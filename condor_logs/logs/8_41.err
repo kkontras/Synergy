@@ -1,0 +1,54 @@
+Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+The following values were not passed to `accelerate launch` and had defaults used instead:
+	`--num_processes` was set to a value of `1`
+	`--num_machines` was set to a value of `1`
+	`--mixed_precision` was set to a value of `'no'`
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+wandb: Currently logged in as: kkontras. Use `wandb login --relogin` to force relogin
+wandb: wandb version 0.22.3 is available!  To upgrade, please run:
+wandb:  $ pip install wandb --upgrade
+wandb: Tracking run with wandb version 0.16.2
+wandb: Run data is saved locally in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/wandb/run-20251103_192755-ydyatjq2
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run Synprom_IB_fold2_l1_lr0.0001_wd0.0_clsconformer_pre
+wandb: ⭐️ View project at https://wandb.ai/kkontras/balance
+wandb: 🚀 View run at https://wandb.ai/kkontras/balance/runs/ydyatjq2
+Traceback (most recent call last):
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 247, in <module>
+    main(config_path=args.config, default_config_path=args.default_config, args=args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 173, in main
+    agent = agent_class(config)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 51, in __init__
+    self.mem_loader.load_models_n_optimizer()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Loader.py", line 86, in load_models_n_optimizer
+    self.agent.model = model_class(encs = enc, args = self.agent.config.model.args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models.py", line 859, in __init__
+    self.perturb = {"type": args.perturb}
+AttributeError: 'EasyDict' object has no attribute 'perturb'
+Traceback (most recent call last):
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 247, in <module>
+    main(config_path=args.config, default_config_path=args.default_config, args=args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 173, in main
+    agent = agent_class(config)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 51, in __init__
+    self.mem_loader.load_models_n_optimizer()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Loader.py", line 86, in load_models_n_optimizer
+    self.agent.model = model_class(encs = enc, args = self.agent.config.model.args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models.py", line 859, in __init__
+    self.perturb = {"type": args.perturb}
+AttributeError: 'EasyDict' object has no attribute 'perturb'
+wandb: - 0.005 MB of 0.005 MB uploadedwandb: \ 0.014 MB of 0.017 MB uploadedwandb: 🚀 View run Synprom_IB_fold2_l1_lr0.0001_wd0.0_clsconformer_pre at: https://wandb.ai/kkontras/balance/runs/ydyatjq2
+wandb: Synced 6 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20251103_192755-ydyatjq2/logs
+Traceback (most recent call last):
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/accelerate", line 8, in <module>
+    sys.exit(main())
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
+    args.func(args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 1198, in launch_command
+    simple_launcher(args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 785, in simple_launcher
+    raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
+subprocess.CalledProcessError: Command '['/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python', '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py', '--config', './configs/CREMA_D/synergy/nov/synprom_ib.json', '--default_config', './configs/CREMA_D/default_config_cremad_res_syn.json', '--fold', '2', '--pre', '--l', '1', '--tdqm_disable', '--lr', '0.0001', '--wd', '0.0', '--cls', 'conformer']' returned non-zero exit status 1.

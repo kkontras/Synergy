@@ -1,0 +1,228 @@
+Starting Job
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python
+Python 3.9.18
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy
+We have 1 GPU
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
+config-./configs/CREMA_D/synergy/nov/synprom_ib.json
+Executing command: accelerate launch /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py --config ./configs/CREMA_D/synergy/nov/synprom_ib.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 1 --pre  --l 100 --contrcoeff 1 --lr 0.0001 --wd 0.0001 --cls mlp --perturb gen --start_over 
+Namespace(config='./configs/CREMA_D/synergy/nov/synprom_ib.json', default_config='./configs/CREMA_D/default_config_cremad_res_syn.json', fold='1', alpha=None, tanh_mode=None, tanh_mode_beta=None, regby=None, clip=None, batch_size=None, l='100', multil=None, l_diffsq=None, lib=None, ratio_us=None, ratio_snr=None, kmepoch=None, num_samples=None, pow=None, nstep=None, contrcoeff='1', kde_coeff=None, etube=None, temperature=None, contr_type=None, shuffle_type=None, validate_with=None, transform_type=None, trasform_before=None, num_classes=None, base_alpha=None, alpha_var=None, base_beta=None, beta_var=None, optim_method=None, ilr_c=None, ilr_g=None, mmcosine_scaling=None, ending_epoch=None, load_ongoing=None, commonlayers=None, recon_weight1=None, recon_weight2=None, recon_epochstages=None, recon_ensemblestages=None, lr='0.0001', wd='0.0001', mm=None, cls='mlp', perturb='gen', pre=True, frozen=False, tdqm_disable=False, start_over=True)
+2025-11-08 01:13:05,217 - Config - INFO - ./configs/CREMA_D/synergy/nov/synprom_ib.json
+2025-11-08 01:13:05,223 - Config - INFO -  THE Configuration of your experiment ..
+{'agent': 'Agent',
+ 'dataset': {'data_roots': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D',
+             'data_split': {'fold': 0, 'method': 'non_inclusive'},
+             'dataloader_class': 'CramedD_Dataloader',
+             'fps': 1,
+             'norm': False,
+             'norm_face_path': './mydatasets/CREMAD/norm_face_path_fold{}.pkl',
+             'norm_wav_path': './mydatasets/CREMAD/wav_norm_16000_fold{}.pkl',
+             'num_frame': 3,
+             'return_data': {'audio': False,
+                             'face': False,
+                             'spectrogram': True,
+                             'video': True},
+             'sampling_rate': 22050},
+ 'early_stopping': {'end_of_epoch_check': True,
+                    'log_interval': 10,
+                    'max_epoch': 1500,
+                    'n_steps_stop': 20,
+                    'n_steps_stop_after': 0,
+                    'save_every_step': 3000,
+                    'save_every_valstep': 10,
+                    'validate_after': 0,
+                    'validate_every': 25,
+                    'validate_with': 'accuracy'},
+ 'exp_name': 'CREMAD Experiment',
+ 'model': {'args': {'bias_infusion': {'ending_epoch': 1500,
+                                      'l': 0.1,
+                                      'method': 'false',
+                                      'plot': False,
+                                      'starting_epoch': 0,
+                                      'use': True},
+                    'clip_grad': False,
+                    'cls_type': 'linear',
+                    'd_model': 512,
+                    'dropout': 0.1,
+                    'fc_inner': 64,
+                    'multi_loss': {'multi_supervised_w': {'c': 0,
+                                                          'combined': 1,
+                                                          'g': 0}},
+                    'num_classes': 6},
+           'encoders': [{'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': False,
+                                  'num_classes': 6},
+                         'model': 'Audio_ResNet',
+                         'pretrainedEncoder': {'dir': 'unimodal_audio_fold{}_lr0.001_wd0.0001.pth.tar',
+                                               'use': False}},
+                        {'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': False,
+                                  'num_classes': 6},
+                         'model': 'Video_ResNet',
+                         'pretrainedEncoder': {'dir': 'unimodal_video_fold{}_lr0.001_wd0.0001.pth.tar',
+                                               'use': False}}],
+           'load_ongoing': False,
+           'model_class': 'Fusion_Synprom_IB',
+           'save_base_dir': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy',
+           'save_dir': 'Synprom_IB_{}.pth.tar'},
+ 'optimizer': {'beta1': 0.9,
+               'beta2': 0.999,
+               'learning_rate': 1e-05,
+               'momentum': 0.9,
+               'type': 'Adam',
+               'weight_decay': 1e-05},
+ 'scheduler': {'max_lr': 0.03, 'type': 'cosanneal', 'warm_up_steps': 780},
+ 'training_params': {'adversarial_training': {'adv_epsilon': 0.01,
+                                              'use': False},
+                     'async_loading': True,
+                     'batch_size': 32,
+                     'cuda': True,
+                     'data_loader_workers': 8,
+                     'gpu_device': [0],
+                     'pin_memory': False,
+                     'rec_test': True,
+                     'res': True,
+                     'seed': 109,
+                     'tdqm_disable': False,
+                     'test_batch_size': 32,
+                     'test_on_bottoms': False,
+                     'use_test_set': True,
+                     'validation': True,
+                     'verbose': True,
+                     'wandb_disable': False}}
+2025-11-08 01:13:05,226 - Config - INFO -  *************************************** 
+2025-11-08 01:13:05,226 - Config - INFO - The experiment name is CREMAD Experiment
+2025-11-08 01:13:05,226 - Config - INFO -  *************************************** 
+2025-11-08 01:13:05,227 - root - INFO - save_dir: Synprom_IB_fold1_l100_contrcoeff1_perturbgen_lr0.0001_wd0.0001_clsmlp_pre.pth.tar
+2025-11-08 01:13:05,441 - Cuda Statistics - INFO - __Python VERSION:  3.9.18 (main, Sep 11 2023, 13:41:44) 
+[GCC 11.2.0]
+2025-11-08 01:13:05,441 - Cuda Statistics - INFO - __pyTorch VERSION:  2.0.1+cu118
+2025-11-08 01:13:05,441 - Cuda Statistics - INFO - __CUDA VERSION
+2025-11-08 01:13:05,445 - Cuda Statistics - INFO - __CUDNN VERSION:  8700
+2025-11-08 01:13:05,490 - Cuda Statistics - INFO - __Number CUDA Devices:  1
+2025-11-08 01:13:05,490 - Cuda Statistics - INFO - __Devices
+2025-11-08 01:13:05,490 - Cuda Statistics - INFO - index, name, driver_version, memory.total [MiB], memory.used [MiB], memory.free [MiB]
+2025-11-08 01:13:05,490 - Cuda Statistics - INFO - 0, Tesla P100-PCIE-16GB, 580.95.05, 16384 MiB, 3 MiB, 16268 MiB
+2025-11-08 01:13:05,492 - Cuda Statistics - INFO - Active CUDA Device: GPU 0
+2025-11-08 01:13:05,492 - Cuda Statistics - INFO - Available devices  1
+2025-11-08 01:13:05,493 - Cuda Statistics - INFO - Current cuda device  0
+This path does not exist /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/AudioWAV/1076_MTI_SAD_XX.wav or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Image-01-FPS/1076_MTI_SAD_XX or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Face_features/1076_MTI_SAD_XX.npy
+2025-11-08 01:13:07,721 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold1.pkl
+2025-11-08 01:13:07,727 - root - INFO - Norm values are {'mean': tensor(-2.6751e-05), 'std': tensor(0.0610), 'max_duration': 5.005}
+2025-11-08 01:13:08,271 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold1.pkl
+2025-11-08 01:13:08,273 - root - INFO - Norm values are {'mean': tensor(-2.6751e-05), 'std': tensor(0.0610), 'max_duration': 5.005}
+2025-11-08 01:13:08,611 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold1.pkl
+2025-11-08 01:13:08,613 - root - INFO - Norm values are {'mean': tensor(-2.6751e-05), 'std': tensor(0.0610), 'max_duration': 5.005}
+Available cores 8
+We are changing dataloader workers to num of cores 0
+2025-11-08 01:13:08,617 - Agent - INFO - Device: cuda:0
+2025-11-08 01:13:08,617 - Agent - INFO - Total training batches: 126, validate every 25 batches, steps per epoch: 6
+2025-11-08 01:13:15,836 - Agent - INFO - Loss Weights are {'total': 1, 'combined': 1, 'c': 0, 'g': 0}
+2025-11-08 01:13:16,562 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold1_lr0.001_wd0.0001.pth.tar
+Replacing module
+2025-11-08 01:13:16,977 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold1_lr0.001_wd0.0001.pth.tar
+Replacing module
+2025-11-08 01:13:17,021 - Agent - INFO - Total number of trainable parameters are: 23483032
+2025-11-08 01:13:17,030 - Agent - INFO - Total number of trainable parameters are: 23483032
+2025-11-08 01:20:28,554 - Agent - INFO - [37mVal Epoch 1 step 1 with [31mce_loss_combined : 1.783664 [31mtotal : 1.783664 [94mAcc_combined: 63.11 [94mAcc_c: 53.69 [94mAcc_g: 51.65 [95mCEU_cue_audio: 0.5631 [95mCEU_cue_video: 0.5465 [95mCEU_synergy: 0.1725 [95mCEU_coexistence: 0.9429 
+2025-11-08 01:20:28,575 - Agent - INFO - [37mTest Epoch 1 step 1 with [31mce_loss_combined : 1.783319 [31mtotal : 1.783319 [94mAcc_combined: 65.68 [94mAcc_c: 50.82 [94mAcc_g: 58.69 
+2025-11-08 01:20:29,428 - Agent - INFO - [37mModels has saved successfully in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_fold1_l100_contrcoeff1_perturbgen_lr0.0001_wd0.0001_clsmlp_pre.pth.tar
+2025-11-08 01:27:40,026 - Agent - INFO - [37mVal Epoch 2 step 2 with [31mce_loss_combined : 1.781412 [31mtotal : 1.781412 [94mAcc_combined: 60.95 [94mAcc_c: 42.68 [94mAcc_g: 44.27 [95mCEU_cue_audio: 0.4917 [95mCEU_cue_video: 0.6610 [95mCEU_synergy: 0.2412 [95mCEU_coexistence: 0.8381 
+2025-11-08 01:34:50,720 - Agent - INFO - [37mVal Epoch 3 step 3 with [31mce_loss_combined : 1.770245 [31mtotal : 1.770245 [94mAcc_combined: 57.43 [94mAcc_c: 50.28 [94mAcc_g: 47.56 [95mCEU_cue_audio: 0.4076 [95mCEU_cue_video: 0.6505 [95mCEU_synergy: 0.1586 [95mCEU_coexistence: 0.8476 
+2025-11-08 01:41:59,980 - Agent - INFO - [37mVal Epoch 4 step 4 with [31mce_loss_combined : 1.735321 [31mtotal : 1.735321 [94mAcc_combined: 54.03 [94mAcc_c: 45.29 [94mAcc_g: 45.63 [95mCEU_cue_audio: 0.3320 [95mCEU_cue_video: 0.6341 [95mCEU_synergy: 0.1379 [95mCEU_coexistence: 0.8286 
+2025-11-08 01:49:05,283 - Agent - INFO - [37mVal Epoch 5 step 5 with [31mce_loss_combined : 1.597669 [31mtotal : 1.597669 [94mAcc_combined: 53.35 [94mAcc_c: 51.76 [94mAcc_g: 47.22 [95mCEU_cue_audio: 0.2942 [95mCEU_cue_video: 0.6447 [95mCEU_synergy: 0.1792 [95mCEU_coexistence: 0.8126 
+2025-11-08 01:56:16,091 - Agent - INFO - [37mVal Epoch 6 step 6 with [31mce_loss_combined : 1.369396 [31mtotal : 1.369396 [94mAcc_combined: 50.28 [94mAcc_c: 47.45 [94mAcc_g: 40.30 [95mCEU_cue_audio: 0.2354 [95mCEU_cue_video: 0.6341 [95mCEU_synergy: 0.1725 [95mCEU_coexistence: 0.7810 
+2025-11-08 02:03:31,728 - Agent - INFO - [37mVal Epoch 7 step 7 with [31mce_loss_combined : 1.213560 [31mtotal : 1.213560 [94mAcc_combined: 54.14 [94mAcc_c: 50.17 [94mAcc_g: 40.18 [95mCEU_cue_audio: 0.2605 [95mCEU_cue_video: 0.6996 [95mCEU_synergy: 0.1725 [95mCEU_coexistence: 0.8317 
+2025-11-08 02:10:44,155 - Agent - INFO - [37mVal Epoch 8 step 8 with [31mce_loss_combined : 1.163608 [31mtotal : 1.163608 [94mAcc_combined: 59.25 [94mAcc_c: 52.10 [94mAcc_g: 47.33 [95mCEU_cue_audio: 0.3823 [95mCEU_cue_video: 0.7323 [95mCEU_synergy: 0.1860 [95mCEU_coexistence: 0.8571 
+2025-11-08 02:17:56,250 - Agent - INFO - [37mVal Epoch 9 step 9 with [31mce_loss_combined : 1.115893 [31mtotal : 1.115893 [94mAcc_combined: 59.25 [94mAcc_c: 51.65 [94mAcc_g: 48.24 [95mCEU_cue_audio: 0.3528 [95mCEU_cue_video: 0.7267 [95mCEU_synergy: 0.1653 [95mCEU_coexistence: 0.8921 
+2025-11-08 02:25:07,012 - Agent - INFO - [37mVal Epoch 10 step 10 with [31mce_loss_combined : 1.059456 [31mtotal : 1.059456 [94mAcc_combined: 61.29 [94mAcc_c: 51.53 [94mAcc_g: 42.91 [95mCEU_cue_audio: 0.3949 [95mCEU_cue_video: 0.7434 [95mCEU_synergy: 0.1519 [95mCEU_coexistence: 0.9144 
+2025-11-08 02:32:21,442 - Agent - INFO - [37mVal Epoch 11 step 11 with [31mce_loss_combined : 1.120153 [31mtotal : 1.120153 [94mAcc_combined: 57.55 [94mAcc_c: 49.72 [94mAcc_g: 44.38 [95mCEU_cue_audio: 0.3151 [95mCEU_cue_video: 0.7434 [95mCEU_synergy: 0.1932 [95mCEU_coexistence: 0.8509 
+2025-11-08 02:39:32,902 - Agent - INFO - [37mVal Epoch 12 step 12 with [31mce_loss_combined : 0.997495 [31mtotal : 0.997495 [94mAcc_combined: 64.47 [94mAcc_c: 47.45 [94mAcc_g: 44.72 [95mCEU_cue_audio: 0.4034 [95mCEU_cue_video: 0.8142 [95mCEU_synergy: 0.1447 [95mCEU_coexistence: 0.9586 
+2025-11-08 02:39:32,926 - Agent - INFO - [37mTest Epoch 12 step 12 with [31mce_loss_combined : 1.086276 [31mtotal : 1.086276 [94mAcc_combined: 67.65 [94mAcc_c: 48.31 [94mAcc_g: 52.13 
+2025-11-08 02:39:33,824 - Agent - INFO - [37mModels has saved successfully in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_fold1_l100_contrcoeff1_perturbgen_lr0.0001_wd0.0001_clsmlp_pre.pth.tar
+2025-11-08 02:46:45,513 - Agent - INFO - [37mVal Epoch 13 step 13 with [31mce_loss_combined : 1.000489 [31mtotal : 1.000489 [94mAcc_combined: 64.70 [94mAcc_c: 50.28 [94mAcc_g: 45.18 [95mCEU_cue_audio: 0.4117 [95mCEU_cue_video: 0.8359 [95mCEU_synergy: 0.1586 [95mCEU_coexistence: 0.9396 
+2025-11-08 02:46:45,536 - Agent - INFO - [37mTest Epoch 13 step 13 with [31mce_loss_combined : 1.041316 [31mtotal : 1.041316 [94mAcc_combined: 69.07 [94mAcc_c: 52.46 [94mAcc_g: 52.02 
+2025-11-08 02:46:46,384 - Agent - INFO - [37mModels has saved successfully in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_fold1_l100_contrcoeff1_perturbgen_lr0.0001_wd0.0001_clsmlp_pre.pth.tar
+2025-11-08 02:53:56,645 - Agent - INFO - [37mVal Epoch 14 step 14 with [31mce_loss_combined : 1.006814 [31mtotal : 1.006814 [94mAcc_combined: 64.36 [94mAcc_c: 48.13 [94mAcc_g: 41.43 [95mCEU_cue_audio: 0.3908 [95mCEU_cue_video: 0.8305 [95mCEU_synergy: 0.1932 [95mCEU_coexistence: 0.9334 
+2025-11-08 03:01:07,893 - Agent - INFO - [37mVal Epoch 15 step 15 with [31mce_loss_combined : 0.932993 [31mtotal : 0.932993 [94mAcc_combined: 66.63 [94mAcc_c: 50.28 [94mAcc_g: 45.86 [95mCEU_cue_audio: 0.4537 [95mCEU_cue_video: 0.8469 [95mCEU_synergy: 0.1519 [95mCEU_coexistence: 0.9586 
+2025-11-08 03:01:07,917 - Agent - INFO - [37mTest Epoch 15 step 15 with [31mce_loss_combined : 1.024550 [31mtotal : 1.024550 [94mAcc_combined: 71.04 [94mAcc_c: 50.82 [94mAcc_g: 51.69 
+2025-11-08 03:01:08,789 - Agent - INFO - [37mModels has saved successfully in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_fold1_l100_contrcoeff1_perturbgen_lr0.0001_wd0.0001_clsmlp_pre.pth.tar
+2025-11-08 03:08:19,654 - Agent - INFO - [37mVal Epoch 16 step 16 with [31mce_loss_combined : 0.964732 [31mtotal : 0.964732 [94mAcc_combined: 64.93 [94mAcc_c: 50.85 [94mAcc_g: 44.61 [95mCEU_cue_audio: 0.4160 [95mCEU_cue_video: 0.8359 [95mCEU_synergy: 0.1447 [95mCEU_coexistence: 0.9491 
+2025-11-08 03:15:29,888 - Agent - INFO - [37mVal Epoch 17 step 17 with [31mce_loss_combined : 1.057302 [31mtotal : 1.057302 [94mAcc_combined: 63.22 [94mAcc_c: 53.58 [94mAcc_g: 44.95 [95mCEU_cue_audio: 0.3613 [95mCEU_cue_video: 0.8252 [95mCEU_synergy: 0.1999 [95mCEU_coexistence: 0.9239 
+2025-11-08 03:22:43,620 - Agent - INFO - [37mVal Epoch 18 step 18 with [31mce_loss_combined : 1.148535 [31mtotal : 1.148535 [94mAcc_combined: 61.07 [94mAcc_c: 43.25 [94mAcc_g: 46.08 [95mCEU_cue_audio: 0.3613 [95mCEU_cue_video: 0.7978 [95mCEU_synergy: 0.2278 [95mCEU_coexistence: 0.8666 
+2025-11-08 03:29:53,946 - Agent - INFO - [37mVal Epoch 19 step 19 with [31mce_loss_combined : 1.058023 [31mtotal : 1.058023 [94mAcc_combined: 65.83 [94mAcc_c: 48.81 [94mAcc_g: 43.81 [95mCEU_cue_audio: 0.4454 [95mCEU_cue_video: 0.8305 [95mCEU_synergy: 0.1586 [95mCEU_coexistence: 0.9491 
+2025-11-08 03:37:07,236 - Agent - INFO - [37mVal Epoch 20 step 20 with [31mce_loss_combined : 1.135927 [31mtotal : 1.135927 [94mAcc_combined: 64.13 [94mAcc_c: 44.84 [94mAcc_g: 42.79 [95mCEU_cue_audio: 0.4160 [95mCEU_cue_video: 0.7814 [95mCEU_synergy: 0.2278 [95mCEU_coexistence: 0.9206 
+2025-11-08 03:44:23,814 - Agent - INFO - [37mVal Epoch 21 step 21 with [31mce_loss_combined : 1.057777 [31mtotal : 1.057777 [94mAcc_combined: 65.04 [94mAcc_c: 51.87 [94mAcc_g: 41.32 [95mCEU_cue_audio: 0.4076 [95mCEU_cue_video: 0.8359 [95mCEU_synergy: 0.1932 [95mCEU_coexistence: 0.9365 
+2025-11-08 03:51:40,656 - Agent - INFO - [37mVal Epoch 22 step 22 with [31mce_loss_combined : 1.088733 [31mtotal : 1.088733 [94mAcc_combined: 60.84 [94mAcc_c: 50.28 [94mAcc_g: 44.04 [95mCEU_cue_audio: 0.3277 [95mCEU_cue_video: 0.7814 [95mCEU_synergy: 0.2205 [95mCEU_coexistence: 0.8985 
+2025-11-08 03:58:57,248 - Agent - INFO - [37mVal Epoch 23 step 23 with [31mce_loss_combined : 1.089108 [31mtotal : 1.089108 [94mAcc_combined: 64.47 [94mAcc_c: 55.39 [94mAcc_g: 42.34 [95mCEU_cue_audio: 0.4160 [95mCEU_cue_video: 0.8195 [95mCEU_synergy: 0.2345 [95mCEU_coexistence: 0.9046 
+2025-11-08 04:06:14,343 - Agent - INFO - [37mVal Epoch 24 step 24 with [31mce_loss_combined : 1.161514 [31mtotal : 1.161514 [94mAcc_combined: 60.05 [94mAcc_c: 49.72 [94mAcc_g: 40.52 [95mCEU_cue_audio: 0.2731 [95mCEU_cue_video: 0.8252 [95mCEU_synergy: 0.2552 [95mCEU_coexistence: 0.8761 
+2025-11-08 04:13:28,617 - Agent - INFO - [37mVal Epoch 25 step 25 with [31mce_loss_combined : 1.120386 [31mtotal : 1.120386 [94mAcc_combined: 63.68 [94mAcc_c: 50.06 [94mAcc_g: 43.36 [95mCEU_cue_audio: 0.4034 [95mCEU_cue_video: 0.7925 [95mCEU_synergy: 0.2205 [95mCEU_coexistence: 0.9144 
+2025-11-08 04:20:44,849 - Agent - INFO - [37mVal Epoch 26 step 26 with [31mce_loss_combined : 1.053245 [31mtotal : 1.053245 [94mAcc_combined: 65.61 [94mAcc_c: 49.94 [94mAcc_g: 42.45 [95mCEU_cue_audio: 0.4328 [95mCEU_cue_video: 0.8195 [95mCEU_synergy: 0.2278 [95mCEU_coexistence: 0.9270 
+2025-11-08 04:28:01,461 - Agent - INFO - [37mVal Epoch 27 step 27 with [31mce_loss_combined : 1.088094 [31mtotal : 1.088094 [94mAcc_combined: 64.59 [94mAcc_c: 49.38 [94mAcc_g: 42.34 [95mCEU_cue_audio: 0.4202 [95mCEU_cue_video: 0.8142 [95mCEU_synergy: 0.2139 [95mCEU_coexistence: 0.9175 
+2025-11-08 04:35:18,999 - Agent - INFO - [37mVal Epoch 28 step 28 with [31mce_loss_combined : 1.048845 [31mtotal : 1.048845 [94mAcc_combined: 65.95 [94mAcc_c: 50.51 [94mAcc_g: 42.91 [95mCEU_cue_audio: 0.4412 [95mCEU_cue_video: 0.8305 [95mCEU_synergy: 0.2345 [95mCEU_coexistence: 0.9206 
+2025-11-08 04:42:37,197 - Agent - INFO - [37mVal Epoch 29 step 29 with [31mce_loss_combined : 1.103744 [31mtotal : 1.103744 [94mAcc_combined: 65.27 [94mAcc_c: 50.17 [94mAcc_g: 42.68 [95mCEU_cue_audio: 0.4454 [95mCEU_cue_video: 0.8032 [95mCEU_synergy: 0.2278 [95mCEU_coexistence: 0.9175 
+2025-11-08 04:49:57,206 - Agent - INFO - [37mVal Epoch 30 step 30 with [31mce_loss_combined : 1.078160 [31mtotal : 1.078160 [94mAcc_combined: 64.59 [94mAcc_c: 50.85 [94mAcc_g: 42.57 [95mCEU_cue_audio: 0.4160 [95mCEU_cue_video: 0.8252 [95mCEU_synergy: 0.2139 [95mCEU_coexistence: 0.9144 
+2025-11-08 04:57:21,156 - Agent - INFO - [37mVal Epoch 31 step 31 with [31mce_loss_combined : 1.077535 [31mtotal : 1.077535 [94mAcc_combined: 65.04 [94mAcc_c: 50.17 [94mAcc_g: 42.45 [95mCEU_cue_audio: 0.4160 [95mCEU_cue_video: 0.8142 [95mCEU_synergy: 0.2412 [95mCEU_coexistence: 0.9206 
+2025-11-08 05:04:41,596 - Agent - INFO - [37mVal Epoch 32 step 32 with [31mce_loss_combined : 1.189783 [31mtotal : 1.189783 [94mAcc_combined: 62.88 [94mAcc_c: 49.26 [94mAcc_g: 41.88 [95mCEU_cue_audio: 0.3949 [95mCEU_cue_video: 0.7925 [95mCEU_synergy: 0.2552 [95mCEU_coexistence: 0.8826 
+2025-11-08 05:12:02,651 - Agent - INFO - [37mVal Epoch 33 step 33 with [31mce_loss_combined : 1.398503 [31mtotal : 1.398503 [94mAcc_combined: 61.63 [94mAcc_c: 49.15 [94mAcc_g: 38.93 [95mCEU_cue_audio: 0.3823 [95mCEU_cue_video: 0.7434 [95mCEU_synergy: 0.2618 [95mCEU_coexistence: 0.8826 
+2025-11-08 05:19:22,473 - Agent - INFO - [37mVal Epoch 34 step 34 with [31mce_loss_combined : 1.005857 [31mtotal : 1.005857 [94mAcc_combined: 69.01 [94mAcc_c: 50.85 [94mAcc_g: 43.25 [95mCEU_cue_audio: 0.4832 [95mCEU_cue_video: 0.8252 [95mCEU_synergy: 0.2618 [95mCEU_coexistence: 0.9650 
+2025-11-08 05:19:22,498 - Agent - INFO - [37mTest Epoch 34 step 34 with [31mce_loss_combined : 0.968363 [31mtotal : 0.968363 [94mAcc_combined: 76.07 [94mAcc_c: 50.49 [94mAcc_g: 50.38 
+2025-11-08 05:19:23,422 - Agent - INFO - [37mModels has saved successfully in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_fold1_l100_contrcoeff1_perturbgen_lr0.0001_wd0.0001_clsmlp_pre.pth.tar
+2025-11-08 05:26:44,960 - Agent - INFO - [37mVal Epoch 35 step 35 with [31mce_loss_combined : 1.217321 [31mtotal : 1.217321 [94mAcc_combined: 65.95 [94mAcc_c: 48.58 [94mAcc_g: 41.09 [95mCEU_cue_audio: 0.4663 [95mCEU_cue_video: 0.8089 [95mCEU_synergy: 0.2898 [95mCEU_coexistence: 0.8890 
+2025-11-08 05:34:04,718 - Agent - INFO - [37mVal Epoch 36 step 36 with [31mce_loss_combined : 1.214143 [31mtotal : 1.214143 [94mAcc_combined: 62.66 [94mAcc_c: 46.88 [94mAcc_g: 43.47 [95mCEU_cue_audio: 0.3908 [95mCEU_cue_video: 0.8089 [95mCEU_synergy: 0.2412 [95mCEU_coexistence: 0.8761 
+2025-11-08 05:41:24,968 - Agent - INFO - [37mVal Epoch 37 step 37 with [31mce_loss_combined : 1.088767 [31mtotal : 1.088767 [94mAcc_combined: 66.74 [94mAcc_c: 51.42 [94mAcc_g: 45.18 [95mCEU_cue_audio: 0.4663 [95mCEU_cue_video: 0.8032 [95mCEU_synergy: 0.2898 [95mCEU_coexistence: 0.9144 
+2025-11-08 05:48:45,673 - Agent - INFO - [37mVal Epoch 38 step 38 with [31mce_loss_combined : 1.241407 [31mtotal : 1.241407 [94mAcc_combined: 63.68 [94mAcc_c: 45.97 [94mAcc_g: 41.54 [95mCEU_cue_audio: 0.3908 [95mCEU_cue_video: 0.8032 [95mCEU_synergy: 0.2758 [95mCEU_coexistence: 0.8921 
+2025-11-08 05:56:05,317 - Agent - INFO - [37mVal Epoch 39 step 39 with [31mce_loss_combined : 1.200500 [31mtotal : 1.200500 [94mAcc_combined: 63.90 [94mAcc_c: 52.21 [94mAcc_g: 40.64 [95mCEU_cue_audio: 0.4034 [95mCEU_cue_video: 0.7703 [95mCEU_synergy: 0.2412 [95mCEU_coexistence: 0.9239 
+2025-11-08 06:03:22,280 - Agent - INFO - [37mVal Epoch 40 step 40 with [31mce_loss_combined : 1.162009 [31mtotal : 1.162009 [94mAcc_combined: 63.34 [94mAcc_c: 48.24 [94mAcc_g: 40.18 [95mCEU_cue_audio: 0.3782 [95mCEU_cue_video: 0.7925 [95mCEU_synergy: 0.2758 [95mCEU_coexistence: 0.8985 
+2025-11-08 06:10:42,685 - Agent - INFO - [37mVal Epoch 41 step 41 with [31mce_loss_combined : 1.099165 [31mtotal : 1.099165 [94mAcc_combined: 66.40 [94mAcc_c: 50.40 [94mAcc_g: 45.06 [95mCEU_cue_audio: 0.4243 [95mCEU_cue_video: 0.8032 [95mCEU_synergy: 0.3171 [95mCEU_coexistence: 0.9239 
+2025-11-08 06:18:02,019 - Agent - INFO - [37mVal Epoch 42 step 42 with [31mce_loss_combined : 1.146603 [31mtotal : 1.146603 [94mAcc_combined: 69.13 [94mAcc_c: 49.38 [94mAcc_g: 44.27 [95mCEU_cue_audio: 0.5420 [95mCEU_cue_video: 0.7925 [95mCEU_synergy: 0.3240 [95mCEU_coexistence: 0.9144 
+2025-11-08 06:18:02,043 - Agent - INFO - [37mTest Epoch 42 step 42 with [31mce_loss_combined : 0.994157 [31mtotal : 0.994157 [94mAcc_combined: 76.39 [94mAcc_c: 49.29 [94mAcc_g: 48.09 
+2025-11-08 06:18:02,937 - Agent - INFO - [37mModels has saved successfully in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_fold1_l100_contrcoeff1_perturbgen_lr0.0001_wd0.0001_clsmlp_pre.pth.tar
+2025-11-08 06:25:24,907 - Agent - INFO - [37mVal Epoch 43 step 43 with [31mce_loss_combined : 1.057021 [31mtotal : 1.057021 [94mAcc_combined: 67.76 [94mAcc_c: 52.44 [94mAcc_g: 42.00 [95mCEU_cue_audio: 0.4748 [95mCEU_cue_video: 0.8305 [95mCEU_synergy: 0.2552 [95mCEU_coexistence: 0.9365 
+2025-11-08 06:32:45,128 - Agent - INFO - [37mVal Epoch 44 step 44 with [31mce_loss_combined : 1.071590 [31mtotal : 1.071590 [94mAcc_combined: 66.86 [94mAcc_c: 51.31 [94mAcc_g: 45.63 [95mCEU_cue_audio: 0.4706 [95mCEU_cue_video: 0.7978 [95mCEU_synergy: 0.2278 [95mCEU_coexistence: 0.9460 
+2025-11-08 06:40:04,439 - Agent - INFO - [37mVal Epoch 45 step 45 with [31mce_loss_combined : 1.072556 [31mtotal : 1.072556 [94mAcc_combined: 68.56 [94mAcc_c: 51.76 [94mAcc_g: 48.01 [95mCEU_cue_audio: 0.5420 [95mCEU_cue_video: 0.7868 [95mCEU_synergy: 0.2618 [95mCEU_coexistence: 0.9301 
+2025-11-08 06:47:25,092 - Agent - INFO - [37mVal Epoch 46 step 46 with [31mce_loss_combined : 1.272953 [31mtotal : 1.272953 [94mAcc_combined: 63.00 [94mAcc_c: 52.55 [94mAcc_g: 44.04 [95mCEU_cue_audio: 0.3908 [95mCEU_cue_video: 0.7868 [95mCEU_synergy: 0.2552 [95mCEU_coexistence: 0.8921 
+2025-11-08 06:54:45,496 - Agent - INFO - [37mVal Epoch 47 step 47 with [31mce_loss_combined : 1.237702 [31mtotal : 1.237702 [94mAcc_combined: 64.36 [94mAcc_c: 51.53 [94mAcc_g: 45.29 [95mCEU_cue_audio: 0.4076 [95mCEU_cue_video: 0.7925 [95mCEU_synergy: 0.2758 [95mCEU_coexistence: 0.9046 
+2025-11-08 07:02:04,683 - Agent - INFO - [37mVal Epoch 48 step 48 with [31mce_loss_combined : 1.078041 [31mtotal : 1.078041 [94mAcc_combined: 67.88 [94mAcc_c: 51.76 [94mAcc_g: 43.70 [95mCEU_cue_audio: 0.5083 [95mCEU_cue_video: 0.8195 [95mCEU_synergy: 0.2412 [95mCEU_coexistence: 0.9270 
+2025-11-08 07:09:24,429 - Agent - INFO - [37mVal Epoch 49 step 49 with [31mce_loss_combined : 1.114773 [31mtotal : 1.114773 [94mAcc_combined: 67.20 [94mAcc_c: 51.87 [94mAcc_g: 44.04 [95mCEU_cue_audio: 0.5043 [95mCEU_cue_video: 0.7868 [95mCEU_synergy: 0.2552 [95mCEU_coexistence: 0.9239 
+2025-11-08 07:16:45,343 - Agent - INFO - [37mVal Epoch 50 step 50 with [31mce_loss_combined : 1.098364 [31mtotal : 1.098364 [94mAcc_combined: 66.97 [94mAcc_c: 52.33 [94mAcc_g: 44.38 [95mCEU_cue_audio: 0.4917 [95mCEU_cue_video: 0.7761 [95mCEU_synergy: 0.2552 [95mCEU_coexistence: 0.9334 
+2025-11-08 07:24:09,611 - Agent - INFO - [37mVal Epoch 51 step 51 with [31mce_loss_combined : 1.108948 [31mtotal : 1.108948 [94mAcc_combined: 66.74 [94mAcc_c: 52.44 [94mAcc_g: 45.86 [95mCEU_cue_audio: 0.4748 [95mCEU_cue_video: 0.7814 [95mCEU_synergy: 0.2758 [95mCEU_coexistence: 0.9270 
+2025-11-08 07:31:31,863 - Agent - INFO - [37mVal Epoch 52 step 52 with [31mce_loss_combined : 1.213456 [31mtotal : 1.213456 [94mAcc_combined: 65.38 [94mAcc_c: 53.23 [94mAcc_g: 44.04 [95mCEU_cue_audio: 0.4663 [95mCEU_cue_video: 0.7487 [95mCEU_synergy: 0.2965 [95mCEU_coexistence: 0.9046 
+2025-11-08 07:38:53,466 - Agent - INFO - [37mVal Epoch 53 step 53 with [31mce_loss_combined : 1.241114 [31mtotal : 1.241114 [94mAcc_combined: 65.83 [94mAcc_c: 52.89 [94mAcc_g: 44.38 [95mCEU_cue_audio: 0.4791 [95mCEU_cue_video: 0.7597 [95mCEU_synergy: 0.2965 [95mCEU_coexistence: 0.9016 
+2025-11-08 07:46:13,852 - Agent - INFO - [37mVal Epoch 54 step 54 with [31mce_loss_combined : 1.067916 [31mtotal : 1.067916 [94mAcc_combined: 68.22 [94mAcc_c: 52.10 [94mAcc_g: 46.20 [95mCEU_cue_audio: 0.5337 [95mCEU_cue_video: 0.7650 [95mCEU_synergy: 0.2827 [95mCEU_coexistence: 0.9301 
+2025-11-08 07:53:34,813 - Agent - INFO - [37mVal Epoch 55 step 55 with [31mce_loss_combined : 1.208518 [31mtotal : 1.208518 [94mAcc_combined: 63.79 [94mAcc_c: 50.06 [94mAcc_g: 43.47 [95mCEU_cue_audio: 0.4243 [95mCEU_cue_video: 0.7487 [95mCEU_synergy: 0.2758 [95mCEU_coexistence: 0.9016 
+2025-11-08 08:00:55,063 - Agent - INFO - [37mVal Epoch 56 step 56 with [31mce_loss_combined : 1.144375 [31mtotal : 1.144375 [94mAcc_combined: 68.10 [94mAcc_c: 54.26 [94mAcc_g: 46.31 [95mCEU_cue_audio: 0.5377 [95mCEU_cue_video: 0.7703 [95mCEU_synergy: 0.2965 [95mCEU_coexistence: 0.9144 
+2025-11-08 08:08:15,843 - Agent - INFO - [37mVal Epoch 57 step 57 with [31mce_loss_combined : 1.092083 [31mtotal : 1.092083 [94mAcc_combined: 68.22 [94mAcc_c: 50.96 [94mAcc_g: 46.88 [95mCEU_cue_audio: 0.5463 [95mCEU_cue_video: 0.7597 [95mCEU_synergy: 0.2898 [95mCEU_coexistence: 0.9206 
+2025-11-08 08:15:36,110 - Agent - INFO - [37mVal Epoch 58 step 58 with [31mce_loss_combined : 1.010650 [31mtotal : 1.010650 [94mAcc_combined: 70.60 [94mAcc_c: 53.46 [94mAcc_g: 47.45 [95mCEU_cue_audio: 0.6009 [95mCEU_cue_video: 0.7814 [95mCEU_synergy: 0.2618 [95mCEU_coexistence: 0.9460 
+2025-11-08 08:15:36,134 - Agent - INFO - [37mTest Epoch 58 step 58 with [31mce_loss_combined : 0.986106 [31mtotal : 0.986106 [94mAcc_combined: 77.70 [94mAcc_c: 52.35 [94mAcc_g: 52.24 
+2025-11-08 08:15:37,160 - Agent - INFO - [37mModels has saved successfully in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_fold1_l100_contrcoeff1_perturbgen_lr0.0001_wd0.0001_clsmlp_pre.pth.tar
+2025-11-08 08:22:58,853 - Agent - INFO - [37mVal Epoch 59 step 59 with [31mce_loss_combined : 1.115852 [31mtotal : 1.115852 [94mAcc_combined: 68.56 [94mAcc_c: 52.33 [94mAcc_g: 45.52 [95mCEU_cue_audio: 0.5714 [95mCEU_cue_video: 0.7434 [95mCEU_synergy: 0.3033 [95mCEU_coexistence: 0.9144 
+2025-11-08 08:30:19,358 - Agent - INFO - [37mVal Epoch 60 step 60 with [31mce_loss_combined : 1.023012 [31mtotal : 1.023012 [94mAcc_combined: 70.26 [94mAcc_c: 54.37 [94mAcc_g: 46.42 [95mCEU_cue_audio: 0.6051 [95mCEU_cue_video: 0.7540 [95mCEU_synergy: 0.2827 [95mCEU_coexistence: 0.9396 
+2025-11-08 08:37:42,168 - Agent - INFO - [37mVal Epoch 61 step 61 with [31mce_loss_combined : 1.049132 [31mtotal : 1.049132 [94mAcc_combined: 69.58 [94mAcc_c: 52.89 [94mAcc_g: 44.95 [95mCEU_cue_audio: 0.5924 [95mCEU_cue_video: 0.7487 [95mCEU_synergy: 0.2965 [95mCEU_coexistence: 0.9270 
+2025-11-08 08:45:02,690 - Agent - INFO - [37mVal Epoch 62 step 62 with [31mce_loss_combined : 1.118097 [31mtotal : 1.118097 [94mAcc_combined: 67.42 [94mAcc_c: 53.69 [94mAcc_g: 45.18 [95mCEU_cue_audio: 0.5252 [95mCEU_cue_video: 0.7650 [95mCEU_synergy: 0.2827 [95mCEU_coexistence: 0.9144 
+2025-11-08 08:52:23,283 - Agent - INFO - [37mVal Epoch 63 step 63 with [31mce_loss_combined : 1.077199 [31mtotal : 1.077199 [94mAcc_combined: 68.90 [94mAcc_c: 53.23 [94mAcc_g: 44.72 [95mCEU_cue_audio: 0.5883 [95mCEU_cue_video: 0.7434 [95mCEU_synergy: 0.2758 [95mCEU_coexistence: 0.9239 
+2025-11-08 08:59:43,277 - Agent - INFO - [37mVal Epoch 64 step 64 with [31mce_loss_combined : 1.102268 [31mtotal : 1.102268 [94mAcc_combined: 68.90 [94mAcc_c: 54.14 [94mAcc_g: 46.42 [95mCEU_cue_audio: 0.5757 [95mCEU_cue_video: 0.7487 [95mCEU_synergy: 0.2827 [95mCEU_coexistence: 0.9270 
+2025-11-08 09:07:01,802 - Agent - INFO - [37mVal Epoch 65 step 65 with [31mce_loss_combined : 1.046877 [31mtotal : 1.046877 [94mAcc_combined: 69.01 [94mAcc_c: 53.12 [94mAcc_g: 45.86 [95mCEU_cue_audio: 0.5503 [95mCEU_cue_video: 0.7597 [95mCEU_synergy: 0.2965 [95mCEU_coexistence: 0.9365 
+2025-11-08 09:14:22,493 - Agent - INFO - [37mVal Epoch 66 step 66 with [31mce_loss_combined : 1.246115 [31mtotal : 1.246115 [94mAcc_combined: 65.95 [94mAcc_c: 52.33 [94mAcc_g: 47.33 [95mCEU_cue_audio: 0.4412 [95mCEU_cue_video: 0.8032 [95mCEU_synergy: 0.2618 [95mCEU_coexistence: 0.9239 
+2025-11-08 09:21:41,930 - Agent - INFO - [37mVal Epoch 67 step 67 with [31mce_loss_combined : 1.053456 [31mtotal : 1.053456 [94mAcc_combined: 70.15 [94mAcc_c: 53.92 [94mAcc_g: 49.26 [95mCEU_cue_audio: 0.5588 [95mCEU_cue_video: 0.7925 [95mCEU_synergy: 0.2345 [95mCEU_coexistence: 0.9715 
+2025-11-08 09:29:00,981 - Agent - INFO - [37mVal Epoch 68 step 68 with [31mce_loss_combined : 1.266227 [31mtotal : 1.266227 [94mAcc_combined: 63.22 [94mAcc_c: 49.94 [94mAcc_g: 45.18 [95mCEU_cue_audio: 0.4454 [95mCEU_cue_video: 0.7597 [95mCEU_synergy: 0.2758 [95mCEU_coexistence: 0.8635 
+2025-11-08 09:36:21,844 - Agent - INFO - [37mVal Epoch 69 step 69 with [31mce_loss_combined : 1.340655 [31mtotal : 1.340655 [94mAcc_combined: 62.88 [94mAcc_c: 48.58 [94mAcc_g: 42.34 [95mCEU_cue_audio: 0.4580 [95mCEU_cue_video: 0.7103 [95mCEU_synergy: 0.3378 [95mCEU_coexistence: 0.8445 
+2025-11-08 09:43:41,134 - Agent - INFO - [37mVal Epoch 70 step 70 with [31mce_loss_combined : 1.236931 [31mtotal : 1.236931 [94mAcc_combined: 67.42 [94mAcc_c: 53.46 [94mAcc_g: 44.95 [95mCEU_cue_audio: 0.5631 [95mCEU_cue_video: 0.8089 [95mCEU_synergy: 0.2345 [95mCEU_coexistence: 0.8826 
+2025-11-08 09:51:02,150 - Agent - INFO - [37mVal Epoch 71 step 71 with [31mce_loss_combined : 1.067201 [31mtotal : 1.067201 [94mAcc_combined: 67.88 [94mAcc_c: 54.26 [94mAcc_g: 46.99 [95mCEU_cue_audio: 0.5588 [95mCEU_cue_video: 0.7703 [95mCEU_synergy: 0.2205 [95mCEU_coexistence: 0.9270 
+2025-11-08 09:58:22,436 - Agent - INFO - [37mVal Epoch 72 step 72 with [31mce_loss_combined : 1.235497 [31mtotal : 1.235497 [94mAcc_combined: 66.63 [94mAcc_c: 54.82 [94mAcc_g: 49.49 [95mCEU_cue_audio: 0.5043 [95mCEU_cue_video: 0.7978 [95mCEU_synergy: 0.2139 [95mCEU_coexistence: 0.9206 
+2025-11-08 10:05:42,171 - Agent - INFO - [37mVal Epoch 73 step 73 with [31mce_loss_combined : 1.187491 [31mtotal : 1.187491 [94mAcc_combined: 65.38 [94mAcc_c: 54.71 [94mAcc_g: 47.79 [95mCEU_cue_audio: 0.4791 [95mCEU_cue_video: 0.7814 [95mCEU_synergy: 0.2552 [95mCEU_coexistence: 0.8951 
+2025-11-08 10:13:00,927 - Agent - INFO - [37mVal Epoch 74 step 74 with [31mce_loss_combined : 1.149979 [31mtotal : 1.149979 [94mAcc_combined: 69.01 [94mAcc_c: 55.39 [94mAcc_g: 46.20 [95mCEU_cue_audio: 0.5883 [95mCEU_cue_video: 0.7761 [95mCEU_synergy: 0.2691 [95mCEU_coexistence: 0.9111 
+2025-11-08 10:20:21,184 - Agent - INFO - [37mVal Epoch 75 step 75 with [31mce_loss_combined : 1.094354 [31mtotal : 1.094354 [94mAcc_combined: 66.17 [94mAcc_c: 50.85 [94mAcc_g: 45.06 [95mCEU_cue_audio: 0.5377 [95mCEU_cue_video: 0.7703 [95mCEU_synergy: 0.2278 [95mCEU_coexistence: 0.8921 
+2025-11-08 10:27:40,653 - Agent - INFO - [37mVal Epoch 76 step 76 with [31mce_loss_combined : 1.075422 [31mtotal : 1.075422 [94mAcc_combined: 69.47 [94mAcc_c: 53.12 [94mAcc_g: 44.95 [95mCEU_cue_audio: 0.5883 [95mCEU_cue_video: 0.7925 [95mCEU_synergy: 0.2618 [95mCEU_coexistence: 0.9175 
+2025-11-08 10:35:01,274 - Agent - INFO - [37mVal Epoch 77 step 77 with [31mce_loss_combined : 1.085809 [31mtotal : 1.085809 [94mAcc_combined: 68.44 [94mAcc_c: 48.01 [94mAcc_g: 45.52 [95mCEU_cue_audio: 0.5503 [95mCEU_cue_video: 0.7761 [95mCEU_synergy: 0.3033 [95mCEU_coexistence: 0.9080 
+2025-11-08 10:35:02,658 - Agent - INFO - We are in the final state.
+2025-11-08 10:35:03,076 - root - INFO - Loaded best model from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_fold1_l100_contrcoeff1_perturbgen_lr0.0001_wd0.0001_clsmlp_pre.pth.tar
+2025-11-08 10:35:27,853 - Agent - INFO - [37mVal Epoch 77 step 0 with [31mce_loss_combined : 1.010650 [31mtotal : 1.010650 [94mAcc_combined: 70.60 [94mAcc_c: 53.46 [94mAcc_g: 47.45 [95mCEU_cue_audio: 0.6009 [95mCEU_cue_video: 0.7814 [95mCEU_synergy: 0.2618 [95mCEU_coexistence: 0.9460 
+2025-11-08 10:35:53,487 - Agent - INFO - [37mTest Epoch 77 step 0 with [31mce_loss_combined : 0.986106 [31mtotal : 0.986106 [94mAcc_combined: 77.70 [94mAcc_c: 52.35 [94mAcc_g: 52.24 
+2025-11-08 10:35:55,336 - Agent - INFO - [37mModels has saved successfully in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_fold1_l100_contrcoeff1_perturbgen_lr0.0001_wd0.0001_clsmlp_pre.pth.tar
+Job finished

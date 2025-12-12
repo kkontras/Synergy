@@ -1,0 +1,67 @@
+{
+  "training_params": {
+    "batch_size": 32,
+    "test_batch_size": 32
+  },
+  "dataset": {
+    "norm": false
+  },
+  "model": {
+    "model_class": "Base_Model",
+    "args": {
+      "d_model": 100,
+      "num_classes": 2,
+      "fc_inner": 64,
+      "dropout": 0.1,
+      "cls_type": "linear",
+      "clip_grad": false,
+      "bias_infusion": {
+        "method": "OGM-Mine",
+        "alpha": 1.0,
+        "starting_epoch": 0,
+        "ending_epoch": 1500,
+        "use": true,
+        "plot": false
+      },
+    "multi_loss": {
+      "multi_supervised_w": {
+        "combined": 1,
+        "c": 1,
+        "g": 1
+      }
+    }
+    },
+    "load_ongoing": false,
+    "save_dir": "binary_MLB_{}.pth.tar",
+    "encoders": [
+      {
+        "model": "SyntheticGaussianNet_Enc",
+        "args": {
+          "input_size": 100,
+          "hidden_size": 100,
+          "modality": 0,
+          "num_classes": 2,
+          "freeze_encoder": false
+        },
+        "pretrainedEncoder": {
+          "use": false,
+          "dir": "uni0_{}.pth.tar"
+        }
+      },
+      {
+        "model": "SyntheticGaussianNet_Enc",
+        "args": {
+          "input_size": 100,
+          "hidden_size": 100,
+          "modality": 1,
+          "num_classes": 2,
+          "freeze_encoder": false
+        },
+        "pretrainedEncoder": {
+          "use": false,
+          "dir": "uni1_{}.pth.tar"
+        }
+      }
+    ]
+  }
+}

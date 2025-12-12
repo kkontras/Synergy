@@ -1,0 +1,17 @@
+Notification = Error
+executable = /users/sista/kkontras/Documents/Balance/condor_logs/condor/script_m.sh
+initialdir = /users/sista/kkontras/Documents/Balance/condor_logs/logs
+Log          = $(ClusterId)_$(Process).log
+Output       = $(ClusterId)_$(Process).out
+Error        = $(ClusterId)_$(Process).err
+RequestCpus    = 15
+RequestMemory  = 40G
+RequestWalltime = 100199
+Request_GPUs   = 1
+NiceUser = True
+Requirements = ( GPUs_GlobalMemoryMb > 7500) && ( machine != "vladimir.esat.kuleuven.be") && ( machine != "pythagoras.esat.kuleuven.be")
+Queue Arguments from (
+    ./configs/CREMA_D/Multimodal/concat/PMR_search/concat_singleloss_PMR_test.json,./configs/CREMA_D/default_config_cremad.json,0,5.0,1500
+    ./configs/CREMA_D/Multimodal/concat/PMR_search/concat_singleloss_PMR_test.json,./configs/CREMA_D/default_config_cremad.json,0,1.0,1500
+    ./configs/CREMA_D/Multimodal/concat/PMR_search/concat_singleloss_PMR_test.json,./configs/CREMA_D/default_config_cremad.json,0,0.5,1500
+)

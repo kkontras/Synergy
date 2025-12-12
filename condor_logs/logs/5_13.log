@@ -1,0 +1,72 @@
+000 (005.013.000) 2025-11-10 20:12:36 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+001 (005.013.000) 2025-11-11 03:53:29 Job executing on host: <10.87.24.25:9618?addrs=10.87.24.25-9618+[--1]-9618&alias=estragon.esat.kuleuven.be&noUDP&sock=startd_2009_95db>
+	SlotName: slot1_1@estragon.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_fd0ce06a }
+	CondorScratchDir = "/usr/data/condor/execute/dir_479703"
+	Cpus = 8
+	Disk = 1054592
+	GPUs = 1
+	GPUs_GPU_fd0ce06a = [ Id = "GPU-fd0ce06a"; ClockMhz = 1328.5; Capability = 6.0; CoresPerCU = 64; DeviceName = "Tesla P100-PCIE-16GB"; DeviceUuid = "fd0ce06a-713e-f0de-00ac-18e3e9780412"; ECCEnabled = true; ComputeUnits = 56; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:08:00.0"; GlobalMemoryMb = 16269; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (005.013.000) 2025-11-11 03:53:38 Image size of job updated: 218804
+	214  -  MemoryUsage of job (MB)
+	218804  -  ResidentSetSize of job (KB)
+...
+006 (005.013.000) 2025-11-11 03:55:51 Image size of job updated: 1546468
+	214  -  MemoryUsage of job (MB)
+	218804  -  ResidentSetSize of job (KB)
+...
+005 (005.013.000) 2025-11-11 03:55:51 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:05:51, Sys 0 00:00:26  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:05:51, Sys 0 00:00:26  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :        0        8         8 
+	   Disk (KB)            :        2  1048576   1054592 
+	   GPUs                 :        0        1         1 "GPU-fd0ce06a"
+	   Memory (MB)          :      214    71680     71680 
+	   TimeExecute (s)      :      142                    
+	   TimeSlotBusy (s)     :      142                    
+...
+000 (005.013.000) 2025-11-23 17:32:34 Job submitted from host: <10.87.28.3:9618?addrs=10.87.28.3-9618&alias=deanston.esat.kuleuven.be&noUDP&sock=schedd_1644_39c9>
+...
+001 (005.013.000) 2025-11-23 17:33:06 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_2594_d8c2>
+	SlotName: slot1_3@aristoteles.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_edd4a9d8 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_2190442/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_edd4a9d8 = [ Id = "GPU-edd4a9d8"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "edd4a9d8-371c-bb9a-e898-24b94b410094"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.105.08"; DriverVersion = 13.0; DevicePciBusId = "0000:8D:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (005.013.000) 2025-11-23 17:33:10 Image size of job updated: 2
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+005 (005.013.000) 2025-11-23 17:33:11 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:02, Sys 0 00:00:01  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:02, Sys 0 00:00:01  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :                 8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :                 1         1 "GPU-edd4a9d8"
+	   Memory (MB)          :        0    71680     71680 
+	   TimeExecute (s)      :        4                    
+	   TimeSlotBusy (s)     :        5                    
+...

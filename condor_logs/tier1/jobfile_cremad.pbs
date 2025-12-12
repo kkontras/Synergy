@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+#PBS -l walltime=32:00:00
+#PBS -l nodes=1:ppn=12:gpus=1
+
+#PBS -A 2024_111
+
+#PBS -o ./condor_logs/logs_vsc/out_${PBS_JOBID}.txt
+#PBS -e ./condor_logs/logs_vsc/err_${PBS_JOBID}.txt
+
+
+cd /dodrio/scratch/projects/2024_111/Balance
+
+git pull origin vsc
+
+source /dodrio/scratch/projects/starting_2024_024/env/Anaconda/etc/profile.d/conda.sh
+conda activate /dodrio/scratch/projects/starting_2024_024/env/balance
+
+which python
+python -V
+echo $PWD
+
+variables=("config" "default_config" "fold" "lr" "wd" "alpha" "kmepoch" "recon_weight1" "recon_weight2" "recon_epochstages" "recon_ensemblestages" "l" "reg_by" "cls" "clip" "load_ongoing" "num_samples" "reg_by" "batch_size" "pow" "contr_coeff" "temperature" "kde_coeff" "shuffle_type" "contr_type" "l_diffsq" "lib" "multil" "ceb" "tanh_mode" "tanh_mode_beta")
+
+for var_name in "${variables[@]}"; do
+    var_value="${!var_name}"
+    if [ -z "$var_value" ]; then
+        declare "$var_name"="None"
+    fi
+done
+
+accelerate launch main_mcrema_MSLR.py --config $config --default_config $default_config --fold $fold --lr $lr --wd $wd --alpha $alpha --kmepoch $kmepoch --recon_weight1 $recon_weight1 --recon_weight2 $recon_weight2 --recon_epochstages $recon_epochstages --recon_ensemblestages $recon_ensemblestages --cls $cls --load_ongoing $load_ongoing --clip $clip --l $l --reg_by $reg_by --num_samples $num_samples --batch_size $batch_size --pow $pow --contr_coeff $contr_coeff --temperature $temperature --kde_coeff $kde_coeff --shuffle_type $shuffle_type --contr_type $contr_type --l_diffsq $l_diffsq --lib $lib --multil $multil --ceb $ceb --tanh_mode $tanh_mode --tanh_mode_beta $tanh_mode_beta

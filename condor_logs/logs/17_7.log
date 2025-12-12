@@ -1,0 +1,39 @@
+000 (017.007.000) 2025-11-09 11:30:15 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+...
+001 (017.007.000) 2025-11-09 15:33:21 Job executing on host: <10.87.28.117:9618?addrs=10.87.28.117-9618&alias=stadius-nc-4.esat.kuleuven.be&noUDP&sock=startd_3335_1c6f>
+	SlotName: slot1_1@stadius-nc-4.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_1236270c }
+	CondorScratchDir = "/volume1/condor/execute/dir_1344221"
+	Cpus = 8
+	Disk = 1050150
+	GPUs = 1
+	GPUs_GPU_1236270c = [ Id = "GPU-1236270c"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "1236270c-ad23-648a-e65a-80b2ab2cf0c3"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "570.153.02"; DriverVersion = 12.8; DevicePciBusId = "0000:25:00.0"; GlobalMemoryMb = 10823; MaxSupportedVersion = 12080 ]
+	Memory = 71680
+...
+006 (017.007.000) 2025-11-09 15:33:29 Image size of job updated: 438708
+	429  -  MemoryUsage of job (MB)
+	438708  -  ResidentSetSize of job (KB)
+...
+006 (017.007.000) 2025-11-09 15:34:41 Image size of job updated: 2274724
+	429  -  MemoryUsage of job (MB)
+	438784  -  ResidentSetSize of job (KB)
+...
+005 (017.007.000) 2025-11-09 15:34:41 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:04:50, Sys 0 00:00:15  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:04:50, Sys 0 00:00:15  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     6.08        8         8 
+	   Disk (KB)            :     2     1048576   1050150 
+	   GPUs                 :     0.07        1         1 "GPU-1236270c"
+	   GpusMemory (MB)      :  1954                       
+	   Memory (MB)          :   429       71680     71680 
+	   TimeExecute (s)      :    80                       
+	   TimeSlotBusy (s)     :    80                       
+...

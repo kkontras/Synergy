@@ -1,0 +1,26 @@
+Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+The following values were not passed to `accelerate launch` and had defaults used instead:
+	`--num_processes` was set to a value of `1`
+	`--num_machines` was set to a value of `1`
+	`--mixed_precision` was set to a value of `'no'`
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+Traceback (most recent call last):
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 3, in <module>
+    from agents.general_agent import *
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/__init__.py", line 7, in <module>
+    mod = __import__('.'.join([__name__, py]), fromlist=[py])
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 4, in <module>
+    from agents.general_agent.helpers.Loader import Loader
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/__init__.py", line 7, in <module>
+    mod = __import__('.'.join([__name__, py]), fromlist=[py])
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Loader.py", line 11, in <module>
+    from models.MCR_Models import *
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/__init__.py", line 7, in <module>
+    mod = __import__('.'.join([__name__, py]), fromlist=[py])
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models.py", line 4, in <module>
+    from models.MCR_Models import TF_Fusion
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/MCR_Models.py", line 14, in <module>
+    from diffusers import StableDiffusionPipeline
+ModuleNotFoundError: No module named 'diffusers'

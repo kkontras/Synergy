@@ -1,0 +1,133 @@
+000 (011.005.000) 2025-11-07 18:57:34 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+...
+001 (011.005.000) 2025-11-08 10:47:38 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_12050_e04e>
+	SlotName: slot1_3@aristoteles.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_30152e2d }
+	CondorScratchDir = "/usr/data/condor/execute/dir_4109083"
+	Cpus = 8
+	Disk = 1050529
+	GPUs = 1
+	GPUs_GPU_30152e2d = [ Id = "GPU-30152e2d"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "30152e2d-c9ad-da16-21bc-bf9b07cb3dd0"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:4D:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (011.005.000) 2025-11-08 10:47:47 Image size of job updated: 241528
+	236  -  MemoryUsage of job (MB)
+	241528  -  ResidentSetSize of job (KB)
+...
+006 (011.005.000) 2025-11-08 10:52:48 Image size of job updated: 1557772
+	1522  -  MemoryUsage of job (MB)
+	1557772  -  ResidentSetSize of job (KB)
+...
+006 (011.005.000) 2025-11-08 10:57:48 Image size of job updated: 1641536
+	1551  -  MemoryUsage of job (MB)
+	1588056  -  ResidentSetSize of job (KB)
+...
+006 (011.005.000) 2025-11-08 11:07:49 Image size of job updated: 1665696
+	1582  -  MemoryUsage of job (MB)
+	1619560  -  ResidentSetSize of job (KB)
+...
+006 (011.005.000) 2025-11-08 11:12:49 Image size of job updated: 1678472
+	1582  -  MemoryUsage of job (MB)
+	1619560  -  ResidentSetSize of job (KB)
+...
+006 (011.005.000) 2025-11-08 11:17:50 Image size of job updated: 1678472
+	1635  -  MemoryUsage of job (MB)
+	1673560  -  ResidentSetSize of job (KB)
+...
+006 (011.005.000) 2025-11-08 11:27:51 Image size of job updated: 1696328
+	1635  -  MemoryUsage of job (MB)
+	1673560  -  ResidentSetSize of job (KB)
+...
+006 (011.005.000) 2025-11-08 11:47:52 Image size of job updated: 1702440
+	1635  -  MemoryUsage of job (MB)
+	1673560  -  ResidentSetSize of job (KB)
+...
+006 (011.005.000) 2025-11-08 11:57:54 Image size of job updated: 1723352
+	1635  -  MemoryUsage of job (MB)
+	1673560  -  ResidentSetSize of job (KB)
+...
+006 (011.005.000) 2025-11-08 12:02:54 Image size of job updated: 1732620
+	1651  -  MemoryUsage of job (MB)
+	1690496  -  ResidentSetSize of job (KB)
+...
+006 (011.005.000) 2025-11-08 12:12:55 Image size of job updated: 2291156
+	1651  -  MemoryUsage of job (MB)
+	1690496  -  ResidentSetSize of job (KB)
+...
+004 (011.005.000) 2025-11-08 13:03:06 Job was evicted. Code 1005 Subcode 0
+	(0) CPU times
+		Usr 0 10:25:20, Sys 0 00:20:06  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	Reason: Unspecified job interruption
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     3.51        8         8 
+	   Disk (KB)            :     2     1048576   1050529 
+	   GPUs                 :                 1         1 "GPU-30152e2d"
+	   Memory (MB)          :  1651       71680     71680 
+	   TimeExecute (s)      :  8128                       
+	   TimeSlotBusy (s)     :  8128                       
+...
+001 (011.005.000) 2025-11-08 16:36:26 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_12050_e04e>
+	SlotName: slot1_2@aristoteles.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_54c371e8 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_584257"
+	Cpus = 8
+	Disk = 1050529
+	GPUs = 1
+	GPUs_GPU_54c371e8 = [ Id = "GPU-54c371e8"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "54c371e8-0248-653b-6bb3-a267a149ca71"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:0A:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+004 (011.005.000) 2025-11-08 16:38:46 Job was evicted. Code 1005 Subcode 0
+	(0) CPU times
+		Usr 0 00:05:16, Sys 0 00:00:34  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	Reason: Unspecified job interruption
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     3.78        8         8 
+	   Disk (KB)            :     2     1048576   1050529 
+	   GPUs                 :                 1         1 "GPU-54c371e8"
+	   Memory (MB)          :  1709       71680     71680 
+	   TimeExecute (s)      :   140                       
+	   TimeSlotBusy (s)     :   140                       
+...
+001 (011.005.000) 2025-11-08 17:41:47 Job executing on host: <10.87.24.28:9618?addrs=10.87.24.28-9618&alias=z4-demo.esat.kuleuven.be&noUDP&sock=startd_1821_a20d>
+	SlotName: slot1_1@z4-demo.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_3a8a5d5c }
+	CondorScratchDir = "/usr/data/condor/execute/dir_785127"
+	Cpus = 8
+	Disk = 1049600
+	GPUs = 1
+	GPUs_GPU_3a8a5d5c = [ Id = "GPU-3a8a5d5c"; ClockMhz = 1695.0; Capability = 8.6; CoresPerCU = 128; DeviceName = "NVIDIA GeForce RTX 3090"; DeviceUuid = "3a8a5d5c-a24a-7f66-bb71-a1b798b11468"; ECCEnabled = false; ComputeUnits = 82; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:21:00.0"; GlobalMemoryMb = 24114; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (011.005.000) 2025-11-08 19:52:08 Image size of job updated: 2661168
+	1709  -  MemoryUsage of job (MB)
+	1750000  -  ResidentSetSize of job (KB)
+...
+006 (011.005.000) 2025-11-08 19:57:32 Image size of job updated: 3789628
+	1709  -  MemoryUsage of job (MB)
+	1750000  -  ResidentSetSize of job (KB)
+...
+005 (011.005.000) 2025-11-08 19:57:32 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 05:31:40, Sys 0 00:47:10  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 16:02:16, Sys 0 01:07:50  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     2.51        8         8 
+	   Disk (KB)            :     2     1048576   1049600 
+	   GPUs                 :     0.70        1         1 "GPU-3a8a5d5c"
+	   GpusMemory (MB)      : 24560                       
+	   Memory (MB)          :  1709       71680     71680 
+	   TimeExecute (s)      :  8145                       
+	   TimeSlotBusy (s)     :  8146                       
+...

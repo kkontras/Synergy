@@ -1,0 +1,204 @@
+Starting Job
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python
+Python 3.10.19
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy
+We have 1 GPU
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
+config-./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json
+Executing command: accelerate launch /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py --config ./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 1 --lr 0.001 --wd 1e-5 --perturb gen --start_over  --cls mlp --lib 1.0
+Namespace(config='./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json', default_config='./configs/CREMA_D/default_config_cremad_res_syn.json', fold='1', alpha=None, tanh_mode=None, tanh_mode_beta=None, regby=None, clip=None, batch_size=None, l=None, multil=None, l_diffsq=None, lib='1.0', ratio_us=None, ratio_snr=None, kmepoch=None, num_samples=None, pow=None, nstep=None, contrcoeff=None, kde_coeff=None, etube=None, temperature=None, contr_type=None, shuffle_type=None, validate_with=None, transform_type=None, trasform_before=None, num_classes=None, base_alpha=None, alpha_var=None, base_beta=None, beta_var=None, optim_method=None, ilr_c=None, ilr_g=None, mmcosine_scaling=None, ending_epoch=None, load_ongoing=None, commonlayers=None, recon_weight1=None, recon_weight2=None, recon_epochstages=None, recon_ensemblestages=None, lr='0.001', wd='1e-5', mm=None, cls='mlp', perturb='gen', pre=False, frozen=False, tdqm_disable=False, start_over=True)
+2025-11-24 08:37:35,673 - Config - INFO - ./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json
+2025-11-24 08:37:35,675 - Config - INFO -  THE Configuration of your experiment ..
+{'agent': 'Agent',
+ 'dataset': {'data_roots': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D',
+             'data_split': {'fold': 0, 'method': 'non_inclusive'},
+             'dataloader_class': 'CramedD_Dataloader',
+             'fps': 1,
+             'norm': False,
+             'norm_face_path': './mydatasets/CREMAD/norm_face_path_fold{}.pkl',
+             'norm_wav_path': './mydatasets/CREMAD/wav_norm_16000_fold{}.pkl',
+             'num_frame': 3,
+             'return_data': {'audio': False,
+                             'face': False,
+                             'spectrogram': True,
+                             'video': True},
+             'sampling_rate': 22050},
+ 'early_stopping': {'end_of_epoch_check': True,
+                    'log_interval': 10,
+                    'max_epoch': 1500,
+                    'n_steps_stop': 100,
+                    'n_steps_stop_after': 0,
+                    'save_every_step': 3000,
+                    'save_every_valstep': 10,
+                    'validate_after': 0,
+                    'validate_every': 25,
+                    'validate_with': 'loss'},
+ 'exp_name': 'CREMAD Experiment',
+ 'model': {'args': {'bias_infusion': {'ending_epoch': 1500,
+                                      'l': 0.1,
+                                      'method': 'false',
+                                      'plot': False,
+                                      'starting_epoch': 0,
+                                      'use': True},
+                    'clip_grad': False,
+                    'cls_type': 'linear',
+                    'd_model': 512,
+                    'dropout': 0.1,
+                    'fc_inner': 64,
+                    'multi_loss': {'multi_supervised_w': {'c': 0,
+                                                          'combined': 1,
+                                                          'g': 0}},
+                    'num_classes': 6,
+                    'swap_direction': True},
+           'encoders': [{'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': True,
+                                  'num_classes': 6},
+                         'model': 'Audio_ResNet',
+                         'pretrainedEncoder': {'dir': 'unimodal_audio_fold{}_lr0.001_wd0.0001.pth.tar',
+                                               'use': True}},
+                        {'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': True,
+                                  'num_classes': 6},
+                         'model': 'Video_ResNet',
+                         'pretrainedEncoder': {'dir': 'unimodal_video_fold{}_lr0.001_wd0.0001.pth.tar',
+                                               'use': True}},
+                        {'args': {'dim_in': 512,
+                                  'dim_out': 512,
+                                  'hidden': 512,
+                                  'latent_dim': 64},
+                         'model': 'SimpleVAEZ2toZ1OneSide',
+                         'pretrainedEncoder': {'dir': '', 'use': False},
+                         'save_encoder': True}],
+           'load_ongoing': False,
+           'model_class': 'Model_GeneratorVAEOneSide',
+           'save_base_dir': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy',
+           'save_dir': 'Synprom_IB_genVAEOS{}.pth.tar'},
+ 'optimizer': {'beta1': 0.9,
+               'beta2': 0.999,
+               'learning_rate': 1e-05,
+               'momentum': 0.9,
+               'type': 'Adam',
+               'weight_decay': 1e-05},
+ 'scheduler': {'max_lr': 0.03, 'type': 'cosanneal', 'warm_up_steps': 780},
+ 'task': 'generative',
+ 'training_params': {'adversarial_training': {'adv_epsilon': 0.01,
+                                              'use': False},
+                     'async_loading': True,
+                     'batch_size': 128,
+                     'cuda': True,
+                     'data_loader_workers': 8,
+                     'gpu_device': [0],
+                     'pin_memory': False,
+                     'rec_test': False,
+                     'res': True,
+                     'seed': 109,
+                     'tdqm_disable': False,
+                     'test_batch_size': 128,
+                     'test_on_bottoms': False,
+                     'use_test_set': True,
+                     'validation': True,
+                     'verbose': True,
+                     'wandb_disable': False}}
+2025-11-24 08:37:35,678 - Config - INFO -  *************************************** 
+2025-11-24 08:37:35,678 - Config - INFO - The experiment name is CREMAD Experiment
+2025-11-24 08:37:35,678 - Config - INFO -  *************************************** 
+2025-11-24 08:37:35,678 - root - INFO - save_dir: Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.001_wd1e-5_clsmlp.pth.tar
+2025-11-24 08:37:35,722 - Cuda Statistics - INFO - __Python VERSION:  3.10.19 (main, Oct 21 2025, 16:43:05) [GCC 11.2.0]
+2025-11-24 08:37:35,722 - Cuda Statistics - INFO - __pyTorch VERSION:  2.6.0+cu124
+2025-11-24 08:37:35,722 - Cuda Statistics - INFO - __CUDA VERSION
+2025-11-24 08:37:35,723 - Cuda Statistics - INFO - __CUDNN VERSION:  90100
+2025-11-24 08:37:35,737 - Cuda Statistics - INFO - __Number CUDA Devices:  1
+2025-11-24 08:37:35,737 - Cuda Statistics - INFO - __Devices
+2025-11-24 08:37:35,737 - Cuda Statistics - INFO - index, name, driver_version, memory.total [MiB], memory.used [MiB], memory.free [MiB]
+2025-11-24 08:37:35,737 - Cuda Statistics - INFO - 0, NVIDIA GeForce RTX 2080 Ti, 570.153.02, 11264 MiB, 4 MiB, 10820 MiB
+2025-11-24 08:37:35,742 - Cuda Statistics - INFO - Active CUDA Device: GPU 0
+2025-11-24 08:37:35,742 - Cuda Statistics - INFO - Available devices  1
+2025-11-24 08:37:35,742 - Cuda Statistics - INFO - Current cuda device  0
+This path does not exist /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/AudioWAV/1076_MTI_SAD_XX.wav or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Image-01-FPS/1076_MTI_SAD_XX or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Face_features/1076_MTI_SAD_XX.npy
+2025-11-24 08:37:36,616 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold1.pkl
+2025-11-24 08:37:36,618 - root - INFO - Norm values are {'mean': tensor(-2.6751e-05), 'std': tensor(0.0610), 'max_duration': 5.005}
+2025-11-24 08:37:36,727 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold1.pkl
+2025-11-24 08:37:36,727 - root - INFO - Norm values are {'mean': tensor(-2.6751e-05), 'std': tensor(0.0610), 'max_duration': 5.005}
+2025-11-24 08:37:37,032 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold1.pkl
+2025-11-24 08:37:37,033 - root - INFO - Norm values are {'mean': tensor(-2.6751e-05), 'std': tensor(0.0610), 'max_duration': 5.005}
+Available cores 8
+We are changing dataloader workers to num of cores 0
+2025-11-24 08:37:37,034 - Agent - INFO - Device: cuda:0
+2025-11-24 08:37:37,034 - Agent - INFO - Total training batches: 32, validate every 25 batches, steps per epoch: 2
+2025-11-24 08:37:38,547 - Agent - INFO - Loss Weights are {'total': 1, 'combined': 1, 'c': 0, 'g': 0}
+2025-11-24 08:37:38,988 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold1_lr0.001_wd0.0001.pth.tar
+Missing keys in state_dict: ['audio_net.conv1.weight', 'audio_net.bn1.weight', 'audio_net.bn1.bias', 'audio_net.bn1.running_mean', 'audio_net.bn1.running_var', 'audio_net.layer1.0.conv1.weight', 'audio_net.layer1.0.bn1.weight', 'audio_net.layer1.0.bn1.bias', 'audio_net.layer1.0.bn1.running_mean', 'audio_net.layer1.0.bn1.running_var', 'audio_net.layer1.0.conv2.weight', 'audio_net.layer1.0.bn2.weight', 'audio_net.layer1.0.bn2.bias', 'audio_net.layer1.0.bn2.running_mean', 'audio_net.layer1.0.bn2.running_var', 'audio_net.layer1.1.conv1.weight', 'audio_net.layer1.1.bn1.weight', 'audio_net.layer1.1.bn1.bias', 'audio_net.layer1.1.bn1.running_mean', 'audio_net.layer1.1.bn1.running_var', 'audio_net.layer1.1.conv2.weight', 'audio_net.layer1.1.bn2.weight', 'audio_net.layer1.1.bn2.bias', 'audio_net.layer1.1.bn2.running_mean', 'audio_net.layer1.1.bn2.running_var', 'audio_net.layer2.0.conv1.weight', 'audio_net.layer2.0.bn1.weight', 'audio_net.layer2.0.bn1.bias', 'audio_net.layer2.0.bn1.running_mean', 'audio_net.layer2.0.bn1.running_var', 'audio_net.layer2.0.conv2.weight', 'audio_net.layer2.0.bn2.weight', 'audio_net.layer2.0.bn2.bias', 'audio_net.layer2.0.bn2.running_mean', 'audio_net.layer2.0.bn2.running_var', 'audio_net.layer2.0.downsample.0.weight', 'audio_net.layer2.0.downsample.1.weight', 'audio_net.layer2.0.downsample.1.bias', 'audio_net.layer2.0.downsample.1.running_mean', 'audio_net.layer2.0.downsample.1.running_var', 'audio_net.layer2.1.conv1.weight', 'audio_net.layer2.1.bn1.weight', 'audio_net.layer2.1.bn1.bias', 'audio_net.layer2.1.bn1.running_mean', 'audio_net.layer2.1.bn1.running_var', 'audio_net.layer2.1.conv2.weight', 'audio_net.layer2.1.bn2.weight', 'audio_net.layer2.1.bn2.bias', 'audio_net.layer2.1.bn2.running_mean', 'audio_net.layer2.1.bn2.running_var', 'audio_net.layer3.0.conv1.weight', 'audio_net.layer3.0.bn1.weight', 'audio_net.layer3.0.bn1.bias', 'audio_net.layer3.0.bn1.running_mean', 'audio_net.layer3.0.bn1.running_var', 'audio_net.layer3.0.conv2.weight', 'audio_net.layer3.0.bn2.weight', 'audio_net.layer3.0.bn2.bias', 'audio_net.layer3.0.bn2.running_mean', 'audio_net.layer3.0.bn2.running_var', 'audio_net.layer3.0.downsample.0.weight', 'audio_net.layer3.0.downsample.1.weight', 'audio_net.layer3.0.downsample.1.bias', 'audio_net.layer3.0.downsample.1.running_mean', 'audio_net.layer3.0.downsample.1.running_var', 'audio_net.layer3.1.conv1.weight', 'audio_net.layer3.1.bn1.weight', 'audio_net.layer3.1.bn1.bias', 'audio_net.layer3.1.bn1.running_mean', 'audio_net.layer3.1.bn1.running_var', 'audio_net.layer3.1.conv2.weight', 'audio_net.layer3.1.bn2.weight', 'audio_net.layer3.1.bn2.bias', 'audio_net.layer3.1.bn2.running_mean', 'audio_net.layer3.1.bn2.running_var', 'audio_net.layer4.0.conv1.weight', 'audio_net.layer4.0.bn1.weight', 'audio_net.layer4.0.bn1.bias', 'audio_net.layer4.0.bn1.running_mean', 'audio_net.layer4.0.bn1.running_var', 'audio_net.layer4.0.conv2.weight', 'audio_net.layer4.0.bn2.weight', 'audio_net.layer4.0.bn2.bias', 'audio_net.layer4.0.bn2.running_mean', 'audio_net.layer4.0.bn2.running_var', 'audio_net.layer4.0.downsample.0.weight', 'audio_net.layer4.0.downsample.1.weight', 'audio_net.layer4.0.downsample.1.bias', 'audio_net.layer4.0.downsample.1.running_mean', 'audio_net.layer4.0.downsample.1.running_var', 'audio_net.layer4.1.conv1.weight', 'audio_net.layer4.1.bn1.weight', 'audio_net.layer4.1.bn1.bias', 'audio_net.layer4.1.bn1.running_mean', 'audio_net.layer4.1.bn1.running_var', 'audio_net.layer4.1.conv2.weight', 'audio_net.layer4.1.bn2.weight', 'audio_net.layer4.1.bn2.bias', 'audio_net.layer4.1.bn2.running_mean', 'audio_net.layer4.1.bn2.running_var', 'aclassifier.weight', 'aclassifier.bias']
+Unexpected keys in state_dict: ['module.audio_net.conv1.weight', 'module.audio_net.bn1.weight', 'module.audio_net.bn1.bias', 'module.audio_net.bn1.running_mean', 'module.audio_net.bn1.running_var', 'module.audio_net.bn1.num_batches_tracked', 'module.audio_net.layer1.0.conv1.weight', 'module.audio_net.layer1.0.bn1.weight', 'module.audio_net.layer1.0.bn1.bias', 'module.audio_net.layer1.0.bn1.running_mean', 'module.audio_net.layer1.0.bn1.running_var', 'module.audio_net.layer1.0.bn1.num_batches_tracked', 'module.audio_net.layer1.0.conv2.weight', 'module.audio_net.layer1.0.bn2.weight', 'module.audio_net.layer1.0.bn2.bias', 'module.audio_net.layer1.0.bn2.running_mean', 'module.audio_net.layer1.0.bn2.running_var', 'module.audio_net.layer1.0.bn2.num_batches_tracked', 'module.audio_net.layer1.1.conv1.weight', 'module.audio_net.layer1.1.bn1.weight', 'module.audio_net.layer1.1.bn1.bias', 'module.audio_net.layer1.1.bn1.running_mean', 'module.audio_net.layer1.1.bn1.running_var', 'module.audio_net.layer1.1.bn1.num_batches_tracked', 'module.audio_net.layer1.1.conv2.weight', 'module.audio_net.layer1.1.bn2.weight', 'module.audio_net.layer1.1.bn2.bias', 'module.audio_net.layer1.1.bn2.running_mean', 'module.audio_net.layer1.1.bn2.running_var', 'module.audio_net.layer1.1.bn2.num_batches_tracked', 'module.audio_net.layer2.0.conv1.weight', 'module.audio_net.layer2.0.bn1.weight', 'module.audio_net.layer2.0.bn1.bias', 'module.audio_net.layer2.0.bn1.running_mean', 'module.audio_net.layer2.0.bn1.running_var', 'module.audio_net.layer2.0.bn1.num_batches_tracked', 'module.audio_net.layer2.0.conv2.weight', 'module.audio_net.layer2.0.bn2.weight', 'module.audio_net.layer2.0.bn2.bias', 'module.audio_net.layer2.0.bn2.running_mean', 'module.audio_net.layer2.0.bn2.running_var', 'module.audio_net.layer2.0.bn2.num_batches_tracked', 'module.audio_net.layer2.0.downsample.0.weight', 'module.audio_net.layer2.0.downsample.1.weight', 'module.audio_net.layer2.0.downsample.1.bias', 'module.audio_net.layer2.0.downsample.1.running_mean', 'module.audio_net.layer2.0.downsample.1.running_var', 'module.audio_net.layer2.0.downsample.1.num_batches_tracked', 'module.audio_net.layer2.1.conv1.weight', 'module.audio_net.layer2.1.bn1.weight', 'module.audio_net.layer2.1.bn1.bias', 'module.audio_net.layer2.1.bn1.running_mean', 'module.audio_net.layer2.1.bn1.running_var', 'module.audio_net.layer2.1.bn1.num_batches_tracked', 'module.audio_net.layer2.1.conv2.weight', 'module.audio_net.layer2.1.bn2.weight', 'module.audio_net.layer2.1.bn2.bias', 'module.audio_net.layer2.1.bn2.running_mean', 'module.audio_net.layer2.1.bn2.running_var', 'module.audio_net.layer2.1.bn2.num_batches_tracked', 'module.audio_net.layer3.0.conv1.weight', 'module.audio_net.layer3.0.bn1.weight', 'module.audio_net.layer3.0.bn1.bias', 'module.audio_net.layer3.0.bn1.running_mean', 'module.audio_net.layer3.0.bn1.running_var', 'module.audio_net.layer3.0.bn1.num_batches_tracked', 'module.audio_net.layer3.0.conv2.weight', 'module.audio_net.layer3.0.bn2.weight', 'module.audio_net.layer3.0.bn2.bias', 'module.audio_net.layer3.0.bn2.running_mean', 'module.audio_net.layer3.0.bn2.running_var', 'module.audio_net.layer3.0.bn2.num_batches_tracked', 'module.audio_net.layer3.0.downsample.0.weight', 'module.audio_net.layer3.0.downsample.1.weight', 'module.audio_net.layer3.0.downsample.1.bias', 'module.audio_net.layer3.0.downsample.1.running_mean', 'module.audio_net.layer3.0.downsample.1.running_var', 'module.audio_net.layer3.0.downsample.1.num_batches_tracked', 'module.audio_net.layer3.1.conv1.weight', 'module.audio_net.layer3.1.bn1.weight', 'module.audio_net.layer3.1.bn1.bias', 'module.audio_net.layer3.1.bn1.running_mean', 'module.audio_net.layer3.1.bn1.running_var', 'module.audio_net.layer3.1.bn1.num_batches_tracked', 'module.audio_net.layer3.1.conv2.weight', 'module.audio_net.layer3.1.bn2.weight', 'module.audio_net.layer3.1.bn2.bias', 'module.audio_net.layer3.1.bn2.running_mean', 'module.audio_net.layer3.1.bn2.running_var', 'module.audio_net.layer3.1.bn2.num_batches_tracked', 'module.audio_net.layer4.0.conv1.weight', 'module.audio_net.layer4.0.bn1.weight', 'module.audio_net.layer4.0.bn1.bias', 'module.audio_net.layer4.0.bn1.running_mean', 'module.audio_net.layer4.0.bn1.running_var', 'module.audio_net.layer4.0.bn1.num_batches_tracked', 'module.audio_net.layer4.0.conv2.weight', 'module.audio_net.layer4.0.bn2.weight', 'module.audio_net.layer4.0.bn2.bias', 'module.audio_net.layer4.0.bn2.running_mean', 'module.audio_net.layer4.0.bn2.running_var', 'module.audio_net.layer4.0.bn2.num_batches_tracked', 'module.audio_net.layer4.0.downsample.0.weight', 'module.audio_net.layer4.0.downsample.1.weight', 'module.audio_net.layer4.0.downsample.1.bias', 'module.audio_net.layer4.0.downsample.1.running_mean', 'module.audio_net.layer4.0.downsample.1.running_var', 'module.audio_net.layer4.0.downsample.1.num_batches_tracked', 'module.audio_net.layer4.1.conv1.weight', 'module.audio_net.layer4.1.bn1.weight', 'module.audio_net.layer4.1.bn1.bias', 'module.audio_net.layer4.1.bn1.running_mean', 'module.audio_net.layer4.1.bn1.running_var', 'module.audio_net.layer4.1.bn1.num_batches_tracked', 'module.audio_net.layer4.1.conv2.weight', 'module.audio_net.layer4.1.bn2.weight', 'module.audio_net.layer4.1.bn2.bias', 'module.audio_net.layer4.1.bn2.running_mean', 'module.audio_net.layer4.1.bn2.running_var', 'module.audio_net.layer4.1.bn2.num_batches_tracked', 'module.aclassifier.weight', 'module.aclassifier.bias']
+2025-11-24 08:37:39,323 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold1_lr0.001_wd0.0001.pth.tar
+Missing keys in state_dict: ['visual_net.conv1.weight', 'visual_net.bn1.weight', 'visual_net.bn1.bias', 'visual_net.bn1.running_mean', 'visual_net.bn1.running_var', 'visual_net.layer1.0.conv1.weight', 'visual_net.layer1.0.bn1.weight', 'visual_net.layer1.0.bn1.bias', 'visual_net.layer1.0.bn1.running_mean', 'visual_net.layer1.0.bn1.running_var', 'visual_net.layer1.0.conv2.weight', 'visual_net.layer1.0.bn2.weight', 'visual_net.layer1.0.bn2.bias', 'visual_net.layer1.0.bn2.running_mean', 'visual_net.layer1.0.bn2.running_var', 'visual_net.layer1.1.conv1.weight', 'visual_net.layer1.1.bn1.weight', 'visual_net.layer1.1.bn1.bias', 'visual_net.layer1.1.bn1.running_mean', 'visual_net.layer1.1.bn1.running_var', 'visual_net.layer1.1.conv2.weight', 'visual_net.layer1.1.bn2.weight', 'visual_net.layer1.1.bn2.bias', 'visual_net.layer1.1.bn2.running_mean', 'visual_net.layer1.1.bn2.running_var', 'visual_net.layer2.0.conv1.weight', 'visual_net.layer2.0.bn1.weight', 'visual_net.layer2.0.bn1.bias', 'visual_net.layer2.0.bn1.running_mean', 'visual_net.layer2.0.bn1.running_var', 'visual_net.layer2.0.conv2.weight', 'visual_net.layer2.0.bn2.weight', 'visual_net.layer2.0.bn2.bias', 'visual_net.layer2.0.bn2.running_mean', 'visual_net.layer2.0.bn2.running_var', 'visual_net.layer2.0.downsample.0.weight', 'visual_net.layer2.0.downsample.1.weight', 'visual_net.layer2.0.downsample.1.bias', 'visual_net.layer2.0.downsample.1.running_mean', 'visual_net.layer2.0.downsample.1.running_var', 'visual_net.layer2.1.conv1.weight', 'visual_net.layer2.1.bn1.weight', 'visual_net.layer2.1.bn1.bias', 'visual_net.layer2.1.bn1.running_mean', 'visual_net.layer2.1.bn1.running_var', 'visual_net.layer2.1.conv2.weight', 'visual_net.layer2.1.bn2.weight', 'visual_net.layer2.1.bn2.bias', 'visual_net.layer2.1.bn2.running_mean', 'visual_net.layer2.1.bn2.running_var', 'visual_net.layer3.0.conv1.weight', 'visual_net.layer3.0.bn1.weight', 'visual_net.layer3.0.bn1.bias', 'visual_net.layer3.0.bn1.running_mean', 'visual_net.layer3.0.bn1.running_var', 'visual_net.layer3.0.conv2.weight', 'visual_net.layer3.0.bn2.weight', 'visual_net.layer3.0.bn2.bias', 'visual_net.layer3.0.bn2.running_mean', 'visual_net.layer3.0.bn2.running_var', 'visual_net.layer3.0.downsample.0.weight', 'visual_net.layer3.0.downsample.1.weight', 'visual_net.layer3.0.downsample.1.bias', 'visual_net.layer3.0.downsample.1.running_mean', 'visual_net.layer3.0.downsample.1.running_var', 'visual_net.layer3.1.conv1.weight', 'visual_net.layer3.1.bn1.weight', 'visual_net.layer3.1.bn1.bias', 'visual_net.layer3.1.bn1.running_mean', 'visual_net.layer3.1.bn1.running_var', 'visual_net.layer3.1.conv2.weight', 'visual_net.layer3.1.bn2.weight', 'visual_net.layer3.1.bn2.bias', 'visual_net.layer3.1.bn2.running_mean', 'visual_net.layer3.1.bn2.running_var', 'visual_net.layer4.0.conv1.weight', 'visual_net.layer4.0.bn1.weight', 'visual_net.layer4.0.bn1.bias', 'visual_net.layer4.0.bn1.running_mean', 'visual_net.layer4.0.bn1.running_var', 'visual_net.layer4.0.conv2.weight', 'visual_net.layer4.0.bn2.weight', 'visual_net.layer4.0.bn2.bias', 'visual_net.layer4.0.bn2.running_mean', 'visual_net.layer4.0.bn2.running_var', 'visual_net.layer4.0.downsample.0.weight', 'visual_net.layer4.0.downsample.1.weight', 'visual_net.layer4.0.downsample.1.bias', 'visual_net.layer4.0.downsample.1.running_mean', 'visual_net.layer4.0.downsample.1.running_var', 'visual_net.layer4.1.conv1.weight', 'visual_net.layer4.1.bn1.weight', 'visual_net.layer4.1.bn1.bias', 'visual_net.layer4.1.bn1.running_mean', 'visual_net.layer4.1.bn1.running_var', 'visual_net.layer4.1.conv2.weight', 'visual_net.layer4.1.bn2.weight', 'visual_net.layer4.1.bn2.bias', 'visual_net.layer4.1.bn2.running_mean', 'visual_net.layer4.1.bn2.running_var', 'vclassifier.0.weight', 'vclassifier.0.bias']
+Unexpected keys in state_dict: ['module.visual_net.conv1.weight', 'module.visual_net.bn1.weight', 'module.visual_net.bn1.bias', 'module.visual_net.bn1.running_mean', 'module.visual_net.bn1.running_var', 'module.visual_net.bn1.num_batches_tracked', 'module.visual_net.layer1.0.conv1.weight', 'module.visual_net.layer1.0.bn1.weight', 'module.visual_net.layer1.0.bn1.bias', 'module.visual_net.layer1.0.bn1.running_mean', 'module.visual_net.layer1.0.bn1.running_var', 'module.visual_net.layer1.0.bn1.num_batches_tracked', 'module.visual_net.layer1.0.conv2.weight', 'module.visual_net.layer1.0.bn2.weight', 'module.visual_net.layer1.0.bn2.bias', 'module.visual_net.layer1.0.bn2.running_mean', 'module.visual_net.layer1.0.bn2.running_var', 'module.visual_net.layer1.0.bn2.num_batches_tracked', 'module.visual_net.layer1.1.conv1.weight', 'module.visual_net.layer1.1.bn1.weight', 'module.visual_net.layer1.1.bn1.bias', 'module.visual_net.layer1.1.bn1.running_mean', 'module.visual_net.layer1.1.bn1.running_var', 'module.visual_net.layer1.1.bn1.num_batches_tracked', 'module.visual_net.layer1.1.conv2.weight', 'module.visual_net.layer1.1.bn2.weight', 'module.visual_net.layer1.1.bn2.bias', 'module.visual_net.layer1.1.bn2.running_mean', 'module.visual_net.layer1.1.bn2.running_var', 'module.visual_net.layer1.1.bn2.num_batches_tracked', 'module.visual_net.layer2.0.conv1.weight', 'module.visual_net.layer2.0.bn1.weight', 'module.visual_net.layer2.0.bn1.bias', 'module.visual_net.layer2.0.bn1.running_mean', 'module.visual_net.layer2.0.bn1.running_var', 'module.visual_net.layer2.0.bn1.num_batches_tracked', 'module.visual_net.layer2.0.conv2.weight', 'module.visual_net.layer2.0.bn2.weight', 'module.visual_net.layer2.0.bn2.bias', 'module.visual_net.layer2.0.bn2.running_mean', 'module.visual_net.layer2.0.bn2.running_var', 'module.visual_net.layer2.0.bn2.num_batches_tracked', 'module.visual_net.layer2.0.downsample.0.weight', 'module.visual_net.layer2.0.downsample.1.weight', 'module.visual_net.layer2.0.downsample.1.bias', 'module.visual_net.layer2.0.downsample.1.running_mean', 'module.visual_net.layer2.0.downsample.1.running_var', 'module.visual_net.layer2.0.downsample.1.num_batches_tracked', 'module.visual_net.layer2.1.conv1.weight', 'module.visual_net.layer2.1.bn1.weight', 'module.visual_net.layer2.1.bn1.bias', 'module.visual_net.layer2.1.bn1.running_mean', 'module.visual_net.layer2.1.bn1.running_var', 'module.visual_net.layer2.1.bn1.num_batches_tracked', 'module.visual_net.layer2.1.conv2.weight', 'module.visual_net.layer2.1.bn2.weight', 'module.visual_net.layer2.1.bn2.bias', 'module.visual_net.layer2.1.bn2.running_mean', 'module.visual_net.layer2.1.bn2.running_var', 'module.visual_net.layer2.1.bn2.num_batches_tracked', 'module.visual_net.layer3.0.conv1.weight', 'module.visual_net.layer3.0.bn1.weight', 'module.visual_net.layer3.0.bn1.bias', 'module.visual_net.layer3.0.bn1.running_mean', 'module.visual_net.layer3.0.bn1.running_var', 'module.visual_net.layer3.0.bn1.num_batches_tracked', 'module.visual_net.layer3.0.conv2.weight', 'module.visual_net.layer3.0.bn2.weight', 'module.visual_net.layer3.0.bn2.bias', 'module.visual_net.layer3.0.bn2.running_mean', 'module.visual_net.layer3.0.bn2.running_var', 'module.visual_net.layer3.0.bn2.num_batches_tracked', 'module.visual_net.layer3.0.downsample.0.weight', 'module.visual_net.layer3.0.downsample.1.weight', 'module.visual_net.layer3.0.downsample.1.bias', 'module.visual_net.layer3.0.downsample.1.running_mean', 'module.visual_net.layer3.0.downsample.1.running_var', 'module.visual_net.layer3.0.downsample.1.num_batches_tracked', 'module.visual_net.layer3.1.conv1.weight', 'module.visual_net.layer3.1.bn1.weight', 'module.visual_net.layer3.1.bn1.bias', 'module.visual_net.layer3.1.bn1.running_mean', 'module.visual_net.layer3.1.bn1.running_var', 'module.visual_net.layer3.1.bn1.num_batches_tracked', 'module.visual_net.layer3.1.conv2.weight', 'module.visual_net.layer3.1.bn2.weight', 'module.visual_net.layer3.1.bn2.bias', 'module.visual_net.layer3.1.bn2.running_mean', 'module.visual_net.layer3.1.bn2.running_var', 'module.visual_net.layer3.1.bn2.num_batches_tracked', 'module.visual_net.layer4.0.conv1.weight', 'module.visual_net.layer4.0.bn1.weight', 'module.visual_net.layer4.0.bn1.bias', 'module.visual_net.layer4.0.bn1.running_mean', 'module.visual_net.layer4.0.bn1.running_var', 'module.visual_net.layer4.0.bn1.num_batches_tracked', 'module.visual_net.layer4.0.conv2.weight', 'module.visual_net.layer4.0.bn2.weight', 'module.visual_net.layer4.0.bn2.bias', 'module.visual_net.layer4.0.bn2.running_mean', 'module.visual_net.layer4.0.bn2.running_var', 'module.visual_net.layer4.0.bn2.num_batches_tracked', 'module.visual_net.layer4.0.downsample.0.weight', 'module.visual_net.layer4.0.downsample.1.weight', 'module.visual_net.layer4.0.downsample.1.bias', 'module.visual_net.layer4.0.downsample.1.running_mean', 'module.visual_net.layer4.0.downsample.1.running_var', 'module.visual_net.layer4.0.downsample.1.num_batches_tracked', 'module.visual_net.layer4.1.conv1.weight', 'module.visual_net.layer4.1.bn1.weight', 'module.visual_net.layer4.1.bn1.bias', 'module.visual_net.layer4.1.bn1.running_mean', 'module.visual_net.layer4.1.bn1.running_var', 'module.visual_net.layer4.1.bn1.num_batches_tracked', 'module.visual_net.layer4.1.conv2.weight', 'module.visual_net.layer4.1.bn2.weight', 'module.visual_net.layer4.1.bn2.bias', 'module.visual_net.layer4.1.bn2.running_mean', 'module.visual_net.layer4.1.bn2.running_var', 'module.visual_net.layer4.1.bn2.num_batches_tracked', 'module.vclassifier.0.weight', 'module.vclassifier.0.bias']
+2025-11-24 08:37:39,336 - Agent - INFO - Freezing encoder enc_0
+2025-11-24 08:37:39,336 - Agent - INFO - Freezing encoder enc_1
+2025-11-24 08:37:39,368 - Agent - INFO - Total number of trainable parameters are: 23502476
+2025-11-24 08:37:39,373 - Agent - INFO - Total number of trainable parameters are: 1149568
+2025-11-24 08:38:59,073 - Agent - INFO - [37mVal Epoch 1 step 1 with [31mpx_total : 59.579479 [31mtotal : 59.579479 
+2025-11-24 08:38:59,478 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.001_wd1e-5_clsmlp.pth.tar[39m
+2025-11-24 08:40:17,108 - Agent - INFO - [37mVal Epoch 2 step 2 with [31mpx_total : 59.108799 [31mtotal : 59.108799 
+2025-11-24 08:40:17,409 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.001_wd1e-5_clsmlp.pth.tar[39m
+2025-11-24 08:41:34,300 - Agent - INFO - [37mVal Epoch 3 step 3 with [31mpx_total : 59.537807 [31mtotal : 59.537807 
+2025-11-24 08:42:51,468 - Agent - INFO - [37mVal Epoch 4 step 4 with [31mpx_total : 60.232124 [31mtotal : 60.232124 
+2025-11-24 08:44:09,136 - Agent - INFO - [37mVal Epoch 5 step 5 with [31mpx_total : 61.111172 [31mtotal : 61.111172 
+2025-11-24 08:45:25,655 - Agent - INFO - [37mVal Epoch 6 step 6 with [31mpx_total : 61.587971 [31mtotal : 61.587971 
+2025-11-24 08:46:43,314 - Agent - INFO - [37mVal Epoch 7 step 7 with [31mpx_total : 61.662685 [31mtotal : 61.662685 
+2025-11-24 08:48:01,397 - Agent - INFO - [37mVal Epoch 8 step 8 with [31mpx_total : 61.765743 [31mtotal : 61.765743 
+2025-11-24 08:49:19,589 - Agent - INFO - [37mVal Epoch 9 step 9 with [31mpx_total : 61.673046 [31mtotal : 61.673046 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0268         0.0602         0.4934         0.9920         0.9842
+z1_vs_~z                        0.0007        -0.0235         0.6978         0.9945         0.9931
+z2_vs_~z                       -0.0081        -0.1346         0.7153         0.9974         0.9737
+------------------------------------------------------------------------------------------------------
+2025-11-24 08:51:14,932 - Agent - INFO - [37mVal Epoch 10 step 10 with [31mpx_total : 61.784336 [31mtotal : 61.784336 
+2025-11-24 08:52:34,373 - Agent - INFO - [37mVal Epoch 11 step 11 with [31mpx_total : 61.866909 [31mtotal : 61.866909 
+2025-11-24 08:53:51,394 - Agent - INFO - [37mVal Epoch 12 step 12 with [31mpx_total : 61.766357 [31mtotal : 61.766357 
+2025-11-24 08:55:07,726 - Agent - INFO - [37mVal Epoch 13 step 13 with [31mpx_total : 61.808113 [31mtotal : 61.808113 
+2025-11-24 08:56:22,711 - Agent - INFO - [37mVal Epoch 14 step 14 with [31mpx_total : 61.958088 [31mtotal : 61.958088 
+2025-11-24 08:57:39,365 - Agent - INFO - [37mVal Epoch 15 step 15 with [31mpx_total : 61.729679 [31mtotal : 61.729679 
+2025-11-24 08:58:54,575 - Agent - INFO - [37mVal Epoch 16 step 16 with [31mpx_total : 61.749104 [31mtotal : 61.749104 
+2025-11-24 09:00:10,477 - Agent - INFO - [37mVal Epoch 17 step 17 with [31mpx_total : 61.738796 [31mtotal : 61.738796 
+2025-11-24 09:01:26,028 - Agent - INFO - [37mVal Epoch 18 step 18 with [31mpx_total : 61.581562 [31mtotal : 61.581562 
+2025-11-24 09:02:42,689 - Agent - INFO - [37mVal Epoch 19 step 19 with [31mpx_total : 61.542736 [31mtotal : 61.542736 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0268         0.0602         0.4934         0.9920         0.9842
+z1_vs_~z                        0.0012        -0.0099         0.6975         0.9945         0.9937
+z2_vs_~z                        0.0085        -0.1357         0.7154         0.9948         0.9747
+------------------------------------------------------------------------------------------------------
+2025-11-24 09:04:34,859 - Agent - INFO - [37mVal Epoch 20 step 20 with [31mpx_total : 61.332264 [31mtotal : 61.332264 
+2025-11-24 09:05:50,200 - Agent - INFO - [37mVal Epoch 21 step 21 with [31mpx_total : 61.542763 [31mtotal : 61.542763 
+2025-11-24 09:07:05,284 - Agent - INFO - [37mVal Epoch 22 step 22 with [31mpx_total : 61.459324 [31mtotal : 61.459324 
+2025-11-24 09:08:20,752 - Agent - INFO - [37mVal Epoch 23 step 23 with [31mpx_total : 61.433872 [31mtotal : 61.433872 
+2025-11-24 09:09:35,811 - Agent - INFO - [37mVal Epoch 24 step 24 with [31mpx_total : 61.402222 [31mtotal : 61.402222 
+2025-11-24 09:10:51,304 - Agent - INFO - [37mVal Epoch 25 step 25 with [31mpx_total : 61.254951 [31mtotal : 61.254951 
+2025-11-24 09:12:08,208 - Agent - INFO - [37mVal Epoch 26 step 26 with [31mpx_total : 61.330498 [31mtotal : 61.330498 
+2025-11-24 09:13:23,747 - Agent - INFO - [37mVal Epoch 27 step 27 with [31mpx_total : 61.319019 [31mtotal : 61.319019 
+2025-11-24 09:14:40,304 - Agent - INFO - [37mVal Epoch 28 step 28 with [31mpx_total : 61.380558 [31mtotal : 61.380558 
+2025-11-24 09:15:56,833 - Agent - INFO - [37mVal Epoch 29 step 29 with [31mpx_total : 61.425213 [31mtotal : 61.425213 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0268         0.0602         0.4934         0.9920         0.9842
+z1_vs_~z                       -0.0244         0.0253         0.6973         0.9947         0.9937
+z2_vs_~z                        0.0027        -0.1284         0.7157         0.9948         0.9775
+------------------------------------------------------------------------------------------------------
+2025-11-24 09:17:40,979 - Agent - INFO - [37mVal Epoch 30 step 30 with [31mpx_total : 61.367565 [31mtotal : 61.367565 
+You have entered CTRL+C.. Wait to finalize
+2025-11-24 09:18:09,575 - Agent - INFO - We are in the final state.
+2025-11-24 09:18:09,744 - root - INFO - Loaded best model from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.001_wd1e-5_clsmlp.pth.tar
+2025-11-24 09:18:23,194 - Agent - INFO - [37mVal Epoch 30 step 0 with [31mpx_total : 59.078144 [31mtotal : 59.078144 
+[1;34mwandb[0m: 
+[1;34mwandb[0m: 🚀 View run [33mSynprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.001_wd1e-5_clsmlp[0m at: [34m[0m
+[1;34mwandb[0m: Find logs at: [1;35mwandb/run-20251124_083737-9henud3f/logs[0m
+Job finished

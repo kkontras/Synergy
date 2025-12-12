@@ -1,0 +1,38 @@
+000 (011.024.000) 2025-11-07 18:57:34 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+...
+001 (011.024.000) 2025-11-08 22:37:22 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_12050_e04e>
+	SlotName: slot1_7@aristoteles.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_1ba53048 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1455745"
+	Cpus = 8
+	Disk = 1050529
+	GPUs = 1
+	GPUs_GPU_1ba53048 = [ Id = "GPU-1ba53048"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "1ba53048-c5a1-3226-7f78-7a6cb9cbaa42"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:C7:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (011.024.000) 2025-11-08 22:37:31 Image size of job updated: 399408
+	391  -  MemoryUsage of job (MB)
+	399408  -  ResidentSetSize of job (KB)
+...
+006 (011.024.000) 2025-11-08 22:37:45 Image size of job updated: 719308
+	391  -  MemoryUsage of job (MB)
+	399408  -  ResidentSetSize of job (KB)
+...
+005 (011.024.000) 2025-11-08 22:37:45 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:10, Sys 0 00:00:06  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:10, Sys 0 00:00:06  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     0.60        8         8 
+	   Disk (KB)            :     2     1048576   1050529 
+	   GPUs                 :                 1         1 "GPU-1ba53048"
+	   Memory (MB)          :   391       71680     71680 
+	   TimeExecute (s)      :    23                       
+	   TimeSlotBusy (s)     :    23                       
+...

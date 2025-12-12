@@ -1,0 +1,2 @@
+Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/condor_logs/condor/script_m.sh: line 42:    17 Segmentation fault         (core dumped) $command

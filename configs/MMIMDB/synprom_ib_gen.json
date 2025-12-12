@@ -1,0 +1,109 @@
+{
+  "training_params": {
+    "batch_size": 2,
+    "test_batch_size": 2,
+    "tdqm_disable": false
+  },
+  "early_stopping": {
+    "end_of_epoch_check": true,
+    "n_steps_stop": 50,
+    "save_every_valstep": 10,
+    "validate_every": 25
+  },
+  "optimizer": {
+    "type": "Adam",
+    "learning_rate": 0.00001,
+    "momentum": 0.9,
+    "weight_decay": 0.00001,
+    "beta1": 0.9,
+    "beta2": 0.999
+  },
+  "dataset": {
+      "norm": false,
+      "return_data" : {"video": true, "spectrogram":true, "audio":false, "face": false},
+      "sampling_rate": 22050,
+      "data_split": {
+        "fold": 0
+      }
+  },
+  "model": {
+    "model_class": "Fusion_Synprom_IB_Input",
+    "args": {
+      "d_model": 512, "num_classes": 23, "fc_inner": 64, "dropout": 0.1,
+      "cls_type": "linear",
+      "clip_grad": false,
+      "bias_infusion": {
+        "method": "false",
+        "l": 0.1,
+        "starting_epoch": 0,
+        "ending_epoch": 1500,
+        "use": true,
+        "plot": false
+      },
+      "multi_loss": {
+        "multi_supervised_w": {
+             "combined": 1, "c": 0, "g": 0
+          }
+      }
+    },
+    "load_ongoing": false,
+    "save_dir": "Synprom_IBInput_{}.pth.tar",
+    "encoders": [
+      {
+        "model": "Text_DistilBERT",
+        "args": {
+          "d_model": 512,
+          "num_classes": 80,
+          "fc_inner": 64,
+          "dropout": 0.1,
+          "freeze_encoder": true
+        },
+        "pretrainedEncoder": {
+          "use": false,
+          "dir": ""
+        }
+      },
+
+      {
+        "model": "Image_ViT_Small",
+        "args": {
+          "d_model": 512,
+          "num_classes": 23,
+          "fc_inner": 64,
+          "dropout": 0.1,
+          "freeze_encoder": true
+        },
+        "pretrainedEncoder": {
+          "use": false,
+          "dir": ""
+        }
+      },
+
+      {
+        "model": "ImageToText_InstructBLIP",
+        "args": {
+          "d_model": 512,
+          "num_classes": 23,
+          "freeze_encoder": true
+        },
+        "pretrainedEncoder": {
+          "use": false,
+          "dir": ""
+        }
+      },
+
+      {
+        "model": "TextToImage_SDmini",
+        "args": {
+          "d_model": 512,
+          "num_classes": 23,
+          "freeze_encoder": true
+        },
+        "pretrainedEncoder": {
+          "use": false,
+          "dir": ""
+        }
+      }
+    ]
+  }
+}

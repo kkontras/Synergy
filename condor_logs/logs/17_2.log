@@ -1,0 +1,59 @@
+000 (017.002.000) 2025-11-09 11:30:15 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+...
+001 (017.002.000) 2025-11-09 14:50:55 Job executing on host: <10.87.24.139:9618?addrs=10.87.24.139-9618&alias=fig.esat.kuleuven.be&noUDP&sock=startd_2022_8096>
+	SlotName: slot1_1@fig.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_cedc718d }
+	CondorScratchDir = "/usr/data/condor/execute/dir_202884"
+	Cpus = 8
+	Disk = 1049995
+	GPUs = 1
+	GPUs_GPU_cedc718d = [ Id = "GPU-cedc718d"; ClockMhz = 1695.0; Capability = 8.6; CoresPerCU = 128; DeviceName = "NVIDIA GeForce RTX 3090"; DeviceUuid = "cedc718d-8ccd-1c5c-42ee-9f07bacbde5e"; ECCEnabled = false; ComputeUnits = 82; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:09:00.0"; GlobalMemoryMb = 24124; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (017.002.000) 2025-11-09 14:51:03 Image size of job updated: 427108
+	418  -  MemoryUsage of job (MB)
+	427108  -  ResidentSetSize of job (KB)
+...
+006 (017.002.000) 2025-11-09 14:56:03 Image size of job updated: 1592932
+	1462  -  MemoryUsage of job (MB)
+	1496072  -  ResidentSetSize of job (KB)
+...
+006 (017.002.000) 2025-11-09 15:01:04 Image size of job updated: 1628836
+	1479  -  MemoryUsage of job (MB)
+	1513720  -  ResidentSetSize of job (KB)
+...
+006 (017.002.000) 2025-11-09 15:06:05 Image size of job updated: 1628836
+	1570  -  MemoryUsage of job (MB)
+	1607300  -  ResidentSetSize of job (KB)
+...
+006 (017.002.000) 2025-11-09 15:11:05 Image size of job updated: 1638404
+	1591  -  MemoryUsage of job (MB)
+	1628436  -  ResidentSetSize of job (KB)
+...
+006 (017.002.000) 2025-11-09 15:21:06 Image size of job updated: 1686520
+	1591  -  MemoryUsage of job (MB)
+	1628436  -  ResidentSetSize of job (KB)
+...
+006 (017.002.000) 2025-11-09 15:46:09 Image size of job updated: 1686520
+	1595  -  MemoryUsage of job (MB)
+	1632976  -  ResidentSetSize of job (KB)
+...
+005 (017.002.000) 2025-11-09 16:09:55 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 02:22:58, Sys 0 00:27:59  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 02:22:58, Sys 0 00:27:59  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     1.97        8         8 
+	   Disk (KB)            :     2     1048576   1049995 
+	   GPUs                 :     0.53        1         1 "GPU-cedc718d"
+	   GpusMemory (MB)      :  9405                       
+	   Memory (MB)          :  1595       71680     71680 
+	   TimeExecute (s)      :  4740                       
+	   TimeSlotBusy (s)     :  4740                       
+...

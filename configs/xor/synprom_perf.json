@@ -1,0 +1,27 @@
+{
+  "early_stopping": {
+    "n_steps_stop": 300
+  },
+  "optimizer": {
+    "learning_rate": 0.01,
+    "weight_decay": 0.01
+  },
+  "model": {
+    "model_class": "TriModalFusionClassifier",
+    "args": {
+      "d_model": 16, "num_classes": 2,
+      "bias_infusion": {
+        "method": "false",
+        "l": 0.1,
+        "use": true
+      },
+      "multi_loss": {
+        "multi_supervised_w": {
+             "combined": 1, "a": 0, "b": 0, "c": 0
+          }
+      }
+    },
+    "save_dir": "Synprom_perf_{}.pth.tar",
+    "encoders": []
+  }
+}

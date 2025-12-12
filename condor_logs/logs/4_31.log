@@ -1,0 +1,125 @@
+000 (004.031.000) 2025-11-10 17:33:52 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+001 (004.031.000) 2025-11-10 23:10:05 Job executing on host: <10.87.28.117:9618?addrs=10.87.28.117-9618&alias=stadius-nc-4.esat.kuleuven.be&noUDP&sock=startd_3335_1c6f>
+	SlotName: slot1_1@stadius-nc-4.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_1236270c }
+	CondorScratchDir = "/volume1/condor/execute/dir_1396728"
+	Cpus = 8
+	Disk = 1050150
+	GPUs = 1
+	GPUs_GPU_1236270c = [ Id = "GPU-1236270c"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "1236270c-ad23-648a-e65a-80b2ab2cf0c3"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "570.153.02"; DriverVersion = 12.8; DevicePciBusId = "0000:25:00.0"; GlobalMemoryMb = 10823; MaxSupportedVersion = 12080 ]
+	Memory = 71680
+...
+006 (004.031.000) 2025-11-10 23:10:14 Image size of job updated: 501128
+	490  -  MemoryUsage of job (MB)
+	501128  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-10 23:15:15 Image size of job updated: 1564860
+	1529  -  MemoryUsage of job (MB)
+	1564860  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-10 23:20:15 Image size of job updated: 1590836
+	1529  -  MemoryUsage of job (MB)
+	1564860  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-10 23:30:17 Image size of job updated: 1593756
+	1529  -  MemoryUsage of job (MB)
+	1564860  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-10 23:45:19 Image size of job updated: 1606816
+	1529  -  MemoryUsage of job (MB)
+	1564860  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-10 23:55:20 Image size of job updated: 1631196
+	1540  -  MemoryUsage of job (MB)
+	1576276  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-11 00:00:20 Image size of job updated: 1632812
+	1540  -  MemoryUsage of job (MB)
+	1576484  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-11 00:05:20 Image size of job updated: 1632936
+	1540  -  MemoryUsage of job (MB)
+	1576484  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-11 00:20:22 Image size of job updated: 1633696
+	1540  -  MemoryUsage of job (MB)
+	1576484  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-11 00:25:23 Image size of job updated: 1641688
+	1549  -  MemoryUsage of job (MB)
+	1585236  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-11 00:30:23 Image size of job updated: 1641856
+	1549  -  MemoryUsage of job (MB)
+	1585404  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-11 00:35:24 Image size of job updated: 1642024
+	1549  -  MemoryUsage of job (MB)
+	1585572  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-11 00:40:24 Image size of job updated: 1642176
+	1549  -  MemoryUsage of job (MB)
+	1585784  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-11 00:45:24 Image size of job updated: 1642332
+	1549  -  MemoryUsage of job (MB)
+	1585784  -  ResidentSetSize of job (KB)
+...
+006 (004.031.000) 2025-11-11 00:48:23 Image size of job updated: 1642388
+	1549  -  MemoryUsage of job (MB)
+	1585784  -  ResidentSetSize of job (KB)
+...
+005 (004.031.000) 2025-11-11 00:48:23 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 06:49:42, Sys 0 00:26:48  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 06:49:42, Sys 0 00:26:48  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     4.61        8         8 
+	   Disk (KB)            :     2     1048576   1050150 
+	   GPUs                 :     0.41        1         1 "GPU-1236270c"
+	   GpusMemory (MB)      :  1674                       
+	   Memory (MB)          :  1549       71680     71680 
+	   TimeExecute (s)      :  5898                       
+	   TimeSlotBusy (s)     :  5898                       
+...
+000 (004.031.000) 2025-11-23 16:30:33 Job submitted from host: <10.87.28.3:9618?addrs=10.87.28.3-9618&alias=deanston.esat.kuleuven.be&noUDP&sock=schedd_1644_39c9>
+...
+001 (004.031.000) 2025-11-23 16:31:44 Job executing on host: <10.87.24.138:9618?addrs=10.87.24.138-9618&alias=grape.esat.kuleuven.be&noUDP&sock=startd_2157_19df>
+	SlotName: slot1_1@grape.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_97601f5c }
+	CondorScratchDir = "/usr/data/condor/execute/dir_2922654/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_97601f5c = [ Id = "GPU-97601f5c"; ClockMhz = 1695.0; Capability = 8.6; CoresPerCU = 128; DeviceName = "NVIDIA GeForce RTX 3090"; DeviceUuid = "97601f5c-9e32-f178-e4a8-b5517f10d8de"; ECCEnabled = false; ComputeUnits = 82; NvidiaDriver = "580.105.08"; DriverVersion = 13.0; DevicePciBusId = "0000:09:00.0"; GlobalMemoryMb = 24124; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (004.031.000) 2025-11-23 16:31:50 Image size of job updated: 288624
+	282  -  MemoryUsage of job (MB)
+	288624  -  ResidentSetSize of job (KB)
+...
+005 (004.031.000) 2025-11-23 16:31:50 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:02, Sys 0 00:00:01  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:02, Sys 0 00:00:01  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :        0        8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :        0        1         1 "GPU-97601f5c"
+	   Memory (MB)          :      282    71680     71680 
+	   TimeExecute (s)      :        6                    
+	   TimeSlotBusy (s)     :        6                    
+...

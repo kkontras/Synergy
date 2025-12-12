@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+#PBS -l walltime=01:00:00
+#PBS -l nodes=1:gpus=1
+
+#PBS -A starting_2024_076
+
+#PBS -o ./condor_logs/logs_vsc/out_${PBS_JOBID}.txt
+#PBS -e ./condor_logs/logs_vsc/err_${PBS_JOBID}.txt
+
+
+cd /dodrio/scratch/projects/starting_2024_024/projects/Balance
+
+git pull origin vsc
+
+
+source /dodrio/scratch/projects/starting_2024_024/env/Anaconda/etc/profile.d/conda.sh
+conda activate /dodrio/scratch/projects/starting_2024_024/env/balance
+
+which python
+python -V
+echo $PWD
+
+accelerate launch main_mcrema_MSLR.py --config ${config} --default_config ${default_config} --l ${l} --multil ${multil} --l_diffsq ${l_diffsq} --lib ${lib} --num_samples ${num_samples} --reg_by ${reg_by} --batch_size ${batch_size} --contr_coeff ${contr_coeff} --shuffle_type ${shuffle_type} --contr_type ${contr_type}

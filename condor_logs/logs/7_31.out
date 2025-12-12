@@ -1,0 +1,161 @@
+Starting Job
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python
+Python 3.10.19
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy
+We have 1 GPU
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
+config-./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json
+Executing command: accelerate launch /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py --config ./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 1 --lr 0.001 --wd 1e-5 --perturb gen --start_over  --cls mlp --lib 0.1
+Namespace(config='./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json', default_config='./configs/CREMA_D/default_config_cremad_res_syn.json', fold='1', alpha=None, tanh_mode=None, tanh_mode_beta=None, regby=None, clip=None, batch_size=None, l=None, multil=None, l_diffsq=None, lib='0.1', ratio_us=None, ratio_snr=None, kmepoch=None, num_samples=None, pow=None, nstep=None, contrcoeff=None, kde_coeff=None, etube=None, temperature=None, contr_type=None, shuffle_type=None, validate_with=None, transform_type=None, trasform_before=None, num_classes=None, base_alpha=None, alpha_var=None, base_beta=None, beta_var=None, optim_method=None, ilr_c=None, ilr_g=None, mmcosine_scaling=None, ending_epoch=None, load_ongoing=None, commonlayers=None, recon_weight1=None, recon_weight2=None, recon_epochstages=None, recon_ensemblestages=None, lr='0.001', wd='1e-5', mm=None, cls='mlp', perturb='gen', pre=False, frozen=False, tdqm_disable=False, start_over=True)
+2025-11-24 09:09:56,746 - Config - INFO - ./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json
+2025-11-24 09:09:56,749 - Config - INFO -  THE Configuration of your experiment ..
+{'agent': 'Agent',
+ 'dataset': {'data_roots': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D',
+             'data_split': {'fold': 0, 'method': 'non_inclusive'},
+             'dataloader_class': 'CramedD_Dataloader',
+             'fps': 1,
+             'norm': False,
+             'norm_face_path': './mydatasets/CREMAD/norm_face_path_fold{}.pkl',
+             'norm_wav_path': './mydatasets/CREMAD/wav_norm_16000_fold{}.pkl',
+             'num_frame': 3,
+             'return_data': {'audio': False,
+                             'face': False,
+                             'spectrogram': True,
+                             'video': True},
+             'sampling_rate': 22050},
+ 'early_stopping': {'end_of_epoch_check': True,
+                    'log_interval': 10,
+                    'max_epoch': 1500,
+                    'n_steps_stop': 100,
+                    'n_steps_stop_after': 0,
+                    'save_every_step': 3000,
+                    'save_every_valstep': 10,
+                    'validate_after': 0,
+                    'validate_every': 25,
+                    'validate_with': 'loss'},
+ 'exp_name': 'CREMAD Experiment',
+ 'model': {'args': {'bias_infusion': {'ending_epoch': 1500,
+                                      'l': 0.1,
+                                      'method': 'false',
+                                      'plot': False,
+                                      'starting_epoch': 0,
+                                      'use': True},
+                    'clip_grad': False,
+                    'cls_type': 'linear',
+                    'd_model': 512,
+                    'dropout': 0.1,
+                    'fc_inner': 64,
+                    'multi_loss': {'multi_supervised_w': {'c': 0,
+                                                          'combined': 1,
+                                                          'g': 0}},
+                    'num_classes': 6,
+                    'swap_direction': True},
+           'encoders': [{'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': True,
+                                  'num_classes': 6},
+                         'model': 'Audio_ResNet',
+                         'pretrainedEncoder': {'dir': 'unimodal_audio_fold{}_lr0.001_wd0.0001.pth.tar',
+                                               'use': True}},
+                        {'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': True,
+                                  'num_classes': 6},
+                         'model': 'Video_ResNet',
+                         'pretrainedEncoder': {'dir': 'unimodal_video_fold{}_lr0.001_wd0.0001.pth.tar',
+                                               'use': True}},
+                        {'args': {'dim_in': 512,
+                                  'dim_out': 512,
+                                  'hidden': 512,
+                                  'latent_dim': 64},
+                         'model': 'SimpleVAEZ2toZ1OneSide',
+                         'pretrainedEncoder': {'dir': '', 'use': False},
+                         'save_encoder': True}],
+           'load_ongoing': False,
+           'model_class': 'Model_GeneratorVAEOneSide',
+           'save_base_dir': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy',
+           'save_dir': 'Synprom_IB_genVAEOS{}.pth.tar'},
+ 'optimizer': {'beta1': 0.9,
+               'beta2': 0.999,
+               'learning_rate': 1e-05,
+               'momentum': 0.9,
+               'type': 'Adam',
+               'weight_decay': 1e-05},
+ 'scheduler': {'max_lr': 0.03, 'type': 'cosanneal', 'warm_up_steps': 780},
+ 'task': 'generative',
+ 'training_params': {'adversarial_training': {'adv_epsilon': 0.01,
+                                              'use': False},
+                     'async_loading': True,
+                     'batch_size': 128,
+                     'cuda': True,
+                     'data_loader_workers': 8,
+                     'gpu_device': [0],
+                     'pin_memory': False,
+                     'rec_test': False,
+                     'res': True,
+                     'seed': 109,
+                     'tdqm_disable': False,
+                     'test_batch_size': 128,
+                     'test_on_bottoms': False,
+                     'use_test_set': True,
+                     'validation': True,
+                     'verbose': True,
+                     'wandb_disable': False}}
+2025-11-24 09:09:56,751 - Config - INFO -  *************************************** 
+2025-11-24 09:09:56,751 - Config - INFO - The experiment name is CREMAD Experiment
+2025-11-24 09:09:56,751 - Config - INFO -  *************************************** 
+2025-11-24 09:09:56,752 - root - INFO - save_dir: Synprom_IB_genVAEOSfold1_lib0.1_perturbgen_lr0.001_wd1e-5_clsmlp.pth.tar
+2025-11-24 09:09:56,816 - Cuda Statistics - INFO - __Python VERSION:  3.10.19 (main, Oct 21 2025, 16:43:05) [GCC 11.2.0]
+2025-11-24 09:09:56,816 - Cuda Statistics - INFO - __pyTorch VERSION:  2.6.0+cu124
+2025-11-24 09:09:56,816 - Cuda Statistics - INFO - __CUDA VERSION
+2025-11-24 09:09:56,825 - Cuda Statistics - INFO - __CUDNN VERSION:  90100
+2025-11-24 09:09:56,848 - Cuda Statistics - INFO - __Number CUDA Devices:  1
+2025-11-24 09:09:56,848 - Cuda Statistics - INFO - __Devices
+2025-11-24 09:09:56,848 - Cuda Statistics - INFO - index, name, driver_version, memory.total [MiB], memory.used [MiB], memory.free [MiB]
+2025-11-24 09:09:56,848 - Cuda Statistics - INFO - 0, NVIDIA GeForce RTX 3090, 580.105.08, 24576 MiB, 4 MiB, 24121 MiB
+2025-11-24 09:09:56,853 - Cuda Statistics - INFO - Active CUDA Device: GPU 0
+2025-11-24 09:09:56,853 - Cuda Statistics - INFO - Available devices  1
+2025-11-24 09:09:56,853 - Cuda Statistics - INFO - Current cuda device  0
+This path does not exist /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/AudioWAV/1076_MTI_SAD_XX.wav or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Image-01-FPS/1076_MTI_SAD_XX or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Face_features/1076_MTI_SAD_XX.npy
+2025-11-24 09:09:58,914 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold1.pkl
+2025-11-24 09:09:58,925 - root - INFO - Norm values are {'mean': tensor(-2.6751e-05), 'std': tensor(0.0610), 'max_duration': 5.005}
+2025-11-24 09:09:59,376 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold1.pkl
+2025-11-24 09:09:59,377 - root - INFO - Norm values are {'mean': tensor(-2.6751e-05), 'std': tensor(0.0610), 'max_duration': 5.005}
+2025-11-24 09:09:59,850 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold1.pkl
+2025-11-24 09:09:59,851 - root - INFO - Norm values are {'mean': tensor(-2.6751e-05), 'std': tensor(0.0610), 'max_duration': 5.005}
+Available cores 8
+We are changing dataloader workers to num of cores 0
+2025-11-24 09:09:59,852 - Agent - INFO - Device: cuda:0
+2025-11-24 09:09:59,852 - Agent - INFO - Total training batches: 32, validate every 25 batches, steps per epoch: 2
+2025-11-24 09:10:02,220 - Agent - INFO - Loss Weights are {'total': 1, 'combined': 1, 'c': 0, 'g': 0}
+2025-11-24 09:10:02,848 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold1_lr0.001_wd0.0001.pth.tar
+Missing keys in state_dict: ['audio_net.conv1.weight', 'audio_net.bn1.weight', 'audio_net.bn1.bias', 'audio_net.bn1.running_mean', 'audio_net.bn1.running_var', 'audio_net.layer1.0.conv1.weight', 'audio_net.layer1.0.bn1.weight', 'audio_net.layer1.0.bn1.bias', 'audio_net.layer1.0.bn1.running_mean', 'audio_net.layer1.0.bn1.running_var', 'audio_net.layer1.0.conv2.weight', 'audio_net.layer1.0.bn2.weight', 'audio_net.layer1.0.bn2.bias', 'audio_net.layer1.0.bn2.running_mean', 'audio_net.layer1.0.bn2.running_var', 'audio_net.layer1.1.conv1.weight', 'audio_net.layer1.1.bn1.weight', 'audio_net.layer1.1.bn1.bias', 'audio_net.layer1.1.bn1.running_mean', 'audio_net.layer1.1.bn1.running_var', 'audio_net.layer1.1.conv2.weight', 'audio_net.layer1.1.bn2.weight', 'audio_net.layer1.1.bn2.bias', 'audio_net.layer1.1.bn2.running_mean', 'audio_net.layer1.1.bn2.running_var', 'audio_net.layer2.0.conv1.weight', 'audio_net.layer2.0.bn1.weight', 'audio_net.layer2.0.bn1.bias', 'audio_net.layer2.0.bn1.running_mean', 'audio_net.layer2.0.bn1.running_var', 'audio_net.layer2.0.conv2.weight', 'audio_net.layer2.0.bn2.weight', 'audio_net.layer2.0.bn2.bias', 'audio_net.layer2.0.bn2.running_mean', 'audio_net.layer2.0.bn2.running_var', 'audio_net.layer2.0.downsample.0.weight', 'audio_net.layer2.0.downsample.1.weight', 'audio_net.layer2.0.downsample.1.bias', 'audio_net.layer2.0.downsample.1.running_mean', 'audio_net.layer2.0.downsample.1.running_var', 'audio_net.layer2.1.conv1.weight', 'audio_net.layer2.1.bn1.weight', 'audio_net.layer2.1.bn1.bias', 'audio_net.layer2.1.bn1.running_mean', 'audio_net.layer2.1.bn1.running_var', 'audio_net.layer2.1.conv2.weight', 'audio_net.layer2.1.bn2.weight', 'audio_net.layer2.1.bn2.bias', 'audio_net.layer2.1.bn2.running_mean', 'audio_net.layer2.1.bn2.running_var', 'audio_net.layer3.0.conv1.weight', 'audio_net.layer3.0.bn1.weight', 'audio_net.layer3.0.bn1.bias', 'audio_net.layer3.0.bn1.running_mean', 'audio_net.layer3.0.bn1.running_var', 'audio_net.layer3.0.conv2.weight', 'audio_net.layer3.0.bn2.weight', 'audio_net.layer3.0.bn2.bias', 'audio_net.layer3.0.bn2.running_mean', 'audio_net.layer3.0.bn2.running_var', 'audio_net.layer3.0.downsample.0.weight', 'audio_net.layer3.0.downsample.1.weight', 'audio_net.layer3.0.downsample.1.bias', 'audio_net.layer3.0.downsample.1.running_mean', 'audio_net.layer3.0.downsample.1.running_var', 'audio_net.layer3.1.conv1.weight', 'audio_net.layer3.1.bn1.weight', 'audio_net.layer3.1.bn1.bias', 'audio_net.layer3.1.bn1.running_mean', 'audio_net.layer3.1.bn1.running_var', 'audio_net.layer3.1.conv2.weight', 'audio_net.layer3.1.bn2.weight', 'audio_net.layer3.1.bn2.bias', 'audio_net.layer3.1.bn2.running_mean', 'audio_net.layer3.1.bn2.running_var', 'audio_net.layer4.0.conv1.weight', 'audio_net.layer4.0.bn1.weight', 'audio_net.layer4.0.bn1.bias', 'audio_net.layer4.0.bn1.running_mean', 'audio_net.layer4.0.bn1.running_var', 'audio_net.layer4.0.conv2.weight', 'audio_net.layer4.0.bn2.weight', 'audio_net.layer4.0.bn2.bias', 'audio_net.layer4.0.bn2.running_mean', 'audio_net.layer4.0.bn2.running_var', 'audio_net.layer4.0.downsample.0.weight', 'audio_net.layer4.0.downsample.1.weight', 'audio_net.layer4.0.downsample.1.bias', 'audio_net.layer4.0.downsample.1.running_mean', 'audio_net.layer4.0.downsample.1.running_var', 'audio_net.layer4.1.conv1.weight', 'audio_net.layer4.1.bn1.weight', 'audio_net.layer4.1.bn1.bias', 'audio_net.layer4.1.bn1.running_mean', 'audio_net.layer4.1.bn1.running_var', 'audio_net.layer4.1.conv2.weight', 'audio_net.layer4.1.bn2.weight', 'audio_net.layer4.1.bn2.bias', 'audio_net.layer4.1.bn2.running_mean', 'audio_net.layer4.1.bn2.running_var', 'aclassifier.weight', 'aclassifier.bias']
+Unexpected keys in state_dict: ['module.audio_net.conv1.weight', 'module.audio_net.bn1.weight', 'module.audio_net.bn1.bias', 'module.audio_net.bn1.running_mean', 'module.audio_net.bn1.running_var', 'module.audio_net.bn1.num_batches_tracked', 'module.audio_net.layer1.0.conv1.weight', 'module.audio_net.layer1.0.bn1.weight', 'module.audio_net.layer1.0.bn1.bias', 'module.audio_net.layer1.0.bn1.running_mean', 'module.audio_net.layer1.0.bn1.running_var', 'module.audio_net.layer1.0.bn1.num_batches_tracked', 'module.audio_net.layer1.0.conv2.weight', 'module.audio_net.layer1.0.bn2.weight', 'module.audio_net.layer1.0.bn2.bias', 'module.audio_net.layer1.0.bn2.running_mean', 'module.audio_net.layer1.0.bn2.running_var', 'module.audio_net.layer1.0.bn2.num_batches_tracked', 'module.audio_net.layer1.1.conv1.weight', 'module.audio_net.layer1.1.bn1.weight', 'module.audio_net.layer1.1.bn1.bias', 'module.audio_net.layer1.1.bn1.running_mean', 'module.audio_net.layer1.1.bn1.running_var', 'module.audio_net.layer1.1.bn1.num_batches_tracked', 'module.audio_net.layer1.1.conv2.weight', 'module.audio_net.layer1.1.bn2.weight', 'module.audio_net.layer1.1.bn2.bias', 'module.audio_net.layer1.1.bn2.running_mean', 'module.audio_net.layer1.1.bn2.running_var', 'module.audio_net.layer1.1.bn2.num_batches_tracked', 'module.audio_net.layer2.0.conv1.weight', 'module.audio_net.layer2.0.bn1.weight', 'module.audio_net.layer2.0.bn1.bias', 'module.audio_net.layer2.0.bn1.running_mean', 'module.audio_net.layer2.0.bn1.running_var', 'module.audio_net.layer2.0.bn1.num_batches_tracked', 'module.audio_net.layer2.0.conv2.weight', 'module.audio_net.layer2.0.bn2.weight', 'module.audio_net.layer2.0.bn2.bias', 'module.audio_net.layer2.0.bn2.running_mean', 'module.audio_net.layer2.0.bn2.running_var', 'module.audio_net.layer2.0.bn2.num_batches_tracked', 'module.audio_net.layer2.0.downsample.0.weight', 'module.audio_net.layer2.0.downsample.1.weight', 'module.audio_net.layer2.0.downsample.1.bias', 'module.audio_net.layer2.0.downsample.1.running_mean', 'module.audio_net.layer2.0.downsample.1.running_var', 'module.audio_net.layer2.0.downsample.1.num_batches_tracked', 'module.audio_net.layer2.1.conv1.weight', 'module.audio_net.layer2.1.bn1.weight', 'module.audio_net.layer2.1.bn1.bias', 'module.audio_net.layer2.1.bn1.running_mean', 'module.audio_net.layer2.1.bn1.running_var', 'module.audio_net.layer2.1.bn1.num_batches_tracked', 'module.audio_net.layer2.1.conv2.weight', 'module.audio_net.layer2.1.bn2.weight', 'module.audio_net.layer2.1.bn2.bias', 'module.audio_net.layer2.1.bn2.running_mean', 'module.audio_net.layer2.1.bn2.running_var', 'module.audio_net.layer2.1.bn2.num_batches_tracked', 'module.audio_net.layer3.0.conv1.weight', 'module.audio_net.layer3.0.bn1.weight', 'module.audio_net.layer3.0.bn1.bias', 'module.audio_net.layer3.0.bn1.running_mean', 'module.audio_net.layer3.0.bn1.running_var', 'module.audio_net.layer3.0.bn1.num_batches_tracked', 'module.audio_net.layer3.0.conv2.weight', 'module.audio_net.layer3.0.bn2.weight', 'module.audio_net.layer3.0.bn2.bias', 'module.audio_net.layer3.0.bn2.running_mean', 'module.audio_net.layer3.0.bn2.running_var', 'module.audio_net.layer3.0.bn2.num_batches_tracked', 'module.audio_net.layer3.0.downsample.0.weight', 'module.audio_net.layer3.0.downsample.1.weight', 'module.audio_net.layer3.0.downsample.1.bias', 'module.audio_net.layer3.0.downsample.1.running_mean', 'module.audio_net.layer3.0.downsample.1.running_var', 'module.audio_net.layer3.0.downsample.1.num_batches_tracked', 'module.audio_net.layer3.1.conv1.weight', 'module.audio_net.layer3.1.bn1.weight', 'module.audio_net.layer3.1.bn1.bias', 'module.audio_net.layer3.1.bn1.running_mean', 'module.audio_net.layer3.1.bn1.running_var', 'module.audio_net.layer3.1.bn1.num_batches_tracked', 'module.audio_net.layer3.1.conv2.weight', 'module.audio_net.layer3.1.bn2.weight', 'module.audio_net.layer3.1.bn2.bias', 'module.audio_net.layer3.1.bn2.running_mean', 'module.audio_net.layer3.1.bn2.running_var', 'module.audio_net.layer3.1.bn2.num_batches_tracked', 'module.audio_net.layer4.0.conv1.weight', 'module.audio_net.layer4.0.bn1.weight', 'module.audio_net.layer4.0.bn1.bias', 'module.audio_net.layer4.0.bn1.running_mean', 'module.audio_net.layer4.0.bn1.running_var', 'module.audio_net.layer4.0.bn1.num_batches_tracked', 'module.audio_net.layer4.0.conv2.weight', 'module.audio_net.layer4.0.bn2.weight', 'module.audio_net.layer4.0.bn2.bias', 'module.audio_net.layer4.0.bn2.running_mean', 'module.audio_net.layer4.0.bn2.running_var', 'module.audio_net.layer4.0.bn2.num_batches_tracked', 'module.audio_net.layer4.0.downsample.0.weight', 'module.audio_net.layer4.0.downsample.1.weight', 'module.audio_net.layer4.0.downsample.1.bias', 'module.audio_net.layer4.0.downsample.1.running_mean', 'module.audio_net.layer4.0.downsample.1.running_var', 'module.audio_net.layer4.0.downsample.1.num_batches_tracked', 'module.audio_net.layer4.1.conv1.weight', 'module.audio_net.layer4.1.bn1.weight', 'module.audio_net.layer4.1.bn1.bias', 'module.audio_net.layer4.1.bn1.running_mean', 'module.audio_net.layer4.1.bn1.running_var', 'module.audio_net.layer4.1.bn1.num_batches_tracked', 'module.audio_net.layer4.1.conv2.weight', 'module.audio_net.layer4.1.bn2.weight', 'module.audio_net.layer4.1.bn2.bias', 'module.audio_net.layer4.1.bn2.running_mean', 'module.audio_net.layer4.1.bn2.running_var', 'module.audio_net.layer4.1.bn2.num_batches_tracked', 'module.aclassifier.weight', 'module.aclassifier.bias']
+2025-11-24 09:10:03,349 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold1_lr0.001_wd0.0001.pth.tar
+Missing keys in state_dict: ['visual_net.conv1.weight', 'visual_net.bn1.weight', 'visual_net.bn1.bias', 'visual_net.bn1.running_mean', 'visual_net.bn1.running_var', 'visual_net.layer1.0.conv1.weight', 'visual_net.layer1.0.bn1.weight', 'visual_net.layer1.0.bn1.bias', 'visual_net.layer1.0.bn1.running_mean', 'visual_net.layer1.0.bn1.running_var', 'visual_net.layer1.0.conv2.weight', 'visual_net.layer1.0.bn2.weight', 'visual_net.layer1.0.bn2.bias', 'visual_net.layer1.0.bn2.running_mean', 'visual_net.layer1.0.bn2.running_var', 'visual_net.layer1.1.conv1.weight', 'visual_net.layer1.1.bn1.weight', 'visual_net.layer1.1.bn1.bias', 'visual_net.layer1.1.bn1.running_mean', 'visual_net.layer1.1.bn1.running_var', 'visual_net.layer1.1.conv2.weight', 'visual_net.layer1.1.bn2.weight', 'visual_net.layer1.1.bn2.bias', 'visual_net.layer1.1.bn2.running_mean', 'visual_net.layer1.1.bn2.running_var', 'visual_net.layer2.0.conv1.weight', 'visual_net.layer2.0.bn1.weight', 'visual_net.layer2.0.bn1.bias', 'visual_net.layer2.0.bn1.running_mean', 'visual_net.layer2.0.bn1.running_var', 'visual_net.layer2.0.conv2.weight', 'visual_net.layer2.0.bn2.weight', 'visual_net.layer2.0.bn2.bias', 'visual_net.layer2.0.bn2.running_mean', 'visual_net.layer2.0.bn2.running_var', 'visual_net.layer2.0.downsample.0.weight', 'visual_net.layer2.0.downsample.1.weight', 'visual_net.layer2.0.downsample.1.bias', 'visual_net.layer2.0.downsample.1.running_mean', 'visual_net.layer2.0.downsample.1.running_var', 'visual_net.layer2.1.conv1.weight', 'visual_net.layer2.1.bn1.weight', 'visual_net.layer2.1.bn1.bias', 'visual_net.layer2.1.bn1.running_mean', 'visual_net.layer2.1.bn1.running_var', 'visual_net.layer2.1.conv2.weight', 'visual_net.layer2.1.bn2.weight', 'visual_net.layer2.1.bn2.bias', 'visual_net.layer2.1.bn2.running_mean', 'visual_net.layer2.1.bn2.running_var', 'visual_net.layer3.0.conv1.weight', 'visual_net.layer3.0.bn1.weight', 'visual_net.layer3.0.bn1.bias', 'visual_net.layer3.0.bn1.running_mean', 'visual_net.layer3.0.bn1.running_var', 'visual_net.layer3.0.conv2.weight', 'visual_net.layer3.0.bn2.weight', 'visual_net.layer3.0.bn2.bias', 'visual_net.layer3.0.bn2.running_mean', 'visual_net.layer3.0.bn2.running_var', 'visual_net.layer3.0.downsample.0.weight', 'visual_net.layer3.0.downsample.1.weight', 'visual_net.layer3.0.downsample.1.bias', 'visual_net.layer3.0.downsample.1.running_mean', 'visual_net.layer3.0.downsample.1.running_var', 'visual_net.layer3.1.conv1.weight', 'visual_net.layer3.1.bn1.weight', 'visual_net.layer3.1.bn1.bias', 'visual_net.layer3.1.bn1.running_mean', 'visual_net.layer3.1.bn1.running_var', 'visual_net.layer3.1.conv2.weight', 'visual_net.layer3.1.bn2.weight', 'visual_net.layer3.1.bn2.bias', 'visual_net.layer3.1.bn2.running_mean', 'visual_net.layer3.1.bn2.running_var', 'visual_net.layer4.0.conv1.weight', 'visual_net.layer4.0.bn1.weight', 'visual_net.layer4.0.bn1.bias', 'visual_net.layer4.0.bn1.running_mean', 'visual_net.layer4.0.bn1.running_var', 'visual_net.layer4.0.conv2.weight', 'visual_net.layer4.0.bn2.weight', 'visual_net.layer4.0.bn2.bias', 'visual_net.layer4.0.bn2.running_mean', 'visual_net.layer4.0.bn2.running_var', 'visual_net.layer4.0.downsample.0.weight', 'visual_net.layer4.0.downsample.1.weight', 'visual_net.layer4.0.downsample.1.bias', 'visual_net.layer4.0.downsample.1.running_mean', 'visual_net.layer4.0.downsample.1.running_var', 'visual_net.layer4.1.conv1.weight', 'visual_net.layer4.1.bn1.weight', 'visual_net.layer4.1.bn1.bias', 'visual_net.layer4.1.bn1.running_mean', 'visual_net.layer4.1.bn1.running_var', 'visual_net.layer4.1.conv2.weight', 'visual_net.layer4.1.bn2.weight', 'visual_net.layer4.1.bn2.bias', 'visual_net.layer4.1.bn2.running_mean', 'visual_net.layer4.1.bn2.running_var', 'vclassifier.0.weight', 'vclassifier.0.bias']
+Unexpected keys in state_dict: ['module.visual_net.conv1.weight', 'module.visual_net.bn1.weight', 'module.visual_net.bn1.bias', 'module.visual_net.bn1.running_mean', 'module.visual_net.bn1.running_var', 'module.visual_net.bn1.num_batches_tracked', 'module.visual_net.layer1.0.conv1.weight', 'module.visual_net.layer1.0.bn1.weight', 'module.visual_net.layer1.0.bn1.bias', 'module.visual_net.layer1.0.bn1.running_mean', 'module.visual_net.layer1.0.bn1.running_var', 'module.visual_net.layer1.0.bn1.num_batches_tracked', 'module.visual_net.layer1.0.conv2.weight', 'module.visual_net.layer1.0.bn2.weight', 'module.visual_net.layer1.0.bn2.bias', 'module.visual_net.layer1.0.bn2.running_mean', 'module.visual_net.layer1.0.bn2.running_var', 'module.visual_net.layer1.0.bn2.num_batches_tracked', 'module.visual_net.layer1.1.conv1.weight', 'module.visual_net.layer1.1.bn1.weight', 'module.visual_net.layer1.1.bn1.bias', 'module.visual_net.layer1.1.bn1.running_mean', 'module.visual_net.layer1.1.bn1.running_var', 'module.visual_net.layer1.1.bn1.num_batches_tracked', 'module.visual_net.layer1.1.conv2.weight', 'module.visual_net.layer1.1.bn2.weight', 'module.visual_net.layer1.1.bn2.bias', 'module.visual_net.layer1.1.bn2.running_mean', 'module.visual_net.layer1.1.bn2.running_var', 'module.visual_net.layer1.1.bn2.num_batches_tracked', 'module.visual_net.layer2.0.conv1.weight', 'module.visual_net.layer2.0.bn1.weight', 'module.visual_net.layer2.0.bn1.bias', 'module.visual_net.layer2.0.bn1.running_mean', 'module.visual_net.layer2.0.bn1.running_var', 'module.visual_net.layer2.0.bn1.num_batches_tracked', 'module.visual_net.layer2.0.conv2.weight', 'module.visual_net.layer2.0.bn2.weight', 'module.visual_net.layer2.0.bn2.bias', 'module.visual_net.layer2.0.bn2.running_mean', 'module.visual_net.layer2.0.bn2.running_var', 'module.visual_net.layer2.0.bn2.num_batches_tracked', 'module.visual_net.layer2.0.downsample.0.weight', 'module.visual_net.layer2.0.downsample.1.weight', 'module.visual_net.layer2.0.downsample.1.bias', 'module.visual_net.layer2.0.downsample.1.running_mean', 'module.visual_net.layer2.0.downsample.1.running_var', 'module.visual_net.layer2.0.downsample.1.num_batches_tracked', 'module.visual_net.layer2.1.conv1.weight', 'module.visual_net.layer2.1.bn1.weight', 'module.visual_net.layer2.1.bn1.bias', 'module.visual_net.layer2.1.bn1.running_mean', 'module.visual_net.layer2.1.bn1.running_var', 'module.visual_net.layer2.1.bn1.num_batches_tracked', 'module.visual_net.layer2.1.conv2.weight', 'module.visual_net.layer2.1.bn2.weight', 'module.visual_net.layer2.1.bn2.bias', 'module.visual_net.layer2.1.bn2.running_mean', 'module.visual_net.layer2.1.bn2.running_var', 'module.visual_net.layer2.1.bn2.num_batches_tracked', 'module.visual_net.layer3.0.conv1.weight', 'module.visual_net.layer3.0.bn1.weight', 'module.visual_net.layer3.0.bn1.bias', 'module.visual_net.layer3.0.bn1.running_mean', 'module.visual_net.layer3.0.bn1.running_var', 'module.visual_net.layer3.0.bn1.num_batches_tracked', 'module.visual_net.layer3.0.conv2.weight', 'module.visual_net.layer3.0.bn2.weight', 'module.visual_net.layer3.0.bn2.bias', 'module.visual_net.layer3.0.bn2.running_mean', 'module.visual_net.layer3.0.bn2.running_var', 'module.visual_net.layer3.0.bn2.num_batches_tracked', 'module.visual_net.layer3.0.downsample.0.weight', 'module.visual_net.layer3.0.downsample.1.weight', 'module.visual_net.layer3.0.downsample.1.bias', 'module.visual_net.layer3.0.downsample.1.running_mean', 'module.visual_net.layer3.0.downsample.1.running_var', 'module.visual_net.layer3.0.downsample.1.num_batches_tracked', 'module.visual_net.layer3.1.conv1.weight', 'module.visual_net.layer3.1.bn1.weight', 'module.visual_net.layer3.1.bn1.bias', 'module.visual_net.layer3.1.bn1.running_mean', 'module.visual_net.layer3.1.bn1.running_var', 'module.visual_net.layer3.1.bn1.num_batches_tracked', 'module.visual_net.layer3.1.conv2.weight', 'module.visual_net.layer3.1.bn2.weight', 'module.visual_net.layer3.1.bn2.bias', 'module.visual_net.layer3.1.bn2.running_mean', 'module.visual_net.layer3.1.bn2.running_var', 'module.visual_net.layer3.1.bn2.num_batches_tracked', 'module.visual_net.layer4.0.conv1.weight', 'module.visual_net.layer4.0.bn1.weight', 'module.visual_net.layer4.0.bn1.bias', 'module.visual_net.layer4.0.bn1.running_mean', 'module.visual_net.layer4.0.bn1.running_var', 'module.visual_net.layer4.0.bn1.num_batches_tracked', 'module.visual_net.layer4.0.conv2.weight', 'module.visual_net.layer4.0.bn2.weight', 'module.visual_net.layer4.0.bn2.bias', 'module.visual_net.layer4.0.bn2.running_mean', 'module.visual_net.layer4.0.bn2.running_var', 'module.visual_net.layer4.0.bn2.num_batches_tracked', 'module.visual_net.layer4.0.downsample.0.weight', 'module.visual_net.layer4.0.downsample.1.weight', 'module.visual_net.layer4.0.downsample.1.bias', 'module.visual_net.layer4.0.downsample.1.running_mean', 'module.visual_net.layer4.0.downsample.1.running_var', 'module.visual_net.layer4.0.downsample.1.num_batches_tracked', 'module.visual_net.layer4.1.conv1.weight', 'module.visual_net.layer4.1.bn1.weight', 'module.visual_net.layer4.1.bn1.bias', 'module.visual_net.layer4.1.bn1.running_mean', 'module.visual_net.layer4.1.bn1.running_var', 'module.visual_net.layer4.1.bn1.num_batches_tracked', 'module.visual_net.layer4.1.conv2.weight', 'module.visual_net.layer4.1.bn2.weight', 'module.visual_net.layer4.1.bn2.bias', 'module.visual_net.layer4.1.bn2.running_mean', 'module.visual_net.layer4.1.bn2.running_var', 'module.visual_net.layer4.1.bn2.num_batches_tracked', 'module.vclassifier.0.weight', 'module.vclassifier.0.bias']
+2025-11-24 09:10:03,361 - Agent - INFO - Freezing encoder enc_0
+2025-11-24 09:10:03,361 - Agent - INFO - Freezing encoder enc_1
+2025-11-24 09:10:03,383 - Agent - INFO - Total number of trainable parameters are: 23502476
+2025-11-24 09:10:03,389 - Agent - INFO - Total number of trainable parameters are: 1149568
+2025-11-24 09:11:36,956 - Agent - INFO - [37mVal Epoch 1 step 1 with [31mpx_total : 59.579479 [31mtotal : 59.579479 
+2025-11-24 09:11:37,156 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib0.1_perturbgen_lr0.001_wd1e-5_clsmlp.pth.tar[39m
+2025-11-24 09:12:57,434 - Agent - INFO - [37mVal Epoch 2 step 2 with [31mpx_total : 59.108799 [31mtotal : 59.108799 
+2025-11-24 09:12:57,684 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib0.1_perturbgen_lr0.001_wd1e-5_clsmlp.pth.tar[39m
+2025-11-24 09:14:17,123 - Agent - INFO - [37mVal Epoch 3 step 3 with [31mpx_total : 59.537807 [31mtotal : 59.537807 
+2025-11-24 09:15:36,648 - Agent - INFO - [37mVal Epoch 4 step 4 with [31mpx_total : 60.232128 [31mtotal : 60.232128 
+2025-11-24 09:16:55,959 - Agent - INFO - [37mVal Epoch 5 step 5 with [31mpx_total : 61.111176 [31mtotal : 61.111176 
+2025-11-24 09:18:15,254 - Agent - INFO - [37mVal Epoch 6 step 6 with [31mpx_total : 61.587971 [31mtotal : 61.587971 
+2025-11-24 09:19:34,422 - Agent - INFO - [37mVal Epoch 7 step 7 with [31mpx_total : 61.662933 [31mtotal : 61.662933 
+2025-11-24 09:20:53,283 - Agent - INFO - [37mVal Epoch 8 step 8 with [31mpx_total : 61.768379 [31mtotal : 61.768379 
+You have entered CTRL+C.. Wait to finalize
+2025-11-24 09:21:32,483 - Agent - INFO - We are in the final state.
+2025-11-24 09:21:32,536 - root - INFO - Loaded best model from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib0.1_perturbgen_lr0.001_wd1e-5_clsmlp.pth.tar
+2025-11-24 09:21:46,177 - Agent - INFO - [37mVal Epoch 8 step 0 with [31mpx_total : 59.115910 [31mtotal : 59.115910 
+[1;34mwandb[0m: 
+[1;34mwandb[0m: 🚀 View run [33mSynprom_IB_genVAEOSfold1_lib0.1_perturbgen_lr0.001_wd1e-5_clsmlp[0m at: [34m[0m
+[1;34mwandb[0m: Find logs at: [1;35mwandb/run-20251124_091000-9oi4tutj/logs[0m
+Job finished

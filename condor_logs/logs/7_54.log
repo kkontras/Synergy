@@ -1,0 +1,23 @@
+000 (007.054.000) 2025-11-23 17:36:53 Job submitted from host: <10.87.28.3:9618?addrs=10.87.28.3-9618&alias=deanston.esat.kuleuven.be&noUDP&sock=schedd_1644_39c9>
+...
+021 (007.054.000) 2025-11-24 10:35:23 Error from starter on slot1_3@pythagoras.esat.kuleuven.be:
+	Failed to open '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/condor_logs/logs/7_54.out' as standard output: No such file or directory (errno 2)
+	Code 7 Subcode 2
+...
+004 (007.054.000) 2025-11-24 10:35:43 Job was evicted. Code 7 Subcode 2
+	(0) CPU times
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	Reason: Error from slot1_3@pythagoras.esat.kuleuven.be: Failed to open '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/condor_logs/logs/7_54.out' as standard output: No such file or directory (errno 2)
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :                 8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :                 1         1 "GPU-1e452605"
+	   Memory (MB)          :             71680     71680 
+...
+012 (007.054.000) 2025-11-24 10:35:43 Job was held.
+	Error from slot1_3@pythagoras.esat.kuleuven.be: Failed to open '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/condor_logs/logs/7_54.out' as standard output: No such file or directory (errno 2)
+	Code 7 Subcode 2
+...

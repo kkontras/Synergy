@@ -1,0 +1,90 @@
+000 (011.012.000) 2025-11-07 18:57:34 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+...
+001 (011.012.000) 2025-11-08 22:33:50 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_12050_e04e>
+	SlotName: slot1_6@aristoteles.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_edd4a9d8 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1441684"
+	Cpus = 8
+	Disk = 1050529
+	GPUs = 1
+	GPUs_GPU_edd4a9d8 = [ Id = "GPU-edd4a9d8"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "edd4a9d8-371c-bb9a-e898-24b94b410094"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:8D:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (011.012.000) 2025-11-08 22:33:58 Image size of job updated: 256068
+	251  -  MemoryUsage of job (MB)
+	256068  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-08 22:38:58 Image size of job updated: 1642224
+	1604  -  MemoryUsage of job (MB)
+	1642224  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-08 22:43:59 Image size of job updated: 1654856
+	1604  -  MemoryUsage of job (MB)
+	1642224  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-08 22:49:00 Image size of job updated: 1669220
+	1631  -  MemoryUsage of job (MB)
+	1669220  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-08 22:54:00 Image size of job updated: 1689940
+	1631  -  MemoryUsage of job (MB)
+	1669220  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-08 23:04:01 Image size of job updated: 1718212
+	1631  -  MemoryUsage of job (MB)
+	1669220  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-08 23:19:02 Image size of job updated: 2268012
+	1631  -  MemoryUsage of job (MB)
+	1669220  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-08 23:39:04 Image size of job updated: 2268012
+	1635  -  MemoryUsage of job (MB)
+	1673844  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-08 23:49:05 Image size of job updated: 2268012
+	1638  -  MemoryUsage of job (MB)
+	1676404  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-09 00:14:08 Image size of job updated: 2268012
+	1639  -  MemoryUsage of job (MB)
+	1677400  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-09 00:19:08 Image size of job updated: 2268012
+	1640  -  MemoryUsage of job (MB)
+	1679056  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-09 00:24:09 Image size of job updated: 2268012
+	1646  -  MemoryUsage of job (MB)
+	1684676  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-09 00:39:11 Image size of job updated: 2268012
+	1655  -  MemoryUsage of job (MB)
+	1694292  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-09 00:49:12 Image size of job updated: 2277292
+	1655  -  MemoryUsage of job (MB)
+	1694292  -  ResidentSetSize of job (KB)
+...
+006 (011.012.000) 2025-11-09 01:42:05 Image size of job updated: 3812788
+	3187  -  MemoryUsage of job (MB)
+	3262520  -  ResidentSetSize of job (KB)
+...
+005 (011.012.000) 2025-11-09 01:42:05 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 08:58:57, Sys 0 01:04:40  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 08:58:57, Sys 0 01:04:40  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     2.91        8         8 
+	   Disk (KB)            :     2     1048576   1050529 
+	   GPUs                 :                 1         1 "GPU-edd4a9d8"
+	   Memory (MB)          :  3187       71680     71680 
+	   TimeExecute (s)      : 11295                       
+	   TimeSlotBusy (s)     : 11295                       
+...

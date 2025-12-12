@@ -1,0 +1,37 @@
+{
+  "scheduler": {"type":"cosanneal", "max_lr": 0.03, "warm_up_steps": 31655},
+  "optimizer": {
+    "type": "Adaw",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.02
+  },
+  "dataset": {
+     "modalities":{
+          "layout":{"activate": true},
+          "flow": {"activate": false},
+          "video": {"activate": false}
+      }
+  },
+  "model": {
+    "model_class": "All3Model_Ens",
+    "args": {
+      "modality": "layout",
+      "activate_model": {"layout": true, "flow": false, "video": false},
+      "clip_grad": true,
+      "clip_value": 5.0,
+      "d_model": 512,
+      "num_frames":16,
+      "num_classes": 174,
+      "bias_infusion": {
+        "method": false
+      },
+      "multi_loss": {
+        "multi_supervised_w": {
+             "combined": 1
+          }
+      }
+    },
+    "load_ongoing": true,
+    "save_dir": "layout_test_optAdaw{}.pth.tar"
+  }
+}

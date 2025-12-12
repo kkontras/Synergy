@@ -1,0 +1,604 @@
+Starting Job
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python
+Python 3.10.19
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy
+We have 1 GPU
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
+config-./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json
+Executing command: accelerate launch /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py --config ./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 1 --lr 0.0003 --wd 0.0 --perturb gen --start_over  --cls mlp --lib 1.0
+Namespace(config='./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json', default_config='./configs/CREMA_D/default_config_cremad_res_syn.json', fold='1', alpha=None, tanh_mode=None, tanh_mode_beta=None, regby=None, clip=None, batch_size=None, l=None, multil=None, l_diffsq=None, lib='1.0', ratio_us=None, ratio_snr=None, kmepoch=None, num_samples=None, pow=None, nstep=None, contrcoeff=None, kde_coeff=None, etube=None, temperature=None, contr_type=None, shuffle_type=None, validate_with=None, transform_type=None, trasform_before=None, num_classes=None, base_alpha=None, alpha_var=None, base_beta=None, beta_var=None, optim_method=None, ilr_c=None, ilr_g=None, mmcosine_scaling=None, ending_epoch=None, load_ongoing=None, commonlayers=None, recon_weight1=None, recon_weight2=None, recon_epochstages=None, recon_ensemblestages=None, lr='0.0003', wd='0.0', mm=None, cls='mlp', perturb='gen', pre=False, frozen=False, tdqm_disable=False, start_over=True)
+2025-11-24 09:49:45,219 - Config - INFO - ./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json
+2025-11-24 09:49:45,222 - Config - INFO -  THE Configuration of your experiment ..
+{'agent': 'Agent',
+ 'dataset': {'data_roots': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D',
+             'data_split': {'fold': 0, 'method': 'non_inclusive'},
+             'dataloader_class': 'CramedD_Dataloader',
+             'fps': 1,
+             'norm': False,
+             'norm_face_path': './mydatasets/CREMAD/norm_face_path_fold{}.pkl',
+             'norm_wav_path': './mydatasets/CREMAD/wav_norm_16000_fold{}.pkl',
+             'num_frame': 3,
+             'return_data': {'audio': False,
+                             'face': False,
+                             'spectrogram': True,
+                             'video': True},
+             'sampling_rate': 22050},
+ 'early_stopping': {'end_of_epoch_check': True,
+                    'log_interval': 10,
+                    'max_epoch': 1500,
+                    'n_steps_stop': 100,
+                    'n_steps_stop_after': 0,
+                    'save_every_step': 3000,
+                    'save_every_valstep': 10,
+                    'validate_after': 0,
+                    'validate_every': 25,
+                    'validate_with': 'loss'},
+ 'exp_name': 'CREMAD Experiment',
+ 'model': {'args': {'bias_infusion': {'ending_epoch': 1500,
+                                      'l': 0.1,
+                                      'method': 'false',
+                                      'plot': False,
+                                      'starting_epoch': 0,
+                                      'use': True},
+                    'clip_grad': False,
+                    'cls_type': 'linear',
+                    'd_model': 512,
+                    'dropout': 0.1,
+                    'fc_inner': 64,
+                    'multi_loss': {'multi_supervised_w': {'c': 0,
+                                                          'combined': 1,
+                                                          'g': 0}},
+                    'num_classes': 6,
+                    'swap_direction': True},
+           'encoders': [{'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': True,
+                                  'num_classes': 6},
+                         'model': 'Audio_ResNet',
+                         'pretrainedEncoder': {'dir': 'unimodal_audio_fold{}_lr0.001_wd0.0001.pth.tar',
+                                               'use': True}},
+                        {'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': True,
+                                  'num_classes': 6},
+                         'model': 'Video_ResNet',
+                         'pretrainedEncoder': {'dir': 'unimodal_video_fold{}_lr0.001_wd0.0001.pth.tar',
+                                               'use': True}},
+                        {'args': {'dim_in': 512,
+                                  'dim_out': 512,
+                                  'hidden': 512,
+                                  'latent_dim': 64},
+                         'model': 'SimpleVAEZ2toZ1OneSide',
+                         'pretrainedEncoder': {'dir': '', 'use': False},
+                         'save_encoder': True}],
+           'load_ongoing': False,
+           'model_class': 'Model_GeneratorVAEOneSide',
+           'save_base_dir': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy',
+           'save_dir': 'Synprom_IB_genVAEOS{}.pth.tar'},
+ 'optimizer': {'beta1': 0.9,
+               'beta2': 0.999,
+               'learning_rate': 1e-05,
+               'momentum': 0.9,
+               'type': 'Adam',
+               'weight_decay': 1e-05},
+ 'scheduler': {'max_lr': 0.03, 'type': 'cosanneal', 'warm_up_steps': 780},
+ 'task': 'generative',
+ 'training_params': {'adversarial_training': {'adv_epsilon': 0.01,
+                                              'use': False},
+                     'async_loading': True,
+                     'batch_size': 128,
+                     'cuda': True,
+                     'data_loader_workers': 8,
+                     'gpu_device': [0],
+                     'pin_memory': False,
+                     'rec_test': False,
+                     'res': True,
+                     'seed': 109,
+                     'tdqm_disable': False,
+                     'test_batch_size': 128,
+                     'test_on_bottoms': False,
+                     'use_test_set': True,
+                     'validation': True,
+                     'verbose': True,
+                     'wandb_disable': False}}
+2025-11-24 09:49:45,227 - Config - INFO -  *************************************** 
+2025-11-24 09:49:45,227 - Config - INFO - The experiment name is CREMAD Experiment
+2025-11-24 09:49:45,227 - Config - INFO -  *************************************** 
+2025-11-24 09:49:45,227 - root - INFO - save_dir: Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar
+2025-11-24 09:49:45,300 - Cuda Statistics - INFO - __Python VERSION:  3.10.19 (main, Oct 21 2025, 16:43:05) [GCC 11.2.0]
+2025-11-24 09:49:45,300 - Cuda Statistics - INFO - __pyTorch VERSION:  2.6.0+cu124
+2025-11-24 09:49:45,300 - Cuda Statistics - INFO - __CUDA VERSION
+2025-11-24 09:49:45,302 - Cuda Statistics - INFO - __CUDNN VERSION:  90100
+2025-11-24 09:49:45,337 - Cuda Statistics - INFO - __Number CUDA Devices:  1
+2025-11-24 09:49:45,338 - Cuda Statistics - INFO - __Devices
+2025-11-24 09:49:45,338 - Cuda Statistics - INFO - index, name, driver_version, memory.total [MiB], memory.used [MiB], memory.free [MiB]
+2025-11-24 09:49:45,338 - Cuda Statistics - INFO - 0, NVIDIA A100-SXM4-80GB, 580.105.08, 81920 MiB, 4 MiB, 81150 MiB
+2025-11-24 09:49:45,341 - Cuda Statistics - INFO - Active CUDA Device: GPU 0
+2025-11-24 09:49:45,342 - Cuda Statistics - INFO - Available devices  1
+2025-11-24 09:49:45,342 - Cuda Statistics - INFO - Current cuda device  0
+This path does not exist /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/AudioWAV/1076_MTI_SAD_XX.wav or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Image-01-FPS/1076_MTI_SAD_XX or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Face_features/1076_MTI_SAD_XX.npy
+2025-11-24 09:49:46,717 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold1.pkl
+2025-11-24 09:49:46,720 - root - INFO - Norm values are {'mean': tensor(-2.6751e-05), 'std': tensor(0.0610), 'max_duration': 5.005}
+2025-11-24 09:49:47,110 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold1.pkl
+2025-11-24 09:49:47,111 - root - INFO - Norm values are {'mean': tensor(-2.6751e-05), 'std': tensor(0.0610), 'max_duration': 5.005}
+2025-11-24 09:49:47,624 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold1.pkl
+2025-11-24 09:49:47,625 - root - INFO - Norm values are {'mean': tensor(-2.6751e-05), 'std': tensor(0.0610), 'max_duration': 5.005}
+Available cores 8
+We are changing dataloader workers to num of cores 0
+2025-11-24 09:49:47,626 - Agent - INFO - Device: cuda:0
+2025-11-24 09:49:47,626 - Agent - INFO - Total training batches: 32, validate every 25 batches, steps per epoch: 2
+2025-11-24 09:49:49,432 - Agent - INFO - Loss Weights are {'total': 1, 'combined': 1, 'c': 0, 'g': 0}
+2025-11-24 09:49:50,033 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold1_lr0.001_wd0.0001.pth.tar
+Replacing module
+2025-11-24 09:49:50,434 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold1_lr0.001_wd0.0001.pth.tar
+Replacing module
+2025-11-24 09:49:50,487 - Agent - INFO - Freezing encoder enc_0
+2025-11-24 09:49:50,488 - Agent - INFO - Freezing encoder enc_1
+2025-11-24 09:49:50,512 - Agent - INFO - Total number of trainable parameters are: 23502476
+2025-11-24 09:49:50,527 - Agent - INFO - Total number of trainable parameters are: 1149568
+2025-11-24 09:51:42,066 - Agent - INFO - [37mVal Epoch 1 step 1 with [31mpx_total : 0.179472 [31mtotal : 0.179472 
+2025-11-24 09:51:42,409 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 09:53:25,511 - Agent - INFO - [37mVal Epoch 2 step 2 with [31mpx_total : 0.173418 [31mtotal : 0.173418 
+2025-11-24 09:53:25,877 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 09:55:06,116 - Agent - INFO - [37mVal Epoch 3 step 3 with [31mpx_total : 0.175672 [31mtotal : 0.175672 
+2025-11-24 09:56:44,512 - Agent - INFO - [37mVal Epoch 4 step 4 with [31mpx_total : 0.190660 [31mtotal : 0.190660 
+2025-11-24 09:58:24,909 - Agent - INFO - [37mVal Epoch 5 step 5 with [31mpx_total : 0.175010 [31mtotal : 0.175010 
+2025-11-24 10:00:10,963 - Agent - INFO - [37mVal Epoch 6 step 6 with [31mpx_total : 0.169901 [31mtotal : 0.169901 
+2025-11-24 10:00:11,275 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 10:01:54,367 - Agent - INFO - [37mVal Epoch 7 step 7 with [31mpx_total : 0.168046 [31mtotal : 0.168046 
+2025-11-24 10:01:54,631 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 10:03:41,298 - Agent - INFO - [37mVal Epoch 8 step 8 with [31mpx_total : 0.165544 [31mtotal : 0.165544 
+2025-11-24 10:03:41,611 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 10:05:25,551 - Agent - INFO - [37mVal Epoch 9 step 9 with [31mpx_total : 0.176562 [31mtotal : 0.176562 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2075         0.1494         0.8162         0.9939         0.8663
+z2_vs_~z                        0.3931         0.3388         0.3950         0.9748         0.6541
+------------------------------------------------------------------------------------------------------
+2025-11-24 10:07:45,877 - Agent - INFO - [37mVal Epoch 10 step 10 with [31mpx_total : 0.156001 [31mtotal : 0.156001 
+2025-11-24 10:07:46,230 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 10:09:30,438 - Agent - INFO - [37mVal Epoch 11 step 11 with [31mpx_total : 0.166453 [31mtotal : 0.166453 
+2025-11-24 10:11:14,870 - Agent - INFO - [37mVal Epoch 12 step 12 with [31mpx_total : 0.172379 [31mtotal : 0.172379 
+2025-11-24 10:12:55,519 - Agent - INFO - [37mVal Epoch 13 step 13 with [31mpx_total : 0.174934 [31mtotal : 0.174934 
+2025-11-24 10:14:40,737 - Agent - INFO - [37mVal Epoch 14 step 14 with [31mpx_total : 0.166949 [31mtotal : 0.166949 
+2025-11-24 10:16:22,499 - Agent - INFO - [37mVal Epoch 15 step 15 with [31mpx_total : 0.161589 [31mtotal : 0.161589 
+2025-11-24 10:18:10,790 - Agent - INFO - [37mVal Epoch 16 step 16 with [31mpx_total : 0.166846 [31mtotal : 0.166846 
+2025-11-24 10:19:55,690 - Agent - INFO - [37mVal Epoch 17 step 17 with [31mpx_total : 0.168355 [31mtotal : 0.168355 
+2025-11-24 10:21:39,463 - Agent - INFO - [37mVal Epoch 18 step 18 with [31mpx_total : 0.166516 [31mtotal : 0.166516 
+2025-11-24 10:23:23,738 - Agent - INFO - [37mVal Epoch 19 step 19 with [31mpx_total : 0.165638 [31mtotal : 0.165638 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2094         0.1852         0.8060         0.9868         0.8633
+z2_vs_~z                        0.4073         0.4045         0.3919         0.9832         0.6296
+------------------------------------------------------------------------------------------------------
+2025-11-24 10:25:31,123 - Agent - INFO - [37mVal Epoch 20 step 20 with [31mpx_total : 0.161411 [31mtotal : 0.161411 
+2025-11-24 10:27:15,244 - Agent - INFO - [37mVal Epoch 21 step 21 with [31mpx_total : 0.152519 [31mtotal : 0.152519 
+2025-11-24 10:27:15,630 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 10:28:58,840 - Agent - INFO - [37mVal Epoch 22 step 22 with [31mpx_total : 0.164361 [31mtotal : 0.164361 
+2025-11-24 10:30:42,579 - Agent - INFO - [37mVal Epoch 23 step 23 with [31mpx_total : 0.165053 [31mtotal : 0.165053 
+2025-11-24 10:32:27,782 - Agent - INFO - [37mVal Epoch 24 step 24 with [31mpx_total : 0.153928 [31mtotal : 0.153928 
+2025-11-24 10:34:14,344 - Agent - INFO - [37mVal Epoch 25 step 25 with [31mpx_total : 0.154835 [31mtotal : 0.154835 
+2025-11-24 10:35:57,387 - Agent - INFO - [37mVal Epoch 26 step 26 with [31mpx_total : 0.155912 [31mtotal : 0.155912 
+2025-11-24 10:37:42,369 - Agent - INFO - [37mVal Epoch 27 step 27 with [31mpx_total : 0.163028 [31mtotal : 0.163028 
+2025-11-24 10:39:29,099 - Agent - INFO - [37mVal Epoch 28 step 28 with [31mpx_total : 0.160318 [31mtotal : 0.160318 
+2025-11-24 10:41:10,692 - Agent - INFO - [37mVal Epoch 29 step 29 with [31mpx_total : 0.157058 [31mtotal : 0.157058 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2250         0.2036         0.8054         0.9861         0.8561
+z2_vs_~z                        0.3846         0.3510         0.3901         0.9844         0.6368
+------------------------------------------------------------------------------------------------------
+2025-11-24 10:43:27,304 - Agent - INFO - [37mVal Epoch 30 step 30 with [31mpx_total : 0.157906 [31mtotal : 0.157906 
+2025-11-24 10:45:10,397 - Agent - INFO - [37mVal Epoch 31 step 31 with [31mpx_total : 0.158333 [31mtotal : 0.158333 
+2025-11-24 10:46:55,071 - Agent - INFO - [37mVal Epoch 32 step 32 with [31mpx_total : 0.165975 [31mtotal : 0.165975 
+2025-11-24 10:48:35,873 - Agent - INFO - [37mVal Epoch 33 step 33 with [31mpx_total : 0.164159 [31mtotal : 0.164159 
+2025-11-24 10:50:22,220 - Agent - INFO - [37mVal Epoch 34 step 34 with [31mpx_total : 0.166097 [31mtotal : 0.166097 
+2025-11-24 10:52:04,588 - Agent - INFO - [37mVal Epoch 35 step 35 with [31mpx_total : 0.164609 [31mtotal : 0.164609 
+2025-11-24 10:53:45,608 - Agent - INFO - [37mVal Epoch 36 step 36 with [31mpx_total : 0.161453 [31mtotal : 0.161453 
+2025-11-24 10:55:14,735 - Agent - INFO - [37mVal Epoch 37 step 37 with [31mpx_total : 0.156133 [31mtotal : 0.156133 
+2025-11-24 10:57:02,533 - Agent - INFO - [37mVal Epoch 38 step 38 with [31mpx_total : 0.153769 [31mtotal : 0.153769 
+2025-11-24 10:58:42,529 - Agent - INFO - [37mVal Epoch 39 step 39 with [31mpx_total : 0.161348 [31mtotal : 0.161348 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2252         0.2049         0.7954         0.9827         0.8515
+z2_vs_~z                        0.3976         0.3740         0.3870         0.9858         0.6359
+------------------------------------------------------------------------------------------------------
+2025-11-24 11:00:56,462 - Agent - INFO - [37mVal Epoch 40 step 40 with [31mpx_total : 0.164188 [31mtotal : 0.164188 
+2025-11-24 11:02:40,418 - Agent - INFO - [37mVal Epoch 41 step 41 with [31mpx_total : 0.164606 [31mtotal : 0.164606 
+2025-11-24 11:04:21,698 - Agent - INFO - [37mVal Epoch 42 step 42 with [31mpx_total : 0.158445 [31mtotal : 0.158445 
+2025-11-24 11:06:02,947 - Agent - INFO - [37mVal Epoch 43 step 43 with [31mpx_total : 0.157380 [31mtotal : 0.157380 
+2025-11-24 11:07:44,586 - Agent - INFO - [37mVal Epoch 44 step 44 with [31mpx_total : 0.151911 [31mtotal : 0.151911 
+2025-11-24 11:07:44,951 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 11:09:23,008 - Agent - INFO - [37mVal Epoch 45 step 45 with [31mpx_total : 0.157866 [31mtotal : 0.157866 
+2025-11-24 11:11:06,545 - Agent - INFO - [37mVal Epoch 46 step 46 with [31mpx_total : 0.159911 [31mtotal : 0.159911 
+2025-11-24 11:12:46,513 - Agent - INFO - [37mVal Epoch 47 step 47 with [31mpx_total : 0.160230 [31mtotal : 0.160230 
+2025-11-24 11:14:25,718 - Agent - INFO - [37mVal Epoch 48 step 48 with [31mpx_total : 0.151192 [31mtotal : 0.151192 
+2025-11-24 11:14:26,099 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 11:16:09,109 - Agent - INFO - [37mVal Epoch 49 step 49 with [31mpx_total : 0.159559 [31mtotal : 0.159559 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2447         0.2305         0.8012         0.9843         0.8407
+z2_vs_~z                        0.3467         0.2986         0.3898         0.9867         0.6481
+------------------------------------------------------------------------------------------------------
+2025-11-24 11:18:20,287 - Agent - INFO - [37mVal Epoch 50 step 50 with [31mpx_total : 0.155039 [31mtotal : 0.155039 
+2025-11-24 11:20:02,287 - Agent - INFO - [37mVal Epoch 51 step 51 with [31mpx_total : 0.156680 [31mtotal : 0.156680 
+2025-11-24 11:21:42,400 - Agent - INFO - [37mVal Epoch 52 step 52 with [31mpx_total : 0.151158 [31mtotal : 0.151158 
+2025-11-24 11:21:42,744 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 11:23:22,898 - Agent - INFO - [37mVal Epoch 53 step 53 with [31mpx_total : 0.152189 [31mtotal : 0.152189 
+2025-11-24 11:25:05,009 - Agent - INFO - [37mVal Epoch 54 step 54 with [31mpx_total : 0.151603 [31mtotal : 0.151603 
+2025-11-24 11:26:36,824 - Agent - INFO - [37mVal Epoch 55 step 55 with [31mpx_total : 0.153868 [31mtotal : 0.153868 
+2025-11-24 11:28:26,998 - Agent - INFO - [37mVal Epoch 56 step 56 with [31mpx_total : 0.153921 [31mtotal : 0.153921 
+2025-11-24 11:30:09,921 - Agent - INFO - [37mVal Epoch 57 step 57 with [31mpx_total : 0.151902 [31mtotal : 0.151902 
+2025-11-24 11:31:53,602 - Agent - INFO - [37mVal Epoch 58 step 58 with [31mpx_total : 0.160303 [31mtotal : 0.160303 
+2025-11-24 11:33:35,888 - Agent - INFO - [37mVal Epoch 59 step 59 with [31mpx_total : 0.155947 [31mtotal : 0.155947 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2396         0.2294         0.8014         0.9843         0.8424
+z2_vs_~z                        0.3454         0.3066         0.3883         0.9869         0.6574
+------------------------------------------------------------------------------------------------------
+2025-11-24 11:35:56,074 - Agent - INFO - [37mVal Epoch 60 step 60 with [31mpx_total : 0.155687 [31mtotal : 0.155687 
+2025-11-24 11:37:42,444 - Agent - INFO - [37mVal Epoch 61 step 61 with [31mpx_total : 0.156077 [31mtotal : 0.156077 
+2025-11-24 11:39:30,366 - Agent - INFO - [37mVal Epoch 62 step 62 with [31mpx_total : 0.155242 [31mtotal : 0.155242 
+2025-11-24 11:41:15,466 - Agent - INFO - [37mVal Epoch 63 step 63 with [31mpx_total : 0.155495 [31mtotal : 0.155495 
+2025-11-24 11:42:59,265 - Agent - INFO - [37mVal Epoch 64 step 64 with [31mpx_total : 0.150341 [31mtotal : 0.150341 
+2025-11-24 11:42:59,687 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 11:44:41,359 - Agent - INFO - [37mVal Epoch 65 step 65 with [31mpx_total : 0.149699 [31mtotal : 0.149699 
+2025-11-24 11:44:41,848 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 11:46:24,726 - Agent - INFO - [37mVal Epoch 66 step 66 with [31mpx_total : 0.159682 [31mtotal : 0.159682 
+2025-11-24 11:48:10,204 - Agent - INFO - [37mVal Epoch 67 step 67 with [31mpx_total : 0.155942 [31mtotal : 0.155942 
+2025-11-24 11:49:52,828 - Agent - INFO - [37mVal Epoch 68 step 68 with [31mpx_total : 0.161019 [31mtotal : 0.161019 
+2025-11-24 11:51:36,891 - Agent - INFO - [37mVal Epoch 69 step 69 with [31mpx_total : 0.162902 [31mtotal : 0.162902 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2237         0.2131         0.7900         0.9831         0.8486
+z2_vs_~z                        0.3726         0.3434         0.3898         0.9859         0.6543
+------------------------------------------------------------------------------------------------------
+2025-11-24 11:53:52,185 - Agent - INFO - [37mVal Epoch 70 step 70 with [31mpx_total : 0.170659 [31mtotal : 0.170659 
+2025-11-24 11:55:35,551 - Agent - INFO - [37mVal Epoch 71 step 71 with [31mpx_total : 0.162005 [31mtotal : 0.162005 
+2025-11-24 11:57:18,778 - Agent - INFO - [37mVal Epoch 72 step 72 with [31mpx_total : 0.152484 [31mtotal : 0.152484 
+2025-11-24 11:59:05,341 - Agent - INFO - [37mVal Epoch 73 step 73 with [31mpx_total : 0.149792 [31mtotal : 0.149792 
+2025-11-24 12:01:01,471 - Agent - INFO - [37mVal Epoch 74 step 74 with [31mpx_total : 0.164376 [31mtotal : 0.164376 
+2025-11-24 12:02:53,294 - Agent - INFO - [37mVal Epoch 75 step 75 with [31mpx_total : 0.153487 [31mtotal : 0.153487 
+2025-11-24 12:04:45,803 - Agent - INFO - [37mVal Epoch 76 step 76 with [31mpx_total : 0.158837 [31mtotal : 0.158837 
+2025-11-24 12:06:31,899 - Agent - INFO - [37mVal Epoch 77 step 77 with [31mpx_total : 0.156612 [31mtotal : 0.156612 
+2025-11-24 12:08:15,679 - Agent - INFO - [37mVal Epoch 78 step 78 with [31mpx_total : 0.157565 [31mtotal : 0.157565 
+2025-11-24 12:09:57,811 - Agent - INFO - [37mVal Epoch 79 step 79 with [31mpx_total : 0.154911 [31mtotal : 0.154911 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2509         0.2456         0.8014         0.9828         0.8355
+z2_vs_~z                        0.3049         0.2852         0.3914         0.9870         0.6696
+------------------------------------------------------------------------------------------------------
+2025-11-24 12:12:10,842 - Agent - INFO - [37mVal Epoch 80 step 80 with [31mpx_total : 0.153113 [31mtotal : 0.153113 
+2025-11-24 12:13:55,625 - Agent - INFO - [37mVal Epoch 81 step 81 with [31mpx_total : 0.156615 [31mtotal : 0.156615 
+2025-11-24 12:15:39,449 - Agent - INFO - [37mVal Epoch 82 step 82 with [31mpx_total : 0.152121 [31mtotal : 0.152121 
+2025-11-24 12:17:22,277 - Agent - INFO - [37mVal Epoch 83 step 83 with [31mpx_total : 0.148089 [31mtotal : 0.148089 
+2025-11-24 12:17:22,686 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+2025-11-24 12:19:01,240 - Agent - INFO - [37mVal Epoch 84 step 84 with [31mpx_total : 0.164804 [31mtotal : 0.164804 
+2025-11-24 12:20:42,256 - Agent - INFO - [37mVal Epoch 85 step 85 with [31mpx_total : 0.149343 [31mtotal : 0.149343 
+2025-11-24 12:22:23,207 - Agent - INFO - [37mVal Epoch 86 step 86 with [31mpx_total : 0.150977 [31mtotal : 0.150977 
+2025-11-24 12:24:02,394 - Agent - INFO - [37mVal Epoch 87 step 87 with [31mpx_total : 0.156811 [31mtotal : 0.156811 
+2025-11-24 12:25:42,366 - Agent - INFO - [37mVal Epoch 88 step 88 with [31mpx_total : 0.163486 [31mtotal : 0.163486 
+2025-11-24 12:27:21,810 - Agent - INFO - [37mVal Epoch 89 step 89 with [31mpx_total : 0.156401 [31mtotal : 0.156401 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2483         0.2361         0.8001         0.9814         0.8347
+z2_vs_~z                        0.3406         0.3001         0.3892         0.9884         0.6580
+------------------------------------------------------------------------------------------------------
+2025-11-24 12:29:41,065 - Agent - INFO - [37mVal Epoch 90 step 90 with [31mpx_total : 0.154087 [31mtotal : 0.154087 
+2025-11-24 12:31:20,842 - Agent - INFO - [37mVal Epoch 91 step 91 with [31mpx_total : 0.154982 [31mtotal : 0.154982 
+2025-11-24 12:33:04,788 - Agent - INFO - [37mVal Epoch 92 step 92 with [31mpx_total : 0.160830 [31mtotal : 0.160830 
+2025-11-24 12:34:51,771 - Agent - INFO - [37mVal Epoch 93 step 93 with [31mpx_total : 0.169616 [31mtotal : 0.169616 
+2025-11-24 12:36:36,706 - Agent - INFO - [37mVal Epoch 94 step 94 with [31mpx_total : 0.161379 [31mtotal : 0.161379 
+2025-11-24 12:38:17,158 - Agent - INFO - [37mVal Epoch 95 step 95 with [31mpx_total : 0.155356 [31mtotal : 0.155356 
+2025-11-24 12:39:57,083 - Agent - INFO - [37mVal Epoch 96 step 96 with [31mpx_total : 0.158407 [31mtotal : 0.158407 
+2025-11-24 12:41:38,291 - Agent - INFO - [37mVal Epoch 97 step 97 with [31mpx_total : 0.154700 [31mtotal : 0.154700 
+2025-11-24 12:43:23,630 - Agent - INFO - [37mVal Epoch 98 step 98 with [31mpx_total : 0.153814 [31mtotal : 0.153814 
+2025-11-24 12:45:03,312 - Agent - INFO - [37mVal Epoch 99 step 99 with [31mpx_total : 0.157408 [31mtotal : 0.157408 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2331         0.2268         0.8037         0.9816         0.8467
+z2_vs_~z                        0.3274         0.2594         0.3861         0.9876         0.6737
+------------------------------------------------------------------------------------------------------
+2025-11-24 12:47:09,670 - Agent - INFO - [37mVal Epoch 100 step 100 with [31mpx_total : 0.153208 [31mtotal : 0.153208 
+2025-11-24 12:48:51,871 - Agent - INFO - [37mVal Epoch 101 step 101 with [31mpx_total : 0.163268 [31mtotal : 0.163268 
+2025-11-24 12:50:33,245 - Agent - INFO - [37mVal Epoch 102 step 102 with [31mpx_total : 0.152900 [31mtotal : 0.152900 
+2025-11-24 12:52:13,974 - Agent - INFO - [37mVal Epoch 103 step 103 with [31mpx_total : 0.154542 [31mtotal : 0.154542 
+2025-11-24 12:53:55,450 - Agent - INFO - [37mVal Epoch 104 step 104 with [31mpx_total : 0.158323 [31mtotal : 0.158323 
+2025-11-24 12:55:39,127 - Agent - INFO - [37mVal Epoch 105 step 105 with [31mpx_total : 0.159014 [31mtotal : 0.159014 
+2025-11-24 12:57:18,008 - Agent - INFO - [37mVal Epoch 106 step 106 with [31mpx_total : 0.157230 [31mtotal : 0.157230 
+2025-11-24 12:58:58,321 - Agent - INFO - [37mVal Epoch 107 step 107 with [31mpx_total : 0.155871 [31mtotal : 0.155871 
+2025-11-24 13:00:40,359 - Agent - INFO - [37mVal Epoch 108 step 108 with [31mpx_total : 0.157412 [31mtotal : 0.157412 
+2025-11-24 13:02:21,953 - Agent - INFO - [37mVal Epoch 109 step 109 with [31mpx_total : 0.152873 [31mtotal : 0.152873 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2413         0.2293         0.7989         0.9831         0.8423
+z2_vs_~z                        0.3405         0.2787         0.3860         0.9882         0.6655
+------------------------------------------------------------------------------------------------------
+2025-11-24 13:04:33,344 - Agent - INFO - [37mVal Epoch 110 step 110 with [31mpx_total : 0.156729 [31mtotal : 0.156729 
+2025-11-24 13:06:19,691 - Agent - INFO - [37mVal Epoch 111 step 111 with [31mpx_total : 0.156787 [31mtotal : 0.156787 
+2025-11-24 13:08:02,745 - Agent - INFO - [37mVal Epoch 112 step 112 with [31mpx_total : 0.156608 [31mtotal : 0.156608 
+2025-11-24 13:09:42,808 - Agent - INFO - [37mVal Epoch 113 step 113 with [31mpx_total : 0.157274 [31mtotal : 0.157274 
+2025-11-24 13:11:23,925 - Agent - INFO - [37mVal Epoch 114 step 114 with [31mpx_total : 0.154430 [31mtotal : 0.154430 
+2025-11-24 13:13:05,969 - Agent - INFO - [37mVal Epoch 115 step 115 with [31mpx_total : 0.159490 [31mtotal : 0.159490 
+2025-11-24 13:14:44,776 - Agent - INFO - [37mVal Epoch 116 step 116 with [31mpx_total : 0.154647 [31mtotal : 0.154647 
+2025-11-24 13:16:28,184 - Agent - INFO - [37mVal Epoch 117 step 117 with [31mpx_total : 0.156370 [31mtotal : 0.156370 
+2025-11-24 13:18:08,751 - Agent - INFO - [37mVal Epoch 118 step 118 with [31mpx_total : 0.157266 [31mtotal : 0.157266 
+2025-11-24 13:19:53,362 - Agent - INFO - [37mVal Epoch 119 step 119 with [31mpx_total : 0.155342 [31mtotal : 0.155342 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2364         0.2247         0.7993         0.9815         0.8466
+z2_vs_~z                        0.3418         0.2876         0.3874         0.9890         0.6649
+------------------------------------------------------------------------------------------------------
+2025-11-24 13:22:09,070 - Agent - INFO - [37mVal Epoch 120 step 120 with [31mpx_total : 0.158461 [31mtotal : 0.158461 
+2025-11-24 13:23:48,441 - Agent - INFO - [37mVal Epoch 121 step 121 with [31mpx_total : 0.156104 [31mtotal : 0.156104 
+2025-11-24 13:25:29,326 - Agent - INFO - [37mVal Epoch 122 step 122 with [31mpx_total : 0.156825 [31mtotal : 0.156825 
+2025-11-24 13:27:14,953 - Agent - INFO - [37mVal Epoch 123 step 123 with [31mpx_total : 0.155473 [31mtotal : 0.155473 
+2025-11-24 13:28:59,931 - Agent - INFO - [37mVal Epoch 124 step 124 with [31mpx_total : 0.156560 [31mtotal : 0.156560 
+2025-11-24 13:30:43,378 - Agent - INFO - [37mVal Epoch 125 step 125 with [31mpx_total : 0.155952 [31mtotal : 0.155952 
+2025-11-24 13:32:29,775 - Agent - INFO - [37mVal Epoch 126 step 126 with [31mpx_total : 0.156470 [31mtotal : 0.156470 
+2025-11-24 13:34:15,473 - Agent - INFO - [37mVal Epoch 127 step 127 with [31mpx_total : 0.156271 [31mtotal : 0.156271 
+2025-11-24 13:35:47,468 - Agent - INFO - [37mVal Epoch 128 step 128 with [31mpx_total : 0.156778 [31mtotal : 0.156778 
+2025-11-24 13:37:38,376 - Agent - INFO - [37mVal Epoch 129 step 129 with [31mpx_total : 0.149126 [31mtotal : 0.149126 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2552         0.2528         0.8041         0.9832         0.8349
+z2_vs_~z                        0.2918         0.2147         0.3880         0.9879         0.6843
+------------------------------------------------------------------------------------------------------
+2025-11-24 13:39:58,613 - Agent - INFO - [37mVal Epoch 130 step 130 with [31mpx_total : 0.149925 [31mtotal : 0.149925 
+2025-11-24 13:41:43,577 - Agent - INFO - [37mVal Epoch 131 step 131 with [31mpx_total : 0.163439 [31mtotal : 0.163439 
+2025-11-24 13:43:26,052 - Agent - INFO - [37mVal Epoch 132 step 132 with [31mpx_total : 0.159483 [31mtotal : 0.159483 
+2025-11-24 13:45:12,062 - Agent - INFO - [37mVal Epoch 133 step 133 with [31mpx_total : 0.157789 [31mtotal : 0.157789 
+2025-11-24 13:46:53,925 - Agent - INFO - [37mVal Epoch 134 step 134 with [31mpx_total : 0.151997 [31mtotal : 0.151997 
+2025-11-24 13:48:34,874 - Agent - INFO - [37mVal Epoch 135 step 135 with [31mpx_total : 0.163100 [31mtotal : 0.163100 
+2025-11-24 13:50:16,755 - Agent - INFO - [37mVal Epoch 136 step 136 with [31mpx_total : 0.157399 [31mtotal : 0.157399 
+2025-11-24 13:52:02,321 - Agent - INFO - [37mVal Epoch 137 step 137 with [31mpx_total : 0.162346 [31mtotal : 0.162346 
+2025-11-24 13:53:42,859 - Agent - INFO - [37mVal Epoch 138 step 138 with [31mpx_total : 0.155743 [31mtotal : 0.155743 
+2025-11-24 13:55:22,640 - Agent - INFO - [37mVal Epoch 139 step 139 with [31mpx_total : 0.148760 [31mtotal : 0.148760 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2325         0.2282         0.7967         0.9802         0.8446
+z2_vs_~z                        0.3374         0.2765         0.3887         0.9874         0.6565
+------------------------------------------------------------------------------------------------------
+2025-11-24 13:57:44,175 - Agent - INFO - [37mVal Epoch 140 step 140 with [31mpx_total : 0.158421 [31mtotal : 0.158421 
+2025-11-24 13:59:30,041 - Agent - INFO - [37mVal Epoch 141 step 141 with [31mpx_total : 0.167161 [31mtotal : 0.167161 
+2025-11-24 14:01:14,209 - Agent - INFO - [37mVal Epoch 142 step 142 with [31mpx_total : 0.151237 [31mtotal : 0.151237 
+2025-11-24 14:02:57,780 - Agent - INFO - [37mVal Epoch 143 step 143 with [31mpx_total : 0.156475 [31mtotal : 0.156475 
+2025-11-24 14:04:39,415 - Agent - INFO - [37mVal Epoch 144 step 144 with [31mpx_total : 0.157818 [31mtotal : 0.157818 
+2025-11-24 14:06:20,870 - Agent - INFO - [37mVal Epoch 145 step 145 with [31mpx_total : 0.148964 [31mtotal : 0.148964 
+2025-11-24 14:08:03,314 - Agent - INFO - [37mVal Epoch 146 step 146 with [31mpx_total : 0.162144 [31mtotal : 0.162144 
+2025-11-24 14:09:40,754 - Agent - INFO - [37mVal Epoch 147 step 147 with [31mpx_total : 0.155852 [31mtotal : 0.155852 
+2025-11-24 14:11:25,406 - Agent - INFO - [37mVal Epoch 148 step 148 with [31mpx_total : 0.150709 [31mtotal : 0.150709 
+2025-11-24 14:13:05,999 - Agent - INFO - [37mVal Epoch 149 step 149 with [31mpx_total : 0.156220 [31mtotal : 0.156220 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2228         0.2037         0.7941         0.9806         0.8526
+z2_vs_~z                        0.3671         0.3333         0.3919         0.9866         0.6546
+------------------------------------------------------------------------------------------------------
+2025-11-24 14:15:20,562 - Agent - INFO - [37mVal Epoch 150 step 150 with [31mpx_total : 0.170893 [31mtotal : 0.170893 
+2025-11-24 14:17:03,569 - Agent - INFO - [37mVal Epoch 151 step 151 with [31mpx_total : 0.160982 [31mtotal : 0.160982 
+2025-11-24 14:18:40,857 - Agent - INFO - [37mVal Epoch 152 step 152 with [31mpx_total : 0.150190 [31mtotal : 0.150190 
+2025-11-24 14:20:22,128 - Agent - INFO - [37mVal Epoch 153 step 153 with [31mpx_total : 0.170062 [31mtotal : 0.170062 
+2025-11-24 14:22:10,491 - Agent - INFO - [37mVal Epoch 154 step 154 with [31mpx_total : 0.151054 [31mtotal : 0.151054 
+2025-11-24 14:23:52,508 - Agent - INFO - [37mVal Epoch 155 step 155 with [31mpx_total : 0.154873 [31mtotal : 0.154873 
+2025-11-24 14:25:37,456 - Agent - INFO - [37mVal Epoch 156 step 156 with [31mpx_total : 0.160861 [31mtotal : 0.160861 
+2025-11-24 14:27:21,805 - Agent - INFO - [37mVal Epoch 157 step 157 with [31mpx_total : 0.159050 [31mtotal : 0.159050 
+2025-11-24 14:29:05,226 - Agent - INFO - [37mVal Epoch 158 step 158 with [31mpx_total : 0.152164 [31mtotal : 0.152164 
+2025-11-24 14:30:48,162 - Agent - INFO - [37mVal Epoch 159 step 159 with [31mpx_total : 0.145719 [31mtotal : 0.145719 
+2025-11-24 14:30:48,518 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2606         0.2491         0.8048         0.9822         0.8401
+z2_vs_~z                        0.2731         0.2010         0.3879         0.9889         0.6954
+------------------------------------------------------------------------------------------------------
+2025-11-24 14:32:59,011 - Agent - INFO - [37mVal Epoch 160 step 160 with [31mpx_total : 0.150884 [31mtotal : 0.150884 
+2025-11-24 14:34:46,373 - Agent - INFO - [37mVal Epoch 161 step 161 with [31mpx_total : 0.156349 [31mtotal : 0.156349 
+2025-11-24 14:36:33,551 - Agent - INFO - [37mVal Epoch 162 step 162 with [31mpx_total : 0.151989 [31mtotal : 0.151989 
+2025-11-24 14:38:13,352 - Agent - INFO - [37mVal Epoch 163 step 163 with [31mpx_total : 0.173155 [31mtotal : 0.173155 
+2025-11-24 14:40:01,830 - Agent - INFO - [37mVal Epoch 164 step 164 with [31mpx_total : 0.162644 [31mtotal : 0.162644 
+2025-11-24 14:41:42,421 - Agent - INFO - [37mVal Epoch 165 step 165 with [31mpx_total : 0.161639 [31mtotal : 0.161639 
+2025-11-24 14:43:21,343 - Agent - INFO - [37mVal Epoch 166 step 166 with [31mpx_total : 0.157768 [31mtotal : 0.157768 
+2025-11-24 14:44:59,752 - Agent - INFO - [37mVal Epoch 167 step 167 with [31mpx_total : 0.156672 [31mtotal : 0.156672 
+2025-11-24 14:46:44,576 - Agent - INFO - [37mVal Epoch 168 step 168 with [31mpx_total : 0.148923 [31mtotal : 0.148923 
+2025-11-24 14:48:25,704 - Agent - INFO - [37mVal Epoch 169 step 169 with [31mpx_total : 0.158948 [31mtotal : 0.158948 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2422         0.2262         0.7938         0.9801         0.8419
+z2_vs_~z                        0.3576         0.3163         0.3856         0.9886         0.6608
+------------------------------------------------------------------------------------------------------
+2025-11-24 14:50:47,205 - Agent - INFO - [37mVal Epoch 170 step 170 with [31mpx_total : 0.161617 [31mtotal : 0.161617 
+2025-11-24 14:52:29,976 - Agent - INFO - [37mVal Epoch 171 step 171 with [31mpx_total : 0.150865 [31mtotal : 0.150865 
+2025-11-24 14:54:09,873 - Agent - INFO - [37mVal Epoch 172 step 172 with [31mpx_total : 0.153557 [31mtotal : 0.153557 
+2025-11-24 14:55:52,342 - Agent - INFO - [37mVal Epoch 173 step 173 with [31mpx_total : 0.149554 [31mtotal : 0.149554 
+2025-11-24 14:57:33,050 - Agent - INFO - [37mVal Epoch 174 step 174 with [31mpx_total : 0.162907 [31mtotal : 0.162907 
+2025-11-24 14:59:20,543 - Agent - INFO - [37mVal Epoch 175 step 175 with [31mpx_total : 0.152384 [31mtotal : 0.152384 
+2025-11-24 15:01:05,729 - Agent - INFO - [37mVal Epoch 176 step 176 with [31mpx_total : 0.159017 [31mtotal : 0.159017 
+2025-11-24 15:02:47,893 - Agent - INFO - [37mVal Epoch 177 step 177 with [31mpx_total : 0.170174 [31mtotal : 0.170174 
+2025-11-24 15:04:30,065 - Agent - INFO - [37mVal Epoch 178 step 178 with [31mpx_total : 0.163142 [31mtotal : 0.163142 
+2025-11-24 15:06:13,627 - Agent - INFO - [37mVal Epoch 179 step 179 with [31mpx_total : 0.150335 [31mtotal : 0.150335 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2189         0.2085         0.8012         0.9816         0.8592
+z2_vs_~z                        0.3624         0.3081         0.3887         0.9889         0.6534
+------------------------------------------------------------------------------------------------------
+2025-11-24 15:08:33,058 - Agent - INFO - [37mVal Epoch 180 step 180 with [31mpx_total : 0.162248 [31mtotal : 0.162248 
+2025-11-24 15:10:17,213 - Agent - INFO - [37mVal Epoch 181 step 181 with [31mpx_total : 0.150305 [31mtotal : 0.150305 
+2025-11-24 15:11:58,684 - Agent - INFO - [37mVal Epoch 182 step 182 with [31mpx_total : 0.159227 [31mtotal : 0.159227 
+2025-11-24 15:13:40,411 - Agent - INFO - [37mVal Epoch 183 step 183 with [31mpx_total : 0.152525 [31mtotal : 0.152525 
+2025-11-24 15:15:22,612 - Agent - INFO - [37mVal Epoch 184 step 184 with [31mpx_total : 0.149602 [31mtotal : 0.149602 
+2025-11-24 15:17:07,632 - Agent - INFO - [37mVal Epoch 185 step 185 with [31mpx_total : 0.164365 [31mtotal : 0.164365 
+2025-11-24 15:18:51,967 - Agent - INFO - [37mVal Epoch 186 step 186 with [31mpx_total : 0.158441 [31mtotal : 0.158441 
+2025-11-24 15:20:36,197 - Agent - INFO - [37mVal Epoch 187 step 187 with [31mpx_total : 0.158916 [31mtotal : 0.158916 
+2025-11-24 15:22:21,318 - Agent - INFO - [37mVal Epoch 188 step 188 with [31mpx_total : 0.152705 [31mtotal : 0.152705 
+2025-11-24 15:24:03,755 - Agent - INFO - [37mVal Epoch 189 step 189 with [31mpx_total : 0.157036 [31mtotal : 0.157036 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2592         0.2479         0.7992         0.9782         0.8358
+z2_vs_~z                        0.3022         0.2435         0.3872         0.9898         0.6844
+------------------------------------------------------------------------------------------------------
+2025-11-24 15:26:21,856 - Agent - INFO - [37mVal Epoch 190 step 190 with [31mpx_total : 0.155012 [31mtotal : 0.155012 
+2025-11-24 15:28:06,641 - Agent - INFO - [37mVal Epoch 191 step 191 with [31mpx_total : 0.156568 [31mtotal : 0.156568 
+2025-11-24 15:29:54,623 - Agent - INFO - [37mVal Epoch 192 step 192 with [31mpx_total : 0.157040 [31mtotal : 0.157040 
+2025-11-24 15:31:38,448 - Agent - INFO - [37mVal Epoch 193 step 193 with [31mpx_total : 0.158300 [31mtotal : 0.158300 
+2025-11-24 15:33:20,782 - Agent - INFO - [37mVal Epoch 194 step 194 with [31mpx_total : 0.154589 [31mtotal : 0.154589 
+2025-11-24 15:35:05,297 - Agent - INFO - [37mVal Epoch 195 step 195 with [31mpx_total : 0.158753 [31mtotal : 0.158753 
+2025-11-24 15:36:49,987 - Agent - INFO - [37mVal Epoch 196 step 196 with [31mpx_total : 0.156898 [31mtotal : 0.156898 
+2025-11-24 15:38:34,917 - Agent - INFO - [37mVal Epoch 197 step 197 with [31mpx_total : 0.157455 [31mtotal : 0.157455 
+2025-11-24 15:40:12,806 - Agent - INFO - [37mVal Epoch 198 step 198 with [31mpx_total : 0.155982 [31mtotal : 0.155982 
+2025-11-24 15:42:05,922 - Agent - INFO - [37mVal Epoch 199 step 199 with [31mpx_total : 0.156841 [31mtotal : 0.156841 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2411         0.2356         0.8001         0.9815         0.8363
+z2_vs_~z                        0.3272         0.2512         0.3852         0.9895         0.6694
+------------------------------------------------------------------------------------------------------
+2025-11-24 15:44:32,354 - Agent - INFO - [37mVal Epoch 200 step 200 with [31mpx_total : 0.153251 [31mtotal : 0.153251 
+2025-11-24 15:46:19,943 - Agent - INFO - [37mVal Epoch 201 step 201 with [31mpx_total : 0.160849 [31mtotal : 0.160849 
+2025-11-24 15:48:04,570 - Agent - INFO - [37mVal Epoch 202 step 202 with [31mpx_total : 0.157845 [31mtotal : 0.157845 
+2025-11-24 15:49:54,416 - Agent - INFO - [37mVal Epoch 203 step 203 with [31mpx_total : 0.163002 [31mtotal : 0.163002 
+2025-11-24 15:51:39,232 - Agent - INFO - [37mVal Epoch 204 step 204 with [31mpx_total : 0.158597 [31mtotal : 0.158597 
+2025-11-24 15:53:22,012 - Agent - INFO - [37mVal Epoch 205 step 205 with [31mpx_total : 0.154807 [31mtotal : 0.154807 
+2025-11-24 15:55:03,233 - Agent - INFO - [37mVal Epoch 206 step 206 with [31mpx_total : 0.157072 [31mtotal : 0.157072 
+2025-11-24 15:56:46,474 - Agent - INFO - [37mVal Epoch 207 step 207 with [31mpx_total : 0.154033 [31mtotal : 0.154033 
+2025-11-24 15:58:29,727 - Agent - INFO - [37mVal Epoch 208 step 208 with [31mpx_total : 0.154968 [31mtotal : 0.154968 
+2025-11-24 16:00:15,413 - Agent - INFO - [37mVal Epoch 209 step 209 with [31mpx_total : 0.155827 [31mtotal : 0.155827 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2210         0.2087         0.7936         0.9789         0.8541
+z2_vs_~z                        0.3491         0.3032         0.3857         0.9890         0.6641
+------------------------------------------------------------------------------------------------------
+2025-11-24 16:02:31,147 - Agent - INFO - [37mVal Epoch 210 step 210 with [31mpx_total : 0.164052 [31mtotal : 0.164052 
+2025-11-24 16:04:15,142 - Agent - INFO - [37mVal Epoch 211 step 211 with [31mpx_total : 0.163159 [31mtotal : 0.163159 
+2025-11-24 16:05:56,946 - Agent - INFO - [37mVal Epoch 212 step 212 with [31mpx_total : 0.160624 [31mtotal : 0.160624 
+2025-11-24 16:07:41,677 - Agent - INFO - [37mVal Epoch 213 step 213 with [31mpx_total : 0.155345 [31mtotal : 0.155345 
+2025-11-24 16:09:21,405 - Agent - INFO - [37mVal Epoch 214 step 214 with [31mpx_total : 0.158925 [31mtotal : 0.158925 
+2025-11-24 16:11:01,710 - Agent - INFO - [37mVal Epoch 215 step 215 with [31mpx_total : 0.156798 [31mtotal : 0.156798 
+2025-11-24 16:12:49,078 - Agent - INFO - [37mVal Epoch 216 step 216 with [31mpx_total : 0.153516 [31mtotal : 0.153516 
+2025-11-24 16:14:29,514 - Agent - INFO - [37mVal Epoch 217 step 217 with [31mpx_total : 0.153454 [31mtotal : 0.153454 
+2025-11-24 16:16:07,627 - Agent - INFO - [37mVal Epoch 218 step 218 with [31mpx_total : 0.152806 [31mtotal : 0.152806 
+2025-11-24 16:17:46,615 - Agent - INFO - [37mVal Epoch 219 step 219 with [31mpx_total : 0.154965 [31mtotal : 0.154965 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2406         0.2166         0.7993         0.9821         0.8502
+z2_vs_~z                        0.3347         0.2792         0.3874         0.9904         0.6707
+------------------------------------------------------------------------------------------------------
+2025-11-24 16:20:06,361 - Agent - INFO - [37mVal Epoch 220 step 220 with [31mpx_total : 0.159576 [31mtotal : 0.159576 
+2025-11-24 16:21:50,235 - Agent - INFO - [37mVal Epoch 221 step 221 with [31mpx_total : 0.157544 [31mtotal : 0.157544 
+2025-11-24 16:23:28,100 - Agent - INFO - [37mVal Epoch 222 step 222 with [31mpx_total : 0.154997 [31mtotal : 0.154997 
+2025-11-24 16:25:12,092 - Agent - INFO - [37mVal Epoch 223 step 223 with [31mpx_total : 0.154018 [31mtotal : 0.154018 
+2025-11-24 16:26:53,008 - Agent - INFO - [37mVal Epoch 224 step 224 with [31mpx_total : 0.155146 [31mtotal : 0.155146 
+2025-11-24 16:28:35,631 - Agent - INFO - [37mVal Epoch 225 step 225 with [31mpx_total : 0.153154 [31mtotal : 0.153154 
+2025-11-24 16:30:18,018 - Agent - INFO - [37mVal Epoch 226 step 226 with [31mpx_total : 0.157542 [31mtotal : 0.157542 
+2025-11-24 16:32:00,266 - Agent - INFO - [37mVal Epoch 227 step 227 with [31mpx_total : 0.154400 [31mtotal : 0.154400 
+2025-11-24 16:33:43,777 - Agent - INFO - [37mVal Epoch 228 step 228 with [31mpx_total : 0.155894 [31mtotal : 0.155894 
+2025-11-24 16:35:29,329 - Agent - INFO - [37mVal Epoch 229 step 229 with [31mpx_total : 0.155525 [31mtotal : 0.155525 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2508         0.2299         0.8013         0.9803         0.8408
+z2_vs_~z                        0.3272         0.2495         0.3848         0.9907         0.6752
+------------------------------------------------------------------------------------------------------
+2025-11-24 16:37:46,738 - Agent - INFO - [37mVal Epoch 230 step 230 with [31mpx_total : 0.153975 [31mtotal : 0.153975 
+2025-11-24 16:39:27,709 - Agent - INFO - [37mVal Epoch 231 step 231 with [31mpx_total : 0.153526 [31mtotal : 0.153526 
+2025-11-24 16:41:08,570 - Agent - INFO - [37mVal Epoch 232 step 232 with [31mpx_total : 0.155758 [31mtotal : 0.155758 
+2025-11-24 16:42:40,792 - Agent - INFO - [37mVal Epoch 233 step 233 with [31mpx_total : 0.155948 [31mtotal : 0.155948 
+2025-11-24 16:44:28,917 - Agent - INFO - [37mVal Epoch 234 step 234 with [31mpx_total : 0.156206 [31mtotal : 0.156206 
+2025-11-24 16:46:09,051 - Agent - INFO - [37mVal Epoch 235 step 235 with [31mpx_total : 0.157524 [31mtotal : 0.157524 
+2025-11-24 16:47:51,402 - Agent - INFO - [37mVal Epoch 236 step 236 with [31mpx_total : 0.157229 [31mtotal : 0.157229 
+2025-11-24 16:49:35,683 - Agent - INFO - [37mVal Epoch 237 step 237 with [31mpx_total : 0.156011 [31mtotal : 0.156011 
+2025-11-24 16:51:19,264 - Agent - INFO - [37mVal Epoch 238 step 238 with [31mpx_total : 0.155489 [31mtotal : 0.155489 
+2025-11-24 16:53:04,827 - Agent - INFO - [37mVal Epoch 239 step 239 with [31mpx_total : 0.156201 [31mtotal : 0.156201 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2513         0.2316         0.7986         0.9798         0.8411
+z2_vs_~z                        0.3210         0.2587         0.3853         0.9911         0.6773
+------------------------------------------------------------------------------------------------------
+2025-11-24 16:55:13,648 - Agent - INFO - [37mVal Epoch 240 step 240 with [31mpx_total : 0.156143 [31mtotal : 0.156143 
+2025-11-24 16:56:56,096 - Agent - INFO - [37mVal Epoch 241 step 241 with [31mpx_total : 0.156184 [31mtotal : 0.156184 
+2025-11-24 16:58:37,539 - Agent - INFO - [37mVal Epoch 242 step 242 with [31mpx_total : 0.156405 [31mtotal : 0.156405 
+2025-11-24 17:00:20,615 - Agent - INFO - [37mVal Epoch 243 step 243 with [31mpx_total : 0.155580 [31mtotal : 0.155580 
+2025-11-24 17:01:59,550 - Agent - INFO - [37mVal Epoch 244 step 244 with [31mpx_total : 0.156063 [31mtotal : 0.156063 
+2025-11-24 17:03:39,612 - Agent - INFO - [37mVal Epoch 245 step 245 with [31mpx_total : 0.155191 [31mtotal : 0.155191 
+2025-11-24 17:05:20,268 - Agent - INFO - [37mVal Epoch 246 step 246 with [31mpx_total : 0.156035 [31mtotal : 0.156035 
+2025-11-24 17:07:01,525 - Agent - INFO - [37mVal Epoch 247 step 247 with [31mpx_total : 0.156230 [31mtotal : 0.156230 
+2025-11-24 17:08:41,966 - Agent - INFO - [37mVal Epoch 248 step 248 with [31mpx_total : 0.155958 [31mtotal : 0.155958 
+2025-11-24 17:10:24,481 - Agent - INFO - [37mVal Epoch 249 step 249 with [31mpx_total : 0.155737 [31mtotal : 0.155737 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0235         0.0109         0.3518         0.9642         0.9260
+z1_vs_~z                        0.2487         0.2303         0.7988         0.9804         0.8412
+z2_vs_~z                        0.3231         0.2604         0.3856         0.9909         0.6781
+------------------------------------------------------------------------------------------------------
+2025-11-24 17:12:45,752 - Agent - INFO - [37mVal Epoch 250 step 250 with [31mpx_total : 0.155972 [31mtotal : 0.155972 
+2025-11-24 17:14:20,944 - Agent - INFO - [37mVal Epoch 251 step 251 with [31mpx_total : 0.156031 [31mtotal : 0.156031 
+2025-11-24 17:16:24,865 - Agent - INFO - [37mVal Epoch 252 step 252 with [31mpx_total : 0.155748 [31mtotal : 0.155748 
+2025-11-24 17:18:16,931 - Agent - INFO - [37mVal Epoch 253 step 253 with [31mpx_total : 0.155768 [31mtotal : 0.155768 
+2025-11-24 17:19:58,418 - Agent - INFO - [37mVal Epoch 254 step 254 with [31mpx_total : 0.155776 [31mtotal : 0.155776 
+2025-11-24 17:21:40,971 - Agent - INFO - [37mVal Epoch 255 step 255 with [31mpx_total : 0.155890 [31mtotal : 0.155890 
+2025-11-24 17:23:25,876 - Agent - INFO - [37mVal Epoch 256 step 256 with [31mpx_total : 0.157721 [31mtotal : 0.157721 
+2025-11-24 17:25:09,418 - Agent - INFO - [37mVal Epoch 257 step 257 with [31mpx_total : 0.150430 [31mtotal : 0.150430 
+2025-11-24 17:26:51,926 - Agent - INFO - [37mVal Epoch 258 step 258 with [31mpx_total : 0.149958 [31mtotal : 0.149958 
+2025-11-24 17:26:54,686 - Agent - INFO - We are in the final state.
+2025-11-24 17:26:54,831 - root - INFO - Loaded best model from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar
+2025-11-24 17:27:12,825 - Agent - INFO - [37mVal Epoch 258 step 0 with [31mpx_total : 0.145746 [31mtotal : 0.145746 
+
+Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
+------------------------------------------------------------------------------------------------------
+z1_vs_z2                        0.0393         0.0393         0.3395         0.9581         0.9166
+z1_vs_~z                        0.1650         0.1597         0.7938         0.9807         0.8612
+z2_vs_~z                        0.2618         0.1858         0.3726         0.9873         0.6523
+------------------------------------------------------------------------------------------------------
+2025-11-24 17:28:12,777 - Agent - INFO - [37mTest Epoch 258 step 0 with [31mpx_total : 0.173571 [31mtotal : 0.173571 
+2025-11-24 17:28:13,395 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+[1;34mwandb[0m: 
+[1;34mwandb[0m: 🚀 View run [33mSynprom_IB_genVAEOSfold1_lib1.0_perturbgen_lr0.0003_wd0.0_clsmlp[0m at: [34m[0m
+[1;34mwandb[0m: Find logs at: [1;35mwandb/run-20251124_094948-1tsuxnwp/logs[0m
+Job finished

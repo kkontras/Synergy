@@ -1,0 +1,18 @@
+000 (006.100.000) 2025-11-23 17:34:50 Job submitted from host: <10.87.28.3:9618?addrs=10.87.28.3-9618&alias=deanston.esat.kuleuven.be&noUDP&sock=schedd_1644_39c9>
+...
+004 (006.100.000) 2025-11-23 17:36:50 Job was evicted. Code 1009 Subcode 0
+	(0) CPU times
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	Reason: Claim deactivated
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :                 8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :                 1         1 "GPU-edd4a9d8"
+	   Memory (MB)          :             71680     71680 
+...
+009 (006.100.000) 2025-11-23 17:36:50 Job was aborted.
+	via condor_rm (by user kkontras)
+...

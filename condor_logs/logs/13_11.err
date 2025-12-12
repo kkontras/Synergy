@@ -1,0 +1,67 @@
+Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+The following values were not passed to `accelerate launch` and had defaults used instead:
+	`--num_processes` was set to a value of `1`
+	`--num_machines` was set to a value of `1`
+	`--mixed_precision` was set to a value of `'no'`
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+wandb: Currently logged in as: kkontras. Use `wandb login --relogin` to force relogin
+wandb: wandb version 0.22.3 is available!  To upgrade, please run:
+wandb:  $ pip install wandb --upgrade
+wandb: Tracking run with wandb version 0.16.2
+wandb: Run data is saved locally in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/wandb/run-20251108_142733-y7ksv1pz
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run Synprom_IB_fold2_l0.5_contrcoeff1_perturbgennoise_lr0.0001_wd0.0001_clsmlp_pre
+wandb: ⭐️ View project at https://wandb.ai/kkontras/balance
+wandb: 🚀 View run at https://wandb.ai/kkontras/balance/runs/y7ksv1pz
+Training:   0%|          | 0/126 [00:00<?, ?it/s]Training:   0%|          | 0/126 [00:02<?, ?it/s]
+Traceback (most recent call last):
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 247, in <module>
+    main(config_path=args.config, default_config_path=args.default_config, args=args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 174, in main
+    agent.run()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 108, in run
+    self.trainer.train_steps()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Trainer.py", line 68, in train_steps
+    step_outcome, optstep_done = self.this_train_step_func(served_dict)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Trainer.py", line 151, in train_one_step
+    self.agent.accelerator.backward(total_loss)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/accelerator.py", line 2473, in backward
+    loss.backward(**kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.cuda.FloatTensor [32, 512]], which is output 0 of AddBackward0, is at version 1; expected version 0 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True).
+Traceback (most recent call last):
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 247, in <module>
+    main(config_path=args.config, default_config_path=args.default_config, args=args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 174, in main
+    agent.run()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 108, in run
+    self.trainer.train_steps()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Trainer.py", line 68, in train_steps
+    step_outcome, optstep_done = self.this_train_step_func(served_dict)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Trainer.py", line 151, in train_one_step
+    self.agent.accelerator.backward(total_loss)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/accelerator.py", line 2473, in backward
+    loss.backward(**kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.cuda.FloatTensor [32, 512]], which is output 0 of AddBackward0, is at version 1; expected version 0 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True).
+wandb: - 0.017 MB of 0.017 MB uploadedwandb: \ 0.029 MB of 0.032 MB uploadedwandb: 🚀 View run Synprom_IB_fold2_l0.5_contrcoeff1_perturbgennoise_lr0.0001_wd0.0001_clsmlp_pre at: https://wandb.ai/kkontras/balance/runs/y7ksv1pz
+wandb: Synced 6 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20251108_142733-y7ksv1pz/logs
+Traceback (most recent call last):
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/accelerate", line 8, in <module>
+    sys.exit(main())
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
+    args.func(args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 1198, in launch_command
+    simple_launcher(args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 785, in simple_launcher
+    raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
+subprocess.CalledProcessError: Command '['/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python', '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py', '--config', './configs/CREMA_D/synergy/nov/synprom_ib.json', '--default_config', './configs/CREMA_D/default_config_cremad_res_syn.json', '--fold', '2', '--pre', '--l', '0.5', '--contrcoeff', '1', '--lr', '0.0001', '--wd', '0.0001', '--cls', 'mlp', '--perturb', 'gennoise']' returned non-zero exit status 1.

@@ -1,0 +1,50 @@
+000 (009.000.000) 2025-11-07 18:42:49 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+...
+001 (009.000.000) 2025-11-07 18:42:58 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_12050_e04e>
+	SlotName: slot1_4@aristoteles.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_1ba53048 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_3655941"
+	Cpus = 8
+	Disk = 1050529
+	GPUs = 1
+	GPUs_GPU_1ba53048 = [ Id = "GPU-1ba53048"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "1ba53048-c5a1-3226-7f78-7a6cb9cbaa42"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:C7:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (009.000.000) 2025-11-07 18:43:07 Image size of job updated: 94808
+	93  -  MemoryUsage of job (MB)
+	94808  -  ResidentSetSize of job (KB)
+...
+006 (009.000.000) 2025-11-07 18:48:08 Image size of job updated: 1515952
+	1480  -  MemoryUsage of job (MB)
+	1515048  -  ResidentSetSize of job (KB)
+...
+006 (009.000.000) 2025-11-07 18:53:08 Image size of job updated: 1622992
+	1585  -  MemoryUsage of job (MB)
+	1622992  -  ResidentSetSize of job (KB)
+...
+006 (009.000.000) 2025-11-07 18:58:09 Image size of job updated: 1679844
+	1588  -  MemoryUsage of job (MB)
+	1625712  -  ResidentSetSize of job (KB)
+...
+006 (009.000.000) 2025-11-07 20:10:11 Image size of job updated: 1997640
+	1588  -  MemoryUsage of job (MB)
+	1625712  -  ResidentSetSize of job (KB)
+...
+005 (009.000.000) 2025-11-07 20:10:11 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 06:10:13, Sys 0 00:17:26  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 06:10:13, Sys 0 00:17:26  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     6.74        8         8 
+	   Disk (KB)            :     2     1048576   1050529 
+	   GPUs                 :                 1         1 "GPU-1ba53048"
+	   Memory (MB)          :  1588       71680     71680 
+	   TimeExecute (s)      :  5233                       
+	   TimeSlotBusy (s)     :  5233                       
+...

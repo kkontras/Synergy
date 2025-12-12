@@ -1,0 +1,78 @@
+000 (016.014.000) 2025-11-09 11:29:26 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+...
+001 (016.014.000) 2025-11-09 12:38:52 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_12050_e04e>
+	SlotName: slot1_6@aristoteles.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_edd4a9d8 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_116656"
+	Cpus = 8
+	Disk = 1050529
+	GPUs = 1
+	GPUs_GPU_edd4a9d8 = [ Id = "GPU-edd4a9d8"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "edd4a9d8-371c-bb9a-e898-24b94b410094"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:8D:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (016.014.000) 2025-11-09 12:39:01 Image size of job updated: 342748
+	335  -  MemoryUsage of job (MB)
+	342748  -  ResidentSetSize of job (KB)
+...
+006 (016.014.000) 2025-11-09 12:44:02 Image size of job updated: 1596584
+	1464  -  MemoryUsage of job (MB)
+	1498936  -  ResidentSetSize of job (KB)
+...
+006 (016.014.000) 2025-11-09 12:49:02 Image size of job updated: 1643712
+	1558  -  MemoryUsage of job (MB)
+	1595380  -  ResidentSetSize of job (KB)
+...
+006 (016.014.000) 2025-11-09 12:54:02 Image size of job updated: 1666448
+	1558  -  MemoryUsage of job (MB)
+	1595380  -  ResidentSetSize of job (KB)
+...
+006 (016.014.000) 2025-11-09 12:59:03 Image size of job updated: 1669524
+	1572  -  MemoryUsage of job (MB)
+	1609392  -  ResidentSetSize of job (KB)
+...
+006 (016.014.000) 2025-11-09 13:04:03 Image size of job updated: 1669524
+	1572  -  MemoryUsage of job (MB)
+	1609516  -  ResidentSetSize of job (KB)
+...
+006 (016.014.000) 2025-11-09 13:09:04 Image size of job updated: 1669524
+	1588  -  MemoryUsage of job (MB)
+	1625904  -  ResidentSetSize of job (KB)
+...
+006 (016.014.000) 2025-11-09 13:19:04 Image size of job updated: 1669524
+	1627  -  MemoryUsage of job (MB)
+	1665596  -  ResidentSetSize of job (KB)
+...
+006 (016.014.000) 2025-11-09 13:24:05 Image size of job updated: 1705720
+	1627  -  MemoryUsage of job (MB)
+	1665596  -  ResidentSetSize of job (KB)
+...
+006 (016.014.000) 2025-11-09 13:29:05 Image size of job updated: 1705720
+	1627  -  MemoryUsage of job (MB)
+	1666048  -  ResidentSetSize of job (KB)
+...
+006 (016.014.000) 2025-11-09 13:54:07 Image size of job updated: 1708656
+	1627  -  MemoryUsage of job (MB)
+	1666048  -  ResidentSetSize of job (KB)
+...
+006 (016.014.000) 2025-11-09 14:19:10 Image size of job updated: 1798456
+	1627  -  MemoryUsage of job (MB)
+	1666048  -  ResidentSetSize of job (KB)
+...
+005 (016.014.000) 2025-11-09 14:29:49 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 06:43:30, Sys 0 00:32:36  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 06:43:30, Sys 0 00:32:36  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     6.25        8         8 
+	   Disk (KB)            :     2     1048576   1050529 
+	   GPUs                 :                 1         1 "GPU-edd4a9d8"
+	   Memory (MB)          :  1627       71680     71680 
+	   TimeExecute (s)      :  6656                       
+	   TimeSlotBusy (s)     :  6656                       
+...

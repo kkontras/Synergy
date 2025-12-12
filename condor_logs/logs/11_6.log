@@ -1,0 +1,99 @@
+000 (011.006.000) 2025-11-07 18:57:34 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+...
+001 (011.006.000) 2025-11-08 20:01:42 Job executing on host: <10.87.24.28:9618?addrs=10.87.24.28-9618&alias=z4-demo.esat.kuleuven.be&noUDP&sock=startd_1821_a20d>
+	SlotName: slot1_1@z4-demo.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_3a8a5d5c }
+	CondorScratchDir = "/usr/data/condor/execute/dir_790669"
+	Cpus = 8
+	Disk = 1049600
+	GPUs = 1
+	GPUs_GPU_3a8a5d5c = [ Id = "GPU-3a8a5d5c"; ClockMhz = 1695.0; Capability = 8.6; CoresPerCU = 128; DeviceName = "NVIDIA GeForce RTX 3090"; DeviceUuid = "3a8a5d5c-a24a-7f66-bb71-a1b798b11468"; ECCEnabled = false; ComputeUnits = 82; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:21:00.0"; GlobalMemoryMb = 24114; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (011.006.000) 2025-11-08 20:01:50 Image size of job updated: 221800
+	217  -  MemoryUsage of job (MB)
+	221800  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 20:06:50 Image size of job updated: 1637944
+	1600  -  MemoryUsage of job (MB)
+	1637944  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 20:11:51 Image size of job updated: 1657284
+	1600  -  MemoryUsage of job (MB)
+	1637944  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 20:16:52 Image size of job updated: 1658752
+	1600  -  MemoryUsage of job (MB)
+	1637944  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 20:21:52 Image size of job updated: 1661128
+	1600  -  MemoryUsage of job (MB)
+	1637944  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 20:36:53 Image size of job updated: 1661128
+	1604  -  MemoryUsage of job (MB)
+	1642384  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 20:41:54 Image size of job updated: 1684712
+	1604  -  MemoryUsage of job (MB)
+	1642384  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 20:46:54 Image size of job updated: 2247776
+	1604  -  MemoryUsage of job (MB)
+	1642384  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 20:51:55 Image size of job updated: 2247776
+	1607  -  MemoryUsage of job (MB)
+	1645304  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 21:16:57 Image size of job updated: 2247776
+	1614  -  MemoryUsage of job (MB)
+	1651796  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 21:26:58 Image size of job updated: 2611696
+	1614  -  MemoryUsage of job (MB)
+	1651796  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 21:52:01 Image size of job updated: 2611696
+	1619  -  MemoryUsage of job (MB)
+	1657448  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 23:22:10 Image size of job updated: 2611696
+	1620  -  MemoryUsage of job (MB)
+	1658080  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 23:42:12 Image size of job updated: 2611696
+	1626  -  MemoryUsage of job (MB)
+	1664500  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-08 23:57:13 Image size of job updated: 2611696
+	1639  -  MemoryUsage of job (MB)
+	1677516  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-09 00:17:16 Image size of job updated: 2618140
+	1639  -  MemoryUsage of job (MB)
+	1677516  -  ResidentSetSize of job (KB)
+...
+006 (011.006.000) 2025-11-09 00:33:31 Image size of job updated: 3799520
+	1639  -  MemoryUsage of job (MB)
+	1677516  -  ResidentSetSize of job (KB)
+...
+005 (011.006.000) 2025-11-09 00:33:31 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 11:03:55, Sys 0 01:34:12  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 11:03:55, Sys 0 01:34:12  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     2.39        8         8 
+	   Disk (KB)            :     2     1048576   1049600 
+	   GPUs                 :     0.70        1         1 "GPU-3a8a5d5c"
+	   GpusMemory (MB)      : 24560                       
+	   Memory (MB)          :  1639       71680     71680 
+	   TimeExecute (s)      : 16309                       
+	   TimeSlotBusy (s)     : 16309                       
+...

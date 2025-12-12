@@ -1,0 +1,38 @@
+000 (004.106.000) 2025-11-23 16:30:33 Job submitted from host: <10.87.28.3:9618?addrs=10.87.28.3-9618&alias=deanston.esat.kuleuven.be&noUDP&sock=schedd_1644_39c9>
+...
+001 (004.106.000) 2025-11-23 16:32:38 Job executing on host: <10.87.24.25:9618?addrs=10.87.24.25-9618+[--1]-9618&alias=estragon.esat.kuleuven.be&noUDP&sock=startd_2090_2506>
+	SlotName: slot1_2@estragon.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_c7741362 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_199575/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_c7741362 = [ Id = "GPU-c7741362"; ClockMhz = 1328.5; Capability = 6.0; CoresPerCU = 64; DeviceName = "Tesla P100-PCIE-16GB"; DeviceUuid = "c7741362-0fc2-057f-631c-ffc90d1eb010"; ECCEnabled = true; ComputeUnits = 56; NvidiaDriver = "580.105.08"; DriverVersion = 13.0; DevicePciBusId = "0000:0B:00.0"; GlobalMemoryMb = 16269; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (004.106.000) 2025-11-23 16:32:46 Image size of job updated: 240544
+	235  -  MemoryUsage of job (MB)
+	240544  -  ResidentSetSize of job (KB)
+...
+006 (004.106.000) 2025-11-23 16:32:48 Image size of job updated: 288624
+	235  -  MemoryUsage of job (MB)
+	240544  -  ResidentSetSize of job (KB)
+...
+005 (004.106.000) 2025-11-23 16:32:48 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:07, Sys 0 00:00:02  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:07, Sys 0 00:00:02  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :        0        8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :        0        1         1 "GPU-c7741362"
+	   Memory (MB)          :      235    71680     71680 
+	   TimeExecute (s)      :       10                    
+	   TimeSlotBusy (s)     :       10                    
+...

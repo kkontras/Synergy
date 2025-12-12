@@ -1,0 +1,18 @@
+Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+The following values were not passed to `accelerate launch` and had defaults used instead:
+	`--num_processes` was set to a value of `1`
+	`--num_machines` was set to a value of `1`
+	`--mixed_precision` was set to a value of `'no'`
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python: can't open file '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py-python-train.py': [Errno 2] No such file or directory
+Traceback (most recent call last):
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/accelerate", line 8, in <module>
+    sys.exit(main())
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
+    args.func(args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 1198, in launch_command
+    simple_launcher(args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 785, in simple_launcher
+    raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
+subprocess.CalledProcessError: Command '['/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python', '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py-python-train.py', '--config', './configs/CREMA_D/synergy/nov/synprom_generatorVAEOtherSide.json', '--default_config', './configs/CREMA_D/default_config_cremad_res_syn.json', '--fold', '1', '--lr', '0.0003', '--wd', '1e-5', '--perturb', 'gen', '--start_over', '--cls', 'mlp', '--lib', '0.01']' returned non-zero exit status 2.

@@ -1,0 +1,98 @@
+Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+The following values were not passed to `accelerate launch` and had defaults used instead:
+	`--num_processes` was set to a value of `1`
+	`--num_machines` was set to a value of `1`
+	`--mixed_precision` was set to a value of `'no'`
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+OpenBLAS blas_thread_init: pthread_create failed for thread 3 of 8: Resource temporarily unavailable
+OpenBLAS blas_thread_init: RLIMIT_NPROC 256 current, 256 max
+OpenBLAS blas_thread_init: pthread_create failed for thread 4 of 8: Resource temporarily unavailable
+OpenBLAS blas_thread_init: RLIMIT_NPROC 256 current, 256 max
+OpenBLAS blas_thread_init: pthread_create failed for thread 5 of 8: Resource temporarily unavailable
+OpenBLAS blas_thread_init: RLIMIT_NPROC 256 current, 256 max
+OpenBLAS blas_thread_init: pthread_create failed for thread 6 of 8: Resource temporarily unavailable
+OpenBLAS blas_thread_init: RLIMIT_NPROC 256 current, 256 max
+OpenBLAS blas_thread_init: pthread_create failed for thread 7 of 8: Resource temporarily unavailable
+OpenBLAS blas_thread_init: RLIMIT_NPROC 256 current, 256 max
+Traceback (most recent call last):
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/runpy.py", line 188, in _run_module_as_main
+    mod_name, mod_spec, code = _get_module_details(mod_name, _Error)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/runpy.py", line 147, in _get_module_details
+    return _get_module_details(pkg_main_name, error)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/runpy.py", line 111, in _get_module_details
+    __import__(pkg_name)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/__init__.py", line 27, in <module>
+    from wandb import sdk as wandb_sdk
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/__init__.py", line 25, in <module>
+    from .artifacts.artifact import Artifact
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/artifacts/artifact.py", line 35, in <module>
+    from wandb import data_types, env, util
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/data_types.py", line 33, in <module>
+    from .sdk.data_types import _dtypes
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/data_types/_dtypes.py", line 367, in <module>
+    NumberType.types.append(np.byte)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/util.py", line 209, in __getattribute__
+    state.load()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/util.py", line 202, in load
+    self.module.__spec__.loader.exec_module(self.module)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/numpy/__init__.py", line 141, in <module>
+    from . import core
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/numpy/core/__init__.py", line 23, in <module>
+    from . import multiarray
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/numpy/core/multiarray.py", line 10, in <module>
+    from . import overrides
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/numpy/core/overrides.py", line 6, in <module>
+    from numpy.core._multiarray_umath import (
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 247, in <module>
+    main(config_path=args.config, default_config_path=args.default_config, args=args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 173, in main
+    agent = agent_class(config)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 41, in __init__
+    self.initialize_logs()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 78, in initialize_logs
+    self.wandb_run = wandb.init(reinit=True, project="balance", config=self.config, name= self.config.model.save_dir.split("/")[-1][:-8] )
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_init.py", line 1195, in init
+    raise e
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_init.py", line 1172, in init
+    wi.setup(kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_init.py", line 189, in setup
+    self._wl = wandb_setup.setup(settings=setup_settings)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_setup.py", line 327, in setup
+    ret = _setup(settings=settings)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_setup.py", line 320, in _setup
+    wl = _WandbSetup(settings=settings)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_setup.py", line 303, in __init__
+    _WandbSetup._instance = _WandbSetup__WandbSetup(settings=settings, pid=pid)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_setup.py", line 114, in __init__
+    self._setup()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_setup.py", line 250, in _setup
+    self._setup_manager()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_setup.py", line 277, in _setup_manager
+    self._manager = wandb_manager._Manager(settings=self._settings)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_manager.py", line 139, in __init__
+    self._service.start()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/service/service.py", line 237, in start
+    self._launch_server()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/service/service.py", line 231, in _launch_server
+    _sentry.reraise(e)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/analytics/sentry.py", line 154, in reraise
+    raise exc.with_traceback(sys.exc_info()[2])
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/service/service.py", line 229, in _launch_server
+    self._wait_for_ports(fname, proc=internal_proc)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/service/service.py", line 107, in _wait_for_ports
+    raise ServiceStartProcessError(
+wandb.sdk.service.service.ServiceStartProcessError: The wandb service process exited with -2. Ensure that `sys.executable` is a valid python interpreter. You can override it with the `_executable` setting or with the `WANDB__EXECUTABLE` environment variable.
+Traceback (most recent call last):
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/accelerate", line 8, in <module>
+    sys.exit(main())
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
+    args.func(args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 1198, in launch_command
+    simple_launcher(args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 785, in simple_launcher
+    raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
+subprocess.CalledProcessError: Command '['/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python', '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py', '--config', './configs/CREMA_D/synergy/nov/synprom_ib.json', '--default_config', './configs/CREMA_D/default_config_cremad_res_syn.json', '--fold', '0', '--pre', '--l', '100', '--contrcoeff', '1', '--lr', '0.0001', '--wd', '0.0001', '--cls', 'mlp', '--perturb', 'gennoise']' returned non-zero exit status 1.

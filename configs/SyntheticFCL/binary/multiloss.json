@@ -1,0 +1,62 @@
+{
+  "training_params": {
+    "batch_size": 256,
+    "test_batch_size": 256
+  },
+  "dataset": {
+    "norm": false
+  },
+  "model": {
+    "model_class": "Base_Model",
+    "args": {
+      "d_model": 100,
+      "num_classes": 2,
+      "fc_inner": 64,
+      "dropout": 0.1,
+      "cls_type": "linear",
+      "clip_grad": false,
+      "bias_infusion": {
+        "method": false
+      },
+    "multi_loss": {
+      "multi_supervised_w": {
+        "combined": 1,
+        "c": 1,
+        "g": 1
+      }
+    }
+    },
+    "load_ongoing": false,
+    "save_dir": "binary_multiloss_{}.pth.tar",
+    "encoders": [
+      {
+        "model": "SyntheticGaussianNet_Enc",
+        "args": {
+          "input_size": 100,
+          "hidden_size": 100,
+          "modality": 1,
+          "num_classes": 2,
+          "freeze_encoder": false
+        },
+        "pretrainedEncoder": {
+          "use": false,
+          "dir": ""
+        }
+      },
+      {
+        "model": "SyntheticGaussianNet_Enc",
+        "args": {
+          "input_size": 100,
+          "hidden_size": 100,
+          "modality": 0,
+          "num_classes": 2,
+          "freeze_encoder": false
+        },
+        "pretrainedEncoder": {
+          "use": false,
+          "dir": ""
+        }
+      }
+    ]
+  }
+}

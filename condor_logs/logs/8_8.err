@@ -1,0 +1,56 @@
+Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+The following values were not passed to `accelerate launch` and had defaults used instead:
+	`--num_processes` was set to a value of `1`
+	`--num_machines` was set to a value of `1`
+	`--mixed_precision` was set to a value of `'no'`
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+wandb: Currently logged in as: kkontras. Use `wandb login --relogin` to force relogin
+wandb: wandb version 0.22.3 is available!  To upgrade, please run:
+wandb:  $ pip install wandb --upgrade
+wandb: Tracking run with wandb version 0.16.2
+wandb: Run data is saved locally in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/wandb/run-20251103_152249-2hyfkqwc
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run Synprom_IB_fold0_l0.01_lr0.0001_wd0.0001_clsconformer_pre
+wandb: ⭐️ View project at https://wandb.ai/kkontras/balance
+wandb: 🚀 View run at https://wandb.ai/kkontras/balance/runs/2hyfkqwc
+wandb: - 0.005 MB of 0.005 MB uploadedwandb: \ 0.005 MB of 0.696 MB uploadedwandb: | 0.005 MB of 0.699 MB uploadedwandb: / 0.699 MB of 0.699 MB uploadedwandb: - 0.699 MB of 0.699 MB uploadedwandb: 
+wandb: Run history:
+wandb: lr █████▂█▇▆▄▂▁██▇▇▆▅▄▃▂▂▁▁████▇▇▇▇▆▆▅▅▄▄▃▃
+wandb: 
+wandb: Run summary:
+wandb: lr 3e-05
+wandb: 
+wandb: 🚀 View run Synprom_IB_fold0_l0.01_lr0.0001_wd0.0001_clsconformer_pre at: https://wandb.ai/kkontras/balance/runs/2hyfkqwc
+wandb: Synced 6 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20251103_152249-2hyfkqwc/logs
+Exception in thread IntMsgThr:
+Traceback (most recent call last):
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/threading.py", line 980, in _bootstrap_inner
+    self.run()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/threading.py", line 917, in run
+    self._target(*self._args, **self._kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_run.py", line 300, in check_internal_messages
+    self._loop_check_status(
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_run.py", line 224, in _loop_check_status
+    local_handle = request()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/interface/interface.py", line 800, in deliver_internal_messages
+    return self._deliver_internal_messages(internal_message)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/interface/interface_shared.py", line 506, in _deliver_internal_messages
+    return self._deliver_record(record)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/interface/interface_shared.py", line 449, in _deliver_record
+    handle = mailbox._deliver_record(record, interface=self)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/lib/mailbox.py", line 455, in _deliver_record
+    interface._publish(record)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/interface/interface_sock.py", line 51, in _publish
+    self._sock_client.send_record_publish(record)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/lib/sock_client.py", line 221, in send_record_publish
+    self.send_server_request(server_req)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/lib/sock_client.py", line 155, in send_server_request
+    self._send_message(msg)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/lib/sock_client.py", line 152, in _send_message
+    self._sendall_with_error_handle(header + data)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/lib/sock_client.py", line 130, in _sendall_with_error_handle
+    sent = self._sock.send(data)
+BrokenPipeError: [Errno 32] Broken pipe

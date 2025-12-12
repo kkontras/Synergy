@@ -1,0 +1,94 @@
+000 (009.024.000) 2025-11-07 18:42:49 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+...
+001 (009.024.000) 2025-11-08 01:09:33 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_12050_e04e>
+	SlotName: slot1_4@aristoteles.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_1ba53048 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_3839196"
+	Cpus = 8
+	Disk = 1050529
+	GPUs = 1
+	GPUs_GPU_1ba53048 = [ Id = "GPU-1ba53048"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "1ba53048-c5a1-3226-7f78-7a6cb9cbaa42"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:C7:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (009.024.000) 2025-11-08 01:09:41 Image size of job updated: 231364
+	226  -  MemoryUsage of job (MB)
+	231364  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 01:14:41 Image size of job updated: 1578356
+	1487  -  MemoryUsage of job (MB)
+	1521908  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 01:19:42 Image size of job updated: 1591904
+	1552  -  MemoryUsage of job (MB)
+	1588308  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 01:24:42 Image size of job updated: 1624692
+	1561  -  MemoryUsage of job (MB)
+	1597444  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 01:29:42 Image size of job updated: 1624692
+	1561  -  MemoryUsage of job (MB)
+	1597644  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 01:39:43 Image size of job updated: 1630736
+	1561  -  MemoryUsage of job (MB)
+	1597644  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 01:54:45 Image size of job updated: 1642924
+	1585  -  MemoryUsage of job (MB)
+	1622020  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 01:59:46 Image size of job updated: 1659492
+	1585  -  MemoryUsage of job (MB)
+	1622540  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 02:09:46 Image size of job updated: 1659492
+	1586  -  MemoryUsage of job (MB)
+	1623196  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 02:39:50 Image size of job updated: 1659492
+	1606  -  MemoryUsage of job (MB)
+	1643932  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 02:54:51 Image size of job updated: 1661544
+	1606  -  MemoryUsage of job (MB)
+	1643932  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 04:20:00 Image size of job updated: 1661544
+	1616  -  MemoryUsage of job (MB)
+	1654528  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 04:25:01 Image size of job updated: 1672608
+	1617  -  MemoryUsage of job (MB)
+	1654868  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 04:50:04 Image size of job updated: 1687872
+	1617  -  MemoryUsage of job (MB)
+	1654868  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 05:20:07 Image size of job updated: 1688804
+	1617  -  MemoryUsage of job (MB)
+	1654868  -  ResidentSetSize of job (KB)
+...
+006 (009.024.000) 2025-11-08 07:19:05 Image size of job updated: 2060436
+	1617  -  MemoryUsage of job (MB)
+	1654868  -  ResidentSetSize of job (KB)
+...
+005 (009.024.000) 2025-11-08 07:19:06 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 1 02:28:48, Sys 0 01:15:12  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 1 02:28:48, Sys 0 01:15:12  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     6.75        8         8 
+	   Disk (KB)            :     2     1048576   1050529 
+	   GPUs                 :                 1         1 "GPU-1ba53048"
+	   Memory (MB)          :  1617       71680     71680 
+	   TimeExecute (s)      : 22172                       
+	   TimeSlotBusy (s)     : 22172                       
+...

@@ -1,0 +1,14 @@
+cat << 'EOF' > .gitignore
+# =====================
+# Python
+# =====================
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+wandb/
+experiments/
+symile*
+mydatasets/Factor_CL_Datasets/MultiBench/

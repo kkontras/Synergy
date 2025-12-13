@@ -19,11 +19,11 @@ from PIL import Image, ImageDraw, ImageFont
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 import torch
 
-HF_CACHE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy"
-os.environ["TRANSFORMERS_CACHE"] = HF_CACHE
-os.environ["HF_HOME"] = HF_CACHE
-os.environ["HF_DATASETS_CACHE"] = HF_CACHE
-os.environ["HF_MODULES_CACHE"] = HF_CACHE
+# HF_CACHE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy"
+# os.environ["TRANSFORMERS_CACHE"] = HF_CACHE
+# os.environ["HF_HOME"] = HF_CACHE
+# os.environ["HF_DATASETS_CACHE"] = HF_CACHE
+# os.environ["HF_MODULES_CACHE"] = HF_CACHE
 
 from timm import create_model
 from transformers.modeling_outputs import BaseModelOutput

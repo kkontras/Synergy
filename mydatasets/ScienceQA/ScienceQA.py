@@ -148,8 +148,8 @@ class ScienceQA_Dataset(Dataset):
         self.weights = torch.tensor(stats["weights"])
 
     def __len__(self):
-        # return len(self.keep_indices)
-        return 32
+        return len(self.keep_indices)
+        # return 32
 
     def _load_image(self, pil_img: Image.Image):
         pil_img = pil_img.convert("RGB")

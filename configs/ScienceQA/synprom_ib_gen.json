@@ -1,7 +1,5 @@
 {
   "training_params": {
-    "batch_size": 8,
-    "test_batch_size": 8,
     "tdqm_disable": false
   },
   "early_stopping": {

@@ -78,6 +78,8 @@ class Agent():
             self.weights = self.data_loader.train_loader.dataset.weights
             self.config.model.args.class_weights = self.weights
 
+        self.config.model.args.save_base_dir = self.config.model.save_base_dir
+
         if "weights" not in vars(self).keys(): self.weights = None
 
         self.logs = {"current_epoch":0,"current_step":0,"steps_no_improve":0, "saved_step": 0, "train_logs":{},"val_logs":{},"test_logs":{},"best_logs":{"loss":{"total":100}, "acc":{"combined":0}} , "seed":self.config.training_params.seed, "weights": self.weights}

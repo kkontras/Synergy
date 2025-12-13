@@ -7,7 +7,7 @@ from models.VAVL_git.VAVL.conformer.model import Conformer
 from models.model_utils.fusion_gates import *
 from typing import Dict
 from transformers import VivitModel, VivitConfig, ASTConfig, Wav2Vec2Model, AutoModel
-from mydatasets.Factor_CL_Datasets.MultiBench.unimodals.common_models import Transformer
+# from mydatasets.Factor_CL_Datasets.MultiBench.unimodals.common_models import Transformer
 from transformers import ViTModel, ViTConfig, DistilBertModel, DistilBertConfig
 import os
 from transformers import BlipForConditionalGeneration, BlipConfig

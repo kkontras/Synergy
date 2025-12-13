@@ -1,0 +1,4 @@
+name: synergy_new
+channels:
+  - defaults
+prefix: /users/sista/kkontras/anaconda3/envs/synergy_new

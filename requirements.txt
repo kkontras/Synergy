@@ -111,7 +111,7 @@ openTSNE==1.0.4
 packaging==25.0
 pandas==2.3.3
 paramiko==3.5.1
-pillow==12.0.0
+pillow
 platformdirs==4.5.0
 plotly==6.5.0
 pooch==1.8.2

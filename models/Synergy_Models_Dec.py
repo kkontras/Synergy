@@ -13,6 +13,9 @@ from transformers import AutoTokenizer
 from torchvision import transforms
 from torchvision.transforms.functional import to_pil_image
 from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
+import os
+from peft import LoraConfig, get_peft_model
+
 
 class TF_Proc(nn.Module):
     def __init__(self, input_dim, dim, layers, output_dim):
@@ -333,8 +336,8 @@ class Fusion_Synprom_IB_Dir_SupRem(nn.Module):
             }
             if "current_step" in kwargs:
                 wandb.log(wandb_loss, step=kwargs["current_step"] + 1)
-            else:
-                wandb.log(wandb_loss)
+            # else:
+            #     wandb.log(wandb_loss)
 
             output["losses"].update(
                 {
@@ -364,14 +367,6 @@ class Fusion_Synprom_IB_Dir_SupRem(nn.Module):
 
         return output
 
-import torch
-import torch.nn as nn
-import weakref
-# assumes:
-#   - wandb is imported
-#   - nt_xent_loss is defined
-#   - TF_Fusion is defined
-
 
 class FusionIBModel(nn.Module):
     def __init__(self, args, encs):
@@ -387,6 +382,7 @@ class FusionIBModel(nn.Module):
         d_model = args.d_model
         fc_inner = args.fc_inner
         dropout = args.get("dropout", 0.1)
+        self.synergy_weight = args.get("bias_infusion",{}).get("l", 0)
 
         # main encoders
         self.enc_0 = encs[0]
@@ -493,12 +489,13 @@ class SynIB(nn.Module):
             self.gen_x1 = encs[2]
             self.gen_x2 = encs[3]
 
-        self.perturb = {"type": args.get("perturb", None)}
+        self.perturb = args.get("perturb", {})
+        self.perturb.reestimate_features = self.perturb.get("reestimate_features", False)
+
 
         bias = args.get("bias_infusion", {})
         self.synergy_weight = bias.get("l", 0.0)
         self.contrastive_weight = bias.get("contrcoeff", 0.0) or 0.0
-
         self.synergy_type = getattr(args, "synergy_type", "gaussian")  # "gaussian" or "dirichlet"
 
         fc_inner = args.fc_inner
@@ -514,7 +511,7 @@ class SynIB(nn.Module):
             raise ValueError(f"Unknown synergy_type: {self.synergy_type}")
 
     @staticmethod
-    def _kl_loss(mu, logvar):
+    def _gaussian_kl(mu, logvar):
         return 0.5 * torch.sum(
             torch.exp(logvar) + mu**2 - 1 - logvar, dim=1
         ).mean()
@@ -522,8 +519,8 @@ class SynIB(nn.Module):
     def _log(self, d, **kwargs):
         if "current_step" in kwargs:
             wandb.log(d, step=kwargs["current_step"] + 1)
-        else:
-            wandb.log(d)
+        # else:
+        #     wandb.log(d)
 
     @staticmethod
     def _dirichlet_kl(alpha, prior_conc=1.0):
@@ -547,57 +544,95 @@ class SynIB(nn.Module):
 
         return (term1 + term2).mean()
 
-    # ------------------ Perturbations ------------------
-
     def _perturb(self, zt, zc, direction, **kwargs):
-        ptype = self.perturb["type"]
 
-        if ptype == "zeros":
-            return {"tilde": torch.zeros_like(zt)}
+        ptype = self.perturb.get("type", "none")
 
-        if ptype == "cmn":
-            mask = (torch.rand_like(zt) < self.perturb.get("p", 0.5)).float()
-            scale = self.perturb.get("s", 0.1) * (
-                1 + torch.tanh(zc.norm(dim=-1, keepdim=True) / self.perturb.get("c", 1))
-            )
-            noise = torch.randn_like(zt) * scale
-            return {"tilde": (mask * zt + (1 - mask) * noise)}
+        if ptype in {"mask", "cmn"}:
+            p = float(self.perturb.get("p", 0.5))
+            s = float(self.perturb.get("s", 0.1))
+            c = float(self.perturb.get("c", 1.0))
+            K = int(self.perturb.get("num_samples", 1))
+            B = zt.shape[0]
 
+            ztK = zt.unsqueeze(0).expand(K, *zt.shape).reshape(K * B, *zt.shape[1:])
+            zcK = zc.unsqueeze(0).expand(K, *zc.shape).reshape(K * B, *zc.shape[1:])
+
+            keep = (torch.rand_like(ztK) > p).to(ztK.dtype)
+
+            if ptype == "mask":
+                fill = self.perturb.get("fill", "zeros")
+
+                if fill == "zeros":
+                    z_fill = torch.zeros_like(ztK)
+
+                elif fill == "noise":
+                    # scale: [K*B, 1] or [K*B, S, 1] -> broadcasts over feature dim
+                    scale = s * (1.0 + torch.tanh(zcK.norm(dim=-1, keepdim=True) / c))
+                    z_fill = torch.randn_like(ztK) * scale
+
+                elif fill == "mean":
+                    # per-position mean: [1, F] or [1, S, F] -> broadcasts cleanly
+                    mean = zt.mean(dim=0, keepdim=True)
+                    z_fill = mean.expand_as(zt).unsqueeze(0).expand(K, B, *zt.shape[1:]).reshape_as(ztK)
+
+                else:
+                    raise ValueError(f"Unknown mask fill: {fill}")
+
+                tilde = keep * ztK + (1.0 - keep) * z_fill
+                return {"tilde": tilde, "mask": keep, "z_c": zcK}
+
+            # ---- cmn ----
+            scale = s * (1.0 + torch.tanh(zcK.norm(dim=-1, keepdim=True) / c))
+            noise = torch.randn_like(ztK) * scale
+            tilde = keep * ztK + (1.0 - keep) * noise
+            return {"tilde": tilde, "mask": keep, "z_c": zcK}
+
+        # --------------------------
+        # 3) Generator-based perturbations
+        # --------------------------
         gen = self.gen_x1 if direction == "x1" else self.gen_x2
         key = "px1" if direction == "x1" else "px2"
 
-        gkw = {"compute_loss": self.training}
-        if ptype == "gennoise":
-            gkw["add_noise"] = True
+        gkw = {
+            "compute_loss": self.training,
+            "add_noise": (ptype == "gennoise"),
+        }
         if "current_step" in kwargs:
             gkw["current_step"] = kwargs["current_step"]
 
         out = gen(zt, zc, **gkw)
-        if "losses" in out:
+
+        if isinstance(out, dict) and "losses" in out:
             self._log({key: out["losses"]}, **kwargs)
-        return out
 
-    def _encode_and_perturb(self, x, px1, px2, **kwargs):
-        a, v = self.main._get_features(x, **kwargs)
+        return out if isinstance(out, dict) else {"tilde": out}
+
+    def _encode_and_perturb(self, x, z1, z2, px1, px2, **kwargs):
+        self.main.eval()
+        if self.perturb.reestimate_features:
+            a, v = self.main._get_features(x, **kwargs)
+            z1, z2 = a["features"]["combined"], v["features"]["combined"]
+
         losses = {}
-
         if px1:
-            out = self._perturb(a["features"]["combined"], v["features"]["combined"], "x1", **kwargs)
-            a["features"]["combined"] = out["tilde"].detach()
+            out = self._perturb(z1, z2, "x1", **kwargs)
+            z1, z2 = out["tilde"], out["z_c"]
             if "losses" in out: losses["px1"] = out["losses"]
-
         if px2:
-            out = self._perturb(v["features"]["combined"], a["features"]["combined"], "x2", **kwargs)
-            v["features"]["combined"] = out["tilde"].detach()
+            out = self._perturb(z2, z1, "x2", **kwargs)
+            z2, z1 = out["tilde"], out["z_c"]
             if "losses" in out: losses["px2"] = out["losses"]
 
-        return a, v, losses
+        self.main.train()
+
+        return z1, z2, losses
 
     # ------------------ KL passes ------------------
 
-    def _kl_pass(self, x, px1, px2, **kwargs):
-        a, v, losses = self._encode_and_perturb(x, px1, px2, **kwargs)
-        mu, feat = self.main._compute_logits(a, v)
+    def _kl_pass(self, x, z1, z2, px1, px2, **kwargs):
+        a, v, losses = self._encode_and_perturb(x, z1, z2, px1, px2, **kwargs)
+        mu, feat = self.main._compute_logits({"features":{"combined":a}}, {"features":{"combined":v}})
         if self.synergy_type == "gaussian":
             logvar = self.logvar_head(feat)
             kl = self._gaussian_kl(mu, logvar)
@@ -609,21 +644,22 @@ class SynIB(nn.Module):
 
 
     def compute_training_losses(self, x, base_output, **kwargs):
-        kl1, loss1 = self._kl_pass(x, px1=True,  px2=False, **kwargs)
-        kl2, loss2 = self._kl_pass(x, px1=False, px2=True,  **kwargs)
+        z1, z2 = base_output["features"]["z1"], base_output["features"]["z2"]
+        kl1, loss1 = self._kl_pass(x, z1, z2, px1=True,  px2=False, **kwargs)
+        kl2, loss2 = self._kl_pass(x, z1, z2, px1=False, px2=True,  **kwargs)
 
-        infonce = nt_xent_loss(
-            base_output["features"]["z1"],
-            base_output["features"]["z2"],
-            temperature=1.0,
-        )
-        self._log({"reg_loss": {"kl_1": kl1, "kl_2": kl2, "infonce": infonce}}, **kwargs)
+        infonce = nt_xent_loss( z1, z2, temperature=1.0)
+        kl_diff_mse = torch.mean((kl1 - kl2) ** 2)
+
+        if self.training:
+            self._log({"reg_loss": {"kl_1": kl1, "kl_2": kl2, "kl_diff_mse": kl_diff_mse, "infonce": infonce}}, **kwargs)
 
         losses = {}
         losses.update(loss1)
         losses.update(loss2)
         losses["sl_1"] = kl1 * self.synergy_weight
         losses["sl_2"] = kl2 * self.synergy_weight
+        # losses["sl_diff"] = kl_diff_mse * self.synergy_weight
         losses["infonce"] = infonce * self.contrastive_weight
         return losses
 
@@ -1067,9 +1103,6 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
         added = tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
         self.cls_token_id = tok.convert_tokens_to_ids("<CLS>")
 
-        # -----------------------------
-        # Backbone
-        # -----------------------------
         self.backbone = Qwen3VLForConditionalGeneration.from_pretrained(
             model_name,
             dtype=torch.bfloat16 if getattr(args, "bf16", False) else torch.float16,
@@ -1077,7 +1110,6 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
             cache_dir=HF_CACHE,
         )
 
-        # resize embeddings if we added tokens
         if added > 0:
             self.backbone.resize_token_embeddings(len(tok))
 
@@ -1090,78 +1122,120 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
         else:
             self.d_model = cfg.hidden_size
 
-        # -----------------------------
-        # Classifier head (provided)
-        # -----------------------------
         if len(encs) < 1:
             raise ValueError("encs[0] must be provided as the 5-way classifier head.")
         self.enc_0 = encs[0]
 
-        # -----------------------------
-        # Optional: your synergy blocks (left disabled here)
-        # -----------------------------
-        # if self.synergy_coeff > 0:
-        #     proj_dim = getattr(args, "proj_dim", self.d_model)
-        #     self.text_proj = nn.Linear(self.d_model, proj_dim)
-        #     self.image_proj = nn.Linear(self.d_model, proj_dim)
-        #     if not hasattr(args, "fc_inner"):
-        #         setattr(args, "fc_inner", self.d_model)
-        #     self.synib = SynIB(args, encs, main=self)
+        self._apply_lora()
+        self._load_cls_embedding()
+        self._setup_trainables()
 
-        # -----------------------------
-        # Training control
-        # -----------------------------
-        self._setup_trainables_no_lora()
-
-    # ============================================================
-    #  Trainable params: head + (optional) CLS row only
-    # ============================================================
-    def _get_language_model(self):
-        if hasattr(self.backbone, "model") and hasattr(self.backbone.model, "language_model"):
-            return self.backbone.model.language_model
-        return None
-
-    def _setup_trainables_no_lora(self):
+    def _setup_trainables(self):
         # Freeze everything
         for p in self.backbone.parameters():
             p.requires_grad = False
 
-        # Always train classifier head
+        if getattr(self.args, "lora_config", None) and self.args.lora_config.get("use_lora", False):
+            for n, p in self.backbone.named_parameters():
+                if "lora_" in n:
+                    p.requires_grad = True
+
         for p in self.enc_0.parameters():
             p.requires_grad = True
 
-        lm = self._get_language_model()
+        lm = self.backbone.model.language_model
 
         # Optionally train final norm (cheap and often stabilizes)
-        if getattr(self.args, "train_lm_norm", False) and lm is not None and hasattr(lm, "norm"):
-            for p in lm.norm.parameters():
-                p.requires_grad = True
+        # if getattr(self.args, "train_lm_norm", False) and lm is not None and hasattr(lm, "norm"):
+        #     for p in lm.norm.parameters():
+        #         p.requires_grad = True
 
         # Make <CLS> embedding learnable WITHOUT unfreezing whole embedding table
         # (default True; set args.train_cls_row=False to disable)
-        if getattr(self.args, "train_cls_row", True) and lm is not None and hasattr(lm, "embed_tokens"):
-            emb = lm.embed_tokens
-            # ensure grads flow to emb.weight (we'll mask them)
-            emb.weight.requires_grad = True
+        if self.args.cls_finetune:
+            if getattr(self.args, "train_cls_row", True) and lm is not None and hasattr(lm, "embed_tokens"):
+                emb = lm.embed_tokens
+                # ensure grads flow to emb.weight (we'll mask them)
+                emb.weight.requires_grad = True
 
-            cls_id = int(self.cls_token_id)
-            # build a (vocab, hidden) mask with 1s only for cls row
-            mask = torch.zeros_like(emb.weight, dtype=torch.float32)
-            mask[cls_id].fill_(1.0)
+                cls_id = int(self.cls_token_id)
+                # build a (vocab, hidden) mask with 1s only for cls row
+                mask = torch.zeros_like(emb.weight, dtype=torch.float32)
+                mask[cls_id].fill_(1.0)
 
-            def grad_mask_hook(grad):
-                return grad * mask.to(grad.device, grad.dtype)
+                def grad_mask_hook(grad):
+                    return grad * mask.to(grad.device, grad.dtype)
 
-            # register once
-            if not hasattr(self, "_cls_grad_hooked"):
-                emb.weight.register_hook(grad_mask_hook)
-                self._cls_grad_hooked = True
+                # register once
+                if not hasattr(self, "_cls_grad_hooked"):
+                    emb.weight.register_hook(grad_mask_hook)
+                    self._cls_grad_hooked = True
 
         # NOTE: if you enabled synergy modules, mark them trainable here.
 
-    # ============================================================
-    #  Prompt building
-    # ============================================================
+    def _load_cls_embedding(self):
+
+        cls_path = getattr(self.args, "cls_emb_path", None)
+        save_base_dir = getattr(self.args, "save_base_dir", None)
+        if save_base_dir is None or cls_path is None:
+            return
+        cls_path = os.path.join(save_base_dir, cls_path)
+
+        self.load_cls_embedding(cls_path)
+
+    def load_cls_embedding(self, path, strict_dim=True):
+
+        assert os.path.isfile(path), f"CLS embedding file not found: {path}"
+
+        ckpt = torch.load(path, map_location="cpu")
+
+        if "cls_row" not in ckpt:
+            raise KeyError("CLS checkpoint must contain 'cls_row'")
+
+        cls_row = ckpt["cls_row"]
+        saved_cls_id = ckpt.get("cls_token_id", self.cls_token_id)
+
+        lm = self.backbone.model.language_model
+        if lm is None or not hasattr(lm, "embed_tokens"):
+            raise RuntimeError("Language model embedding table not found")
+
+        emb = lm.embed_tokens
+        current_cls_id = int(self.cls_token_id)
+
+        if strict_dim and cls_row.numel() != emb.weight.shape[1]:
+            raise ValueError(
+                f"CLS dim mismatch: saved {cls_row.numel()} vs model {emb.weight.shape[1]}"
+            )
+
+        if saved_cls_id != current_cls_id:
+            print(
+                f"[WARN] saved cls_token_id={saved_cls_id} "
+                f"!= current cls_token_id={current_cls_id} — copying to current index"
+            )
+
+        with torch.no_grad():
+            emb.weight[current_cls_id].copy_(
+                cls_row.to(emb.weight.device, emb.weight.dtype)
+            )
+
+        print(f"[OK] Loaded CLS embedding from {path}")
+
+    def _apply_lora(self):
+        cfg = getattr(self.args, "lora_config", None)
+        if not cfg or not cfg.get("use_lora", False):
+            return
+
+        lora_cfg = LoraConfig(
+            r=int(cfg.get("lora_r", 8)),
+            lora_alpha=int(cfg.get("lora_alpha", 8)),
+            lora_dropout=float(cfg.get("lora_dropout", 0.0)),
+            target_modules=list(cfg.get("lora_target_modules", ["q_proj", "v_proj"])),
+            bias=str(cfg.get("lora_bias", "none")),
+            task_type="CAUSAL_LM",
+        )
+
+        self.backbone = get_peft_model(self.backbone, lora_cfg)
+
     def _build_prompts_with_choices(self, hint_texts, qa_texts, letters_list):
         prompts = []
         for hint, qa, letters in zip(hint_texts, qa_texts, letters_list):
@@ -1345,4 +1419,66 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
             preds["mc_from_text"] = mc_from_text
 
         return {"preds": preds, "features": features, "losses": losses}
+
+# ============================================================
+#  Standalone extraction of CLS embedding from checkpoint
+# ============================================================
+if __name__ == "__main__":
+    import torch
+    import os
+
+    CKPT_PATH = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_IBInput2_fold0_lr0.0001_wd0.0001.pth.tar"
+
+    assert os.path.isfile(CKPT_PATH), f"Checkpoint not found: {CKPT_PATH}"
+
+    CKPT_DIR = os.path.dirname(CKPT_PATH)
+    CKPT_BASE = os.path.basename(CKPT_PATH)
+    CLS_PATH = os.path.join(
+        CKPT_DIR,
+        CKPT_BASE.replace(".pth.tar", "_cls_embedding.pt"),
+    )
+
+    device = "cpu"
+
+    print(f"[INFO] Loading checkpoint from {CKPT_PATH}")
+    ckpt = torch.load(CKPT_PATH, map_location=device, weights_only=False)
+
+    print(ckpt.keys())
+
+    if "best_model_state_dict" not in ckpt:
+        raise KeyError("Checkpoint does not contain 'best_model_weights'")
+
+    state = ckpt["best_model_state_dict"]
+
+    # ---- find CLS embedding table ----
+    cls_weight_key = None
+    for k in state.keys():
+        if k.endswith("embed_tokens.weight"):
+            cls_weight_key = k
+            break
+
+    if cls_weight_key is None:
+        raise RuntimeError("Could not find embed_tokens.weight in checkpoint")
+
+    # ---- tokenizer to get CLS id ----
+    from transformers import AutoProcessor
+    model_name = "Qwen/Qwen3-VL-2B-Instruct"
+    processor = AutoProcessor.from_pretrained(model_name)
+    tok = processor.tokenizer
+    tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
+    cls_token_id = tok.convert_tokens_to_ids("<CLS>")
+
+    emb_weight = state[cls_weight_key]            # (vocab, d_model)
+    cls_row = emb_weight[cls_token_id].detach().cpu()
+
+    torch.save(
+        {
+            "cls_token_id": cls_token_id,
+            "cls_row": cls_row,
+        },
+        CLS_PATH,
+    )
+
+    print(f"[OK] Saved CLS embedding to {CLS_PATH}")
+    print(f"[OK] CLS row shape: {tuple(cls_row.shape)}")
 

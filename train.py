@@ -93,7 +93,10 @@ def main(config_path, default_config_path, args):
         }
         m += "_ilrcg{}_{}".format(args.ilr_c, args.ilr_g)
     if "num_samples" in args and args.num_samples is not None:
+        if "perturb" not in config.model.args:
+            config.model.args.perturb = {}
         config.model.args.bias_infusion.num_samples = int(args.num_samples)
+        config.model.args.perturb.num_samples = int(args.num_samples)
         m += "_numsamples{}".format(args.num_samples)
 
     if "contrcoeff" in args and args.contrcoeff is not None:
@@ -129,8 +132,15 @@ def main(config_path, default_config_path, args):
                 m_enc += "_betavar{}".format(args.beta_var)
                 config.model.encoders[i].pretrainedEncoder.dir = config.model.encoders[i].pretrainedEncoder.dir.format(m_enc)
     if "perturb" in args and args.perturb is not None:
-        config.model.args.perturb = args.perturb
+        if not hasattr(config.model.args, "perturb"):
+            config.model.args.perturb = {}
+        config.model.args.perturb.type = args.perturb
         m += "_perturb{}".format(args.perturb)
+    if "perturb_fill" in args and args.perturb_fill is not None:
+        if not hasattr(config.model.args, "perturb"):
+            config.model.args.perturb = {}
+        config.model.args.perturb.fill = args.perturb_fill
+        m += "_fill{}".format(args.perturb_fill)
     if "optim_method" in args and args.optim_method is not None:
         config.model.args.bias_infusion.optim_method = args.optim_method
         m += "_optim{}".format(args.optim_method)
@@ -230,6 +240,7 @@ parser.add_argument('--wd', required=False, help="Weight Decay", default=None)
 parser.add_argument('--mm', required=False, help="Optimizer Momentum", default=None)
 parser.add_argument('--cls', required=False, help="CLS linear, nonlinear, highlynonlinear", default=None)
 parser.add_argument('--perturb', required=False, help="Perturbation type of MCR", default=None)
+parser.add_argument('--perturb_fill', required=False, help="Fill for mask type perturbation of MCR", default=None)
 parser.add_argument('--pre', action='store_true')
 parser.add_argument('--frozen', action='store_true')
 parser.add_argument('--tdqm_disable', action='store_true')

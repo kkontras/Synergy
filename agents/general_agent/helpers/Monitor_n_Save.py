@@ -245,8 +245,38 @@ class Monitor_n_Save():
             #     for i, v in val_metrics["mae"].items(): message += Fore.LIGHTBLUE_EX + "MAE_{}: {:.4f} ".format(i,v)
             # if "corr" in val_metrics:
             #     for i, v in val_metrics["corr"].items(): message += Fore.LIGHTWHITE_EX + "Corr_{}: {:.4f} ".format(i,v)
-            if "ceu" in val_metrics:
-                for i, v in val_metrics["ceu"]["combined"].items(): message += Fore.LIGHTMAGENTA_EX + "CEU_{}: {:.4f} ".format(i,v)
+            # if "ceu" in val_metrics:
+            #     for i, v in val_metrics["ceu"]["combined"].items(): message += Fore.LIGHTMAGENTA_EX + "CEU_{}: {:.4f} ".format(i,v)
+            if "pg_acc" in val_metrics:
+                pg = val_metrics["pg_acc"]["combined"]
+                # Assuming pg = pg_acc from your example
+                m = pg.get('group_metrics', {})
+                sl_dict = pg.get("synergy_per_label_acc", {})
+                # Color Setup
+                K = Fore.LIGHTWHITE_EX  # Main Keys (S, U1, U2, R)
+                V = Fore.LIGHTYELLOW_EX  # Vivid Values (Accuracy)
+                C = Fore.LIGHTRED_EX  # Contribution Values
+                F1 = Fore.LIGHTBLUE_EX  # Synergy F1
+                LK = Fore.LIGHTGREEN_EX  # Label Keys
+                LV = Fore.LIGHTCYAN_EX  # Label Values
+                N = Fore.RESET
+
+                m = pg.get('group_metrics', {})
+                sl_dict = pg.get("synergy_per_label_acc", {})
+                syn_f1 = pg.get("synergy_f1", 0.0)
+
+                # S contains Accuracy, Contribution, and F1
+                s_str = f"{K}S:{V}{m['synergy']['internal_acc']:.1f}%{K}({C}{m['synergy']['contribution_to_total']:.1f}c{K}-{F1}F1:{syn_f1:.1f}%)"
+                u1_str = f"{K}U1:{V}{m['cue_audio']['internal_acc']:.1f}%{K}({C}{m['cue_audio']['contribution_to_total']:.1f}c{K})"
+                u2_str = f"{K}U2:{V}{m['cue_video']['internal_acc']:.1f}%{K}({C}{m['cue_video']['contribution_to_total']:.1f}c{K})"
+                r_str = f"{K}R:{V}{m['coexistence']['internal_acc']:.1f}%{K}({C}{m['coexistence']['contribution_to_total']:.1f}c{K})"
+
+                # S-L (Filtered to keep line short: skips labels with 0% accuracy)
+                sl_items = [f"{LK}{k.split('_')[1]}:{LV}{v:.0f}%" for k, v in sl_dict.items() if v > 0]
+                sl_str = f"{K}S-L: " + (" ".join(sl_items) if sl_items else "None")
+
+                message += f"{s_str} {u1_str} {u2_str} {r_str} {sl_str}{N} "
+
             # if "val_perclassf1" in val_metrics:
             #     for i, v in val_metrics["val_perclassf1"].items(): message += Fore.BLUE + "F1_perclass_{}: {} ".format(i,"{}".format(str(list((v*100).round(2)))))
 

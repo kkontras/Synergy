@@ -1,10 +1,184 @@
 Starting Job
 /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
-/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python
-Python 3.9.18
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python
+Python 3.10.19
 /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy
 We have 1 GPU
 /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
-config-./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json
-Executing command: accelerate launch /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py --config ./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0003 --wd 0.0 --perturb gen --start_over  --cls mlp --lib 0.1
-Job finished
+config-./configs/CREMA_D/synergy/dec/synprom_IB_mask.json
+Executing command: accelerate launch /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 0.1 --lr 0.00001 --wd 0.0001 --cls mlp --perturb mask --perturb_fill mean --contrcoeff 0.1 --num_samples 32
+Namespace(config='./configs/CREMA_D/synergy/dec/synprom_IB_mask.json', default_config='./configs/CREMA_D/default_config_cremad_res_syn.json', fold='0', alpha=None, tanh_mode=None, tanh_mode_beta=None, regby=None, clip=None, batch_size=None, l='0.1', multil=None, l_diffsq=None, lib=None, ratio_us=None, ratio_snr=None, kmepoch=None, num_samples='32', pow=None, nstep=None, contrcoeff='0.1', kde_coeff=None, etube=None, temperature=None, contr_type=None, shuffle_type=None, validate_with=None, transform_type=None, trasform_before=None, num_classes=None, base_alpha=None, alpha_var=None, base_beta=None, beta_var=None, optim_method=None, ilr_c=None, ilr_g=None, mmcosine_scaling=None, ending_epoch=None, load_ongoing=None, commonlayers=None, recon_weight1=None, recon_weight2=None, recon_epochstages=None, recon_ensemblestages=None, lr='0.00001', wd='0.0001', mm=None, cls='mlp', perturb='mask', perturb_fill='mean', pre=False, frozen=False, tdqm_disable=False, start_over=False)
+2025-12-16 00:54:08,187 - Config - INFO - ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json
+2025-12-16 00:54:08,189 - Config - INFO -  THE Configuration of your experiment ..
+{'agent': 'Agent',
+ 'dataset': {'data_roots': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D',
+             'data_split': {'fold': 0, 'method': 'non_inclusive'},
+             'dataloader_class': 'CramedD_Dataloader',
+             'fps': 1,
+             'norm': False,
+             'norm_face_path': './mydatasets/CREMAD/norm_face_path_fold{}.pkl',
+             'norm_wav_path': './mydatasets/CREMAD/wav_norm_16000_fold{}.pkl',
+             'num_frame': 3,
+             'return_data': {'audio': False,
+                             'face': False,
+                             'spectrogram': True,
+                             'video': True},
+             'sampling_rate': 22050},
+ 'early_stopping': {'end_of_epoch_check': True,
+                    'log_interval': 10,
+                    'max_epoch': 1500,
+                    'n_steps_stop': 100,
+                    'n_steps_stop_after': 0,
+                    'save_every_step': 3000,
+                    'save_every_valstep': 10,
+                    'validate_after': 0,
+                    'validate_every': 25,
+                    'validate_with': 'accuracy'},
+ 'exp_name': 'CREMAD Experiment',
+ 'model': {'args': {'bias_infusion': {'ending_epoch': 1500,
+                                      'l': 0.1,
+                                      'method': 'false',
+                                      'plot': False,
+                                      'starting_epoch': 0,
+                                      'use': True},
+                    'clip_grad': False,
+                    'cls_type': 'linear',
+                    'd_model': 512,
+                    'dropout': 0.1,
+                    'fc_inner': 64,
+                    'multi_loss': {'multi_supervised_w': {'c': 0,
+                                                          'combined': 1,
+                                                          'g': 0}},
+                    'num_classes': 6},
+           'encoders': [{'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': True,
+                                  'num_classes': 6},
+                         'model': 'Audio_ResNet',
+                         'pretrainedEncoder': {'dir': 'unimodal_audio_fold{}_lr0.001_wd0.0001.pth.tar',
+                                               'use': True}},
+                        {'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': True,
+                                  'num_classes': 6},
+                         'model': 'Video_ResNet',
+                         'pretrainedEncoder': {'dir': 'unimodal_video_fold{}_lr0.001_wd0.0001.pth.tar',
+                                               'use': True}}],
+           'load_ongoing': False,
+           'model_class': 'FusionIBModel',
+           'save_base_dir': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy',
+           'save_dir': 'Synprom_IB_mask{}.pth.tar'},
+ 'optimizer': {'beta1': 0.9,
+               'beta2': 0.999,
+               'learning_rate': 1e-05,
+               'momentum': 0.9,
+               'type': 'Adam',
+               'weight_decay': 1e-05},
+ 'scheduler': {'max_lr': 0.03, 'type': 'cosanneal', 'warm_up_steps': 780},
+ 'training_params': {'async_loading': True,
+                     'batch_size': 32,
+                     'cuda': True,
+                     'data_loader_workers': 8,
+                     'gpu_device': [0],
+                     'pin_memory': False,
+                     'rec_test': True,
+                     'res': True,
+                     'seed': 109,
+                     'tdqm_disable': False,
+                     'test_batch_size': 32,
+                     'test_on_bottoms': False,
+                     'use_test_set': True,
+                     'validation': True,
+                     'verbose': True,
+                     'wandb_disable': False}}
+2025-12-16 00:54:08,191 - Config - INFO -  *************************************** 
+2025-12-16 00:54:08,191 - Config - INFO - The experiment name is CREMAD Experiment
+2025-12-16 00:54:08,191 - Config - INFO -  *************************************** 
+2025-12-16 00:54:08,191 - root - INFO - save_dir: Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar
+2025-12-16 00:54:08,255 - Cuda Statistics - INFO - __Python VERSION:  3.10.19 (main, Oct 21 2025, 16:43:05) [GCC 11.2.0]
+2025-12-16 00:54:08,255 - Cuda Statistics - INFO - __pyTorch VERSION:  2.6.0+cu124
+2025-12-16 00:54:08,255 - Cuda Statistics - INFO - __CUDA VERSION
+2025-12-16 00:54:08,257 - Cuda Statistics - INFO - __CUDNN VERSION:  90100
+2025-12-16 00:54:08,285 - Cuda Statistics - INFO - __Number CUDA Devices:  1
+2025-12-16 00:54:08,285 - Cuda Statistics - INFO - __Devices
+2025-12-16 00:54:08,285 - Cuda Statistics - INFO - index, name, driver_version, memory.total [MiB], memory.used [MiB], memory.free [MiB]
+2025-12-16 00:54:08,285 - Cuda Statistics - INFO - 0, NVIDIA A100-SXM4-80GB, 580.105.08, 81920 MiB, 4 MiB, 81150 MiB
+2025-12-16 00:54:08,289 - Cuda Statistics - INFO - Active CUDA Device: GPU 0
+2025-12-16 00:54:08,289 - Cuda Statistics - INFO - Available devices  1
+2025-12-16 00:54:08,289 - Cuda Statistics - INFO - Current cuda device  0
+This path does not exist /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/AudioWAV/1076_MTI_SAD_XX.wav or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Image-01-FPS/1076_MTI_SAD_XX or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Face_features/1076_MTI_SAD_XX.npy
+2025-12-16 00:54:09,576 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
+2025-12-16 00:54:09,590 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
+2025-12-16 00:54:10,028 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
+2025-12-16 00:54:10,029 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
+2025-12-16 00:54:10,519 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
+2025-12-16 00:54:10,520 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
+Available cores 8
+We are changing dataloader workers to num of cores 0
+2025-12-16 00:54:10,520 - Agent - INFO - Device: cuda:0
+2025-12-16 00:54:10,521 - Agent - INFO - Total training batches: 127, validate every 25 batches, steps per epoch: 6
+2025-12-16 00:54:17,316 - Agent - INFO - Loss Weights are {'total': 1, 'combined': 1, 'c': 0, 'g': 0}
+2025-12-16 00:54:17,685 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold0_lr0.001_wd0.0001.pth.tar
+Replacing module
+2025-12-16 00:54:18,205 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold0_lr0.001_wd0.0001.pth.tar
+Replacing module
+2025-12-16 00:54:18,321 - Agent - INFO - Freezing encoder enc_0
+2025-12-16 00:54:18,322 - Agent - INFO - Freezing encoder enc_1
+2025-12-16 00:54:18,663 - Agent - INFO - Total number of trainable parameters are: 23173976
+2025-12-16 00:54:18,674 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 00:57:03,865 - Agent - INFO - [37mVal Epoch 1 step 1 with [31mce_loss_combined : 1.654457 [31msl_1 : 0.002193 [31msl_2 : 0.004330 [31minfonce : 0.429813 [31mtotal : 2.090792 [94mAcc_combined: 62.98 [95mCEU_cue_audio: 0.7763 [95mCEU_cue_video: 0.2544 [95mCEU_synergy: 0.2131 [95mCEU_coexistence: 0.8468 
+2025-12-16 00:57:03,874 - Agent - INFO - [37mTest Epoch 1 step 1 with [31mce_loss_combined : 1.656691 [31msl_1 : 0.002456 [31msl_2 : 0.004802 [31minfonce : 0.423875 [31mtotal : 2.087824 [94mAcc_combined: 58.62 
+2025-12-16 00:57:04,230 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 00:57:04,234 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 00:58:43,642 - Agent - INFO - [37mVal Epoch 2 step 2 with [31mce_loss_combined : 1.431189 [31msl_1 : 0.013310 [31msl_2 : 0.028974 [31minfonce : 0.429813 [31mtotal : 1.903286 [94mAcc_combined: 68.00 [95mCEU_cue_audio: 0.8128 [95mCEU_cue_video: 0.3332 [95mCEU_synergy: 0.2050 [95mCEU_coexistence: 0.9113 
+2025-12-16 00:58:43,649 - Agent - INFO - [37mTest Epoch 2 step 2 with [31mce_loss_combined : 1.445701 [31msl_1 : 0.015417 [31msl_2 : 0.032685 [31minfonce : 0.423875 [31mtotal : 1.917678 [94mAcc_combined: 61.62 
+2025-12-16 00:58:43,900 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 00:58:43,905 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:00:33,222 - Agent - INFO - [37mVal Epoch 3 step 3 with [31mce_loss_combined : 1.221458 [31msl_1 : 0.036818 [31msl_2 : 0.075138 [31minfonce : 0.429813 [31mtotal : 1.763227 [94mAcc_combined: 69.48 [95mCEU_cue_audio: 0.8220 [95mCEU_cue_video: 0.3395 [95mCEU_synergy: 0.1806 [95mCEU_coexistence: 0.9462 
+2025-12-16 01:00:33,229 - Agent - INFO - [37mTest Epoch 3 step 3 with [31mce_loss_combined : 1.254041 [31msl_1 : 0.039480 [31msl_2 : 0.080716 [31minfonce : 0.423875 [31mtotal : 1.798113 [94mAcc_combined: 64.07 
+2025-12-16 01:00:33,527 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:00:33,532 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:02:21,842 - Agent - INFO - [37mVal Epoch 4 step 4 with [31mce_loss_combined : 1.079900 [31msl_1 : 0.057478 [31msl_2 : 0.111986 [31minfonce : 0.429813 [31mtotal : 1.679177 [94mAcc_combined: 73.35 [95mCEU_cue_audio: 0.8629 [95mCEU_cue_video: 0.4242 [95mCEU_synergy: 0.1806 [95mCEU_coexistence: 0.9757 
+2025-12-16 01:02:21,849 - Agent - INFO - [37mTest Epoch 4 step 4 with [31mce_loss_combined : 1.134783 [31msl_1 : 0.063071 [31msl_2 : 0.119152 [31minfonce : 0.423875 [31mtotal : 1.740882 [94mAcc_combined: 66.85 
+2025-12-16 01:02:22,143 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:02:22,146 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:04:07,523 - Agent - INFO - [37mVal Epoch 5 step 5 with [31mce_loss_combined : 0.995377 [31msl_1 : 0.075097 [31msl_2 : 0.132331 [31minfonce : 0.429813 [31mtotal : 1.632618 [94mAcc_combined: 74.94 [95mCEU_cue_audio: 0.8540 [95mCEU_cue_video: 0.5152 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9811 
+2025-12-16 01:04:07,530 - Agent - INFO - [37mTest Epoch 5 step 5 with [31mce_loss_combined : 1.066693 [31msl_1 : 0.082490 [31msl_2 : 0.140128 [31minfonce : 0.423875 [31mtotal : 1.713187 [94mAcc_combined: 69.97 
+2025-12-16 01:04:07,778 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:04:07,782 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:05:53,702 - Agent - INFO - [37mVal Epoch 6 step 6 with [31mce_loss_combined : 0.946012 [31msl_1 : 0.086298 [31msl_2 : 0.137438 [31minfonce : 0.429813 [31mtotal : 1.599560 [94mAcc_combined: 76.42 [95mCEU_cue_audio: 0.8585 [95mCEU_cue_video: 0.5636 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9920 
+2025-12-16 01:05:53,708 - Agent - INFO - [37mTest Epoch 6 step 6 with [31mce_loss_combined : 1.028855 [31msl_1 : 0.095383 [31msl_2 : 0.144761 [31minfonce : 0.423875 [31mtotal : 1.692874 [94mAcc_combined: 70.30 
+2025-12-16 01:05:53,969 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:05:53,973 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:07:39,369 - Agent - INFO - [37mVal Epoch 7 step 7 with [31mce_loss_combined : 0.931306 [31msl_1 : 0.090730 [31msl_2 : 0.139864 [31minfonce : 0.429813 [31mtotal : 1.591712 [94mAcc_combined: 76.54 [95mCEU_cue_audio: 0.8585 [95mCEU_cue_video: 0.5697 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9920 
+2025-12-16 01:07:39,376 - Agent - INFO - [37mTest Epoch 7 step 7 with [31mce_loss_combined : 1.017378 [31msl_1 : 0.099796 [31msl_2 : 0.146948 [31minfonce : 0.423875 [31mtotal : 1.687998 [94mAcc_combined: 70.41 
+2025-12-16 01:07:39,668 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:07:39,673 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:09:33,633 - Agent - INFO - [37mVal Epoch 8 step 8 with [31mce_loss_combined : 0.929778 [31msl_1 : 0.091630 [31msl_2 : 0.140472 [31minfonce : 0.429813 [31mtotal : 1.591693 [94mAcc_combined: 76.65 [95mCEU_cue_audio: 0.8540 [95mCEU_cue_video: 0.5697 [95mCEU_synergy: 0.1806 [95mCEU_coexistence: 0.9946 
+2025-12-16 01:09:33,641 - Agent - INFO - [37mTest Epoch 8 step 8 with [31mce_loss_combined : 1.016946 [31msl_1 : 0.101067 [31msl_2 : 0.148042 [31minfonce : 0.423875 [31mtotal : 1.689930 [94mAcc_combined: 70.41 
+2025-12-16 01:09:33,996 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:09:33,999 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:11:22,784 - Agent - INFO - [37mVal Epoch 9 step 9 with [31mce_loss_combined : 0.905506 [31msl_1 : 0.099529 [31msl_2 : 0.143156 [31minfonce : 0.429813 [31mtotal : 1.578004 [94mAcc_combined: 77.45 [95mCEU_cue_audio: 0.8492 [95mCEU_cue_video: 0.6120 [95mCEU_synergy: 0.1965 [95mCEU_coexistence: 0.9920 
+2025-12-16 01:11:22,791 - Agent - INFO - [37mTest Epoch 9 step 9 with [31mce_loss_combined : 0.999954 [31msl_1 : 0.110730 [31msl_2 : 0.152215 [31minfonce : 0.423875 [31mtotal : 1.686774 [94mAcc_combined: 70.75 
+2025-12-16 01:11:23,107 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:11:23,113 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:13:05,820 - Agent - INFO - [37mVal Epoch 10 step 10 with [31mce_loss_combined : 0.886739 [31msl_1 : 0.104071 [31msl_2 : 0.139258 [31minfonce : 0.429813 [31mtotal : 1.559880 [94mAcc_combined: 78.02 [95mCEU_cue_audio: 0.8312 [95mCEU_cue_video: 0.6484 [95mCEU_synergy: 0.2131 [95mCEU_coexistence: 0.9946 
+2025-12-16 01:13:05,828 - Agent - INFO - [37mTest Epoch 10 step 10 with [31mce_loss_combined : 0.989618 [31msl_1 : 0.115628 [31msl_2 : 0.147207 [31minfonce : 0.423875 [31mtotal : 1.676328 [94mAcc_combined: 70.52 
+2025-12-16 01:13:06,085 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:13:06,090 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:14:53,675 - Agent - INFO - [37mVal Epoch 11 step 11 with [31mce_loss_combined : 0.875483 [31msl_1 : 0.110473 [31msl_2 : 0.142975 [31minfonce : 0.429813 [31mtotal : 1.558744 [94mAcc_combined: 77.45 [95mCEU_cue_audio: 0.8220 [95mCEU_cue_video: 0.6365 [95mCEU_synergy: 0.2050 [95mCEU_coexistence: 0.9946 
+2025-12-16 01:14:53,679 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:16:37,798 - Agent - INFO - [37mVal Epoch 12 step 12 with [31mce_loss_combined : 0.870150 [31msl_1 : 0.111521 [31msl_2 : 0.139417 [31minfonce : 0.429813 [31mtotal : 1.550901 [94mAcc_combined: 78.47 [95mCEU_cue_audio: 0.8128 [95mCEU_cue_video: 0.6787 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 01:16:37,804 - Agent - INFO - [37mTest Epoch 12 step 12 with [31mce_loss_combined : 0.977877 [31msl_1 : 0.123917 [31msl_2 : 0.146109 [31minfonce : 0.423875 [31mtotal : 1.671779 [94mAcc_combined: 70.63 
+2025-12-16 01:16:38,087 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:16:38,092 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:18:07,750 - Agent - INFO - [37mVal Epoch 13 step 13 with [31mce_loss_combined : 0.864780 [31msl_1 : 0.113351 [31msl_2 : 0.139907 [31minfonce : 0.429813 [31mtotal : 1.547850 [94mAcc_combined: 78.47 [95mCEU_cue_audio: 0.8172 [95mCEU_cue_video: 0.6849 [95mCEU_synergy: 0.2131 [95mCEU_coexistence: 0.9974 
+2025-12-16 01:18:07,751 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:19:37,540 - Agent - INFO - [37mVal Epoch 14 step 14 with [31mce_loss_combined : 0.861908 [31msl_1 : 0.115333 [31msl_2 : 0.140755 [31minfonce : 0.429813 [31mtotal : 1.547808 [94mAcc_combined: 78.47 [95mCEU_cue_audio: 0.8083 [95mCEU_cue_video: 0.6972 [95mCEU_synergy: 0.2131 [95mCEU_coexistence: 0.9974 
+2025-12-16 01:19:37,542 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:21:07,078 - Agent - INFO - [37mVal Epoch 15 step 15 with [31mce_loss_combined : 0.861212 [31msl_1 : 0.114981 [31msl_2 : 0.140264 [31minfonce : 0.429813 [31mtotal : 1.546269 [94mAcc_combined: 78.59 [95mCEU_cue_audio: 0.8083 [95mCEU_cue_video: 0.7030 [95mCEU_synergy: 0.2131 [95mCEU_coexistence: 0.9974 
+2025-12-16 01:21:07,084 - Agent - INFO - [37mTest Epoch 15 step 15 with [31mce_loss_combined : 0.972378 [31msl_1 : 0.128362 [31msl_2 : 0.147312 [31minfonce : 0.423875 [31mtotal : 1.671928 [94mAcc_combined: 70.75 
+2025-12-16 01:21:07,374 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.1_numsamples32_contrcoeff0.1_perturbmask_fillmean_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:21:07,379 - Agent - INFO - Total number of trainable parameters are: 821068

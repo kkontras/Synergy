@@ -13,7 +13,7 @@
     "async_loading": true,
     "validation": true,
     "rec_test": true,
-    "test_on_bottoms": false,
+    "test_on_bottoms": true,
     "use_test_set": true,
     "tdqm_disable": true,
     "wandb_disable": false,
@@ -36,7 +36,7 @@
     "validate_every": 185,
     "save_every_valstep": 50,
     "validate_after": 0,
-    "n_steps_stop": 100,
+    "n_steps_stop": 30,
     "n_steps_stop_after": 0,
     "validate_with": "accuracy"
   },

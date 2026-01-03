@@ -43,7 +43,7 @@ class Validator():
     def get_results(self, set: str = "Validation", print_results: bool=False, show_border_info: bool=False):
 
         this_dataloader = self.get_set(set)
-        metrics = self.validate(data_loader=this_dataloader, description=set, show_border_info=show_border_info)
+        metrics = self.validate(data_loader=this_dataloader, description=set)
         self._print_results(metrics=metrics, description=set)
         # if print_results:
         #     self.norm_n_plot_confusion_matrix(metrics["conf"]["combined"], description=set)
@@ -67,7 +67,7 @@ class Validator():
                 target = served_dict["label"].type(torch.LongTensor).cuda()
 
 
-                output = self.model(data, return_features=True)
+                output = self.model(data, return_features=True, label=target)
 
                 for i in output["features"]:
                     features[i].append(output["features"][i].cpu().detach())

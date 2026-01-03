@@ -1,0 +1,473 @@
+{
+  "results": {
+    "pu1=0.1000|pu2=0.1000|pred=0.2000|psyn=0.6000|pnone=0.0000": {
+      "cfg": {
+        "batch_size": 64,
+        "device": "cuda",
+        "dim0": 32,
+        "dim1": 32,
+        "epochs": 200,
+        "frac_red": 0.2,
+        "frac_syn": 0.2,
+        "frac_unique": 0.2,
+        "hidden": 256,
+        "inv_destroy_red": true,
+        "inv_destroy_unique": true,
+        "lambda_kl": 10.0,
+        "lambda_shortcut_inv": 0.0,
+        "lambda_uni": 0.0,
+        "latent_r": 4,
+        "latent_s": 1,
+        "latent_u": 4,
+        "lr": 0.0005,
+        "n_test": 4000,
+        "n_train": 2000,
+        "noise_std": 1.0,
+        "out_dir": "runs_refactor/sweep_probs_pu1_0.10_pu2_0.10_pred_0.20_psyn_0.60",
+        "random_block_positions": false,
+        "red_strength": 1.0,
+        "signal_probs": {
+          "red": 0.2,
+          "syn": 0.6,
+          "u1": 0.1,
+          "u2": 0.1
+        },
+        "syn_strength": 1.0,
+        "unique_strength": 1.0,
+        "weight_decay_synib": 1e-05
+      },
+      "probs": {
+        "pnone": 0.0,
+        "pred": 0.2,
+        "psyn": 0.6,
+        "pu1": 0.1,
+        "pu2": 0.1
+      },
+      "split": {
+        "n_test": 4000,
+        "n_train": 1800,
+        "n_val": 200
+      },
+      "summary": {
+        "counts": {
+          "none": 0,
+          "red": 766,
+          "syn": 2442,
+          "u1": 388,
+          "u2": 404
+        },
+        "detectability_acc": 0.4555555582046509,
+        "main": {
+          "acc_fusion": 0.64125,
+          "acc_parts": {
+            "red": 0.9295039164490861,
+            "syn": 0.5057330057330057,
+            "u1": 0.770618556701031,
+            "u2": 0.7896039603960396
+          }
+        },
+        "seed": 0,
+        "synib": {
+          "acc_fusion": 0.74175,
+          "acc_parts": {
+            "red": 0.685378590078329,
+            "syn": 0.8087633087633087,
+            "u1": 0.5927835051546392,
+            "u2": 0.5866336633663366
+          }
+        }
+      }
+    },
+    "pu1=0.1000|pu2=0.1000|pred=0.4000|psyn=0.4000|pnone=0.0000": {
+      "cfg": {
+        "batch_size": 64,
+        "device": "cuda",
+        "dim0": 32,
+        "dim1": 32,
+        "epochs": 200,
+        "frac_red": 0.2,
+        "frac_syn": 0.2,
+        "frac_unique": 0.2,
+        "hidden": 256,
+        "inv_destroy_red": true,
+        "inv_destroy_unique": true,
+        "lambda_kl": 10.0,
+        "lambda_shortcut_inv": 0.0,
+        "lambda_uni": 0.0,
+        "latent_r": 4,
+        "latent_s": 1,
+        "latent_u": 4,
+        "lr": 0.0005,
+        "n_test": 4000,
+        "n_train": 2000,
+        "noise_std": 1.0,
+        "out_dir": "runs_refactor/sweep_probs_pu1_0.10_pu2_0.10_pred_0.40_psyn_0.40",
+        "random_block_positions": false,
+        "red_strength": 1.0,
+        "signal_probs": {
+          "red": 0.4,
+          "syn": 0.4,
+          "u1": 0.1,
+          "u2": 0.1
+        },
+        "syn_strength": 1.0,
+        "unique_strength": 1.0,
+        "weight_decay_synib": 1e-05
+      },
+      "probs": {
+        "pnone": 0.0,
+        "pred": 0.4,
+        "psyn": 0.4,
+        "pu1": 0.1,
+        "pu2": 0.1
+      },
+      "split": {
+        "n_test": 4000,
+        "n_train": 1800,
+        "n_val": 200
+      },
+      "summary": {
+        "counts": {
+          "none": 0,
+          "red": 1661,
+          "syn": 1581,
+          "u1": 368,
+          "u2": 390
+        },
+        "detectability_acc": 0.4541666805744171,
+        "main": {
+          "acc_fusion": 0.7485,
+          "acc_parts": {
+            "red": 0.9813365442504516,
+            "syn": 0.5079063883617964,
+            "u1": 0.7934782608695652,
+            "u2": 0.6897435897435897
+          }
+        },
+        "seed": 0,
+        "synib": {
+          "acc_fusion": 0.65325,
+          "acc_parts": {
+            "red": 0.5767609873570139,
+            "syn": 0.777988614800759,
+            "u1": 0.5625,
+            "u2": 0.558974358974359
+          }
+        }
+      }
+    },
+    "pu1=0.1500|pu2=0.1500|pred=0.3000|psyn=0.4000|pnone=0.0000": {
+      "cfg": {
+        "batch_size": 64,
+        "device": "cuda",
+        "dim0": 32,
+        "dim1": 32,
+        "epochs": 200,
+        "frac_red": 0.2,
+        "frac_syn": 0.2,
+        "frac_unique": 0.2,
+        "hidden": 256,
+        "inv_destroy_red": true,
+        "inv_destroy_unique": true,
+        "lambda_kl": 10.0,
+        "lambda_shortcut_inv": 0.0,
+        "lambda_uni": 0.0,
+        "latent_r": 4,
+        "latent_s": 1,
+        "latent_u": 4,
+        "lr": 0.0005,
+        "n_test": 4000,
+        "n_train": 2000,
+        "noise_std": 1.0,
+        "out_dir": "runs_refactor/sweep_probs_pu1_0.15_pu2_0.15_pred_0.30_psyn_0.40",
+        "random_block_positions": false,
+        "red_strength": 1.0,
+        "signal_probs": {
+          "red": 0.3,
+          "syn": 0.4,
+          "u1": 0.15,
+          "u2": 0.15
+        },
+        "syn_strength": 1.0,
+        "unique_strength": 1.0,
+        "weight_decay_synib": 1e-05
+      },
+      "probs": {
+        "pnone": 0.0,
+        "pred": 0.3,
+        "psyn": 0.4,
+        "pu1": 0.15,
+        "pu2": 0.15
+      },
+      "split": {
+        "n_test": 4000,
+        "n_train": 1800,
+        "n_val": 200
+      },
+      "summary": {
+        "counts": {
+          "none": 0,
+          "red": 1266,
+          "syn": 1619,
+          "u1": 556,
+          "u2": 559
+        },
+        "detectability_acc": 0.4652777910232544,
+        "main": {
+          "acc_fusion": 0.735,
+          "acc_parts": {
+            "red": 0.9597156398104265,
+            "syn": 0.5058678196417542,
+            "u1": 0.8435251798561151,
+            "u2": 0.7817531305903399
+          }
+        },
+        "seed": 0,
+        "synib": {
+          "acc_fusion": 0.658,
+          "acc_parts": {
+            "red": 0.5837282780410743,
+            "syn": 0.8085237801111798,
+            "u1": 0.539568345323741,
+            "u2": 0.5080500894454383
+          }
+        }
+      }
+    },
+    "pu1=0.2000|pu2=0.2000|pred=0.2000|psyn=0.4000|pnone=0.0000": {
+      "cfg": {
+        "batch_size": 64,
+        "device": "cuda",
+        "dim0": 32,
+        "dim1": 32,
+        "epochs": 200,
+        "frac_red": 0.2,
+        "frac_syn": 0.2,
+        "frac_unique": 0.2,
+        "hidden": 256,
+        "inv_destroy_red": true,
+        "inv_destroy_unique": true,
+        "lambda_kl": 10.0,
+        "lambda_shortcut_inv": 0.0,
+        "lambda_uni": 0.0,
+        "latent_r": 4,
+        "latent_s": 1,
+        "latent_u": 4,
+        "lr": 0.0005,
+        "n_test": 4000,
+        "n_train": 2000,
+        "noise_std": 1.0,
+        "out_dir": "runs_refactor/sweep_probs_pu1_0.20_pu2_0.20_pred_0.20_psyn_0.40",
+        "random_block_positions": false,
+        "red_strength": 1.0,
+        "signal_probs": {
+          "red": 0.2,
+          "syn": 0.4,
+          "u1": 0.2,
+          "u2": 0.2
+        },
+        "syn_strength": 1.0,
+        "unique_strength": 1.0,
+        "weight_decay_synib": 1e-05
+      },
+      "probs": {
+        "pnone": 0.0,
+        "pred": 0.2,
+        "psyn": 0.4,
+        "pu1": 0.2,
+        "pu2": 0.2
+      },
+      "split": {
+        "n_test": 4000,
+        "n_train": 1800,
+        "n_val": 200
+      },
+      "summary": {
+        "counts": {
+          "none": 0,
+          "red": 830,
+          "syn": 1577,
+          "u1": 792,
+          "u2": 801
+        },
+        "detectability_acc": 0.45694446563720703,
+        "main": {
+          "acc_fusion": 0.72725,
+          "acc_parts": {
+            "red": 0.9253012048192771,
+            "syn": 0.5022194039315155,
+            "u1": 0.8598484848484849,
+            "u2": 0.8339575530586767
+          }
+        },
+        "seed": 0,
+        "synib": {
+          "acc_fusion": 0.65875,
+          "acc_parts": {
+            "red": 0.591566265060241,
+            "syn": 0.8040583386176284,
+            "u1": 0.5555555555555556,
+            "u2": 0.5443196004993758
+          }
+        }
+      }
+    },
+    "pu1=0.3000|pu2=0.3000|pred=0.0000|psyn=0.4000|pnone=0.0000": {
+      "cfg": {
+        "batch_size": 64,
+        "device": "cuda",
+        "dim0": 32,
+        "dim1": 32,
+        "epochs": 200,
+        "frac_red": 0.2,
+        "frac_syn": 0.2,
+        "frac_unique": 0.2,
+        "hidden": 256,
+        "inv_destroy_red": true,
+        "inv_destroy_unique": true,
+        "lambda_kl": 10.0,
+        "lambda_shortcut_inv": 0.0,
+        "lambda_uni": 0.0,
+        "latent_r": 4,
+        "latent_s": 1,
+        "latent_u": 4,
+        "lr": 0.0005,
+        "n_test": 4000,
+        "n_train": 2000,
+        "noise_std": 1.0,
+        "out_dir": "runs_refactor/sweep_probs_pu1_0.30_pu2_0.30_pred_0.00_psyn_0.40",
+        "random_block_positions": false,
+        "red_strength": 1.0,
+        "signal_probs": {
+          "red": 0.0,
+          "syn": 0.4,
+          "u1": 0.3,
+          "u2": 0.3
+        },
+        "syn_strength": 1.0,
+        "unique_strength": 1.0,
+        "weight_decay_synib": 1e-05
+      },
+      "probs": {
+        "pnone": 0.0,
+        "pred": 0.0,
+        "psyn": 0.4,
+        "pu1": 0.3,
+        "pu2": 0.3
+      },
+      "split": {
+        "n_test": 4000,
+        "n_train": 1800,
+        "n_val": 200
+      },
+      "summary": {
+        "counts": {
+          "none": 0,
+          "red": 0,
+          "syn": 1585,
+          "u1": 1220,
+          "u2": 1195
+        },
+        "detectability_acc": 0.4513888955116272,
+        "main": {
+          "acc_fusion": 0.7375,
+          "acc_parts": {
+            "red": NaN,
+            "syn": 0.4921135646687697,
+            "u1": 0.8885245901639345,
+            "u2": 0.9087866108786611
+          }
+        },
+        "seed": 0,
+        "synib": {
+          "acc_fusion": 0.66125,
+          "acc_parts": {
+            "red": NaN,
+            "syn": 0.7785488958990536,
+            "u1": 0.5704918032786885,
+            "u2": 0.5983263598326359
+          }
+        }
+      }
+    },
+    "pu1=0.4000|pu2=0.4000|pred=0.1000|psyn=0.1000|pnone=0.0000": {
+      "cfg": {
+        "batch_size": 64,
+        "device": "cuda",
+        "dim0": 32,
+        "dim1": 32,
+        "epochs": 200,
+        "frac_red": 0.2,
+        "frac_syn": 0.2,
+        "frac_unique": 0.2,
+        "hidden": 256,
+        "inv_destroy_red": true,
+        "inv_destroy_unique": true,
+        "lambda_kl": 10.0,
+        "lambda_shortcut_inv": 0.0,
+        "lambda_uni": 0.0,
+        "latent_r": 4,
+        "latent_s": 1,
+        "latent_u": 4,
+        "lr": 0.0005,
+        "n_test": 4000,
+        "n_train": 2000,
+        "noise_std": 1.0,
+        "out_dir": "runs_refactor/sweep_probs_pu1_0.40_pu2_0.40_pred_0.10_psyn_0.10",
+        "random_block_positions": false,
+        "red_strength": 1.0,
+        "signal_probs": {
+          "red": 0.1,
+          "syn": 0.1,
+          "u1": 0.4,
+          "u2": 0.4
+        },
+        "syn_strength": 1.0,
+        "unique_strength": 1.0,
+        "weight_decay_synib": 1e-05
+      },
+      "probs": {
+        "pnone": 0.0,
+        "pred": 0.1,
+        "psyn": 0.1,
+        "pu1": 0.4,
+        "pu2": 0.4
+      },
+      "split": {
+        "n_test": 4000,
+        "n_train": 1800,
+        "n_val": 200
+      },
+      "summary": {
+        "counts": {
+          "none": 0,
+          "red": 418,
+          "syn": 408,
+          "u1": 1618,
+          "u2": 1556
+        },
+        "detectability_acc": 0.43194445967674255,
+        "main": {
+          "acc_fusion": 0.83225,
+          "acc_parts": {
+            "red": 0.7703349282296651,
+            "syn": 0.5024509803921569,
+            "u1": 0.9097651421508035,
+            "u2": 0.8547557840616966
+          }
+        },
+        "seed": 0,
+        "synib": {
+          "acc_fusion": 0.832,
+          "acc_parts": {
+            "red": 0.7966507177033493,
+            "syn": 0.5171568627450981,
+            "u1": 0.8708281829419036,
+            "u2": 0.8836760925449871
+          }
+        }
+      }
+    }
+  },
+  "schema": "sweep_nonoverlap_probs_v2"
+}

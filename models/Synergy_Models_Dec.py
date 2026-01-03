@@ -1,3 +1,4 @@
+import copy
 
 from models.model_utils.fusion_gates import *
 from models.VAVL_git.VAVL.conformer.model import Conformer
@@ -15,7 +16,7 @@ from torchvision.transforms.functional import to_pil_image
 from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
 import os
 from peft import LoraConfig, get_peft_model
-
+import torch
 
 class TF_Proc(nn.Module):
     def __init__(self, input_dim, dim, layers, output_dim):
@@ -663,7 +664,7 @@ class SynIB(nn.Module):
         losses["infonce"] = infonce * self.contrastive_weight
         return losses
 
-class LinearHead(nn.Module):
+class LinearHead_Qwen(nn.Module):
     def __init__(self, args, encs=[], **kwargs):
         super().__init__()
         self.args = args
@@ -1419,6 +1420,1138 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
             preds["mc_from_text"] = mc_from_text
 
         return {"preds": preds, "features": features, "losses": losses}
+
+class SynIB_Qwen(nn.Module):
+    def __init__(self, args, encs, main):
+        super().__init__()
+        object.__setattr__(self, "main", main)
+
+        self.perturb = args.get("perturb", {})
+
+        bias = args.get("bias_infusion", {})
+        self.synergy_weight = bias.get("l", 0.0)
+        self.synergy_type = getattr(args, "synergy_type", "gaussian")  # "gaussian" or "dirichlet"
+
+        fc_inner = 2048
+        num_classes = args.num_classes
+
+        if self.synergy_type == "gaussian":
+            self.logvar_head = nn.Linear(fc_inner, num_classes)
+            self.dirichlet_prior_conc = None
+        elif self.synergy_type == "dirichlet":
+            self.evidence_head = nn.Linear(fc_inner, num_classes)
+            self.dirichlet_prior_conc = args.get("dirichlet_prior_conc", 1.0)
+        else:
+            raise ValueError(f"Unknown synergy_type: {self.synergy_type}")
+
+    @staticmethod
+    def _gaussian_kl(mu, logvar):
+        return 0.5 * torch.sum(
+            torch.exp(logvar) + mu**2 - 1 - logvar, dim=1
+        ).mean()
+
+    def _log(self, d, **kwargs):
+        if "current_step" in kwargs:
+            wandb.log(d, step=kwargs["current_step"] + 1)
+        # else:
+        #     wandb.log(d)
+
+    @staticmethod
+    def _dirichlet_kl(alpha, prior_conc=1.0):
+        """
+        KL(Dir(alpha) || Dir(alpha0)), with alpha0_k = prior_conc (scalar or tensor).
+        Batch over dim=0, classes over dim=1.
+        """
+        alpha0 = torch.full_like(alpha, prior_conc) if isinstance(prior_conc, float) else prior_conc
+
+        alpha0_sum = alpha0.sum(dim=1, keepdim=True)
+        alpha_sum = alpha.sum(dim=1, keepdim=True)
+
+        lgamma = torch.lgamma
+        digamma = torch.digamma
+
+        logB_alpha = torch.sum(lgamma(alpha), dim=1) - lgamma(alpha_sum.squeeze(1))
+        logB_alpha0 = torch.sum(lgamma(alpha0), dim=1) - lgamma(alpha0_sum.squeeze(1))
+
+        term1 = logB_alpha0 - logB_alpha
+        term2 = torch.sum((alpha - alpha0) * (digamma(alpha) - digamma(alpha_sum)), dim=1)
+
+        return (term1 + term2).mean()
+
+    def _random_masks(self, m1, m2, px1, px2, **kwargs):
+        """
+        Mask-only perturbation:
+          - sample keep mask with prob (1-p) of keeping each entry
+          - masked entries are replaced with EMA values (per token, per feature)
+        Shapes:
+          zt, zc: [B, T, F]
+        Returns:
+          tilde: [K*B, T, F]
+          mask:  [K*B, T, F] (1=kept, 0=masked)
+          z_c:   [K*B, T, F]
+        """
+        # --- config ---
+        p = float(self.perturb.get("p", 0.5))  # mask probability
+        m1_t, m2_t = None, None
+        if px1:
+            mask_1 = (torch.rand_like(m1[m1==True].float()) > p).to(dtype=m1.dtype)  # [K*B, T, F] in {0,1}
+            m1_t = copy.deepcopy(m1)
+            m1_t[m1] = mask_1
+        if px2:
+            mask_2 = (torch.rand_like(m2[m2==True].float()) > p).to(dtype=m2.dtype)  # [K*B, T, F] in {0,1}
+            m2_t = copy.deepcopy(m2)
+            m2_t[m2] = mask_2
+
+        return m1_t, m2_t
+
+    def _kl_pass(self, x, m1, m2, px1, px2, **kwargs):
+        m1t, m2t = self._random_masks(m1, m2, px1, px2, **kwargs)
+        mu, feat, _ = self.main._compute_logits(x, m1t, m2t)
+        if self.synergy_type == "gaussian":
+            logvar = self.logvar_head(feat["h_cls"])
+            kl = self._gaussian_kl(mu, logvar)
+        else:  # dirichlet
+            evidence = F.softplus(self.evidence_head(feat["h_cls"]))
+            alpha = evidence + 1.0
+            kl = self._dirichlet_kl(alpha, prior_conc=self.dirichlet_prior_conc)
+        return kl
+
+
+    def compute_training_losses(self, x, base_output, **kwargs):
+        m1, m2 = base_output["masks"]["hint_mask"], base_output["masks"]["image_mask"]
+        kl1 = self._kl_pass(x, m1, m2, px1=True,  px2=False, **kwargs)
+        kl2 = self._kl_pass(x, m1, m2, px1=False, px2=True,  **kwargs)
+        kl_diff_mse = torch.mean((kl1 - kl2) ** 2)
+
+        if self.training:
+            self._log({"reg_loss": {"kl_1": kl1, "kl_2": kl2, "kl_diff_mse": kl_diff_mse}}, **kwargs)
+
+        losses = {"sl_1": kl1 * self.synergy_weight, "sl_2": kl2 * self.synergy_weight}
+        # losses["sl_diff"] = kl_diff_mse * self.synergy_weight
+        return losses
+
+# class QwenVL_ScienceQA_Synergy_SynIB(nn.Module):
+#     """
+#     Multimodal (image+text) ScienceQA as 5-way classification.
+#     Backbone is frozen EXCEPT:
+#       - classifier head enc_0 (always trainable)
+#       - (optional) learnable <CLS> embedding row ONLY (via gradient masking hook)
+#       - (optional) final LM norm (cheap, sometimes helps)
+#
+#     Readout is the hidden state at the appended <CLS> token (placed at end of prompt).
+#     """
+#
+#     def __init__(self, args, encs=None, **kwargs):
+#         super().__init__()
+#         encs = encs or []
+#
+#         self.args = args
+#         self.synergy_coeff =  args.get("bias_infusion",{}).get("l", 0)
+#         self.max_new_tokens = getattr(args, "max_new_tokens", 32)
+#         self.num_classes = getattr(args, "num_classes")
+#
+#         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
+#         HF_CACHE = getattr(self.args, "save_base_dir", None)
+#
+#         # -----------------------------
+#         # Processor / Tokenizer
+#         # -----------------------------
+#         self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=HF_CACHE)
+#         tok = self.processor.tokenizer
+#         tok.padding_side = "left"
+#         if tok.pad_token is None:
+#             tok.pad_token = tok.eos_token
+#
+#         # Add <CLS> token to tokenizer
+#         added = tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
+#         self.cls_token_id = tok.convert_tokens_to_ids("<CLS>")
+#
+#         self.backbone = Qwen3VLForConditionalGeneration.from_pretrained(
+#             model_name,
+#             dtype=torch.bfloat16 if getattr(args, "bf16", False) else torch.float16,
+#             device_map="cuda:0",
+#             cache_dir=HF_CACHE,
+#         )
+#
+#         if added > 0:
+#             self.backbone.resize_token_embeddings(len(tok))
+#
+#         cfg = self.backbone.config
+#         self.image_token_id = cfg.image_token_id
+#         self.image_token_str = tok.convert_ids_to_tokens(self.image_token_id)
+#
+#         if hasattr(cfg, "text_config") and hasattr(cfg.text_config, "hidden_size"):
+#             self.d_model = cfg.text_config.hidden_size
+#         else:
+#             self.d_model = cfg.hidden_size
+#
+#         if len(encs) < 1:
+#             raise ValueError("encs[0] must be provided as the 5-way classifier head.")
+#         self.enc_0 = encs[0]
+#
+#         self._apply_lora()
+#         self._load_cls_embedding()
+#         self._setup_trainables()
+#
+#         self.synib = SynIB_Qwen(args, [], self)
+#
+#     def _setup_trainables(self):
+#         # Freeze everything
+#         for p in self.backbone.parameters():
+#             p.requires_grad = False
+#
+#         if getattr(self.args, "lora_config", None) and self.args.lora_config.get("use_lora", False):
+#             for n, p in self.backbone.named_parameters():
+#                 if "lora_" in n:
+#                     p.requires_grad = True
+#
+#         for p in self.enc_0.parameters():
+#             p.requires_grad = True
+#
+#         lm = self.backbone.model.language_model
+#
+#         # Optionally train final norm (cheap and often stabilizes)
+#         # if getattr(self.args, "train_lm_norm", False) and lm is not None and hasattr(lm, "norm"):
+#         #     for p in lm.norm.parameters():
+#         #         p.requires_grad = True
+#
+#         # Make <CLS> embedding learnable WITHOUT unfreezing whole embedding table
+#         # (default True; set args.train_cls_row=False to disable)
+#         if self.args.cls_finetune:
+#             if getattr(self.args, "train_cls_row", True) and lm is not None and hasattr(lm, "embed_tokens"):
+#                 emb = lm.embed_tokens
+#                 # ensure grads flow to emb.weight (we'll mask them)
+#                 emb.weight.requires_grad = True
+#
+#                 cls_id = int(self.cls_token_id)
+#                 # build a (vocab, hidden) mask with 1s only for cls row
+#                 mask = torch.zeros_like(emb.weight, dtype=torch.float32)
+#                 mask[cls_id].fill_(1.0)
+#
+#                 def grad_mask_hook(grad):
+#                     return grad * mask.to(grad.device, grad.dtype)
+#
+#                 # register once
+#                 if not hasattr(self, "_cls_grad_hooked"):
+#                     emb.weight.register_hook(grad_mask_hook)
+#                     self._cls_grad_hooked = True
+#
+#         # NOTE: if you enabled synergy modules, mark them trainable here.
+#
+#     def _load_cls_embedding(self):
+#
+#         cls_path = getattr(self.args, "cls_emb_path", None)
+#         save_base_dir = getattr(self.args, "save_base_dir", None)
+#         if save_base_dir is None or cls_path is None:
+#             return
+#         cls_path = os.path.join(save_base_dir, cls_path)
+#
+#         self.load_cls_embedding(cls_path)
+#
+#     def load_cls_embedding(self, path, strict_dim=True):
+#
+#         assert os.path.isfile(path), f"CLS embedding file not found: {path}"
+#
+#         ckpt = torch.load(path, map_location="cpu")
+#
+#         if "cls_row" not in ckpt:
+#             raise KeyError("CLS checkpoint must contain 'cls_row'")
+#
+#         cls_row = ckpt["cls_row"]
+#         saved_cls_id = ckpt.get("cls_token_id", self.cls_token_id)
+#
+#         lm = self.backbone.model.language_model
+#         if lm is None or not hasattr(lm, "embed_tokens"):
+#             raise RuntimeError("Language model embedding table not found")
+#
+#         emb = lm.embed_tokens
+#         current_cls_id = int(self.cls_token_id)
+#
+#         if strict_dim and cls_row.numel() != emb.weight.shape[1]:
+#             raise ValueError(
+#                 f"CLS dim mismatch: saved {cls_row.numel()} vs model {emb.weight.shape[1]}"
+#             )
+#
+#         if saved_cls_id != current_cls_id:
+#             print(
+#                 f"[WARN] saved cls_token_id={saved_cls_id} "
+#                 f"!= current cls_token_id={current_cls_id} — copying to current index"
+#             )
+#
+#         with torch.no_grad():
+#             emb.weight[current_cls_id].copy_(
+#                 cls_row.to(emb.weight.device, emb.weight.dtype)
+#             )
+#
+#         print(f"[OK] Loaded CLS embedding from {path}")
+#
+#     def _apply_lora(self):
+#         cfg = getattr(self.args, "lora_config", None)
+#         if not cfg or not cfg.get("use_lora", False):
+#             return
+#
+#         lora_cfg = LoraConfig(
+#             r=int(cfg.get("lora_r", 8)),
+#             lora_alpha=int(cfg.get("lora_alpha", 8)),
+#             lora_dropout=float(cfg.get("lora_dropout", 0.0)),
+#             target_modules=list(cfg.get("lora_target_modules", ["q_proj", "v_proj"])),
+#             bias=str(cfg.get("lora_bias", "none")),
+#             task_type="CAUSAL_LM",
+#         )
+#
+#         self.backbone = get_peft_model(self.backbone, lora_cfg)
+#
+#     def _build_prompts_with_choices(self, hint_texts, qa_texts, letters_list):
+#         prompts = []
+#         for hint, qa, letters in zip(hint_texts, qa_texts, letters_list):
+#             parts = []
+#             if hint is not None and hint.strip():
+#                 parts.append(hint.strip())
+#             if qa is not None and qa.strip():
+#                 parts.append(qa.strip())
+#
+#             if letters:
+#                 letters_str = ", ".join(f"({L})" for L in letters)
+#                 parts.append(f"Answer with only one of: {letters_str}.")
+#
+#             # Put CLS token at the END so it can attend to all previous tokens (causal LM)
+#             parts.append("<CLS>")
+#
+#             prompts.append("\n\n".join(parts))
+#         return prompts
+#
+#     # ============================================================
+#     #  Encoding / readout
+#     # ============================================================
+#     def _encode(self, input_ids, attention_mask, pixel_values, image_grid_thw=None):
+#         # IMPORTANT: no torch.no_grad() here; we need grads at least to CLS row + head
+#         outputs = self.backbone(
+#             input_ids=input_ids,
+#             attention_mask=attention_mask,
+#             pixel_values=pixel_values,
+#             image_grid_thw=image_grid_thw,
+#             output_hidden_states=True,
+#         )
+#         return outputs.hidden_states[-1]  # (B, T, d)
+#
+#     def _get_cls_token_repr(self, hidden, input_ids):
+#         B = input_ids.size(0)
+#         device = input_ids.device
+#
+#         # position of <CLS> (assumes exactly once per sample)
+#         cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)  # (B,)
+#         h = hidden[torch.arange(B, device=device), cls_pos]             # (B,d)
+#         h = F.layer_norm(h, (h.shape[-1],))
+#         return h
+#
+#     # ============================================================
+#     #  (Optional) generation for eval-time parsing (unchanged)
+#     # ============================================================
+#     def _generate_raw_answers(self, proc, input_ids, *, letters_list):
+#         gen_inputs = {
+#             k: v for k, v in proc.items()
+#             if k in ("input_ids", "attention_mask", "pixel_values", "image_grid_thw")
+#         }
+#         gen_inputs = {k: v.to(self.backbone.device) for k, v in gen_inputs.items()}
+#
+#         with torch.no_grad():
+#             gen_ids = self.backbone.generate(
+#                 **gen_inputs,
+#                 max_new_tokens=self.max_new_tokens,
+#                 do_sample=False,
+#             )
+#
+#         gen_ids_trimmed = [out_ids[len(in_ids):] for in_ids, out_ids in zip(input_ids, gen_ids)]
+#         raw_answers = self.processor.batch_decode(
+#             gen_ids_trimmed,
+#             skip_special_tokens=True,
+#             clean_up_tokenization_spaces=True,
+#         )
+#
+#         import re
+#
+#         def clean_answer(ans: str):
+#             lines = [l.strip() for l in ans.splitlines() if l.strip()]
+#             if not lines:
+#                 return ans.strip()
+#             first = lines[0]
+#             m = re.search(r"\(([A-Za-z])\)", first)
+#             if m:
+#                 return f"({m.group(1).upper()})"
+#             m2 = re.search(r"\b([A-Za-z])\b", first)
+#             if m2:
+#                 return f"({m2.group(1).upper()})"
+#             return first
+#
+#         cleaned = [clean_answer(ans) for ans in raw_answers]
+#
+#         pred_indices = []
+#         for ans, letters in zip(cleaned, letters_list):
+#             if not letters:
+#                 pred_indices.append(-1)
+#                 continue
+#             letters_upper = [L.upper() for L in letters]
+#             m = re.search(r"\(([A-Za-z])\)", ans)
+#             if not m:
+#                 pred_indices.append(-1)
+#                 continue
+#             letter = m.group(1).upper()
+#             pred_indices.append(letters_upper.index(letter) if letter in letters_upper else -1)
+#
+#         pred_indices = torch.tensor(pred_indices, device=input_ids.device, dtype=torch.long)
+#         return cleaned, pred_indices
+#
+#     def _mc_ce_loss(self, logits, labels):
+#         if hasattr(self.args, "class_weights") and self.args.class_weights is not None:
+#             class_weights = self.args.class_weights.to(logits.device)
+#             return F.cross_entropy(logits, labels, weight=class_weights)
+#         return F.cross_entropy(logits, labels)
+#
+#
+#     def _prepare_modality_tokens(self, x, **kwargs):
+#         """
+#         Returns:
+#           z1, z2, z3: dicts with (ids, mask) for each modality region in the *full* sequence
+#           meta: extra tensors/fields needed downstream (proc fields, letters_list, etc.)
+#         """
+#         hint_texts = x[0]
+#         qa_texts = x[1]
+#         images = x[2]
+#         choices_list = x[3] if len(x) > 3 else kwargs.get("choices", None)
+#         letters_list = x[4] if len(x) > 4 else kwargs.get("letters", None)
+#
+#         if choices_list is None:
+#             raise ValueError("choices_list (x[3] or kwargs['choices']) is required for MC setup.")
+#         if letters_list is None:
+#             raise ValueError("letters_list (x[4] or kwargs['letters']) is required for zero-shot parsing.")
+#
+#         device = images.device
+#
+#         # Build two text regions per sample
+#         hint_parts, qa_parts = self._build_hint_and_qa_parts(
+#             hint_texts, qa_texts, letters_list, choices_list=choices_list
+#         )
+#
+#         # Full prompt that goes to the multimodal processor (same as your original)
+#         # You control separators; must match the way you compute spans below.
+#         full_texts = [self.image_token_str + "\n" + h + "\n" + q for h, q in zip(hint_parts, qa_parts)]
+#         image_list = [img for img in images]
+#
+#         proc = self.processor(
+#             text=full_texts,
+#             images=image_list,
+#             padding=True,
+#             truncation=True,
+#             return_tensors="pt",
+#         )
+#         proc = {k: v.to(device) for k, v in proc.items()}
+#
+#         input_ids = proc["input_ids"]  # [B, L]
+#         attention_mask = proc["attention_mask"]  # [B, L]
+#
+#         # ---- Identify image placeholder token positions (z2) ----
+#         tok = self.processor.tokenizer
+#         image_token_id = tok.convert_tokens_to_ids(self.image_token_str)
+#         if image_token_id is None or image_token_id == tok.unk_token_id:
+#             raise ValueError(
+#                 f"Could not resolve image token id for {self.image_token_str}. "
+#                 "Check your tokenizer special tokens."
+#             )
+#
+#         z2_mask = (input_ids == image_token_id) & attention_mask.bool()  # [B, L]
+#
+#         # ---- Compute hint (z1) and qa (z3) spans as masks over the *full* sequence ----
+#         # We estimate lengths by tokenizing hint_parts and qa_parts separately.
+#         # We do NOT add special tokens so we get raw token counts.
+#         # NOTE: truncation can break perfect alignment; we’ll clamp using actual seq lengths.
+#
+#         hint_ids = tok(
+#             list(hint_parts),
+#             add_special_tokens=False,
+#             padding=False,
+#             truncation=True,
+#             return_tensors=None,
+#         )["input_ids"]
+#
+#         qa_ids = tok(
+#             list(qa_parts),
+#             add_special_tokens=False,
+#             padding=False,
+#             truncation=True,
+#             return_tensors=None,
+#         )["input_ids"]
+#
+#         # Build masks per sample.
+#         B, L = input_ids.shape
+#         z1_mask = torch.zeros((B, L), dtype=torch.bool, device=device)
+#         z3_mask = torch.zeros((B, L), dtype=torch.bool, device=device)
+#
+#         # We assume the full text layout is:
+#         #   [<image>] "\n" [hint tokens] "\n" [qa tokens]
+#         #
+#         # Tokenizers may tokenize "\n" into 1+ tokens, and some processors may insert BOS.
+#         # So instead of hardcoding offsets, we find the first non-padding token index,
+#         # then find the image token position(s) and locate text segments relative to that.
+#         #
+#         # Strategy:
+#         # - find first occurrence of image token in each row -> idx_img
+#         # - treat "hint region" as the next `len(hint_ids[i])` tokens *after* idx_img + gap
+#         # - treat qa region as the next `len(qa_ids[i])` tokens after hint + gap
+#         #
+#         # We detect "gap" by searching forward until we hit the first token that matches
+#         # the first hint token id sequence (best-effort).
+#
+#         for i in range(B):
+#             row_ids = input_ids[i]
+#             row_attn = attention_mask[i].bool()
+#             valid_len = int(row_attn.sum().item())
+#
+#             img_positions = torch.nonzero(row_ids[:valid_len] == image_token_id, as_tuple=False).view(-1)
+#             if len(img_positions) == 0:
+#                 # If processor doesn't actually include the token (some models handle images separately),
+#                 # you can set z2 empty and start from beginning.
+#                 start_after_img = 0
+#             else:
+#                 # pick first <image> token
+#                 start_after_img = int(img_positions[0].item()) + 1
+#
+#             # Best-effort: skip any immediate separator tokens that come from "\n" etc.
+#             # We just advance until we find a position where the remaining tail is long enough.
+#             hlen = len(hint_ids[i])
+#             qlen = len(qa_ids[i])
+#
+#             # Clamp if truncation shortened things.
+#             # We try to allocate hint then qa within valid_len.
+#             # If not enough room, we shrink qa then hint.
+#             max_room = max(0, valid_len - start_after_img)
+#             hlen_eff = min(hlen, max_room)
+#             max_room2 = max(0, max_room - hlen_eff)
+#             qlen_eff = min(qlen, max_room2)
+#
+#             # Mark z1
+#             h_start = start_after_img
+#             h_end = min(valid_len, h_start + hlen_eff)
+#             if h_end > h_start:
+#                 z1_mask[i, h_start:h_end] = True
+#
+#             # Mark z3 right after hint
+#             q_start = h_end
+#             q_end = min(valid_len, q_start + qlen_eff)
+#             if q_end > q_start:
+#                 z3_mask[i, q_start:q_end] = True
+#
+#             # Make sure we don't label the <image> token itself as hint/qa
+#             if len(img_positions) > 0:
+#                 z1_mask[i, img_positions[0]] = False
+#                 z3_mask[i, img_positions[0]] = False
+#
+#         # Convenience: also return the per-modality token ids by masking the full ids
+#         # (these will be ragged if you try to pack them; masks are usually better).
+#         z1 = {"ids": input_ids, "mask": z1_mask}
+#         z2 = {"ids": input_ids, "mask": z2_mask}
+#         z3 = {"ids": input_ids, "mask": z3_mask}
+#
+#         meta = {
+#             "proc": proc,
+#             "input_ids": input_ids,
+#             "attention_mask": attention_mask,
+#             "pixel_values": proc["pixel_values"],
+#             "image_grid_thw": proc.get("image_grid_thw"),
+#             "letters_list": letters_list,
+#             "choices_list": choices_list,
+#         }
+#         return z1, z2, z3, meta
+#
+#     def forward(
+#             self,
+#             x,
+#             *,
+#             label=None,
+#             return_features=False,
+#             current_step=None,
+#             image_token_mask=None,
+#             text_token_mask=None,
+#             **kwargs,
+#     ):
+#         z1, z2, z3, meta = self._prepare_modality_tokens(x, **kwargs)
+#         output = self._forward_from_tokens(
+#             z1=z1, z2=z2, z3=z3, meta=meta,
+#             label=label,
+#             return_features=return_features,
+#             current_step=current_step,
+#             **kwargs,
+#         )
+#
+#         if self.synergy_coeff > 0:
+#             synergy_losses = self.synib.compute_training_losses(
+#                 x, base_output=output, **kwargs
+#             )
+#             output["losses"].update(synergy_losses)
+#
+#         return output
+#
+#     def _build_hint_and_qa_parts(self, hint_texts, qa_texts, letters_list, choices_list=None):
+#         """
+#         Returns:
+#           hint_parts: List[str] length B
+#           qa_parts:   List[str] length B
+#         """
+#         # Minimal assumption:
+#         # - hint_texts[i] is the hint string
+#         # - qa_texts[i] already includes question+answers OR you build it with choices elsewhere
+#         #
+#         # If your existing _build_prompts_with_choices already formats everything,
+#         # it’s worth refactoring it to return (hint_part, qa_part) instead of a single string.
+#         hint_parts = list(hint_texts)
+#
+#         # Example: if qa_texts already contains "Q: ... A: ..." including choices formatting:
+#         qa_parts = list(qa_texts)
+#
+#         # If you actually need to inject letters/choices into qa_parts, do it here.
+#         # (Leaving it as-is because your original snippet doesn't show where choices_list is used.)
+#         return hint_parts, qa_parts
+#
+#     def _forward_from_tokens(
+#             self,
+#             *,
+#             z1, z2, z3, meta,
+#             label=None,
+#             return_features=False,
+#             current_step=None,
+#             **kwargs,
+#     ):
+#         # You still run the encoder on the full packed batch, as before:
+#         hidden = self._encode(
+#             input_ids=meta["input_ids"],
+#             attention_mask=meta["attention_mask"],
+#             pixel_values=meta["pixel_values"],
+#             image_grid_thw=meta["image_grid_thw"],
+#         )
+#
+#         # Your existing CLS readout:
+#         h_cls = self._get_cls_token_repr(hidden, meta["input_ids"])
+#         h_cls = h_cls.to(self.enc_0.linear.weight.dtype)
+#         head_logits = self.enc_0(h_cls)
+#
+#         losses = {}
+#         if label is not None:
+#             losses["ce_head"] = self._mc_ce_loss(head_logits, label)
+#
+#         preds = {"combined": head_logits}
+#         features = {
+#             "h_cls": h_cls,
+#             # expose modality masks for downstream use/debug
+#             "z1": z1["ids"],
+#             "z2": z2["ids"],
+#             "z3": z3["ids"],
+#             "z1_mask": z1["mask"],
+#             "z2_mask": z2["mask"],
+#             "z3_mask": z3["mask"],
+#         }
+#         if return_features:
+#             features["hidden"] = hidden
+#
+#         if (not self.training) and getattr(self.args, "do_zeroshot_parse", False):
+#             raw_text_answers, mc_from_text = self._generate_raw_answers(
+#                 meta["proc"], meta["input_ids"], letters_list=meta["letters_list"]
+#             )
+#             preds["raw_text"] = raw_text_answers
+#             preds["mc_from_text"] = mc_from_text
+#
+#         return {"preds": preds, "features": features, "losses": losses}
+
+class QwenVL_ScienceQA_Synergy_SynIB(nn.Module):
+    """
+    Multimodal (image+text) ScienceQA as 5-way classification.
+    Backbone is frozen EXCEPT:
+      - classifier head enc_0 (always trainable)
+      - (optional) learnable <CLS> embedding row ONLY (via gradient masking hook)
+      - (optional) final LM norm (cheap, sometimes helps)
+
+    Readout is the hidden state at the appended <CLS> token (placed at end of prompt).
+    """
+
+    def __init__(self, args, encs=None, **kwargs):
+        super().__init__()
+        encs = encs or []
+
+        self.args = args
+        self.synergy_weight = float(self.args.get("bias_infusion", {}).get("l", 0.0))
+        self.max_new_tokens = getattr(args, "max_new_tokens", 32)
+        self.num_classes = getattr(args, "num_classes")
+
+        model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
+        HF_CACHE = getattr(self.args, "save_base_dir", None)
+
+        # -----------------------------
+        # Processor / Tokenizer
+        # -----------------------------
+        self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=HF_CACHE)
+        tok = self.processor.tokenizer
+        tok.padding_side = "left"
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
+
+        # Add <CLS> token to tokenizer
+        added = tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
+        self.cls_token_id = tok.convert_tokens_to_ids("<CLS>")
+
+        self.backbone = Qwen3VLForConditionalGeneration.from_pretrained(
+            model_name,
+            dtype=torch.bfloat16 if getattr(args, "bf16", False) else torch.float16,
+            device_map="cuda:0",
+            cache_dir=HF_CACHE,
+        )
+
+        if added > 0:
+            self.backbone.resize_token_embeddings(len(tok))
+
+        cfg = self.backbone.config
+        self.image_token_id = cfg.image_token_id
+        self.image_token_str = tok.convert_ids_to_tokens(self.image_token_id)
+
+        if hasattr(cfg, "text_config") and hasattr(cfg.text_config, "hidden_size"):
+            self.d_model = cfg.text_config.hidden_size
+        else:
+            self.d_model = cfg.hidden_size
+
+        if len(encs) < 1:
+            raise ValueError("encs[0] must be provided as the 5-way classifier head.")
+        self.enc_0 = encs[0]
+
+        self._apply_lora()
+        self._load_cls_embedding()
+        self._setup_trainables()
+
+        self.synib = SynIB_Qwen(args, [], self)
+
+    def _setup_trainables(self):
+        # Freeze everything
+        for p in self.backbone.parameters():
+            p.requires_grad = False
+
+        if getattr(self.args, "lora_config", None) and self.args.lora_config.get("use_lora", False):
+            for n, p in self.backbone.named_parameters():
+                if "lora_" in n:
+                    p.requires_grad = True
+
+        for p in self.enc_0.parameters():
+            p.requires_grad = True
+
+        lm = self.backbone.model.language_model
+
+        # Optionally train final norm (cheap and often stabilizes)
+        # if getattr(self.args, "train_lm_norm", False) and lm is not None and hasattr(lm, "norm"):
+        #     for p in lm.norm.parameters():
+        #         p.requires_grad = True
+
+        # Make <CLS> embedding learnable WITHOUT unfreezing whole embedding table
+        # (default True; set args.train_cls_row=False to disable)
+        if self.args.cls_finetune:
+            if getattr(self.args, "train_cls_row", True) and lm is not None and hasattr(lm, "embed_tokens"):
+                emb = lm.embed_tokens
+                # ensure grads flow to emb.weight (we'll mask them)
+                emb.weight.requires_grad = True
+
+                cls_id = int(self.cls_token_id)
+                # build a (vocab, hidden) mask with 1s only for cls row
+                mask = torch.zeros_like(emb.weight, dtype=torch.float32)
+                mask[cls_id].fill_(1.0)
+
+                def grad_mask_hook(grad):
+                    return grad * mask.to(grad.device, grad.dtype)
+
+                # register once
+                if not hasattr(self, "_cls_grad_hooked"):
+                    emb.weight.register_hook(grad_mask_hook)
+                    self._cls_grad_hooked = True
+
+        # NOTE: if you enabled synergy modules, mark them trainable here.
+
+    def _load_cls_embedding(self):
+
+        cls_path = getattr(self.args, "cls_emb_path", None)
+        save_base_dir = getattr(self.args, "save_base_dir", None)
+        if save_base_dir is None or cls_path is None:
+            return
+        cls_path = os.path.join(save_base_dir, cls_path)
+
+        self.load_cls_embedding(cls_path)
+
+    def load_cls_embedding(self, path, strict_dim=True):
+
+        assert os.path.isfile(path), f"CLS embedding file not found: {path}"
+
+        ckpt = torch.load(path, map_location="cpu")
+
+        if "cls_row" not in ckpt:
+            raise KeyError("CLS checkpoint must contain 'cls_row'")
+
+        cls_row = ckpt["cls_row"]
+        saved_cls_id = ckpt.get("cls_token_id", self.cls_token_id)
+
+        lm = self.backbone.model.language_model
+        if lm is None or not hasattr(lm, "embed_tokens"):
+            raise RuntimeError("Language model embedding table not found")
+
+        emb = lm.embed_tokens
+        current_cls_id = int(self.cls_token_id)
+
+        if strict_dim and cls_row.numel() != emb.weight.shape[1]:
+            raise ValueError(
+                f"CLS dim mismatch: saved {cls_row.numel()} vs model {emb.weight.shape[1]}"
+            )
+
+        if saved_cls_id != current_cls_id:
+            print(
+                f"[WARN] saved cls_token_id={saved_cls_id} "
+                f"!= current cls_token_id={current_cls_id} — copying to current index"
+            )
+
+        with torch.no_grad():
+            emb.weight[current_cls_id].copy_(
+                cls_row.to(emb.weight.device, emb.weight.dtype)
+            )
+
+        print(f"[OK] Loaded CLS embedding from {path}")
+
+    def _apply_lora(self):
+        cfg = getattr(self.args, "lora_config", None)
+        if not cfg or not cfg.get("use_lora", False):
+            return
+
+        lora_cfg = LoraConfig(
+            r=int(cfg.get("lora_r", 8)),
+            lora_alpha=int(cfg.get("lora_alpha", 8)),
+            lora_dropout=float(cfg.get("lora_dropout", 0.0)),
+            target_modules=list(cfg.get("lora_target_modules", ["q_proj", "v_proj"])),
+            bias=str(cfg.get("lora_bias", "none")),
+            task_type="CAUSAL_LM",
+        )
+
+        self.backbone = get_peft_model(self.backbone, lora_cfg)
+
+    def _build_prompts_with_choices(self, hint_texts, qa_texts, letters_list):
+        prompts = []
+        for hint, qa, letters in zip(hint_texts, qa_texts, letters_list):
+            parts = []
+            if hint is not None and hint.strip():
+                parts.append(hint.strip())
+            if qa is not None and qa.strip():
+                parts.append(qa.strip())
+
+            if letters:
+                letters_str = ", ".join(f"({L})" for L in letters)
+                parts.append(f"Answer with only one of: {letters_str}.")
+
+            # Put CLS token at the END so it can attend to all previous tokens (causal LM)
+            parts.append("<CLS>")
+
+            prompts.append("\n\n".join(parts))
+        return prompts
+
+    def _encode(self, input_ids, attention_mask, pixel_values, image_grid_thw=None):
+        # IMPORTANT: no torch.no_grad() here; we need grads at least to CLS row + head
+        outputs = self.backbone(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            pixel_values=pixel_values,
+            image_grid_thw=image_grid_thw,
+            output_hidden_states=True,
+        )
+        return outputs.hidden_states[-1]  # (B, T, d)
+
+    def _get_cls_token_repr(self, hidden, input_ids):
+        B = input_ids.size(0)
+        device = input_ids.device
+
+        # position of <CLS> (assumes exactly once per sample)
+        cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)  # (B,)
+        h = hidden[torch.arange(B, device=device), cls_pos]             # (B,d)
+        h = F.layer_norm(h, (h.shape[-1],))
+        return h
+
+    def _find_subsequence(self, haystack, needle):
+        """
+        Return (start, end) indices of needle in haystack (both python lists of ints),
+        or None if not found.
+        """
+        n = len(needle)
+        if n == 0:
+            return None
+        # simple O(T*n) is fine for debug
+        for i in range(len(haystack) - n + 1):
+            if haystack[i:i + n] == needle:
+                return (i, i + n)
+        return None
+
+    def debug_token_regions(self, processor, proc, prompts_with_image, hint_texts, image_token_str, max_print=2):
+        """
+        processor: your AutoProcessor
+        proc: output of processor(... return_tensors="pt") with keys input_ids, attention_mask, etc.
+        prompts_with_image: list[str] length B (your final text prompts you fed into processor)
+        hint_texts: list[str|None] length B (your hint per example)
+        image_token_str: the prefix string you add (self.image_token_str)
+        """
+
+        tok = processor.tokenizer
+        input_ids = proc["input_ids"]
+        attn = proc["attention_mask"]
+        B, T = input_ids.shape
+
+        hint_mask = torch.zeros((B, T), dtype=torch.bool, device=input_ids.device)
+        image_mask = torch.zeros((B, T), dtype=torch.bool, device=input_ids.device)
+
+        # 1) Identify content region because you set padding_side="left"
+        # content starts at: T - sum(attn)
+        content_starts = (T - attn.sum(dim=1)).tolist()
+        content_lens = attn.sum(dim=1).tolist()
+
+        # 2) Try to discover likely vision special tokens / ids
+        # Qwen-VL usually has some of these; we check what actually exists in your tokenizer vocab.
+        candidate_vision_tokens = [
+            "<|vision_start|>", "<|vision_end|>", "<|image_pad|>", "<|video_pad|>",
+            "<image>", "<img>", "img", "<|image|>"
+        ]
+
+        existing_vision = []
+        for s in candidate_vision_tokens:
+            tid = tok.convert_tokens_to_ids(s)
+            if tid is not None and tid != tok.unk_token_id:
+                existing_vision.append((s, tid))
+
+        # Also tokenize your image_token_str itself (this is often the most reliable)
+        image_prefix_ids = tok(image_token_str, add_special_tokens=False).input_ids
+        image_prefix_id_set = set(image_prefix_ids)
+
+        # 3) For each example: locate hint subsequence and vision tokens inside the content slice
+        spans = []
+        for i in range(B):
+            cs = content_starts[i]
+            clen = int(content_lens[i])
+            content_ids = input_ids[i, cs:cs + clen].tolist()
+
+            # --- Hint: tokenize hint alone and search inside content_ids
+            hint = hint_texts[i] if hint_texts is not None else None
+            hint_span_global = None
+
+            if hint is not None and str(hint).strip():
+                # Important: match how it appears in your prompt. You append hint.strip() as a "parts" item
+                # and later join with "\n\n". So the hint in the full prompt is exactly hint.strip()
+                # (no extra prefix), BUT it is followed by "\n\n" if there is more after it.
+                hint_ids = tok(hint.strip(), add_special_tokens=False).input_ids
+                local = self._find_subsequence(content_ids, hint_ids)
+
+                # If exact match fails (newlines/spacing differences), try a couple fallback variants:
+                if local is None:
+                    hint_ids = tok(hint.strip() + "\n\n", add_special_tokens=False).input_ids
+                    local = self._find_subsequence(content_ids, hint_ids)
+                if local is None:
+                    hint_ids = tok("\n\n" + hint.strip(), add_special_tokens=False).input_ids
+                    local = self._find_subsequence(content_ids, hint_ids)
+
+                if local is not None:
+                    hs, he = local
+                    # convert to global positions in the padded sequence
+                    ghs, ghe = cs + hs, cs + he
+                    hint_mask[i, ghs:ghe] = True
+                    hint_span_global = (ghs, ghe)
+
+            # --- Image tokens: mark positions that correspond to vision placeholders in input_ids
+            # Strategy A: mark any token that is part of your image_token_str tokenization
+            # Strategy B: if tokenizer has explicit <|image_pad|> etc, mark those too
+            row_ids = input_ids[i].tolist()
+
+            # A) image_token_str token ids
+            for j, tid in enumerate(row_ids):
+                if tid in image_prefix_id_set:
+                    image_mask[i, j] = True
+
+            # B) known explicit vision tokens
+            for (s, tid) in existing_vision:
+                # mark all occurrences
+                # (this can include <|image_pad|> repeated many times)
+                for j, t in enumerate(row_ids):
+                    if t == tid:
+                        image_mask[i, j] = True
+
+            # Collect some debug info
+            spans.append({
+                "i": i,
+                "content_start": cs,
+                "content_len": clen,
+                "hint_span_global": hint_span_global,
+                "n_hint_tokens": int(hint_mask[i].sum().item()),
+                "n_image_tokens": int(image_mask[i].sum().item()),
+            })
+
+        # # 4) Print a small debug preview
+        # print("=== Vision token ids that exist in this tokenizer ===")
+        # print(existing_vision)
+        # print("=== image_token_str tokenization ===")
+        # print("image_token_str:", repr(image_token_str))
+        # print("image_prefix_ids:", image_prefix_ids)
+        #
+        # if "image_grid_thw" in proc and proc["image_grid_thw"] is not None:
+        #     print("=== image_grid_thw ===")
+        #     print(proc["image_grid_thw"])
+
+        # Show a couple rows decoded around hint and image positions
+        for i in range(min(B, max_print)):
+            print(f"\n--- Example {i} ---")
+            print("spans:", spans[i])
+
+            # Decode only content (non-pad) for readability
+            cs = spans[i]["content_start"]
+            clen = spans[i]["content_len"]
+            content_ids = input_ids[i, cs:cs + clen]
+            print("Decoded content:\n", tok.decode(content_ids, skip_special_tokens=False))
+
+            # Show the indices where masks are true (first ~80 indices)
+            hint_pos = torch.where(hint_mask[i])[0].tolist()
+            img_pos = torch.where(image_mask[i])[0].tolist()
+            print("hint positions (global, first 80):", hint_pos[:80])
+            print("image positions (global, first 80):", img_pos[:80])
+
+        masks = {"hint_mask": hint_mask, "image_mask": image_mask}
+        return masks
+
+    # ============================================================
+    #  (Optional) generation for eval-time parsing (unchanged)
+    # ============================================================
+    def _generate_raw_answers(self, proc, input_ids, *, letters_list):
+        gen_inputs = {
+            k: v for k, v in proc.items()
+            if k in ("input_ids", "attention_mask", "pixel_values", "image_grid_thw")
+        }
+        gen_inputs = {k: v.to(self.backbone.device) for k, v in gen_inputs.items()}
+
+        with torch.no_grad():
+            gen_ids = self.backbone.generate(
+                **gen_inputs,
+                max_new_tokens=self.max_new_tokens,
+                do_sample=False,
+            )
+
+        gen_ids_trimmed = [out_ids[len(in_ids):] for in_ids, out_ids in zip(input_ids, gen_ids)]
+        raw_answers = self.processor.batch_decode(
+            gen_ids_trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=True,
+        )
+
+        import re
+
+        def clean_answer(ans: str):
+            lines = [l.strip() for l in ans.splitlines() if l.strip()]
+            if not lines:
+                return ans.strip()
+            first = lines[0]
+            m = re.search(r"\(([A-Za-z])\)", first)
+            if m:
+                return f"({m.group(1).upper()})"
+            m2 = re.search(r"\b([A-Za-z])\b", first)
+            if m2:
+                return f"({m2.group(1).upper()})"
+            return first
+
+        cleaned = [clean_answer(ans) for ans in raw_answers]
+
+        pred_indices = []
+        for ans, letters in zip(cleaned, letters_list):
+            if not letters:
+                pred_indices.append(-1)
+                continue
+            letters_upper = [L.upper() for L in letters]
+            m = re.search(r"\(([A-Za-z])\)", ans)
+            if not m:
+                pred_indices.append(-1)
+                continue
+            letter = m.group(1).upper()
+            pred_indices.append(letters_upper.index(letter) if letter in letters_upper else -1)
+
+        pred_indices = torch.tensor(pred_indices, device=input_ids.device, dtype=torch.long)
+        return cleaned, pred_indices
+
+    def _mc_ce_loss(self, logits, labels):
+        if hasattr(self.args, "class_weights") and self.args.class_weights is not None:
+            class_weights = self.args.class_weights.to(logits.device)
+            return F.cross_entropy(logits, labels, weight=class_weights)
+        return F.cross_entropy(logits, labels)
+
+    def apply_custom_masks(self, base_att_mask, hint_attention_mask: Optional[torch.Tensor] = None, image_attention_mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+        if hint_attention_mask is None and image_attention_mask is None:
+            return base_att_mask
+        combined = base_att_mask.clone()
+        if hint_attention_mask is not None:
+            combined = combined * hint_attention_mask
+        if image_attention_mask is not None:
+            combined = combined * image_attention_mask
+        return combined
+
+    def _compute_logits(self, x, m0=None, m1=None, **kwargs):
+        hint_texts = x[0]
+        qa_texts = x[1]
+        images = x[2]
+        choices_list = x[3] if len(x) > 3 else kwargs.get("choices", None)
+        letters_list = x[4] if len(x) > 4 else kwargs.get("letters", None)
+
+        if choices_list is None:
+            raise ValueError("choices_list (x[3] or kwargs['choices']) is required for MC setup.")
+        if letters_list is None:
+            raise ValueError("letters_list (x[4] or kwargs['letters']) is required for zero-shot parsing.")
+
+        device = images.device
+
+        prompts = self._build_prompts_with_choices(hint_texts, qa_texts, letters_list)
+        prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
+        image_list = [img for img in images]
+
+        proc = self.processor(  text=prompts_with_image,
+                                images=image_list,
+                                padding=True,
+                                truncation=True,
+                                return_tensors="pt")
+        proc = {k: v.to(device) for k, v in proc.items()}
+
+        if m0 is None and m1 is None:
+            masks = self.debug_token_regions(
+                processor=self.processor,
+                proc=proc,
+                prompts_with_image=prompts_with_image,
+                hint_texts=hint_texts,
+                image_token_str=self.image_token_str,
+                max_print=0
+            )
+        else:
+            masks = None
+
+        att_mask = self.apply_custom_masks(proc["attention_mask"], m0, m1)
+
+        hidden = self._encode(  input_ids=proc["input_ids"],
+                                attention_mask=att_mask,
+                                pixel_values=proc["pixel_values"],
+                                image_grid_thw=proc.get("image_grid_thw"))
+
+        h_cls = self._get_cls_token_repr(hidden, proc["input_ids"])
+        h_cls = h_cls.to(self.enc_0.linear.weight.dtype)
+        head_logits = self.enc_0(h_cls)
+
+        return head_logits, {"hidden": hidden, "h_cls": h_cls}, masks
+
+    def forward(self, x, label=None, **kwargs):
+        head_logits, features, masks = self._compute_logits(x, **kwargs)
+        losses = {}
+        if label is not None:
+            losses["ce_head"] = self._mc_ce_loss(head_logits, label)
+
+        output = {"preds": {"combined": head_logits}, "features": features, "losses": losses, "masks": masks}
+        if self.synergy_weight > 0:
+            synergy_losses = self.synib.compute_training_losses( x, base_output=output, **kwargs)
+            output["losses"].update(synergy_losses)
+
+        return output
+
 
 # ============================================================
 #  Standalone extraction of CLS embedding from checkpoint

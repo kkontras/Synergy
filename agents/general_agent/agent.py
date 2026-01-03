@@ -82,7 +82,7 @@ class Agent():
 
         if "weights" not in vars(self).keys(): self.weights = None
 
-        self.logs = {"current_epoch":0,"current_step":0,"steps_no_improve":0, "saved_step": 0, "train_logs":{},"val_logs":{},"test_logs":{},"best_logs":{"loss":{"total":100}, "acc":{"combined":0}} , "seed":self.config.training_params.seed, "weights": self.weights}
+        self.logs = {"current_epoch":0,"current_step":0,"steps_no_improve":0, "saved_step": 0, "train_logs":{},"val_logs":{},"test_logs":{},"best_logs":{"loss":{"total":100, "ce_loss_combined":100}, "acc":{"combined":0}} , "seed":self.config.training_params.seed, "weights": self.weights}
         if self.config.training_params.wandb_disable:
             self.wandb_run = wandb.init(reinit=True, project="balance", config=self.config, mode = "disabled", name= self.config.model.save_dir.split("/")[-1][:-8])
         else:

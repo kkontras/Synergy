@@ -1,15 +1,15 @@
 Starting Job
 /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
-/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python
-Python 3.9.18
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python
+Python 3.10.19
 /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy
 We have 1 GPU
 /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
-config-./configs/CREMA_D/synergy/nov/synprom_ib.json
-Executing command: accelerate launch /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py --config ./configs/CREMA_D/synergy/nov/synprom_ib.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --pre  --l 1 --tdqm_disable  --lr 0.0001 --wd 0.0001 --cls conformer
-Namespace(config='./configs/CREMA_D/synergy/nov/synprom_ib.json', default_config='./configs/CREMA_D/default_config_cremad_res_syn.json', fold='0', alpha=None, tanh_mode=None, tanh_mode_beta=None, regby=None, clip=None, batch_size=None, l='1', multil=None, l_diffsq=None, lib=None, ratio_us=None, ratio_snr=None, kmepoch=None, num_samples=None, pow=None, nstep=None, contr_coeff=None, kde_coeff=None, etube=None, temperature=None, contr_type=None, shuffle_type=None, validate_with=None, transform_type=None, trasform_before=None, num_classes=None, base_alpha=None, alpha_var=None, base_beta=None, beta_var=None, optim_method=None, ilr_c=None, ilr_g=None, mmcosine_scaling=None, ending_epoch=None, load_ongoing=None, commonlayers=None, recon_weight1=None, recon_weight2=None, recon_epochstages=None, recon_ensemblestages=None, lr='0.0001', wd='0.0001', mm=None, cls='conformer', pre=True, frozen=False, tdqm_disable=True, start_over=False)
-2025-11-03 13:03:46,855 - Config - INFO - ./configs/CREMA_D/synergy/nov/synprom_ib.json
-2025-11-03 13:03:46,860 - Config - INFO -  THE Configuration of your experiment ..
+config-./configs/CREMA_D/synergy/dec/synprom_IB_mask.json
+Executing command: accelerate launch /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 0.01 --lr 0.00001 --wd 0.0001 --cls mlp --perturb mask --perturb_fill noise --num_samples 32 --start_over 
+Namespace(config='./configs/CREMA_D/synergy/dec/synprom_IB_mask.json', default_config='./configs/CREMA_D/default_config_cremad_res_syn.json', fold='0', alpha=None, tanh_mode=None, tanh_mode_beta=None, regby=None, clip=None, batch_size=None, l='0.01', multil=None, l_diffsq=None, lib=None, ratio_us=None, ratio_snr=None, kmepoch=None, num_samples='32', pow=None, nstep=None, contrcoeff=None, kde_coeff=None, etube=None, temperature=None, contr_type=None, shuffle_type=None, validate_with=None, transform_type=None, trasform_before=None, num_classes=None, base_alpha=None, alpha_var=None, base_beta=None, beta_var=None, optim_method=None, ilr_c=None, ilr_g=None, mmcosine_scaling=None, ending_epoch=None, load_ongoing=None, commonlayers=None, recon_weight1=None, recon_weight2=None, recon_epochstages=None, recon_ensemblestages=None, lr='0.00001', wd='0.0001', mm=None, cls='mlp', perturb='mask', perturb_fill='noise', pre=False, frozen=False, tdqm_disable=False, start_over=True)
+2025-12-16 01:22:48,034 - Config - INFO - ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json
+2025-12-16 01:22:48,037 - Config - INFO -  THE Configuration of your experiment ..
 {'agent': 'Agent',
  'dataset': {'data_roots': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D',
              'data_split': {'fold': 0, 'method': 'non_inclusive'},
@@ -27,7 +27,7 @@ Namespace(config='./configs/CREMA_D/synergy/nov/synprom_ib.json', default_config
  'early_stopping': {'end_of_epoch_check': True,
                     'log_interval': 10,
                     'max_epoch': 1500,
-                    'n_steps_stop': 20,
+                    'n_steps_stop': 100,
                     'n_steps_stop_after': 0,
                     'save_every_step': 3000,
                     'save_every_valstep': 10,
@@ -53,23 +53,23 @@ Namespace(config='./configs/CREMA_D/synergy/nov/synprom_ib.json', default_config
            'encoders': [{'args': {'d_model': 512,
                                   'dropout': 0.1,
                                   'fc_inner': 64,
-                                  'freeze_encoder': False,
+                                  'freeze_encoder': True,
                                   'num_classes': 6},
                          'model': 'Audio_ResNet',
                          'pretrainedEncoder': {'dir': 'unimodal_audio_fold{}_lr0.001_wd0.0001.pth.tar',
-                                               'use': False}},
+                                               'use': True}},
                         {'args': {'d_model': 512,
                                   'dropout': 0.1,
                                   'fc_inner': 64,
-                                  'freeze_encoder': False,
+                                  'freeze_encoder': True,
                                   'num_classes': 6},
                          'model': 'Video_ResNet',
                          'pretrainedEncoder': {'dir': 'unimodal_video_fold{}_lr0.001_wd0.0001.pth.tar',
-                                               'use': False}}],
+                                               'use': True}}],
            'load_ongoing': False,
-           'model_class': 'Fusion_Synprom_IB',
+           'model_class': 'FusionIBModel',
            'save_base_dir': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy',
-           'save_dir': 'Synprom_IB_{}.pth.tar'},
+           'save_dir': 'Synprom_IB_mask{}.pth.tar'},
  'optimizer': {'beta1': 0.9,
                'beta2': 0.999,
                'learning_rate': 1e-05,
@@ -77,9 +77,7 @@ Namespace(config='./configs/CREMA_D/synergy/nov/synprom_ib.json', default_config
                'type': 'Adam',
                'weight_decay': 1e-05},
  'scheduler': {'max_lr': 0.03, 'type': 'cosanneal', 'warm_up_steps': 780},
- 'training_params': {'adversarial_training': {'adv_epsilon': 0.01,
-                                              'use': False},
-                     'async_loading': True,
+ 'training_params': {'async_loading': True,
                      'batch_size': 32,
                      'cuda': True,
                      'data_loader_workers': 8,
@@ -95,38 +93,329 @@ Namespace(config='./configs/CREMA_D/synergy/nov/synprom_ib.json', default_config
                      'validation': True,
                      'verbose': True,
                      'wandb_disable': False}}
-2025-11-03 13:03:46,862 - Config - INFO -  *************************************** 
-2025-11-03 13:03:46,862 - Config - INFO - The experiment name is CREMAD Experiment
-2025-11-03 13:03:46,862 - Config - INFO -  *************************************** 
-2025-11-03 13:03:46,862 - root - INFO - save_dir: Synprom_IB_fold0_l1_lr0.0001_wd0.0001_clsconformer_pre.pth.tar
-2025-11-03 13:03:47,112 - Cuda Statistics - INFO - __Python VERSION:  3.9.18 (main, Sep 11 2023, 13:41:44) 
-[GCC 11.2.0]
-2025-11-03 13:03:47,112 - Cuda Statistics - INFO - __pyTorch VERSION:  2.0.1+cu118
-2025-11-03 13:03:47,112 - Cuda Statistics - INFO - __CUDA VERSION
-2025-11-03 13:03:47,223 - Cuda Statistics - INFO - __CUDNN VERSION:  8700
-2025-11-03 13:03:47,241 - Cuda Statistics - INFO - __Number CUDA Devices:  1
-2025-11-03 13:03:47,242 - Cuda Statistics - INFO - __Devices
-2025-11-03 13:03:47,242 - Cuda Statistics - INFO - index, name, driver_version, memory.total [MiB], memory.used [MiB], memory.free [MiB]
-2025-11-03 13:03:47,242 - Cuda Statistics - INFO - 0, NVIDIA GeForce RTX 3090, 580.95.05, 24576 MiB, 283 MiB, 23833 MiB
-2025-11-03 13:03:47,250 - Cuda Statistics - INFO - Active CUDA Device: GPU 0
-2025-11-03 13:03:47,250 - Cuda Statistics - INFO - Available devices  1
-2025-11-03 13:03:47,250 - Cuda Statistics - INFO - Current cuda device  0
+2025-12-16 01:22:48,039 - Config - INFO -  *************************************** 
+2025-12-16 01:22:48,039 - Config - INFO - The experiment name is CREMAD Experiment
+2025-12-16 01:22:48,039 - Config - INFO -  *************************************** 
+2025-12-16 01:22:48,039 - root - INFO - save_dir: Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar
+2025-12-16 01:22:48,085 - Cuda Statistics - INFO - __Python VERSION:  3.10.19 (main, Oct 21 2025, 16:43:05) [GCC 11.2.0]
+2025-12-16 01:22:48,085 - Cuda Statistics - INFO - __pyTorch VERSION:  2.6.0+cu124
+2025-12-16 01:22:48,085 - Cuda Statistics - INFO - __CUDA VERSION
+2025-12-16 01:22:48,086 - Cuda Statistics - INFO - __CUDNN VERSION:  90100
+2025-12-16 01:22:48,100 - Cuda Statistics - INFO - __Number CUDA Devices:  1
+2025-12-16 01:22:48,100 - Cuda Statistics - INFO - __Devices
+2025-12-16 01:22:48,100 - Cuda Statistics - INFO - index, name, driver_version, memory.total [MiB], memory.used [MiB], memory.free [MiB]
+2025-12-16 01:22:48,100 - Cuda Statistics - INFO - 0, NVIDIA GeForce RTX 2080 Ti, 570.153.02, 11264 MiB, 4 MiB, 10820 MiB
+2025-12-16 01:22:48,104 - Cuda Statistics - INFO - Active CUDA Device: GPU 0
+2025-12-16 01:22:48,104 - Cuda Statistics - INFO - Available devices  1
+2025-12-16 01:22:48,104 - Cuda Statistics - INFO - Current cuda device  0
 This path does not exist /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/AudioWAV/1076_MTI_SAD_XX.wav or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Image-01-FPS/1076_MTI_SAD_XX or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Face_features/1076_MTI_SAD_XX.npy
-2025-11-03 13:03:49,962 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
-2025-11-03 13:03:50,104 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
-2025-11-03 13:03:50,668 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
-2025-11-03 13:03:50,669 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
-2025-11-03 13:03:51,244 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
-2025-11-03 13:03:51,245 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
+2025-12-16 01:22:49,895 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
+2025-12-16 01:22:49,898 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
+2025-12-16 01:22:50,305 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
+2025-12-16 01:22:50,306 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
+2025-12-16 01:22:50,684 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
+2025-12-16 01:22:50,684 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
 Available cores 8
 We are changing dataloader workers to num of cores 0
-2025-11-03 13:03:51,249 - Agent - INFO - Device: cuda:0
-2025-11-03 13:03:51,249 - Agent - INFO - Total training batches: 127, validate every 25 batches, steps per epoch: 6
-2025-11-03 13:04:00,006 - Agent - INFO - Loss Weights are {'total': 1, 'combined': 1, 'c': 0, 'g': 0}
-2025-11-03 13:04:01,035 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold0_lr0.001_wd0.0001.pth.tar
+2025-12-16 01:22:50,686 - Agent - INFO - Device: cuda:0
+2025-12-16 01:22:50,686 - Agent - INFO - Total training batches: 127, validate every 25 batches, steps per epoch: 6
+2025-12-16 01:22:52,116 - Agent - INFO - Loss Weights are {'total': 1, 'combined': 1, 'c': 0, 'g': 0}
+2025-12-16 01:22:52,384 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold0_lr0.001_wd0.0001.pth.tar
 Replacing module
-2025-11-03 13:04:01,887 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold0_lr0.001_wd0.0001.pth.tar
+2025-12-16 01:22:52,744 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold0_lr0.001_wd0.0001.pth.tar
 Replacing module
-2025-11-03 13:04:02,539 - Agent - INFO - Total number of trainable parameters are: 63218008
-2025-11-03 13:04:02,555 - Agent - INFO - Total number of trainable parameters are: 63218008
+2025-12-16 01:22:52,798 - Agent - INFO - Freezing encoder enc_0
+2025-12-16 01:22:52,799 - Agent - INFO - Freezing encoder enc_1
+2025-12-16 01:22:52,981 - Agent - INFO - Total number of trainable parameters are: 23173976
+2025-12-16 01:22:52,987 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:24:30,892 - Agent - INFO - [37mVal Epoch 1 step 1 with [31mce_loss_combined : 1.651345 [31msl_1 : 0.000205 [31msl_2 : 0.000516 [31minfonce : 0.000000 [31mtotal : 1.652067 [94mAcc_combined: 57.86 [95mCEU_cue_audio: 0.7763 [95mCEU_cue_video: 0.1819 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 0.7661 
+2025-12-16 01:24:30,898 - Agent - INFO - [37mTest Epoch 1 step 1 with [31mce_loss_combined : 1.652874 [31msl_1 : 0.000220 [31msl_2 : 0.000569 [31minfonce : 0.000000 [31mtotal : 1.653663 [94mAcc_combined: 56.51 
+2025-12-16 01:24:31,112 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:24:31,117 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:26:11,722 - Agent - INFO - [37mVal Epoch 2 step 2 with [31mce_loss_combined : 1.397694 [31msl_1 : 0.001108 [31msl_2 : 0.004097 [31minfonce : 0.000000 [31mtotal : 1.402899 [94mAcc_combined: 64.46 [95mCEU_cue_audio: 0.7579 [95mCEU_cue_video: 0.3151 [95mCEU_synergy: 0.1965 [95mCEU_coexistence: 0.8709 
+2025-12-16 01:26:11,728 - Agent - INFO - [37mTest Epoch 2 step 2 with [31mce_loss_combined : 1.413939 [31msl_1 : 0.001298 [31msl_2 : 0.004689 [31minfonce : 0.000000 [31mtotal : 1.419926 [94mAcc_combined: 59.96 
+2025-12-16 01:26:12,092 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:26:12,094 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:27:45,408 - Agent - INFO - [37mVal Epoch 3 step 3 with [31mce_loss_combined : 1.133416 [31msl_1 : 0.003964 [31msl_2 : 0.013917 [31minfonce : 0.000000 [31mtotal : 1.151297 [94mAcc_combined: 67.54 [95mCEU_cue_audio: 0.8036 [95mCEU_cue_video: 0.3151 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9247 
+2025-12-16 01:27:45,421 - Agent - INFO - [37mTest Epoch 3 step 3 with [31mce_loss_combined : 1.176474 [31msl_1 : 0.004521 [31msl_2 : 0.015337 [31minfonce : 0.000000 [31mtotal : 1.196331 [94mAcc_combined: 63.18 
+2025-12-16 01:27:45,743 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:27:45,745 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:29:18,790 - Agent - INFO - [37mVal Epoch 4 step 4 with [31mce_loss_combined : 0.940510 [31msl_1 : 0.008496 [31msl_2 : 0.027275 [31minfonce : 0.000000 [31mtotal : 0.976281 [94mAcc_combined: 71.98 [95mCEU_cue_audio: 0.8677 [95mCEU_cue_video: 0.3516 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9757 
+2025-12-16 01:29:18,797 - Agent - INFO - [37mTest Epoch 4 step 4 with [31mce_loss_combined : 1.018249 [31msl_1 : 0.009596 [31msl_2 : 0.029711 [31minfonce : 0.000000 [31mtotal : 1.057556 [94mAcc_combined: 65.63 
+2025-12-16 01:29:19,109 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:29:19,112 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:30:54,137 - Agent - INFO - [37mVal Epoch 5 step 5 with [31mce_loss_combined : 0.827326 [31msl_1 : 0.013643 [31msl_2 : 0.040159 [31minfonce : 0.000000 [31mtotal : 0.881127 [94mAcc_combined: 73.46 [95mCEU_cue_audio: 0.8813 [95mCEU_cue_video: 0.4119 [95mCEU_synergy: 0.1475 [95mCEU_coexistence: 0.9840 
+2025-12-16 01:30:54,161 - Agent - INFO - [37mTest Epoch 5 step 5 with [31mce_loss_combined : 0.931270 [31msl_1 : 0.015295 [31msl_2 : 0.043199 [31minfonce : 0.000000 [31mtotal : 0.989764 [94mAcc_combined: 68.52 
+2025-12-16 01:30:54,494 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:30:54,497 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:32:26,475 - Agent - INFO - [37mVal Epoch 6 step 6 with [31mce_loss_combined : 0.759534 [31msl_1 : 0.017554 [31msl_2 : 0.048743 [31minfonce : 0.000000 [31mtotal : 0.825831 [94mAcc_combined: 74.94 [95mCEU_cue_audio: 0.8905 [95mCEU_cue_video: 0.4545 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9865 
+2025-12-16 01:32:26,482 - Agent - INFO - [37mTest Epoch 6 step 6 with [31mce_loss_combined : 0.877492 [31msl_1 : 0.019558 [31msl_2 : 0.051667 [31minfonce : 0.000000 [31mtotal : 0.948717 [94mAcc_combined: 69.19 
+2025-12-16 01:32:26,807 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:32:26,811 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:34:01,205 - Agent - INFO - [37mVal Epoch 7 step 7 with [31mce_loss_combined : 0.738591 [31msl_1 : 0.018987 [31msl_2 : 0.051224 [31minfonce : 0.000000 [31mtotal : 0.808801 [94mAcc_combined: 75.06 [95mCEU_cue_audio: 0.8766 [95mCEU_cue_video: 0.4726 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9891 
+2025-12-16 01:34:01,212 - Agent - INFO - [37mTest Epoch 7 step 7 with [31mce_loss_combined : 0.867782 [31msl_1 : 0.021219 [31msl_2 : 0.054553 [31minfonce : 0.000000 [31mtotal : 0.943554 [94mAcc_combined: 69.52 
+2025-12-16 01:34:01,541 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:34:01,544 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:35:34,034 - Agent - INFO - [37mVal Epoch 8 step 8 with [31mce_loss_combined : 0.737538 [31msl_1 : 0.019190 [31msl_2 : 0.051799 [31minfonce : 0.000000 [31mtotal : 0.808528 [94mAcc_combined: 74.94 [95mCEU_cue_audio: 0.8677 [95mCEU_cue_video: 0.4790 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9891 
+2025-12-16 01:35:34,036 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:37:07,997 - Agent - INFO - [37mVal Epoch 9 step 9 with [31mce_loss_combined : 0.707817 [31msl_1 : 0.022143 [31msl_2 : 0.056307 [31minfonce : 0.000000 [31mtotal : 0.786267 [94mAcc_combined: 75.85 [95mCEU_cue_audio: 0.8540 [95mCEU_cue_video: 0.5274 [95mCEU_synergy: 0.1965 [95mCEU_coexistence: 0.9891 
+2025-12-16 01:37:08,004 - Agent - INFO - [37mTest Epoch 9 step 9 with [31mce_loss_combined : 0.855054 [31msl_1 : 0.024850 [31msl_2 : 0.060007 [31minfonce : 0.000000 [31mtotal : 0.939911 [94mAcc_combined: 69.97 
+2025-12-16 01:37:08,349 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:37:08,352 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:38:41,604 - Agent - INFO - [37mVal Epoch 10 step 10 with [31mce_loss_combined : 0.672847 [31msl_1 : 0.024259 [31msl_2 : 0.057514 [31minfonce : 0.000000 [31mtotal : 0.754620 [94mAcc_combined: 76.77 [95mCEU_cue_audio: 0.8492 [95mCEU_cue_video: 0.5758 [95mCEU_synergy: 0.1965 [95mCEU_coexistence: 0.9920 
+2025-12-16 01:38:41,610 - Agent - INFO - [37mTest Epoch 10 step 10 with [31mce_loss_combined : 0.828188 [31msl_1 : 0.027005 [31msl_2 : 0.060560 [31minfonce : 0.000000 [31mtotal : 0.915753 [94mAcc_combined: 71.64 
+2025-12-16 01:38:41,929 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:38:41,933 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:40:14,643 - Agent - INFO - [37mVal Epoch 11 step 11 with [31mce_loss_combined : 0.665598 [31msl_1 : 0.026400 [31msl_2 : 0.059957 [31minfonce : 0.000000 [31mtotal : 0.751954 [94mAcc_combined: 76.42 [95mCEU_cue_audio: 0.8312 [95mCEU_cue_video: 0.5758 [95mCEU_synergy: 0.1965 [95mCEU_coexistence: 0.9946 
+2025-12-16 01:40:14,645 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:41:46,822 - Agent - INFO - [37mVal Epoch 12 step 12 with [31mce_loss_combined : 0.648337 [31msl_1 : 0.027470 [31msl_2 : 0.059700 [31minfonce : 0.000000 [31mtotal : 0.735507 [94mAcc_combined: 77.33 [95mCEU_cue_audio: 0.8312 [95mCEU_cue_video: 0.6120 [95mCEU_synergy: 0.2050 [95mCEU_coexistence: 0.9974 
+2025-12-16 01:41:46,829 - Agent - INFO - [37mTest Epoch 12 step 12 with [31mce_loss_combined : 0.819738 [31msl_1 : 0.030524 [31msl_2 : 0.062273 [31minfonce : 0.000000 [31mtotal : 0.912535 [94mAcc_combined: 70.97 
+2025-12-16 01:41:47,149 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:41:47,152 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:43:18,155 - Agent - INFO - [37mVal Epoch 13 step 13 with [31mce_loss_combined : 0.643910 [31msl_1 : 0.028256 [31msl_2 : 0.060597 [31minfonce : 0.000000 [31mtotal : 0.732763 [94mAcc_combined: 77.68 [95mCEU_cue_audio: 0.8356 [95mCEU_cue_video: 0.6243 [95mCEU_synergy: 0.2131 [95mCEU_coexistence: 0.9946 
+2025-12-16 01:43:18,162 - Agent - INFO - [37mTest Epoch 13 step 13 with [31mce_loss_combined : 0.816369 [31msl_1 : 0.031428 [31msl_2 : 0.063087 [31minfonce : 0.000000 [31mtotal : 0.910884 [94mAcc_combined: 71.86 
+2025-12-16 01:43:18,521 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:43:18,524 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:44:51,919 - Agent - INFO - [37mVal Epoch 14 step 14 with [31mce_loss_combined : 0.641267 [31msl_1 : 0.028663 [31msl_2 : 0.060970 [31minfonce : 0.000000 [31mtotal : 0.730901 [94mAcc_combined: 77.56 [95mCEU_cue_audio: 0.8312 [95mCEU_cue_video: 0.6181 [95mCEU_synergy: 0.2216 [95mCEU_coexistence: 0.9946 
+2025-12-16 01:44:51,920 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:46:21,409 - Agent - INFO - [37mVal Epoch 15 step 15 with [31mce_loss_combined : 0.639719 [31msl_1 : 0.028811 [31msl_2 : 0.060784 [31minfonce : 0.000000 [31mtotal : 0.729313 [94mAcc_combined: 77.79 [95mCEU_cue_audio: 0.8265 [95mCEU_cue_video: 0.6303 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9946 
+2025-12-16 01:46:21,416 - Agent - INFO - [37mTest Epoch 15 step 15 with [31mce_loss_combined : 0.816464 [31msl_1 : 0.032056 [31msl_2 : 0.063457 [31minfonce : 0.000000 [31mtotal : 0.911978 [94mAcc_combined: 71.52 
+2025-12-16 01:46:21,738 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:46:21,741 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:47:52,943 - Agent - INFO - [37mVal Epoch 16 step 16 with [31mce_loss_combined : 0.640172 [31msl_1 : 0.028889 [31msl_2 : 0.060951 [31minfonce : 0.000000 [31mtotal : 0.730012 [94mAcc_combined: 77.79 [95mCEU_cue_audio: 0.8265 [95mCEU_cue_video: 0.6303 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9946 
+2025-12-16 01:47:52,944 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:49:23,411 - Agent - INFO - [37mVal Epoch 17 step 17 with [31mce_loss_combined : 0.625307 [31msl_1 : 0.029993 [31msl_2 : 0.060954 [31minfonce : 0.000000 [31mtotal : 0.716254 [94mAcc_combined: 78.25 [95mCEU_cue_audio: 0.8128 [95mCEU_cue_video: 0.6605 [95mCEU_synergy: 0.2376 [95mCEU_coexistence: 0.9974 
+2025-12-16 01:49:23,417 - Agent - INFO - [37mTest Epoch 17 step 17 with [31mce_loss_combined : 0.807462 [31msl_1 : 0.033288 [31msl_2 : 0.063576 [31minfonce : 0.000000 [31mtotal : 0.904326 [94mAcc_combined: 71.19 
+2025-12-16 01:49:23,731 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:49:23,733 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:50:58,601 - Agent - INFO - [37mVal Epoch 18 step 18 with [31mce_loss_combined : 0.626395 [31msl_1 : 0.031339 [31msl_2 : 0.061249 [31minfonce : 0.000000 [31mtotal : 0.718983 [94mAcc_combined: 78.02 [95mCEU_cue_audio: 0.7991 [95mCEU_cue_video: 0.6787 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9946 
+2025-12-16 01:50:58,602 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:52:32,001 - Agent - INFO - [37mVal Epoch 19 step 19 with [31mce_loss_combined : 0.627922 [31msl_1 : 0.032766 [31msl_2 : 0.061860 [31minfonce : 0.000000 [31mtotal : 0.722548 [94mAcc_combined: 78.13 [95mCEU_cue_audio: 0.7855 [95mCEU_cue_video: 0.6972 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 01:52:32,002 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:54:08,170 - Agent - INFO - [37mVal Epoch 20 step 20 with [31mce_loss_combined : 0.622254 [31msl_1 : 0.033332 [31msl_2 : 0.062008 [31minfonce : 0.000000 [31mtotal : 0.717594 [94mAcc_combined: 78.93 [95mCEU_cue_audio: 0.7944 [95mCEU_cue_video: 0.7334 [95mCEU_synergy: 0.2216 [95mCEU_coexistence: 0.9974 
+2025-12-16 01:54:08,176 - Agent - INFO - [37mTest Epoch 20 step 20 with [31mce_loss_combined : 0.824757 [31msl_1 : 0.036630 [31msl_2 : 0.064081 [31minfonce : 0.000000 [31mtotal : 0.925468 [94mAcc_combined: 70.08 
+2025-12-16 01:54:08,516 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:54:08,519 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:55:42,688 - Agent - INFO - [37mVal Epoch 21 step 21 with [31mce_loss_combined : 0.620877 [31msl_1 : 0.033939 [31msl_2 : 0.061946 [31minfonce : 0.000000 [31mtotal : 0.716762 [94mAcc_combined: 78.47 [95mCEU_cue_audio: 0.7719 [95mCEU_cue_video: 0.7394 [95mCEU_synergy: 0.2216 [95mCEU_coexistence: 0.9974 
+2025-12-16 01:55:42,690 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:57:17,165 - Agent - INFO - [37mVal Epoch 22 step 22 with [31mce_loss_combined : 0.611019 [31msl_1 : 0.033944 [31msl_2 : 0.061482 [31minfonce : 0.000000 [31mtotal : 0.706445 [94mAcc_combined: 78.93 [95mCEU_cue_audio: 0.7855 [95mCEU_cue_video: 0.7271 [95mCEU_synergy: 0.2460 [95mCEU_coexistence: 0.9974 
+2025-12-16 01:57:17,166 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 01:58:49,274 - Agent - INFO - [37mVal Epoch 23 step 23 with [31mce_loss_combined : 0.617023 [31msl_1 : 0.034836 [31msl_2 : 0.061143 [31minfonce : 0.000000 [31mtotal : 0.713001 [94mAcc_combined: 79.04 [95mCEU_cue_audio: 0.7670 [95mCEU_cue_video: 0.7637 [95mCEU_synergy: 0.2376 [95mCEU_coexistence: 0.9974 
+2025-12-16 01:58:49,281 - Agent - INFO - [37mTest Epoch 23 step 23 with [31mce_loss_combined : 0.830425 [31msl_1 : 0.037871 [31msl_2 : 0.062897 [31minfonce : 0.000000 [31mtotal : 0.931193 [94mAcc_combined: 70.19 
+2025-12-16 01:58:49,641 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 01:58:49,644 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:00:22,086 - Agent - INFO - [37mVal Epoch 24 step 24 with [31mce_loss_combined : 0.626726 [31msl_1 : 0.035261 [31msl_2 : 0.061707 [31minfonce : 0.000000 [31mtotal : 0.723694 [94mAcc_combined: 78.59 [95mCEU_cue_audio: 0.7579 [95mCEU_cue_video: 0.7696 [95mCEU_synergy: 0.2131 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:00:22,088 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:01:57,057 - Agent - INFO - [37mVal Epoch 25 step 25 with [31mce_loss_combined : 0.622273 [31msl_1 : 0.035391 [31msl_2 : 0.061638 [31minfonce : 0.000000 [31mtotal : 0.719302 [94mAcc_combined: 79.04 [95mCEU_cue_audio: 0.7579 [95mCEU_cue_video: 0.7818 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:01:57,059 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:03:31,759 - Agent - INFO - [37mVal Epoch 26 step 26 with [31mce_loss_combined : 0.620109 [31msl_1 : 0.035459 [31msl_2 : 0.061424 [31minfonce : 0.000000 [31mtotal : 0.716993 [94mAcc_combined: 79.16 [95mCEU_cue_audio: 0.7579 [95mCEU_cue_video: 0.7878 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:03:31,766 - Agent - INFO - [37mTest Epoch 26 step 26 with [31mce_loss_combined : 0.841944 [31msl_1 : 0.038487 [31msl_2 : 0.063072 [31minfonce : 0.000000 [31mtotal : 0.943502 [94mAcc_combined: 69.63 
+2025-12-16 02:03:32,103 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+2025-12-16 02:03:32,107 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:05:03,593 - Agent - INFO - [37mVal Epoch 27 step 27 with [31mce_loss_combined : 0.617698 [31msl_1 : 0.035381 [31msl_2 : 0.061398 [31minfonce : 0.000000 [31mtotal : 0.714477 [94mAcc_combined: 79.04 [95mCEU_cue_audio: 0.7442 [95mCEU_cue_video: 0.7940 [95mCEU_synergy: 0.2376 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:05:03,595 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:06:35,208 - Agent - INFO - [37mVal Epoch 28 step 28 with [31mce_loss_combined : 0.618709 [31msl_1 : 0.035547 [31msl_2 : 0.061327 [31minfonce : 0.000000 [31mtotal : 0.715583 [94mAcc_combined: 78.82 [95mCEU_cue_audio: 0.7442 [95mCEU_cue_video: 0.7878 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:06:35,210 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:08:07,568 - Agent - INFO - [37mVal Epoch 29 step 29 with [31mce_loss_combined : 0.618594 [31msl_1 : 0.035478 [31msl_2 : 0.061374 [31minfonce : 0.000000 [31mtotal : 0.715445 [94mAcc_combined: 78.82 [95mCEU_cue_audio: 0.7442 [95mCEU_cue_video: 0.7878 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:08:07,570 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:09:45,390 - Agent - INFO - [37mVal Epoch 30 step 30 with [31mce_loss_combined : 0.619262 [31msl_1 : 0.035516 [31msl_2 : 0.061332 [31minfonce : 0.000000 [31mtotal : 0.716110 [94mAcc_combined: 78.82 [95mCEU_cue_audio: 0.7442 [95mCEU_cue_video: 0.7878 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:09:45,929 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:11:18,557 - Agent - INFO - [37mVal Epoch 31 step 31 with [31mce_loss_combined : 0.619716 [31msl_1 : 0.035585 [31msl_2 : 0.061290 [31minfonce : 0.000000 [31mtotal : 0.716591 [94mAcc_combined: 78.82 [95mCEU_cue_audio: 0.7442 [95mCEU_cue_video: 0.7878 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:11:18,558 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:12:50,514 - Agent - INFO - [37mVal Epoch 32 step 32 with [31mce_loss_combined : 0.619766 [31msl_1 : 0.035593 [31msl_2 : 0.061483 [31minfonce : 0.000000 [31mtotal : 0.716843 [94mAcc_combined: 78.70 [95mCEU_cue_audio: 0.7442 [95mCEU_cue_video: 0.7818 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:12:50,515 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:14:25,362 - Agent - INFO - [37mVal Epoch 33 step 33 with [31mce_loss_combined : 0.618902 [31msl_1 : 0.035642 [31msl_2 : 0.061243 [31minfonce : 0.000000 [31mtotal : 0.715786 [94mAcc_combined: 78.70 [95mCEU_cue_audio: 0.7351 [95mCEU_cue_video: 0.7940 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:14:25,363 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:15:56,900 - Agent - INFO - [37mVal Epoch 34 step 34 with [31mce_loss_combined : 0.624015 [31msl_1 : 0.036200 [31msl_2 : 0.061124 [31minfonce : 0.000000 [31mtotal : 0.721339 [94mAcc_combined: 78.70 [95mCEU_cue_audio: 0.7351 [95mCEU_cue_video: 0.7999 [95mCEU_synergy: 0.2216 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:15:56,901 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:17:28,124 - Agent - INFO - [37mVal Epoch 35 step 35 with [31mce_loss_combined : 0.633947 [31msl_1 : 0.036521 [31msl_2 : 0.061800 [31minfonce : 0.000000 [31mtotal : 0.732269 [94mAcc_combined: 78.70 [95mCEU_cue_audio: 0.7214 [95mCEU_cue_video: 0.8063 [95mCEU_synergy: 0.2376 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:17:28,126 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:18:59,448 - Agent - INFO - [37mVal Epoch 36 step 36 with [31mce_loss_combined : 0.636501 [31msl_1 : 0.036567 [31msl_2 : 0.060728 [31minfonce : 0.000000 [31mtotal : 0.733796 [94mAcc_combined: 78.47 [95mCEU_cue_audio: 0.7033 [95mCEU_cue_video: 0.8181 [95mCEU_synergy: 0.2376 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:18:59,449 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:20:33,814 - Agent - INFO - [37mVal Epoch 37 step 37 with [31mce_loss_combined : 0.638691 [31msl_1 : 0.036367 [31msl_2 : 0.060063 [31minfonce : 0.000000 [31mtotal : 0.735121 [94mAcc_combined: 78.47 [95mCEU_cue_audio: 0.7033 [95mCEU_cue_video: 0.8244 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:20:33,816 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:22:06,044 - Agent - INFO - [37mVal Epoch 38 step 38 with [31mce_loss_combined : 0.646540 [31msl_1 : 0.036782 [31msl_2 : 0.061209 [31minfonce : 0.000000 [31mtotal : 0.744531 [94mAcc_combined: 78.25 [95mCEU_cue_audio: 0.6941 [95mCEU_cue_video: 0.8244 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:22:06,045 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:23:38,519 - Agent - INFO - [37mVal Epoch 39 step 39 with [31mce_loss_combined : 0.649624 [31msl_1 : 0.036889 [31msl_2 : 0.060485 [31minfonce : 0.000000 [31mtotal : 0.746998 [94mAcc_combined: 78.82 [95mCEU_cue_audio: 0.6941 [95mCEU_cue_video: 0.8547 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:23:38,521 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:25:14,558 - Agent - INFO - [37mVal Epoch 40 step 40 with [31mce_loss_combined : 0.661062 [31msl_1 : 0.037034 [31msl_2 : 0.060795 [31minfonce : 0.000000 [31mtotal : 0.758891 [94mAcc_combined: 78.02 [95mCEU_cue_audio: 0.6668 [95mCEU_cue_video: 0.8606 [95mCEU_synergy: 0.2131 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:25:15,157 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:26:48,134 - Agent - INFO - [37mVal Epoch 41 step 41 with [31mce_loss_combined : 0.672503 [31msl_1 : 0.037553 [31msl_2 : 0.061468 [31minfonce : 0.000000 [31mtotal : 0.771524 [94mAcc_combined: 77.90 [95mCEU_cue_audio: 0.6712 [95mCEU_cue_video: 0.8665 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:26:48,136 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:28:22,730 - Agent - INFO - [37mVal Epoch 42 step 42 with [31mce_loss_combined : 0.661233 [31msl_1 : 0.036685 [31msl_2 : 0.059920 [31minfonce : 0.000000 [31mtotal : 0.757838 [94mAcc_combined: 78.82 [95mCEU_cue_audio: 0.6712 [95mCEU_cue_video: 0.8606 [95mCEU_synergy: 0.2621 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:28:22,732 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:29:57,085 - Agent - INFO - [37mVal Epoch 43 step 43 with [31mce_loss_combined : 0.670502 [31msl_1 : 0.036528 [31msl_2 : 0.059693 [31minfonce : 0.000000 [31mtotal : 0.766723 [94mAcc_combined: 78.13 [95mCEU_cue_audio: 0.6620 [95mCEU_cue_video: 0.8728 [95mCEU_synergy: 0.2131 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:29:57,086 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:31:32,149 - Agent - INFO - [37mVal Epoch 44 step 44 with [31mce_loss_combined : 0.684805 [31msl_1 : 0.036876 [31msl_2 : 0.059949 [31minfonce : 0.000000 [31mtotal : 0.781629 [94mAcc_combined: 77.33 [95mCEU_cue_audio: 0.6301 [95mCEU_cue_video: 0.8850 [95mCEU_synergy: 0.1965 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:31:32,151 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:33:05,226 - Agent - INFO - [37mVal Epoch 45 step 45 with [31mce_loss_combined : 0.681273 [31msl_1 : 0.036847 [31msl_2 : 0.060227 [31minfonce : 0.000000 [31mtotal : 0.778348 [94mAcc_combined: 77.90 [95mCEU_cue_audio: 0.6484 [95mCEU_cue_video: 0.8850 [95mCEU_synergy: 0.2050 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:33:05,228 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:34:38,812 - Agent - INFO - [37mVal Epoch 46 step 46 with [31mce_loss_combined : 0.685481 [31msl_1 : 0.036780 [31msl_2 : 0.060384 [31minfonce : 0.000000 [31mtotal : 0.782645 [94mAcc_combined: 77.56 [95mCEU_cue_audio: 0.6439 [95mCEU_cue_video: 0.8728 [95mCEU_synergy: 0.2050 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:34:38,814 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:36:12,138 - Agent - INFO - [37mVal Epoch 47 step 47 with [31mce_loss_combined : 0.690161 [31msl_1 : 0.036943 [31msl_2 : 0.061212 [31minfonce : 0.000000 [31mtotal : 0.788316 [94mAcc_combined: 77.56 [95mCEU_cue_audio: 0.6393 [95mCEU_cue_video: 0.8787 [95mCEU_synergy: 0.2050 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:36:12,139 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:37:45,813 - Agent - INFO - [37mVal Epoch 48 step 48 with [31mce_loss_combined : 0.694431 [31msl_1 : 0.036758 [31msl_2 : 0.060413 [31minfonce : 0.000000 [31mtotal : 0.791602 [94mAcc_combined: 77.90 [95mCEU_cue_audio: 0.6439 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.2050 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:37:45,814 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:39:20,314 - Agent - INFO - [37mVal Epoch 49 step 49 with [31mce_loss_combined : 0.698558 [31msl_1 : 0.036662 [31msl_2 : 0.060712 [31minfonce : 0.000000 [31mtotal : 0.795932 [94mAcc_combined: 77.56 [95mCEU_cue_audio: 0.6301 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.2050 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:39:20,316 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:40:52,171 - Agent - INFO - [37mVal Epoch 50 step 50 with [31mce_loss_combined : 0.699709 [31msl_1 : 0.036631 [31msl_2 : 0.061380 [31minfonce : 0.000000 [31mtotal : 0.797720 [94mAcc_combined: 77.45 [95mCEU_cue_audio: 0.6301 [95mCEU_cue_video: 0.8850 [95mCEU_synergy: 0.2050 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:40:52,744 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:42:25,611 - Agent - INFO - [37mVal Epoch 51 step 51 with [31mce_loss_combined : 0.701899 [31msl_1 : 0.036619 [31msl_2 : 0.061053 [31minfonce : 0.000000 [31mtotal : 0.799572 [94mAcc_combined: 77.56 [95mCEU_cue_audio: 0.6347 [95mCEU_cue_video: 0.8850 [95mCEU_synergy: 0.2050 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:42:25,613 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:43:57,828 - Agent - INFO - [37mVal Epoch 52 step 52 with [31mce_loss_combined : 0.705416 [31msl_1 : 0.036568 [31msl_2 : 0.061184 [31minfonce : 0.000000 [31mtotal : 0.803168 [94mAcc_combined: 77.68 [95mCEU_cue_audio: 0.6347 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.2050 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:43:57,831 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:45:28,888 - Agent - INFO - [37mVal Epoch 53 step 53 with [31mce_loss_combined : 0.708380 [31msl_1 : 0.036570 [31msl_2 : 0.061555 [31minfonce : 0.000000 [31mtotal : 0.806505 [94mAcc_combined: 77.33 [95mCEU_cue_audio: 0.6255 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.1965 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:45:28,889 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:47:01,658 - Agent - INFO - [37mVal Epoch 54 step 54 with [31mce_loss_combined : 0.710009 [31msl_1 : 0.036536 [31msl_2 : 0.061374 [31minfonce : 0.000000 [31mtotal : 0.807919 [94mAcc_combined: 76.99 [95mCEU_cue_audio: 0.6164 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:47:01,660 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:48:32,442 - Agent - INFO - [37mVal Epoch 55 step 55 with [31mce_loss_combined : 0.715269 [31msl_1 : 0.036455 [31msl_2 : 0.061256 [31minfonce : 0.000000 [31mtotal : 0.812980 [94mAcc_combined: 76.88 [95mCEU_cue_audio: 0.6119 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:48:32,443 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:50:03,432 - Agent - INFO - [37mVal Epoch 56 step 56 with [31mce_loss_combined : 0.714403 [31msl_1 : 0.036439 [31msl_2 : 0.061326 [31minfonce : 0.000000 [31mtotal : 0.812168 [94mAcc_combined: 77.11 [95mCEU_cue_audio: 0.6211 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:50:03,433 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:51:35,029 - Agent - INFO - [37mVal Epoch 57 step 57 with [31mce_loss_combined : 0.713945 [31msl_1 : 0.036459 [31msl_2 : 0.061532 [31minfonce : 0.000000 [31mtotal : 0.811936 [94mAcc_combined: 77.22 [95mCEU_cue_audio: 0.6255 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:51:35,030 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:53:07,028 - Agent - INFO - [37mVal Epoch 58 step 58 with [31mce_loss_combined : 0.714355 [31msl_1 : 0.036419 [31msl_2 : 0.061355 [31minfonce : 0.000000 [31mtotal : 0.812129 [94mAcc_combined: 77.22 [95mCEU_cue_audio: 0.6211 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.1965 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:53:07,030 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:54:39,803 - Agent - INFO - [37mVal Epoch 59 step 59 with [31mce_loss_combined : 0.715062 [31msl_1 : 0.036466 [31msl_2 : 0.061052 [31minfonce : 0.000000 [31mtotal : 0.812579 [94mAcc_combined: 77.33 [95mCEU_cue_audio: 0.6211 [95mCEU_cue_video: 0.8968 [95mCEU_synergy: 0.1965 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:54:39,805 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:56:13,361 - Agent - INFO - [37mVal Epoch 60 step 60 with [31mce_loss_combined : 0.716455 [31msl_1 : 0.036391 [31msl_2 : 0.061084 [31minfonce : 0.000000 [31mtotal : 0.813930 [94mAcc_combined: 77.11 [95mCEU_cue_audio: 0.6119 [95mCEU_cue_video: 0.8968 [95mCEU_synergy: 0.1965 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:56:13,953 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:57:48,018 - Agent - INFO - [37mVal Epoch 61 step 61 with [31mce_loss_combined : 0.716040 [31msl_1 : 0.036406 [31msl_2 : 0.060935 [31minfonce : 0.000000 [31mtotal : 0.813382 [94mAcc_combined: 77.33 [95mCEU_cue_audio: 0.6211 [95mCEU_cue_video: 0.8968 [95mCEU_synergy: 0.1965 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:57:48,020 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 02:59:19,751 - Agent - INFO - [37mVal Epoch 62 step 62 with [31mce_loss_combined : 0.716240 [31msl_1 : 0.036355 [31msl_2 : 0.061215 [31minfonce : 0.000000 [31mtotal : 0.813811 [94mAcc_combined: 76.99 [95mCEU_cue_audio: 0.6164 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 0.9974 
+2025-12-16 02:59:19,753 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:00:51,687 - Agent - INFO - [37mVal Epoch 63 step 63 with [31mce_loss_combined : 0.716287 [31msl_1 : 0.036339 [31msl_2 : 0.061144 [31minfonce : 0.000000 [31mtotal : 0.813771 [94mAcc_combined: 77.11 [95mCEU_cue_audio: 0.6211 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:00:51,689 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:02:25,744 - Agent - INFO - [37mVal Epoch 64 step 64 with [31mce_loss_combined : 0.716258 [31msl_1 : 0.036360 [31msl_2 : 0.061113 [31minfonce : 0.000000 [31mtotal : 0.813732 [94mAcc_combined: 77.11 [95mCEU_cue_audio: 0.6211 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:02:25,745 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:03:59,328 - Agent - INFO - [37mVal Epoch 65 step 65 with [31mce_loss_combined : 0.724452 [31msl_1 : 0.036563 [31msl_2 : 0.062717 [31minfonce : 0.000000 [31mtotal : 0.823732 [94mAcc_combined: 76.99 [95mCEU_cue_audio: 0.6164 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:03:59,329 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:05:30,259 - Agent - INFO - [37mVal Epoch 66 step 66 with [31mce_loss_combined : 0.724444 [31msl_1 : 0.035540 [31msl_2 : 0.060296 [31minfonce : 0.000000 [31mtotal : 0.820281 [94mAcc_combined: 76.31 [95mCEU_cue_audio: 0.6075 [95mCEU_cue_video: 0.8787 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:05:30,261 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:07:00,501 - Agent - INFO - [37mVal Epoch 67 step 67 with [31mce_loss_combined : 0.732715 [31msl_1 : 0.035748 [31msl_2 : 0.061676 [31minfonce : 0.000000 [31mtotal : 0.830139 [94mAcc_combined: 76.31 [95mCEU_cue_audio: 0.6075 [95mCEU_cue_video: 0.8787 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:07:00,502 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:08:32,455 - Agent - INFO - [37mVal Epoch 68 step 68 with [31mce_loss_combined : 0.745862 [31msl_1 : 0.035391 [31msl_2 : 0.060648 [31minfonce : 0.000000 [31mtotal : 0.841901 [94mAcc_combined: 76.20 [95mCEU_cue_audio: 0.5936 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:08:32,456 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:10:03,735 - Agent - INFO - [37mVal Epoch 69 step 69 with [31mce_loss_combined : 0.740375 [31msl_1 : 0.035073 [31msl_2 : 0.060853 [31minfonce : 0.000000 [31mtotal : 0.836300 [94mAcc_combined: 76.54 [95mCEU_cue_audio: 0.5890 [95mCEU_cue_video: 0.9031 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:10:03,736 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:11:33,312 - Agent - INFO - [37mVal Epoch 70 step 70 with [31mce_loss_combined : 0.752583 [31msl_1 : 0.035272 [31msl_2 : 0.062401 [31minfonce : 0.000000 [31mtotal : 0.850256 [94mAcc_combined: 76.20 [95mCEU_cue_audio: 0.5846 [95mCEU_cue_video: 0.8909 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:11:33,914 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:13:03,390 - Agent - INFO - [37mVal Epoch 71 step 71 with [31mce_loss_combined : 0.750578 [31msl_1 : 0.034749 [31msl_2 : 0.062789 [31minfonce : 0.000000 [31mtotal : 0.848116 [94mAcc_combined: 76.54 [95mCEU_cue_audio: 0.5846 [95mCEU_cue_video: 0.9031 [95mCEU_synergy: 0.1965 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:13:03,392 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:14:35,032 - Agent - INFO - [37mVal Epoch 72 step 72 with [31mce_loss_combined : 0.764443 [31msl_1 : 0.034243 [31msl_2 : 0.060973 [31minfonce : 0.000000 [31mtotal : 0.859658 [94mAcc_combined: 76.08 [95mCEU_cue_audio: 0.5754 [95mCEU_cue_video: 0.9090 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:14:35,034 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:16:08,405 - Agent - INFO - [37mVal Epoch 73 step 73 with [31mce_loss_combined : 0.771023 [31msl_1 : 0.033888 [31msl_2 : 0.061967 [31minfonce : 0.000000 [31mtotal : 0.866879 [94mAcc_combined: 75.74 [95mCEU_cue_audio: 0.5662 [95mCEU_cue_video: 0.9031 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:16:08,407 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:17:40,727 - Agent - INFO - [37mVal Epoch 74 step 74 with [31mce_loss_combined : 0.763291 [31msl_1 : 0.033405 [31msl_2 : 0.061716 [31minfonce : 0.000000 [31mtotal : 0.858412 [94mAcc_combined: 75.97 [95mCEU_cue_audio: 0.5662 [95mCEU_cue_video: 0.8968 [95mCEU_synergy: 0.1885 [95mCEU_coexistence: 1.0000 
+2025-12-16 03:17:40,729 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:19:12,097 - Agent - INFO - [37mVal Epoch 75 step 75 with [31mce_loss_combined : 0.770986 [31msl_1 : 0.033120 [31msl_2 : 0.062457 [31minfonce : 0.000000 [31mtotal : 0.866563 [94mAcc_combined: 76.20 [95mCEU_cue_audio: 0.5754 [95mCEU_cue_video: 0.9212 [95mCEU_synergy: 0.1640 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:19:12,100 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:20:45,419 - Agent - INFO - [37mVal Epoch 76 step 76 with [31mce_loss_combined : 0.779145 [31msl_1 : 0.032394 [31msl_2 : 0.062357 [31minfonce : 0.000000 [31mtotal : 0.873896 [94mAcc_combined: 76.08 [95mCEU_cue_audio: 0.5754 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1640 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:20:45,421 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:22:17,135 - Agent - INFO - [37mVal Epoch 77 step 77 with [31mce_loss_combined : 0.786730 [31msl_1 : 0.032392 [31msl_2 : 0.063129 [31minfonce : 0.000000 [31mtotal : 0.882251 [94mAcc_combined: 75.40 [95mCEU_cue_audio: 0.5525 [95mCEU_cue_video: 0.9031 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:22:17,137 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:23:49,251 - Agent - INFO - [37mVal Epoch 78 step 78 with [31mce_loss_combined : 0.793709 [31msl_1 : 0.031912 [31msl_2 : 0.061788 [31minfonce : 0.000000 [31mtotal : 0.887410 [94mAcc_combined: 74.72 [95mCEU_cue_audio: 0.5297 [95mCEU_cue_video: 0.9090 [95mCEU_synergy: 0.1555 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:23:49,252 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:25:21,660 - Agent - INFO - [37mVal Epoch 79 step 79 with [31mce_loss_combined : 0.791543 [31msl_1 : 0.031026 [31msl_2 : 0.062130 [31minfonce : 0.000000 [31mtotal : 0.884699 [94mAcc_combined: 75.06 [95mCEU_cue_audio: 0.5297 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1721 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:25:21,662 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:26:53,893 - Agent - INFO - [37mVal Epoch 80 step 80 with [31mce_loss_combined : 0.790939 [31msl_1 : 0.030698 [31msl_2 : 0.062283 [31minfonce : 0.000000 [31mtotal : 0.883919 [94mAcc_combined: 75.17 [95mCEU_cue_audio: 0.5479 [95mCEU_cue_video: 0.9090 [95mCEU_synergy: 0.1555 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:26:54,499 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:28:28,845 - Agent - INFO - [37mVal Epoch 81 step 81 with [31mce_loss_combined : 0.795255 [31msl_1 : 0.030167 [31msl_2 : 0.062092 [31minfonce : 0.000000 [31mtotal : 0.887514 [94mAcc_combined: 74.83 [95mCEU_cue_audio: 0.5297 [95mCEU_cue_video: 0.9090 [95mCEU_synergy: 0.1640 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:28:28,846 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:30:01,038 - Agent - INFO - [37mVal Epoch 82 step 82 with [31mce_loss_combined : 0.802951 [31msl_1 : 0.029936 [31msl_2 : 0.062545 [31minfonce : 0.000000 [31mtotal : 0.895432 [94mAcc_combined: 74.60 [95mCEU_cue_audio: 0.5251 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1475 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:30:01,039 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:31:34,256 - Agent - INFO - [37mVal Epoch 83 step 83 with [31mce_loss_combined : 0.802970 [31msl_1 : 0.029068 [31msl_2 : 0.062898 [31minfonce : 0.000000 [31mtotal : 0.894936 [94mAcc_combined: 74.83 [95mCEU_cue_audio: 0.5389 [95mCEU_cue_video: 0.9090 [95mCEU_synergy: 0.1475 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:31:34,257 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:33:08,781 - Agent - INFO - [37mVal Epoch 84 step 84 with [31mce_loss_combined : 0.797486 [31msl_1 : 0.029073 [31msl_2 : 0.062965 [31minfonce : 0.000000 [31mtotal : 0.889523 [94mAcc_combined: 75.17 [95mCEU_cue_audio: 0.5433 [95mCEU_cue_video: 0.9212 [95mCEU_synergy: 0.1475 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:33:08,782 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:34:44,066 - Agent - INFO - [37mVal Epoch 85 step 85 with [31mce_loss_combined : 0.806464 [31msl_1 : 0.028904 [31msl_2 : 0.062979 [31minfonce : 0.000000 [31mtotal : 0.898347 [94mAcc_combined: 74.49 [95mCEU_cue_audio: 0.5204 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1475 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:34:44,067 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:36:16,302 - Agent - INFO - [37mVal Epoch 86 step 86 with [31mce_loss_combined : 0.816465 [31msl_1 : 0.028464 [31msl_2 : 0.063082 [31minfonce : 0.000000 [31mtotal : 0.908012 [94mAcc_combined: 74.15 [95mCEU_cue_audio: 0.5114 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1396 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:36:16,304 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:37:49,131 - Agent - INFO - [37mVal Epoch 87 step 87 with [31mce_loss_combined : 0.813011 [31msl_1 : 0.027857 [31msl_2 : 0.062581 [31minfonce : 0.000000 [31mtotal : 0.903449 [94mAcc_combined: 74.49 [95mCEU_cue_audio: 0.5204 [95mCEU_cue_video: 0.9212 [95mCEU_synergy: 0.1396 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:37:49,132 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:39:22,944 - Agent - INFO - [37mVal Epoch 88 step 88 with [31mce_loss_combined : 0.836030 [31msl_1 : 0.027996 [31msl_2 : 0.063958 [31minfonce : 0.000000 [31mtotal : 0.927983 [94mAcc_combined: 73.01 [95mCEU_cue_audio: 0.4796 [95mCEU_cue_video: 0.9090 [95mCEU_synergy: 0.1230 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:39:22,947 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:40:58,347 - Agent - INFO - [37mVal Epoch 89 step 89 with [31mce_loss_combined : 0.822971 [31msl_1 : 0.027035 [31msl_2 : 0.063146 [31minfonce : 0.000000 [31mtotal : 0.913152 [94mAcc_combined: 74.26 [95mCEU_cue_audio: 0.5114 [95mCEU_cue_video: 0.9090 [95mCEU_synergy: 0.1555 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:40:58,348 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:42:30,843 - Agent - INFO - [37mVal Epoch 90 step 90 with [31mce_loss_combined : 0.812576 [31msl_1 : 0.026814 [31msl_2 : 0.062370 [31minfonce : 0.000000 [31mtotal : 0.901759 [94mAcc_combined: 74.83 [95mCEU_cue_audio: 0.5204 [95mCEU_cue_video: 0.9212 [95mCEU_synergy: 0.1555 [95mCEU_coexistence: 1.0000 
+2025-12-16 03:42:31,489 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:44:04,792 - Agent - INFO - [37mVal Epoch 91 step 91 with [31mce_loss_combined : 0.826736 [31msl_1 : 0.026403 [31msl_2 : 0.063101 [31minfonce : 0.000000 [31mtotal : 0.916239 [94mAcc_combined: 74.03 [95mCEU_cue_audio: 0.5068 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1396 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:44:04,797 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:45:36,021 - Agent - INFO - [37mVal Epoch 92 step 92 with [31mce_loss_combined : 0.817007 [31msl_1 : 0.026292 [31msl_2 : 0.063320 [31minfonce : 0.000000 [31mtotal : 0.906618 [94mAcc_combined: 74.49 [95mCEU_cue_audio: 0.5160 [95mCEU_cue_video: 0.9212 [95mCEU_synergy: 0.1475 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:45:36,023 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:47:07,519 - Agent - INFO - [37mVal Epoch 93 step 93 with [31mce_loss_combined : 0.822468 [31msl_1 : 0.026215 [31msl_2 : 0.064645 [31minfonce : 0.000000 [31mtotal : 0.913327 [94mAcc_combined: 73.80 [95mCEU_cue_audio: 0.4886 [95mCEU_cue_video: 0.9271 [95mCEU_synergy: 0.1396 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:47:07,520 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:48:40,777 - Agent - INFO - [37mVal Epoch 94 step 94 with [31mce_loss_combined : 0.828894 [31msl_1 : 0.025625 [31msl_2 : 0.062377 [31minfonce : 0.000000 [31mtotal : 0.916897 [94mAcc_combined: 74.03 [95mCEU_cue_audio: 0.5068 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 1.0000 
+2025-12-16 03:48:40,779 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:50:12,219 - Agent - INFO - [37mVal Epoch 95 step 95 with [31mce_loss_combined : 0.827393 [31msl_1 : 0.025053 [31msl_2 : 0.062745 [31minfonce : 0.000000 [31mtotal : 0.915191 [94mAcc_combined: 74.03 [95mCEU_cue_audio: 0.5024 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1475 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:50:12,221 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:51:45,407 - Agent - INFO - [37mVal Epoch 96 step 96 with [31mce_loss_combined : 0.835601 [31msl_1 : 0.024947 [31msl_2 : 0.062776 [31minfonce : 0.000000 [31mtotal : 0.923325 [94mAcc_combined: 73.92 [95mCEU_cue_audio: 0.4976 [95mCEU_cue_video: 0.9212 [95mCEU_synergy: 0.1396 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:51:45,409 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:53:17,669 - Agent - INFO - [37mVal Epoch 97 step 97 with [31mce_loss_combined : 0.830373 [31msl_1 : 0.024805 [31msl_2 : 0.063232 [31minfonce : 0.000000 [31mtotal : 0.918410 [94mAcc_combined: 73.92 [95mCEU_cue_audio: 0.4886 [95mCEU_cue_video: 0.9271 [95mCEU_synergy: 0.1475 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:53:17,671 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:54:51,836 - Agent - INFO - [37mVal Epoch 98 step 98 with [31mce_loss_combined : 0.834544 [31msl_1 : 0.024561 [31msl_2 : 0.063427 [31minfonce : 0.000000 [31mtotal : 0.922532 [94mAcc_combined: 73.92 [95mCEU_cue_audio: 0.5024 [95mCEU_cue_video: 0.9212 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:54:51,837 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:56:25,809 - Agent - INFO - [37mVal Epoch 99 step 99 with [31mce_loss_combined : 0.845947 [31msl_1 : 0.024188 [31msl_2 : 0.062604 [31minfonce : 0.000000 [31mtotal : 0.932739 [94mAcc_combined: 73.46 [95mCEU_cue_audio: 0.4840 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1396 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:56:25,811 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:57:57,347 - Agent - INFO - [37mVal Epoch 100 step 100 with [31mce_loss_combined : 0.844319 [31msl_1 : 0.023881 [31msl_2 : 0.062667 [31minfonce : 0.000000 [31mtotal : 0.930867 [94mAcc_combined: 73.35 [95mCEU_cue_audio: 0.4840 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:57:57,988 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 03:59:30,428 - Agent - INFO - [37mVal Epoch 101 step 101 with [31mce_loss_combined : 0.841417 [31msl_1 : 0.023856 [31msl_2 : 0.063274 [31minfonce : 0.000000 [31mtotal : 0.928547 [94mAcc_combined: 73.23 [95mCEU_cue_audio: 0.4840 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1230 [95mCEU_coexistence: 0.9974 
+2025-12-16 03:59:30,429 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:01:02,135 - Agent - INFO - [37mVal Epoch 102 step 102 with [31mce_loss_combined : 0.834145 [31msl_1 : 0.023521 [31msl_2 : 0.063539 [31minfonce : 0.000000 [31mtotal : 0.921205 [94mAcc_combined: 73.69 [95mCEU_cue_audio: 0.4886 [95mCEU_cue_video: 0.9212 [95mCEU_synergy: 0.1396 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:01:02,137 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:02:35,137 - Agent - INFO - [37mVal Epoch 103 step 103 with [31mce_loss_combined : 0.843059 [31msl_1 : 0.023471 [31msl_2 : 0.062941 [31minfonce : 0.000000 [31mtotal : 0.929472 [94mAcc_combined: 73.35 [95mCEU_cue_audio: 0.4796 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1396 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:02:35,139 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:04:06,004 - Agent - INFO - [37mVal Epoch 104 step 104 with [31mce_loss_combined : 0.841444 [31msl_1 : 0.023161 [31msl_2 : 0.062963 [31minfonce : 0.000000 [31mtotal : 0.927567 [94mAcc_combined: 73.35 [95mCEU_cue_audio: 0.4840 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:04:06,006 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:05:38,098 - Agent - INFO - [37mVal Epoch 105 step 105 with [31mce_loss_combined : 0.840991 [31msl_1 : 0.023063 [31msl_2 : 0.063048 [31minfonce : 0.000000 [31mtotal : 0.927102 [94mAcc_combined: 73.46 [95mCEU_cue_audio: 0.4886 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:05:38,099 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:07:10,989 - Agent - INFO - [37mVal Epoch 106 step 106 with [31mce_loss_combined : 0.843244 [31msl_1 : 0.022758 [31msl_2 : 0.063064 [31minfonce : 0.000000 [31mtotal : 0.929067 [94mAcc_combined: 73.35 [95mCEU_cue_audio: 0.4840 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:07:10,996 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:08:42,391 - Agent - INFO - [37mVal Epoch 107 step 107 with [31mce_loss_combined : 0.841942 [31msl_1 : 0.022649 [31msl_2 : 0.063100 [31minfonce : 0.000000 [31mtotal : 0.927690 [94mAcc_combined: 73.35 [95mCEU_cue_audio: 0.4840 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:08:42,392 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:10:14,244 - Agent - INFO - [37mVal Epoch 108 step 108 with [31mce_loss_combined : 0.842027 [31msl_1 : 0.022486 [31msl_2 : 0.062815 [31minfonce : 0.000000 [31mtotal : 0.927328 [94mAcc_combined: 73.46 [95mCEU_cue_audio: 0.4886 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:10:14,246 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:11:47,575 - Agent - INFO - [37mVal Epoch 109 step 109 with [31mce_loss_combined : 0.843886 [31msl_1 : 0.022511 [31msl_2 : 0.063070 [31minfonce : 0.000000 [31mtotal : 0.929467 [94mAcc_combined: 73.35 [95mCEU_cue_audio: 0.4840 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:11:47,577 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:13:23,513 - Agent - INFO - [37mVal Epoch 110 step 110 with [31mce_loss_combined : 0.840718 [31msl_1 : 0.022428 [31msl_2 : 0.063043 [31minfonce : 0.000000 [31mtotal : 0.926188 [94mAcc_combined: 73.23 [95mCEU_cue_audio: 0.4796 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:13:24,140 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:14:57,536 - Agent - INFO - [37mVal Epoch 111 step 111 with [31mce_loss_combined : 0.845207 [31msl_1 : 0.022475 [31msl_2 : 0.063491 [31minfonce : 0.000000 [31mtotal : 0.931173 [94mAcc_combined: 73.23 [95mCEU_cue_audio: 0.4796 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:14:57,538 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:16:28,798 - Agent - INFO - [37mVal Epoch 112 step 112 with [31mce_loss_combined : 0.847153 [31msl_1 : 0.022310 [31msl_2 : 0.063468 [31minfonce : 0.000000 [31mtotal : 0.932932 [94mAcc_combined: 72.89 [95mCEU_cue_audio: 0.4657 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:16:28,799 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:18:01,133 - Agent - INFO - [37mVal Epoch 113 step 113 with [31mce_loss_combined : 0.846267 [31msl_1 : 0.022175 [31msl_2 : 0.063601 [31minfonce : 0.000000 [31mtotal : 0.932043 [94mAcc_combined: 73.35 [95mCEU_cue_audio: 0.4840 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:18:01,134 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:19:31,776 - Agent - INFO - [37mVal Epoch 114 step 114 with [31mce_loss_combined : 0.848778 [31msl_1 : 0.022150 [31msl_2 : 0.063273 [31minfonce : 0.000000 [31mtotal : 0.934201 [94mAcc_combined: 73.01 [95mCEU_cue_audio: 0.4703 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:19:31,778 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:21:06,744 - Agent - INFO - [37mVal Epoch 115 step 115 with [31mce_loss_combined : 0.848646 [31msl_1 : 0.021892 [31msl_2 : 0.063254 [31minfonce : 0.000000 [31mtotal : 0.933792 [94mAcc_combined: 72.89 [95mCEU_cue_audio: 0.4657 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:21:06,745 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:22:39,374 - Agent - INFO - [37mVal Epoch 116 step 116 with [31mce_loss_combined : 0.845566 [31msl_1 : 0.021857 [31msl_2 : 0.063058 [31minfonce : 0.000000 [31mtotal : 0.930482 [94mAcc_combined: 73.01 [95mCEU_cue_audio: 0.4703 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:22:39,376 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:24:11,535 - Agent - INFO - [37mVal Epoch 117 step 117 with [31mce_loss_combined : 0.845138 [31msl_1 : 0.021758 [31msl_2 : 0.063206 [31minfonce : 0.000000 [31mtotal : 0.930102 [94mAcc_combined: 73.12 [95mCEU_cue_audio: 0.4749 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:24:11,537 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:25:44,569 - Agent - INFO - [37mVal Epoch 118 step 118 with [31mce_loss_combined : 0.845607 [31msl_1 : 0.021815 [31msl_2 : 0.063334 [31minfonce : 0.000000 [31mtotal : 0.930756 [94mAcc_combined: 73.23 [95mCEU_cue_audio: 0.4796 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:25:44,571 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:27:19,085 - Agent - INFO - [37mVal Epoch 119 step 119 with [31mce_loss_combined : 0.845530 [31msl_1 : 0.021770 [31msl_2 : 0.063274 [31minfonce : 0.000000 [31mtotal : 0.930575 [94mAcc_combined: 73.23 [95mCEU_cue_audio: 0.4796 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:27:19,087 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:28:49,977 - Agent - INFO - [37mVal Epoch 120 step 120 with [31mce_loss_combined : 0.845759 [31msl_1 : 0.021748 [31msl_2 : 0.063181 [31minfonce : 0.000000 [31mtotal : 0.930687 [94mAcc_combined: 73.12 [95mCEU_cue_audio: 0.4749 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:28:50,565 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:30:22,960 - Agent - INFO - [37mVal Epoch 121 step 121 with [31mce_loss_combined : 0.846579 [31msl_1 : 0.021802 [31msl_2 : 0.063257 [31minfonce : 0.000000 [31mtotal : 0.931638 [94mAcc_combined: 73.01 [95mCEU_cue_audio: 0.4703 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:30:22,961 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:31:54,913 - Agent - INFO - [37mVal Epoch 122 step 122 with [31mce_loss_combined : 0.847315 [31msl_1 : 0.021766 [31msl_2 : 0.063470 [31minfonce : 0.000000 [31mtotal : 0.932550 [94mAcc_combined: 73.01 [95mCEU_cue_audio: 0.4703 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:31:54,915 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:33:26,087 - Agent - INFO - [37mVal Epoch 123 step 123 with [31mce_loss_combined : 0.847232 [31msl_1 : 0.021748 [31msl_2 : 0.063402 [31minfonce : 0.000000 [31mtotal : 0.932381 [94mAcc_combined: 73.01 [95mCEU_cue_audio: 0.4703 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:33:26,089 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:34:57,316 - Agent - INFO - [37mVal Epoch 124 step 124 with [31mce_loss_combined : 0.847136 [31msl_1 : 0.021762 [31msl_2 : 0.063545 [31minfonce : 0.000000 [31mtotal : 0.932443 [94mAcc_combined: 73.01 [95mCEU_cue_audio: 0.4703 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:34:57,318 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:36:29,133 - Agent - INFO - [37mVal Epoch 125 step 125 with [31mce_loss_combined : 0.846894 [31msl_1 : 0.021745 [31msl_2 : 0.063363 [31minfonce : 0.000000 [31mtotal : 0.932001 [94mAcc_combined: 73.01 [95mCEU_cue_audio: 0.4703 [95mCEU_cue_video: 0.9154 [95mCEU_synergy: 0.1310 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:36:29,134 - Agent - INFO - Total number of trainable parameters are: 821068
+2025-12-16 04:36:29,892 - Agent - INFO - We are in the final state.
+2025-12-16 04:36:30,052 - root - INFO - Loaded best model from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar
+2025-12-16 04:36:43,015 - Agent - INFO - [37mVal Epoch 125 step 0 with [31mce_loss_combined : 0.620109 [31msl_1 : 0.035497 [31msl_2 : 0.061638 [31minfonce : 0.000000 [31mtotal : 0.717244 [94mAcc_combined: 79.16 [95mCEU_cue_audio: 0.7579 [95mCEU_cue_video: 0.7878 [95mCEU_synergy: 0.2295 [95mCEU_coexistence: 0.9974 
+2025-12-16 04:36:56,021 - Agent - INFO - [37mTest Epoch 125 step 0 with [31mce_loss_combined : 0.841944 [31msl_1 : 0.038499 [31msl_2 : 0.063152 [31minfonce : 0.000000 [31mtotal : 0.943595 [94mAcc_combined: 69.63 
+2025-12-16 04:36:56,601 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp.pth.tar[39m
+[1;34mwandb[0m: 
+[1;34mwandb[0m: 🚀 View run [33mSynprom_IB_maskfold0_l0.01_numsamples32_perturbmask_fillnoise_lr0.00001_wd0.0001_clsmlp[0m at: [34m[0m
+[1;34mwandb[0m: Find logs at: [1;35mwandb/run-20251216_012251-cktugcm3/logs[0m
 Job finished

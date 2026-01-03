@@ -1,54 +1,83 @@
-Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
 The following values were not passed to `accelerate launch` and had defaults used instead:
 	`--num_processes` was set to a value of `1`
 	`--num_machines` was set to a value of `1`
 	`--mixed_precision` was set to a value of `'no'`
 	`--dynamo_backend` was set to a value of `'no'`
 To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
-Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
-wandb: Currently logged in as: kkontras. Use `wandb login --relogin` to force relogin
-wandb: wandb version 0.22.3 is available!  To upgrade, please run:
-wandb:  $ pip install wandb --upgrade
-wandb: Tracking run with wandb version 0.16.2
-wandb: Run data is saved locally in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/wandb/run-20251103_191639-i63cfdg7
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/timm/models/layers/__init__.py:48: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+wandb: Currently logged in as: kkontras to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: WARNING Using a boolean value for 'reinit' is deprecated. Use 'return_previous' or 'finish_previous' instead.
+wandb: setting up run d75hl6xm
+wandb: Tracking run with wandb version 0.23.0
+wandb: Run data is saved locally in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/wandb/run-20251216_012328-d75hl6xm
 wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run Synprom_IB_fold0_l0_lr0.0001_wd0.0_clsconformer_pre
+wandb: Syncing run Synprom_IB_maskfold0_l10_numsamples32_perturbmask_fillzero_lr0.00001_wd0.0001_clsmlp
 wandb: ⭐️ View project at https://wandb.ai/kkontras/balance
-wandb: 🚀 View run at https://wandb.ai/kkontras/balance/runs/i63cfdg7
+wandb: 🚀 View run at https://wandb.ai/kkontras/balance/runs/d75hl6xm
+wandb: Detected [agents] in use.
+wandb: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+wandb: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Training:   0%|          | 0/127 [00:00<?, ?it/s]Training:   0%|          | 0/127 [00:04<?, ?it/s]
 Traceback (most recent call last):
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 247, in <module>
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 263, in <module>
     main(config_path=args.config, default_config_path=args.default_config, args=args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 173, in main
-    agent = agent_class(config)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 51, in __init__
-    self.mem_loader.load_models_n_optimizer()
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Loader.py", line 86, in load_models_n_optimizer
-    self.agent.model = model_class(encs = enc, args = self.agent.config.model.args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models.py", line 838, in __init__
-    self.perturb = {"type": args.perturb}
-AttributeError: 'EasyDict' object has no attribute 'perturb'
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 189, in main
+    agent.run()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 119, in run
+    self.trainer.train_steps()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Trainer.py", line 68, in train_steps
+    step_outcome, optstep_done = self.this_train_step_func(served_dict)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Trainer.py", line 106, in train_one_step
+    output = self.agent.model(data, label=label, return_features=True, current_step=self.agent.logs["current_step"], current_epoch=self.agent.logs["current_epoch"])
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 475, in forward
+    synergy_losses = self.synergy.compute_training_losses(
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 648, in compute_training_losses
+    kl1, loss1 = self._kl_pass(x, z1, z2, px1=True,  px2=False, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 634, in _kl_pass
+    a, v, losses = self._encode_and_perturb(x, z1, z2, px1, px2, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 619, in _encode_and_perturb
+    out = self._perturb(z1, z2, "x1", **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 580, in _perturb
+    raise ValueError(f"Unknown mask fill: {fill}")
+ValueError: Unknown mask fill: zero
 Traceback (most recent call last):
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 247, in <module>
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 263, in <module>
     main(config_path=args.config, default_config_path=args.default_config, args=args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 173, in main
-    agent = agent_class(config)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 51, in __init__
-    self.mem_loader.load_models_n_optimizer()
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Loader.py", line 86, in load_models_n_optimizer
-    self.agent.model = model_class(encs = enc, args = self.agent.config.model.args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models.py", line 838, in __init__
-    self.perturb = {"type": args.perturb}
-AttributeError: 'EasyDict' object has no attribute 'perturb'
-wandb: - 0.005 MB of 0.005 MB uploadedwandb: \ 0.005 MB of 0.017 MB uploadedwandb: 🚀 View run Synprom_IB_fold0_l0_lr0.0001_wd0.0_clsconformer_pre at: https://wandb.ai/kkontras/balance/runs/i63cfdg7
-wandb: Synced 6 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
-wandb: Find logs at: ./wandb/run-20251103_191639-i63cfdg7/logs
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 189, in main
+    agent.run()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 119, in run
+    self.trainer.train_steps()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Trainer.py", line 68, in train_steps
+    step_outcome, optstep_done = self.this_train_step_func(served_dict)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Trainer.py", line 106, in train_one_step
+    output = self.agent.model(data, label=label, return_features=True, current_step=self.agent.logs["current_step"], current_epoch=self.agent.logs["current_epoch"])
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 475, in forward
+    synergy_losses = self.synergy.compute_training_losses(
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 648, in compute_training_losses
+    kl1, loss1 = self._kl_pass(x, z1, z2, px1=True,  px2=False, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 634, in _kl_pass
+    a, v, losses = self._encode_and_perturb(x, z1, z2, px1, px2, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 619, in _encode_and_perturb
+    out = self._perturb(z1, z2, "x1", **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 580, in _perturb
+    raise ValueError(f"Unknown mask fill: {fill}")
+ValueError: Unknown mask fill: zero
 Traceback (most recent call last):
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/accelerate", line 8, in <module>
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/accelerate", line 7, in <module>
     sys.exit(main())
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
     args.func(args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 1198, in launch_command
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/accelerate/commands/launch.py", line 1235, in launch_command
     simple_launcher(args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 785, in simple_launcher
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/accelerate/commands/launch.py", line 823, in simple_launcher
     raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
-subprocess.CalledProcessError: Command '['/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python', '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py', '--config', './configs/CREMA_D/synergy/nov/synprom_ib.json', '--default_config', './configs/CREMA_D/default_config_cremad_res_syn.json', '--fold', '0', '--pre', '--l', '0', '--tdqm_disable', '--lr', '0.0001', '--wd', '0.0', '--cls', 'conformer']' returned non-zero exit status 1.
+subprocess.CalledProcessError: Command '['/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python3.1', '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py', '--config', './configs/CREMA_D/synergy/dec/synprom_IB_mask.json', '--default_config', './configs/CREMA_D/default_config_cremad_res_syn.json', '--fold', '0', '--l', '10', '--lr', '0.00001', '--wd', '0.0001', '--cls', 'mlp', '--perturb', 'mask', '--perturb_fill', 'zero', '--num_samples', '32', '--start_over']' returned non-zero exit status 1.

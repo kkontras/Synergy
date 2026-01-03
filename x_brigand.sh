@@ -63,5 +63,10 @@
 #done
 #done
 
+cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae/enc_2_fusion_trunk_fold0.pth.tar /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask/enc_2_fusion_trunk_fold0.pth.tar
+cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae/enc_3_fusion_head_fold0.pth.tar /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask/enc_3_fusion_head_fold0.pth.tar
+cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae/enc_4_unimodal1_fold0.pth.tar /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask/enc_4_unimodal1_fold0.pth.tar
+cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae/enc_5_unimodal2_fold0.pth.tar /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask/enc_5_unimodal2_fold0.pth.tar
+
 python examine_vae_linearprob.py --config ./configs/CREMA_D/synergy/nov/synprom_generator_diffusiontf.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.001 --wd 0.0001 --perturb gen
 python examine_vae_linearprob.py --config ./configs/CREMA_D/synergy/nov/synprom_generator_diffusiontf_2.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.001 --wd 0.0001 --perturb gen

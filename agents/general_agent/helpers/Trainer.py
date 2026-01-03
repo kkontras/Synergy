@@ -29,6 +29,7 @@ class Trainer():
     def train_steps(self):
 
         # self.agent.validator_tester.validate()
+        # self.agent.validator_tester.validate(test_set=True)
         # self.agent.monitor_n_saver.monitoring()
 
         self.agent.model.train()

@@ -1,6 +1,7 @@
 {
   "training_params": {
     "tdqm_disable": false,
+    "wandb_disable": false,
     "batch_size": 4,
     "test_batch_size": 4
   },
@@ -49,10 +50,10 @@
       }
     },
     "load_ongoing": false,
-    "save_dir": "Synprom_LoRaFT_{}.pth.tar",
+    "save_dir": "Synprom_LoRa_{}.pth.tar",
     "encoders": [
       {
-        "model": "LinearHead",
+        "model": "LinearHead_Qwen",
         "args": {
           "d_model": 2048,
           "num_classes": 5

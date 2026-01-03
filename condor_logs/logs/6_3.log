@@ -32,3 +32,42 @@
 	   TimeExecute (s)      :       10                    
 	   TimeSlotBusy (s)     :       10                    
 ...
+000 (006.003.000) 2025-12-16 00:53:03 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+001 (006.003.000) 2025-12-16 00:53:18 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_2572_c1ad>
+	SlotName: slot1_4@aristoteles.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_30152e2d }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1717095/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_30152e2d = [ Id = "GPU-30152e2d"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "30152e2d-c9ad-da16-21bc-bf9b07cb3dd0"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.105.08"; DriverVersion = 13.0; DevicePciBusId = "0000:4D:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (006.003.000) 2025-12-16 00:53:27 Image size of job updated: 190564
+	187  -  MemoryUsage of job (MB)
+	190564  -  ResidentSetSize of job (KB)
+...
+006 (006.003.000) 2025-12-16 00:54:25 Image size of job updated: 1373932
+	187  -  MemoryUsage of job (MB)
+	190564  -  ResidentSetSize of job (KB)
+...
+005 (006.003.000) 2025-12-16 00:54:26 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:27, Sys 0 00:00:07  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:27, Sys 0 00:00:07  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     0.56        8         8 
+	   Disk (KB)            :     2     1048576   1048576 
+	   GPUs                 :     0           1         1 "GPU-30152e2d"
+	   GpusMemory (MB)      :   771                       
+	   Memory (MB)          :   187       71680     71680 
+	   TimeExecute (s)      :    67                       
+	   TimeSlotBusy (s)     :    67                       
+...

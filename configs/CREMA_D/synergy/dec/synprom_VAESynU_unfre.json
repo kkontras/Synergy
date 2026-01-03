@@ -1,0 +1,171 @@
+{
+  "training_params": {
+    "batch_size": 32,
+    "test_batch_size": 32,
+    "tdqm_disable": false
+  },
+  "early_stopping": {
+    "end_of_epoch_check": true,
+    "n_steps_stop": 100,
+    "save_every_valstep": 10,
+    "validate_every": 25,
+    "validate_with": "loss"
+  },
+  "optimizer": {
+    "type": "Adam",
+    "learning_rate": 0.00001,
+    "momentum": 0.9,
+    "weight_decay": 0.00001,
+    "beta1": 0.9,
+    "beta2": 0.999
+  },
+  "dataset": {
+    "norm": false,
+    "return_data": {
+      "video": true,
+      "spectrogram": true,
+      "audio": false,
+      "face": false
+    },
+    "sampling_rate": 22050,
+    "data_split": {
+      "fold": 0
+    }
+  },
+  "model": {
+    "model_class": "FusionIBModel_VAE",
+    "args": {
+      "d_model": 512,
+      "num_classes": 6,
+      "fc_inner": 64,
+      "dropout": 0.1,
+      "cls_type": "mlp",
+      "norm_decision": false,
+      "bias_infusion": {
+        "l": 1.0,
+        "contrcoeff": 0.0
+      },
+      "multi_loss": {
+        "multi_supervised_w": { "combined": 1, "c": 1, "g": 1 }
+      },
+      "vae_w": {
+        "rec": 1.0,
+        "erase": 1.0,
+        "prior_kl": 0.01,
+        "temperature": 1.0
+      },
+      "synergy_type": "gaussian",
+      "perturb": {
+        "type": "svae",
+        "num_samples": 32,
+        "deterministic": false,
+        "reestimate_features": false
+      }
+    },
+    "load_ongoing": false,
+    "save_dir": "SynIB_VAE_synergy_unfree_fold{}.pth.tar",
+    "save_base_dir": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae",
+    "encoders": [
+      {
+        "name": "enc_0_modality1_encoder",
+        "model": "Audio_ResNet",
+        "args": {
+          "d_model": 512,
+          "num_classes": 6,
+          "fc_inner": 64,
+          "dropout": 0.1,
+          "freeze_encoder": false
+        },
+        "pretrainedEncoder": {
+          "use": true,
+          "dir": "unimodal_audio_fold{}_lr0.001_wd0.0001.pth.tar"
+        },
+        "save_encoder": false
+      },
+      {
+        "name": "enc_1_modality2_encoder",
+        "model": "Video_ResNet",
+        "args": {
+          "d_model": 512,
+          "num_classes": 6,
+          "fc_inner": 64,
+          "dropout": 0.1,
+          "freeze_encoder": false
+        },
+        "pretrainedEncoder": {
+          "use": true,
+          "dir": "unimodal_video_fold{}_lr0.001_wd0.0001.pth.tar"
+        },
+        "save_encoder": false
+      },
+      {
+        "name": "enc_2_vaeU_z1_posterior_tf",
+        "model": "VAEPosterior_TF",
+        "args": {
+          "d_z": 512,
+          "d_hidden": 1024,
+          "d_latent": 128,
+          "n_layers": 4,
+          "n_heads": 8,
+          "dim_feedforward": 4096,
+          "dropout": 0.1,
+          "act": "gelu",
+          "freeze_encoder": true
+        },
+        "pretrainedEncoder": { "use": true, "dir": "enc_6_vaeU_z1_post_tf_fold{}.pth.tar" },
+        "save_encoder": false
+      },
+      {
+        "name": "enc_3_vae_z1_decoder_tf",
+        "model": "VAEDecoder_TF",
+        "args": {
+          "d_latent": 128,
+          "d_hidden": 1024,
+          "d_z": 512,
+          "n_layers": 4,
+          "n_heads": 8,
+          "dim_feedforward": 4096,
+          "dropout": 0.1,
+          "act": "gelu",
+          "delta_mode": true,
+          "delta_scale": 1.0,
+          "freeze_encoder": true
+        },
+        "pretrainedEncoder": { "use": true, "dir": "enc_7_vaeU_z1_dec_tf_fold{}.pth.tar" },
+        "save_encoder": false
+      },
+      {
+        "name": "enc_4_vae_z2_posterior_tf",
+        "model": "VAEPosterior_TF",
+        "args": {
+          "d_z": 512,
+          "d_hidden": 512,
+          "d_latent": 64,
+          "n_layers": 2,
+          "n_heads": 8,
+          "dim_feedforward": 2048,
+          "dropout": 0.0,
+          "freeze_encoder": true
+        },
+        "pretrainedEncoder": { "use": true, "dir": "enc_8_vae_z2_post_tf_fold{}.pth.tar" },
+        "save_encoder": false
+      },
+      {
+        "name": "enc_5_vae_z2_decoder_tf",
+        "model": "VAEDecoder_TF",
+        "args": {
+          "d_latent": 64,
+          "d_hidden": 512,
+          "d_z": 512,
+          "n_layers": 2,
+          "n_heads": 8,
+          "dim_feedforward": 2048,
+          "dropout": 0.0,
+          "freeze_encoder": true
+        },
+        "pretrainedEncoder": { "use": true, "dir": "enc_9_vae_z2_dec_tf_fold{}.pth.tar" },
+        "save_encoder": false
+      }
+    ]
+  }
+}

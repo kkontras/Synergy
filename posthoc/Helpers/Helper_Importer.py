@@ -5,6 +5,7 @@ from models.MCR_Models import *
 from models.SthSth_models import *
 from models.Synergy_Models_2 import *
 from models.Synergy_Models_Dec import *
+from models.Synergy_Models_SVAE import *
 from models.Synergy_Models import *
 
 from mydatasets.CREMAD.CREMAD_Dataset import *
@@ -34,7 +35,7 @@ class Importer():
         else:
             self.checkpoint = torch.load(self.config.model.save_dir, map_location="cpu", weights_only=False)
 
-        self.config = self.checkpoint["configs"]
+        # self.config = self.checkpoint["configs"]
 
     def change_config(self, attr, value, c = None):
         if c == None: c = self.config
@@ -77,8 +78,8 @@ class Importer():
             return model
         elif return_model == "best_model":
 
-            # self.checkpoint["best_model_state_dict"] = {key.replace("module.", ""): value for key, value in
-            #                                   self.checkpoint["best_model_state_dict"].items()}
+            self.checkpoint["best_model_state_dict"] = {key.replace("module.", ""): value for key, value in
+                                              self.checkpoint["best_model_state_dict"].items()}
 
             self.checkpoint["best_model_state_dict"] = {key.replace("parametrizations.weight.original0", "weight_g"): value for key, value in
                                               self.checkpoint["best_model_state_dict"].items()}
@@ -292,7 +293,7 @@ class Importer():
                 if "save_base_dir" in self.config.model:
                     pre_dir = os.path.join(self.config.model.save_base_dir, pre_dir)
                 print("Loading encoder from {}".format(pre_dir))
-                checkpoint = torch.load(pre_dir)
+                checkpoint = torch.load(pre_dir, weights_only=False)
                 if "encoder_state_dict" in checkpoint:
                     checkpoint["encoder_state_dict"] = {key.replace("module.", ""): value for key, value in checkpoint["encoder_state_dict"].items()}
                     enc.load_state_dict(checkpoint["encoder_state_dict"])

@@ -36,3 +36,90 @@
 	   TimeExecute (s)      :       34                    
 	   TimeSlotBusy (s)     :       34                    
 ...
+000 (008.015.000) 2025-12-16 01:22:21 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+001 (008.015.000) 2025-12-16 01:23:39 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_2572_c1ad>
+	SlotName: slot1_7@aristoteles.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_1ba53048 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1723865/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_1ba53048 = [ Id = "GPU-1ba53048"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "1ba53048-c5a1-3226-7f78-7a6cb9cbaa42"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.105.08"; DriverVersion = 13.0; DevicePciBusId = "0000:C7:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (008.015.000) 2025-12-16 01:23:48 Image size of job updated: 381344
+	373  -  MemoryUsage of job (MB)
+	381344  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 01:28:49 Image size of job updated: 2145684
+	2026  -  MemoryUsage of job (MB)
+	2073828  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 01:33:49 Image size of job updated: 2166604
+	2032  -  MemoryUsage of job (MB)
+	2080548  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 01:38:50 Image size of job updated: 2217996
+	2083  -  MemoryUsage of job (MB)
+	2132464  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 01:43:50 Image size of job updated: 2218444
+	2083  -  MemoryUsage of job (MB)
+	2132464  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 01:48:50 Image size of job updated: 2218444
+	2102  -  MemoryUsage of job (MB)
+	2152136  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 01:53:51 Image size of job updated: 2218444
+	2117  -  MemoryUsage of job (MB)
+	2167656  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 02:08:53 Image size of job updated: 2218444
+	2118  -  MemoryUsage of job (MB)
+	2168276  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 02:13:53 Image size of job updated: 2218444
+	2123  -  MemoryUsage of job (MB)
+	2173808  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 02:18:54 Image size of job updated: 2222548
+	2123  -  MemoryUsage of job (MB)
+	2173808  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 02:33:56 Image size of job updated: 2254756
+	2202  -  MemoryUsage of job (MB)
+	2254756  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 03:08:59 Image size of job updated: 2255628
+	2202  -  MemoryUsage of job (MB)
+	2254756  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 03:29:01 Image size of job updated: 2256840
+	2202  -  MemoryUsage of job (MB)
+	2254756  -  ResidentSetSize of job (KB)
+...
+006 (008.015.000) 2025-12-16 04:39:08 Image size of job updated: 2257868
+	2202  -  MemoryUsage of job (MB)
+	2254756  -  ResidentSetSize of job (KB)
+...
+005 (008.015.000) 2025-12-16 04:50:53 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 21:21:38, Sys 0 00:43:49  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 21:21:38, Sys 0 00:43:49  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     6.54        8         8 
+	   Disk (KB)            :     2     1048576   1048576 
+	   GPUs                 :     0.17        1         1 "GPU-1ba53048"
+	   GpusMemory (MB)      :  2243                       
+	   Memory (MB)          :  2202       71680     71680 
+	   TimeExecute (s)      : 12434                       
+	   TimeSlotBusy (s)     : 12434                       
+...

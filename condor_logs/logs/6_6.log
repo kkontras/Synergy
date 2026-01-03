@@ -32,3 +32,62 @@
 	   TimeExecute (s)      :       10                    
 	   TimeSlotBusy (s)     :       10                    
 ...
+000 (006.006.000) 2025-12-16 00:53:03 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+001 (006.006.000) 2025-12-16 00:53:22 Job executing on host: <10.87.28.117:9618?addrs=10.87.28.117-9618&alias=stadius-nc-4.esat.kuleuven.be&noUDP&sock=startd_3356_83ed>
+	SlotName: slot1_2@stadius-nc-4.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_8c3c8db2 }
+	CondorScratchDir = "/volume1/condor/execute/dir_905888"
+	Cpus = 8
+	Disk = 1050150
+	GPUs = 1
+	GPUs_GPU_8c3c8db2 = [ Id = "GPU-8c3c8db2"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "8c3c8db2-06a6-9e0e-a6ee-a948fb2f7f27"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "570.153.02"; DriverVersion = 12.8; DevicePciBusId = "0000:5B:00.0"; GlobalMemoryMb = 10823; MaxSupportedVersion = 12080 ]
+	Memory = 71680
+...
+006 (006.006.000) 2025-12-16 00:53:30 Image size of job updated: 245212
+	240  -  MemoryUsage of job (MB)
+	245212  -  ResidentSetSize of job (KB)
+...
+006 (006.006.000) 2025-12-16 00:58:30 Image size of job updated: 2163704
+	2113  -  MemoryUsage of job (MB)
+	2163704  -  ResidentSetSize of job (KB)
+...
+006 (006.006.000) 2025-12-16 01:03:31 Image size of job updated: 2163756
+	2113  -  MemoryUsage of job (MB)
+	2163704  -  ResidentSetSize of job (KB)
+...
+006 (006.006.000) 2025-12-16 01:08:31 Image size of job updated: 2171080
+	2121  -  MemoryUsage of job (MB)
+	2171080  -  ResidentSetSize of job (KB)
+...
+006 (006.006.000) 2025-12-16 01:13:32 Image size of job updated: 2178196
+	2121  -  MemoryUsage of job (MB)
+	2171080  -  ResidentSetSize of job (KB)
+...
+006 (006.006.000) 2025-12-16 01:18:33 Image size of job updated: 2215792
+	2149  -  MemoryUsage of job (MB)
+	2199724  -  ResidentSetSize of job (KB)
+...
+006 (006.006.000) 2025-12-16 01:21:21 Image size of job updated: 2260212
+	2149  -  MemoryUsage of job (MB)
+	2199724  -  ResidentSetSize of job (KB)
+...
+004 (006.006.000) 2025-12-16 01:21:21 Job was evicted. Code 1009 Subcode 0
+	(0) CPU times
+		Usr 0 02:30:37, Sys 0 00:04:45  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	Reason: Claim deactivated
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     6.00        8         8 
+	   Disk (KB)            :     2     1048576   1050150 
+	   GPUs                 :     0.23        1         1 "GPU-8c3c8db2"
+	   GpusMemory (MB)      :  1597                       
+	   Memory (MB)          :  2149       71680     71680 
+	   TimeExecute (s)      :  1679                       
+	   TimeSlotBusy (s)     :  1679                       
+...
+009 (006.006.000) 2025-12-16 01:21:21 Job was aborted.
+	via condor_rm (by user kkontras)
+...

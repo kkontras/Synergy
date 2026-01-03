@@ -14,6 +14,7 @@ from utils.corr_metrics import (
     print_feature_comparisons,
     tsne_plot
 )
+import json
 
 def multiclass_acc(preds, truths):
     return np.sum(np.round(preds) == np.round(truths)) / float(len(truths))
@@ -51,8 +52,13 @@ class General_Evaluator:
         self.best_acc = 0.0
         self.best_loss = 0.0
 
-        with open('./conf_res_uni_val.pkl', 'rb') as f:
-            self.multi_fold_results = pickle.load(f)
+        if set == "val":
+            with open('./conf_res_uni_val.pkl', 'rb') as f:
+                self.multi_fold_results = pickle.load(f)
+        elif set == "test":
+            with open('./cremad_ceu_test_res.pkl', 'rb') as f:
+                self.multi_fold_results_test = pickle.load(f)["folds"]
+
 
     def set_best(self, best_acc, best_loss):
         self.best_acc = best_acc
@@ -167,10 +173,14 @@ class General_Evaluator:
                     )(preds, targets).item()
 
             # CEU (only for combined head)
-            if pred_key == "combined":
+            if pred_key == "combined" and self.set == "val" or self.set == "test":
                 ceu_val = self.ceu(preds, targets)
+                per_group_acc = self.get_per_group_accuracy(preds, targets)
                 if ceu_val is not None:
                     head_metrics["ceu"] = ceu_val
+                if per_group_acc is not None:
+                    head_metrics["pg_acc"]=per_group_acc
+
 
             return head_metrics
 
@@ -254,6 +264,113 @@ class General_Evaluator:
                 coexistence = cm[3, 1] / (cm[3].sum())
                 return {"cue_audio": cue_audio, "cue_video": cue_video, "synergy":synergy, "coexistence":coexistence}
 
+        if hasattr(self, "multi_fold_results_test"):
+
+            audio_preds = np.array(self.multi_fold_results_test[this_fold]["preds_combined"])
+            audio_targets = np.array(self.multi_fold_results_test[this_fold]["targets"])
+            video_preds = np.array(self.multi_fold_results_test[this_fold+3]["preds_combined"])
+            video_targets = np.array(self.multi_fold_results_test[this_fold+3]["targets"])
+
+            if len(targets_tens) == len(video_targets) == len(audio_targets) and (targets_tens.numpy() == video_targets).all() and (video_targets == audio_targets).all():
+
+                predictions = [ audio_preds.argmax(-1) == audio_targets,
+                                video_preds.argmax(-1) == video_targets,
+                                (total_preds.argmax(-1) == targets_tens).numpy(),]
+                cm = create_conf(predictions)
+                cm = np.round(cm, 2)
+                cue_audio = cm[1, 1] / (cm[1].sum())
+                cue_video = cm[2, 1] / (cm[2].sum())
+                synergy = cm[0, 1] / (cm[0].sum())
+                coexistence = cm[3, 1] / (cm[3].sum())
+                return {"cue_audio": cue_audio, "cue_video": cue_video, "synergy":synergy, "coexistence":coexistence}
+
+    def get_per_group_accuracy(self, total_preds, targets_tens):
+        def calculate_stats(preds_correct, targets, m_preds):
+            preds_correct = np.array(preds_correct)
+            targets = np.array(targets)
+            m_preds = np.array(m_preds)
+            total_samples = float(len(targets))
+
+            groups = {
+                "synergy": (~preds_correct[0]) & (~preds_correct[1]),
+                "cue_audio": (preds_correct[0]) & (~preds_correct[1]),
+                "cue_video": (~preds_correct[0]) & (preds_correct[1]),
+                "coexistence": (preds_correct[0]) & (preds_correct[1])
+            }
+
+            m_model_correct = preds_correct[2]
+            results = {"group_metrics": {}}
+
+            for name, mask in groups.items():
+                group_size = int(mask.sum())
+                correct_in_group = int(m_model_correct[mask].sum())
+
+                internal_acc = (correct_in_group / group_size * 100.0) if group_size > 0 else 0.0
+                contribution = (correct_in_group / total_samples * 100.0)
+
+                results["group_metrics"][name] = {
+                    "internal_acc": float(internal_acc),
+                    "contribution_to_total": float(contribution)
+                }
+
+            # --- Synergy Macro F1 ---
+            syn_mask = groups["synergy"]
+            unique_labels = np.unique(targets)
+            if syn_mask.any():
+                syn_targets = targets[syn_mask]
+                syn_predictions = m_preds[syn_mask]
+                f1_list = []
+                for l in unique_labels:
+                    tp = ((syn_predictions == l) & (syn_targets == l)).sum()
+                    fp = ((syn_predictions == l) & (syn_targets != l)).sum()
+                    fn = ((syn_predictions != l) & (syn_targets == l)).sum()
+                    prec = tp / (tp + fp) if (tp + fp) > 0 else 0
+                    rec = tp / (tp + fn) if (tp + fn) > 0 else 0
+                    f1_list.append(2 * (prec * rec) / (prec + rec) if (prec + rec) > 0 else 0)
+                results["synergy_f1"] = float(np.mean(f1_list) * 100.0)
+            else:
+                results["synergy_f1"] = 0.0
+
+            # Synergy Per-Label Accuracy
+            label_results = {}
+            for label in unique_labels:
+                l_mask = (targets == label) & syn_mask
+                l_count = int(l_mask.sum())
+                l_acc = (m_model_correct[l_mask].sum() / l_count * 100.0) if l_count > 0 else 0.0
+                label_results[f"label_{int(label)}"] = float(l_acc)
+
+            results["synergy_per_label_acc"] = label_results
+            return results
+
+        # Data extraction logic - FIXED: video_targets now loaded correctly
+        this_fold = self.config.dataset.get("fold", 0)
+
+        if hasattr(self, "multi_fold_results"):
+
+            audio_preds = self.multi_fold_results[this_fold]["total_preds"]["combined"]
+            audio_targets = self.multi_fold_results[this_fold]["total_preds_target"]
+            video_preds = self.multi_fold_results[this_fold + 3]["total_preds"]["combined"]
+            video_targets = self.multi_fold_results[this_fold + 3]["total_preds_target"]
+
+        if hasattr(self, "multi_fold_results_test"):
+
+            audio_preds = np.array(self.multi_fold_results_test[this_fold]["preds_combined"])
+            audio_targets = np.array(self.multi_fold_results_test[this_fold]["targets"])
+            video_preds = np.array(self.multi_fold_results_test[this_fold+3]["preds_combined"])
+            video_targets = np.array(self.multi_fold_results_test[this_fold+3]["targets"])
+
+
+        # Safety check for alignment
+        targets_np = targets_tens.numpy()
+        if len(targets_np) == len(video_targets) == len(audio_targets) and \
+                (targets_np == video_targets).all() and (video_targets == audio_targets).all():
+            preds_correct = [
+                audio_preds.argmax(-1) == audio_targets,
+                video_preds.argmax(-1) == video_targets,
+                (total_preds.argmax(-1) == targets_tens).numpy()
+            ]
+            return calculate_stats(preds_correct, targets_np, total_preds.argmax(-1).numpy())
+        return None
 
     def is_best(self, metrics = None, best_logs=None):
         if metrics is None:
@@ -261,7 +378,7 @@ class General_Evaluator:
 
         validate_with = self.config.early_stopping.get("validate_with", "loss")
         if validate_with == "loss":
-            is_best = (metrics["loss"]["total"] < best_logs["loss"]["total"])
+            is_best = (metrics["loss"]["ce_loss_combined"] < best_logs["loss"]["ce_loss_combined"])
         elif validate_with == "accuracy":
             is_best = (metrics["acc"]["combined"] > best_logs["acc"]["combined"])
         else:

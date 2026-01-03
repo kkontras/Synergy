@@ -7,6 +7,7 @@ from utils.schedulers.warmup_scheduler import WarmupScheduler
 import wandb
 import torch._dynamo
 import os
+from utils.optim import *
 
 from models.MCR_Models import *
 from models.SthSth_models import *
@@ -14,6 +15,7 @@ from models.SyntheticData_Model import *
 from models.Synergy_Models import *
 # from models.Synergy_Models_2 import *
 from models.Synergy_Models_Dec import *
+from models.Synergy_Models_SVAE import *
 
 import logging
 
@@ -145,6 +147,10 @@ class Loader():
                 self.agent.optimizer = optim.AdamW(self.agent.model.parameters(),
                                             lr=self.agent.config.optimizer.learning_rate,
                                             weight_decay=self.agent.config.optimizer.weight_decay)
+        elif self.agent.config.optimizer.type == "NormalizedAdamW":
+            self.agent.optimizer = NormalizedAdamW(self.agent.model.parameters(),
+                                        lr=self.agent.config.optimizer.learning_rate,
+                                        weight_decay=self.agent.config.optimizer.weight_decay)
         self.load_pretrained_models()
 
     def load_best_model(self):
@@ -312,21 +318,21 @@ class Loader():
                 checkpoint = torch.load(file_path, weights_only=False)
                 if "encoder_state_dict" in checkpoint:
                     missing_keys, unexpected_keys =  enc.load_state_dict(checkpoint["encoder_state_dict"], strict=False)
-                    if missing_keys:
-                        print(f"Missing keys in state_dict: {missing_keys}")
-                    if unexpected_keys:
-                        print(f"Unexpected keys in state_dict: {unexpected_keys}")
+                    if missing_keys or unexpected_keys:
+                        logging.warn(f"Missing keys in state_dict: {missing_keys}")
+                        logging.warn(f"Unexpected keys in state_dict: {unexpected_keys}")
+                    else:
+                        logging.info("Loading enc encoder state dict from {}".format(file_path))
 
                 elif "best_model_state_dict" in checkpoint:
                     logging.info("Loading enc best model state dict from {}".format(file_path))
                     if "VaVL" not in enc_args[num_enc]["model"]:
-                        print("Replacing module")
+                        logging.info("Replacing module")
                         checkpoint["best_model_state_dict"] = {key.replace("module.", ""): value for key, value in checkpoint["best_model_state_dict"].items()}
                     missing_keys, unexpected_keys =  enc.load_state_dict(checkpoint["best_model_state_dict"], strict=False)
-                    if missing_keys:
-                        print(f"Missing keys in state_dict: {missing_keys}")
-                    if unexpected_keys:
-                        print(f"Unexpected keys in state_dict: {unexpected_keys}")
+                    if missing_keys or unexpected_keys:
+                        logging.warn(f"Missing keys in state_dict: {missing_keys}")
+                        logging.warn(f"Unexpected keys in state_dict: {unexpected_keys}")
 
             encs.append(enc)
         return encs

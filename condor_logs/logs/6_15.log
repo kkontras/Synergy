@@ -32,3 +32,46 @@
 	   TimeExecute (s)      :       10                    
 	   TimeSlotBusy (s)     :       10                    
 ...
+000 (006.015.000) 2025-12-16 00:53:03 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+001 (006.015.000) 2025-12-16 00:55:44 Job executing on host: <10.87.24.221:9618?addrs=10.87.24.221-9618&alias=pythagoras.esat.kuleuven.be&noUDP&sock=startd_6267_381e>
+	SlotName: slot1_1@pythagoras.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_92df90fe }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1279176/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_92df90fe = [ Id = "GPU-92df90fe"; ClockMhz = 2520.0; Capability = 8.9; CoresPerCU = 128; DeviceName = "NVIDIA L40S"; DeviceUuid = "92df90fe-51bb-1eec-5d31-e4ed612f0107"; ECCEnabled = true; ComputeUnits = 142; NvidiaDriver = "580.105.08"; DriverVersion = 13.0; DevicePciBusId = "0000:01:00.0"; GlobalMemoryMb = 45458; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (006.015.000) 2025-12-16 00:55:53 Image size of job updated: 742680
+	726  -  MemoryUsage of job (MB)
+	742680  -  ResidentSetSize of job (KB)
+...
+006 (006.015.000) 2025-12-16 01:00:54 Image size of job updated: 2155720
+	2044  -  MemoryUsage of job (MB)
+	2092756  -  ResidentSetSize of job (KB)
+...
+006 (006.015.000) 2025-12-16 01:05:54 Image size of job updated: 2206472
+	2106  -  MemoryUsage of job (MB)
+	2155736  -  ResidentSetSize of job (KB)
+...
+004 (006.015.000) 2025-12-16 01:21:22 Job was evicted. Code 1009 Subcode 0
+	(0) CPU times
+		Usr 0 02:33:42, Sys 0 00:06:32  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	Reason: Claim deactivated
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     6.31        8         8 
+	   Disk (KB)            :     2     1048576   1048576 
+	   GPUs                 :     0.19        1         1 "GPU-92df90fe"
+	   GpusMemory (MB)      :  2087                       
+	   Memory (MB)          :  2106       71680     71680 
+	   TimeExecute (s)      :  1538                       
+	   TimeSlotBusy (s)     :  1538                       
+...
+009 (006.015.000) 2025-12-16 01:21:22 Job was aborted.
+	via condor_rm (by user kkontras)
+...

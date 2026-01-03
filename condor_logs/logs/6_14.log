@@ -32,3 +32,41 @@
 	   TimeExecute (s)      :       10                    
 	   TimeSlotBusy (s)     :       10                    
 ...
+000 (006.014.000) 2025-12-16 00:53:03 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+001 (006.014.000) 2025-12-16 00:55:21 Job executing on host: <10.87.24.221:9618?addrs=10.87.24.221-9618&alias=pythagoras.esat.kuleuven.be&noUDP&sock=startd_6267_381e>
+	SlotName: slot1_1@pythagoras.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_92df90fe }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1279059/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_92df90fe = [ Id = "GPU-92df90fe"; ClockMhz = 2520.0; Capability = 8.9; CoresPerCU = 128; DeviceName = "NVIDIA L40S"; DeviceUuid = "92df90fe-51bb-1eec-5d31-e4ed612f0107"; ECCEnabled = true; ComputeUnits = 142; NvidiaDriver = "580.105.08"; DriverVersion = 13.0; DevicePciBusId = "0000:01:00.0"; GlobalMemoryMb = 45458; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (006.014.000) 2025-12-16 00:55:29 Image size of job updated: 708360
+	692  -  MemoryUsage of job (MB)
+	708360  -  ResidentSetSize of job (KB)
+...
+006 (006.014.000) 2025-12-16 00:55:44 Image size of job updated: 1398928
+	692  -  MemoryUsage of job (MB)
+	708360  -  ResidentSetSize of job (KB)
+...
+005 (006.014.000) 2025-12-16 00:55:44 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:17, Sys 0 00:00:04  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:17, Sys 0 00:00:04  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :        0        8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :        0        1         1 "GPU-92df90fe"
+	   Memory (MB)          :      692    71680     71680 
+	   TimeExecute (s)      :       23                    
+	   TimeSlotBusy (s)     :       23                    
+...

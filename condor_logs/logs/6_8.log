@@ -32,3 +32,54 @@
 	   TimeExecute (s)      :        4                    
 	   TimeSlotBusy (s)     :        5                    
 ...
+000 (006.008.000) 2025-12-16 00:53:03 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+001 (006.008.000) 2025-12-16 00:53:23 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_2572_c1ad>
+	SlotName: slot1_6@aristoteles.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_edd4a9d8 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1717170/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_edd4a9d8 = [ Id = "GPU-edd4a9d8"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "edd4a9d8-371c-bb9a-e898-24b94b410094"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.105.08"; DriverVersion = 13.0; DevicePciBusId = "0000:8D:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (006.008.000) 2025-12-16 00:53:32 Image size of job updated: 234028
+	229  -  MemoryUsage of job (MB)
+	234028  -  ResidentSetSize of job (KB)
+...
+006 (006.008.000) 2025-12-16 00:58:33 Image size of job updated: 2198028
+	2046  -  MemoryUsage of job (MB)
+	2094424  -  ResidentSetSize of job (KB)
+...
+006 (006.008.000) 2025-12-16 01:03:34 Image size of job updated: 2198028
+	2069  -  MemoryUsage of job (MB)
+	2118412  -  ResidentSetSize of job (KB)
+...
+006 (006.008.000) 2025-12-16 01:13:35 Image size of job updated: 2198028
+	2077  -  MemoryUsage of job (MB)
+	2126712  -  ResidentSetSize of job (KB)
+...
+006 (006.008.000) 2025-12-16 01:18:35 Image size of job updated: 2198028
+	2089  -  MemoryUsage of job (MB)
+	2138700  -  ResidentSetSize of job (KB)
+...
+004 (006.008.000) 2025-12-16 01:21:22 Job was evicted. Code 1009 Subcode 0
+	(0) CPU times
+		Usr 0 02:35:37, Sys 0 00:06:13  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	Reason: Claim deactivated
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     6.18        8         8 
+	   Disk (KB)            :     2     1048576   1048576 
+	   GPUs                 :     0.19        1         1 "GPU-edd4a9d8"
+	   GpusMemory (MB)      :  2243                       
+	   Memory (MB)          :  2089       71680     71680 
+	   TimeExecute (s)      :  1679                       
+	   TimeSlotBusy (s)     :  1679                       
+...
+009 (006.008.000) 2025-12-16 01:21:22 Job was aborted.
+	via condor_rm (by user kkontras)
+...

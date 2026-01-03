@@ -36,3 +36,54 @@
 	   TimeExecute (s)      :       11                    
 	   TimeSlotBusy (s)     :       11                    
 ...
+000 (006.000.000) 2025-12-16 00:53:03 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+001 (006.000.000) 2025-12-16 00:53:16 Job executing on host: <10.87.24.140:9618?addrs=10.87.24.140-9618&alias=hawberry.esat.kuleuven.be&noUDP&sock=startd_2143_7f8b>
+	SlotName: slot1_1@hawberry.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_6bf32b01 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1612362/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_6bf32b01 = [ Id = "GPU-6bf32b01"; ClockMhz = 1695.0; Capability = 8.6; CoresPerCU = 128; DeviceName = "NVIDIA GeForce RTX 3090"; DeviceUuid = "6bf32b01-56ae-80bd-52e0-98456c572cb9"; ECCEnabled = false; ComputeUnits = 82; NvidiaDriver = "580.105.08"; DriverVersion = 13.0; DevicePciBusId = "0000:09:00.0"; GlobalMemoryMb = 24124; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (006.000.000) 2025-12-16 00:53:24 Image size of job updated: 86744
+	85  -  MemoryUsage of job (MB)
+	86744  -  ResidentSetSize of job (KB)
+...
+006 (006.000.000) 2025-12-16 00:58:24 Image size of job updated: 2169040
+	2052  -  MemoryUsage of job (MB)
+	2100844  -  ResidentSetSize of job (KB)
+...
+006 (006.000.000) 2025-12-16 01:03:24 Image size of job updated: 2183092
+	2052  -  MemoryUsage of job (MB)
+	2100844  -  ResidentSetSize of job (KB)
+...
+006 (006.000.000) 2025-12-16 01:13:25 Image size of job updated: 2183092
+	2102  -  MemoryUsage of job (MB)
+	2151776  -  ResidentSetSize of job (KB)
+...
+006 (006.000.000) 2025-12-16 01:21:22 Image size of job updated: 2196264
+	2102  -  MemoryUsage of job (MB)
+	2151776  -  ResidentSetSize of job (KB)
+...
+004 (006.000.000) 2025-12-16 01:21:22 Job was evicted. Code 1009 Subcode 0
+	(0) CPU times
+		Usr 0 01:22:08, Sys 0 00:07:37  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	Reason: Claim deactivated
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     3.30        8         8 
+	   Disk (KB)            :     2     1048576   1048576 
+	   GPUs                 :     0.17        1         1 "GPU-6bf32b01"
+	   GpusMemory (MB)      :  1755                       
+	   Memory (MB)          :  2102       71680     71680 
+	   TimeExecute (s)      :  1686                       
+	   TimeSlotBusy (s)     :  1687                       
+...
+009 (006.000.000) 2025-12-16 01:21:22 Job was aborted.
+	via condor_rm (by user kkontras)
+...

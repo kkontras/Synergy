@@ -36,3 +36,46 @@
 	   TimeExecute (s)      :       15                    
 	   TimeSlotBusy (s)     :       15                    
 ...
+000 (006.010.000) 2025-12-16 00:53:03 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+001 (006.010.000) 2025-12-16 00:53:24 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_2572_c1ad>
+	SlotName: slot1_7@aristoteles.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_1ba53048 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1717190/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_1ba53048 = [ Id = "GPU-1ba53048"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "1ba53048-c5a1-3226-7f78-7a6cb9cbaa42"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.105.08"; DriverVersion = 13.0; DevicePciBusId = "0000:C7:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (006.010.000) 2025-12-16 00:53:33 Image size of job updated: 236556
+	232  -  MemoryUsage of job (MB)
+	236556  -  ResidentSetSize of job (KB)
+...
+006 (006.010.000) 2025-12-16 00:58:34 Image size of job updated: 2169644
+	2108  -  MemoryUsage of job (MB)
+	2158468  -  ResidentSetSize of job (KB)
+...
+006 (006.010.000) 2025-12-16 01:03:34 Image size of job updated: 2177168
+	2108  -  MemoryUsage of job (MB)
+	2158468  -  ResidentSetSize of job (KB)
+...
+004 (006.010.000) 2025-12-16 01:21:22 Job was evicted. Code 1009 Subcode 0
+	(0) CPU times
+		Usr 0 02:42:27, Sys 0 00:05:43  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	Reason: Claim deactivated
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     6.16        8         8 
+	   Disk (KB)            :     2     1048576   1048576 
+	   GPUs                 :     0.16        1         1 "GPU-1ba53048"
+	   GpusMemory (MB)      :  2243                       
+	   Memory (MB)          :  2108       71680     71680 
+	   TimeExecute (s)      :  1678                       
+	   TimeSlotBusy (s)     :  1678                       
+...
+009 (006.010.000) 2025-12-16 01:21:22 Job was aborted.
+	via condor_rm (by user kkontras)
+...

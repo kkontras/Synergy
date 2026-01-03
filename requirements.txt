@@ -15,7 +15,6 @@ opentsne
 peft
 pytorch-metric-learning
 timm
-torch
 torchaudio
 torchmetrics
 wandb

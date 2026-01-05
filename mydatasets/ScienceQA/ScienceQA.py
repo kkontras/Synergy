@@ -255,9 +255,13 @@ class ScienceQA_Dataloader:
 
         self.collate_fn = scienceqa_collate_qwen
 
+        print(f"Visible GPUs: {torch.cuda.device_count()}")
+        print(f"IDs assigned by Slurm: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
+
         total_cpus = multiprocessing.cpu_count()
         num_gpus = Accelerator().num_processes
         workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
+        print("Num CPUs= {}, Num_GPUs= {}, num_worker= {}".format(total_cpus, num_gpus, workers_per_gpu))
 
         self.train_loader = DataLoader(
             ScienceQA_Dataset(

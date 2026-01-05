@@ -17,7 +17,7 @@ cd $VSC_SCRATCH/projects/Synergy
 git pull origin vsc
 
 source $VSC_DATA/anaconda3/etc/profile.d/conda.sh
-conda activate $VSC_DATA/synergy_new
+conda activate synergy_new
 which python
 python -V
 echo $PWD

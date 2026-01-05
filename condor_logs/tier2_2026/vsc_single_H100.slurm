@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=16
 #SBATCH --cpus-per-task=1
-#SBATCH --gpus-per-node=1
+#SBATCH --gpus-per-node=4
 #SBATCH --partition=gpu_h100
 #SBATCH --open-mode=appendj
 #SBATCH --output=$VSC_SCRATCH/projects/Synergy/logs_vsc/slurmout_%J.txt
@@ -35,6 +35,7 @@ export fold=$3
 export lr=$4
 export wd=$5
 export l=$6
+export bs=$7
 
 variables=("config" "default_config" "fold" "lr" "wd" "l" )
 
@@ -45,5 +46,4 @@ for var_name in "${variables[@]}"; do
     fi
 done
 
-
-accelerate launch /scratch/leuven/350/vsc35057/projects/Balance/main_mcrema_MSLR.py --config $config --default_config $default_config --fold $fold --lr $lr --wd $wd --l $l
+accelerate launch --multi_gpu --num_processes=$num_gpus  /scratch/leuven/350/vsc35057/projects/Synergy/train.py --config $config --default_config $default_config --fold $fold --lr $lr --wd $wd --l $l --batch_size $bs

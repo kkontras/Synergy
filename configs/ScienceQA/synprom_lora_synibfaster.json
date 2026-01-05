@@ -2,8 +2,8 @@
   "training_params": {
     "tdqm_disable": false,
     "wandb_disable": false,
-    "batch_size": 2,
-    "test_batch_size": 2
+    "batch_size": 16,
+    "test_batch_size": 16
   },
   "early_stopping": {
     "end_of_epoch_check": true,

@@ -50,9 +50,9 @@
   },
   "dataset": {
     "dataloader_class": "ScienceQA_Dataloader",
-    "data_roots": "$VSC_SCRATCH/Datasets/ScienceQA"
+    "data_roots": "$VSC_SCRATCH/data/ScienceQA"
   },
   "model": {
-    "save_base_dir": "$VSC_SCRATCH/Checkpoints/Synergy/ScienceQA"
+    "save_base_dir": "$VSC_SCRATCH/models/Synergy/ScienceQA"
   }
 }

@@ -3,18 +3,17 @@
 #SBATCH --time=55:00:00
 #SBATCH --cluster=wice
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=16
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-gpu=16
 #SBATCH --gpus-per-node=4
 #SBATCH --partition=gpu_h100
 #SBATCH --open-mode=appendj
-#SBATCH --output=$VSC_SCRATCH/projects/Synergy/condor_logs/logs_vsc/slurmout_%J.txt
-#SBATCH --error=$VSC_SCRATCH/projects/Synergy/condor_logs/logs_vsc/slurmerr_%J.txt
+#SBATCH --output=/scratch/leuven/350/vsc35057/projects/Synergy/condor_logs/logs_vsc/slurmout_%J.txt
+#SBATCH --error=/scratch/leuven/350/vsc35057/projects/Synergy/condor_logs/logs_vsc/slurmerr_%J.txt
 
 
 cd $VSC_SCRATCH/projects/Synergy
 
-git pull origin vsc
+git pull
 
 source $VSC_DATA/anaconda3/etc/profile.d/conda.sh
 conda activate synergy_new

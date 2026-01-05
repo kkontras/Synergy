@@ -11,11 +11,11 @@
 #SBATCH --error=/scratch/leuven/350/vsc35057/projects/Synergy/condor_logs/logs_vsc/slurmerr_%J.txt
 
 
-cd $VSC_SCRATCH/projects/Synergy
+cd /scratch/leuven/350/vsc35057/projects/Synergy
 
 git pull
 
-source $VSC_DATA/anaconda3/etc/profile.d/conda.sh
+source /data/leuven/350/vsc35057/anaconda3/etc/profile.d/conda.sh
 conda activate synergy_new
 which python
 python -V

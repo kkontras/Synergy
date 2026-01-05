@@ -50,9 +50,9 @@
   },
   "dataset": {
     "dataloader_class": "ScienceQA_Dataloader",
-    "data_roots": "$VSC_SCRATCH/data/ScienceQA"
+    "data_roots": "/scratch/leuven/350/vsc35057/data/ScienceQA"
   },
   "model": {
-    "save_base_dir": "$VSC_SCRATCH/models/Synergy/ScienceQA"
+    "save_base_dir": "/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA"
   }
 }

@@ -13,6 +13,8 @@ from torchvision import transforms
 from torchvision.transforms.functional import to_tensor
 from datasets import load_dataset
 from collections import Counter
+import multiprocessing
+from accelerate import Accelerator
 
 LETTERS_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -253,9 +255,13 @@ class ScienceQA_Dataloader:
 
         self.collate_fn = scienceqa_collate_qwen
 
+        total_cpus = multiprocessing.cpu_count()
+        num_gpus = Accelerator().num_processes
+        workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
+
         self.train_loader = DataLoader(
             ScienceQA_Dataset(
-                config= config,
+                config=config,
                 split="train",
                 require_image=True,
                 require_outside_knowledge=True,
@@ -265,6 +271,11 @@ class ScienceQA_Dataloader:
             generator=g,
             worker_init_fn=seed_worker,
             collate_fn=self.collate_fn,
+            # --- ADD THESE FOR H100 PERFORMANCE ---
+            num_workers=workers_per_gpu,  # Start with 8-12 per GPU (e.g., 48 total if on one node)
+            pin_memory=True,  # Speeds up CPU-to-GPU transfer
+            prefetch_factor=4,  # Ensures workers stay ahead of the GPU
+            persistent_workers=True  # Keeps workers alive between epochs
         )
 
         self.valid_loader = DataLoader(
@@ -277,6 +288,10 @@ class ScienceQA_Dataloader:
             batch_size=batch_size,
             shuffle=False,
             collate_fn=self.collate_fn,
+            num_workers=workers_per_gpu,  # Start with 8-12 per GPU (e.g., 48 total if on one node)
+            pin_memory=True,  # Speeds up CPU-to-GPU transfer
+            prefetch_factor=4,  # Ensures workers stay ahead of the GPU
+            persistent_workers=True  # Keeps workers alive between epochs
         )
 
         self.test_loader = DataLoader(
@@ -289,6 +304,10 @@ class ScienceQA_Dataloader:
             batch_size=batch_size,
             shuffle=False,
             collate_fn=self.collate_fn,
+            num_workers=workers_per_gpu,  # Start with 8-12 per GPU (e.g., 48 total if on one node)
+            pin_memory=True,  # Speeds up CPU-to-GPU transfer
+            prefetch_factor=4,  # Ensures workers stay ahead of the GPU
+            persistent_workers=True  # Keeps workers alive between epochs
         )
 
 def compute_label_stats_and_weights(

@@ -8,8 +8,8 @@
 #SBATCH --gpus-per-node=4
 #SBATCH --partition=gpu_h100
 #SBATCH --open-mode=appendj
-#SBATCH --output=$VSC_SCRATCH/projects/Synergy/logs_vsc/slurmout_%J.txt
-#SBATCH --error=$VSC_SCRATCH/projects/Synergy/logs_vsc/slurmerr_%J.txt
+#SBATCH --output=$VSC_SCRATCH/projects/Synergy/condor_logs/logs_vsc/slurmout_%J.txt
+#SBATCH --error=$VSC_SCRATCH/projects/Synergy/condor_logs/logs_vsc/slurmerr_%J.txt
 
 
 cd $VSC_SCRATCH/projects/Synergy

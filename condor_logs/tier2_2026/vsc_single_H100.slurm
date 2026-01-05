@@ -8,16 +8,16 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --partition=gpu_h100
 #SBATCH --open-mode=appendj
-#SBATCH --output=/scratch/leuven/350/vsc35057/projects/Balance/logs_vsc/slurmout_%J.txt
-#SBATCH --error=/scratch/leuven/350/vsc35057/projects/Balance/logs_vsc/slurmerr_%J.txt
+#SBATCH --output=$VSC_SCRATCH/projects/Synergy/logs_vsc/slurmout_%J.txt
+#SBATCH --error=$VSC_SCRATCH/projects/Synergy/logs_vsc/slurmerr_%J.txt
 
 
 cd $VSC_SCRATCH/projects/Synergy
 
 git pull origin vsc
 
-source /data/leuven/350/vsc35057/anaconda3/etc/profile.d/conda.sh
-conda activate /data/leuven/350/vsc35057/synergy_new
+source $VSC_DATA/anaconda3/etc/profile.d/conda.sh
+conda activate $VSC_DATA/synergy_new
 which python
 python -V
 echo $PWD

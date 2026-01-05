@@ -175,5 +175,9 @@ python train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --de
 scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA kkontras@mib.media.mit.edu:/scratch/kkontras/data
 scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Qwen3VL_LHead_fold0.pth.tar kkontras@mib.media.mit.edu:/scratch/kkontras/checkpoints/synergy/ScienceQA/
 scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_LoRaFT_fold0_lr0.0001_wd0.01.pth.tar kkontras@mib.media.mit.edu:/scratch/kkontras/checkpoints/synergy/ScienceQA/
+scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_IBInput2_fold0_lr0.0001_wd0.0001_cls_embedding.pt kkontras@mib.media.mit.edu:/scratch/kkontras/checkpoints/synergy/ScienceQA/
+
+CUDA_VISIBLE_DEVICES=6 python train.py --config ./configs/ScienceQA/synprom_lora_synib.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --l 1
+
 
 python train.py --config ./configs/CREMA_D/synergy/nov/synprom_IB_Dir_VAE.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --pre --frozen --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --perturb gen --start_over

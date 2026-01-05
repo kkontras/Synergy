@@ -36,9 +36,9 @@ easydict==1.13
 einops==0.8.1
 exceptiongroup==1.3.0
 ffmpeg==1.4
-fiftyone==1.10.0
-fiftyone-brain==0.21.4
-fiftyone-db==0.4.0
+fiftyone
+fiftyone-brain
+fiftyone-db
 filelock==3.19.1
 fonttools==4.60.1
 frozenlist==1.8.0
@@ -81,10 +81,10 @@ lightning-utilities==0.15.2
 llvmlite==0.45.1
 logistro==2.0.1
 MarkupSafe==2.1.5
-matplotlib==3.10.7
+matplotlib
 mongoengine==0.29.1
 motor==3.6.1
-moviepy==2.2.1
+moviepy
 mpmath==1.3.0
 msgpack==1.1.2
 multidict==6.7.0
@@ -117,7 +117,7 @@ packaging==25.0
 pandas==2.3.3
 paramiko==3.5.1
 peft==0.18.0
-pillow==12.0.0
+pillow
 pip-chill==1.0.3
 platformdirs==4.5.0
 plotly==6.5.0

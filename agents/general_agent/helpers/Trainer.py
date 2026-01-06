@@ -61,54 +61,56 @@ class Trainer():
             self.agent.evaluators.train_evaluator.reset()
 
             # sched = schedule(wait=10, warmup=10, active=30, repeat=1)
-            with profile(
-                    activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-                    # schedule=sched,
-                    profile_memory=True,
-                    on_trace_ready=None,  # or torch.profiler.tensorboard_trace_handler("logdir")
-            ) as prof:
-                pbar = tqdm(enumerate(self.agent.data_loader.train_loader), total=len(self.agent.data_loader.train_loader), desc="Training", leave=None, disable=self.agent.config.training_params.tdqm_disable or not self.agent.accelerator.is_main_process, position=0)
-                for batch_idx, served_dict in pbar:
-                    # if type(served_dict) == tuple: #FACTORCL DATASETS
-                    #     served_dict = {"data":{"c":served_dict[0][0], "f":served_dict[0][1], "g":served_dict[0][2]}, "label":served_dict[3].squeeze(dim=1)}
-                    #     if self.agent.config.get("task", "classification") == "classification" and len(served_dict["label"][served_dict["label"]==-1])>0:
-                    #         served_dict["label"][served_dict["label"] == -1] = 0
+            # with profile(
+            #         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+            #         # schedule=sched,
+            #         record_shapes=False,
+            #         profile_memory=False,
+            #         with_stack=False,
+            #         on_trace_ready=None,  # or torch.profiler.tensorboard_trace_handler("logdir")
+            # ) as prof:
+            pbar = tqdm(enumerate(self.agent.data_loader.train_loader), total=len(self.agent.data_loader.train_loader), desc="Training", leave=None, disable=self.agent.config.training_params.tdqm_disable or not self.agent.accelerator.is_main_process, position=0)
+            for batch_idx, served_dict in pbar:
+                # if type(served_dict) == tuple: #FACTORCL DATASETS
+                #     served_dict = {"data":{"c":served_dict[0][0], "f":served_dict[0][1], "g":served_dict[0][2]}, "label":served_dict[3].squeeze(dim=1)}
+                #     if self.agent.config.get("task", "classification") == "classification" and len(served_dict["label"][served_dict["label"]==-1])>0:
+                #         served_dict["label"][served_dict["label"] == -1] = 0
 
-                    if self.agent.config.model.get("load_ongoing", False):
-                        if self.agent.logs["current_step"] > self.agent.logs["current_epoch"] * len(self.agent.data_loader.train_loader) + batch_idx:
-                            self.agent.logger.info(f"Skipping batch {batch_idx} due to load_ongoing experiment")
-                            continue
+                if self.agent.config.model.get("load_ongoing", False):
+                    if self.agent.logs["current_step"] > self.agent.logs["current_epoch"] * len(self.agent.data_loader.train_loader) + batch_idx:
+                        self.agent.logger.info(f"Skipping batch {batch_idx} due to load_ongoing experiment")
+                        continue
 
-                    self.agent.optimizer.zero_grad()
-                    step_outcome, optstep_done = self.this_train_step_func(served_dict)
-                    self._clip_grads()
-                    if not optstep_done: self.agent.optimizer.step()
-                    self.agent.scheduler.step(step=self.agent.logs["current_step"]+1, loss=step_outcome["loss"]["total"].item())
+                self.agent.optimizer.zero_grad()
+                step_outcome, optstep_done = self.this_train_step_func(served_dict)
+                self._clip_grads()
+                if not optstep_done: self.agent.optimizer.step()
+                self.agent.scheduler.step(step=self.agent.logs["current_step"]+1, loss=step_outcome["loss"]["total"].item())
 
-                    all_outputs = self.agent.accelerator.gather(step_outcome)
-                    self.agent.evaluators.train_evaluator.process(all_outputs)
-                    del served_dict, step_outcome, all_outputs
-                    # torch.cuda.empty_cache()
+                all_outputs = self.agent.accelerator.gather(step_outcome)
+                self.agent.evaluators.train_evaluator.process(all_outputs)
+                del served_dict, step_outcome, all_outputs
+                # torch.cuda.empty_cache()
 
-                    pbar_message = self.local_logging(batch_idx, False)
-                    pbar.set_description(pbar_message)
-                    pbar.refresh()
+                pbar_message = self.local_logging(batch_idx, False)
+                pbar.set_description(pbar_message)
+                pbar.refresh()
 
-                    # if self.agent.evaluators.train_evaluator.get_early_stop(): return
-                    self.agent.logs["current_step"] += 1
-                    # if self.agent.logs["current_step"] - self.agent.logs["saved_step"] > self.agent.config.early_stopping.get("save_every_step", float("inf")):
-                    #         self.agent.accelerator.wait_for_everyone()
-                    #         if self.agent.accelerator.is_main_process:
-                    #             self.agent.monitor_n_saver.save(verbose=True)
+                if self.agent.evaluators.train_evaluator.get_early_stop(): return
+                self.agent.logs["current_step"] += 1
+                if self.agent.logs["current_step"] - self.agent.logs["saved_step"] > self.agent.config.early_stopping.get("save_every_step", float("inf")):
+                        self.agent.accelerator.wait_for_everyone()
+                        if self.agent.accelerator.is_main_process:
+                            self.agent.monitor_n_saver.save(verbose=True)
 
-                    prof.step()
-                    print("We reached the step")
-                    if batch_idx >= 1:
-                        break
-
-            print("Profiler Begin")
-            print(prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=30))
-            print("Profiler Done")
+            #         prof.step()
+            #         print("We reached the step")
+            #         if batch_idx >= 1:
+            #             break
+            #
+            # print("Profiler Begin")
+            # print(prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=30))
+            # print("Profiler Done")
 
             self.agent.logs["current_epoch"] += 1
             self.local_logging(batch_idx, True)

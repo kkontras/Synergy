@@ -1,8 +1,7 @@
 import os
 import json
 import random
-from typing import List, Dict, Any
-
+import pynvml
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
@@ -15,7 +14,8 @@ from datasets import load_dataset
 from collections import Counter
 import multiprocessing
 from accelerate import Accelerator
-import pynvml
+from typing import List, Dict, Any, Tuple, Optional
+import numpy as np
 
 LETTERS_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -93,9 +93,6 @@ def build_question_text_with_letters(
 
     return "\n\n".join(parts)
 
-
-from typing import Any, Dict, List, Tuple, Optional
-
 def compute_lengths_and_filter(
     raw_ds,
     keep_indices: List[int],
@@ -152,9 +149,6 @@ def compute_lengths_and_filter(
 
     return lengths, filtered_keep
 
-
-from typing import List, Dict, Any, Tuple, Optional
-import numpy as np
 
 
 def suggest_max_len_from_text_lens(
@@ -293,7 +287,7 @@ class ScienceQA_Dataset(Dataset):
             raw_ds=self.raw_ds,
             keep_indices=self.keep_indices,
             min_len=getattr(config.dataset, "min_chars", 200),
-            max_len=getattr(config.dataset, "max_chars", 1500),
+            max_len=getattr(config.dataset, "max_chars", 1800),
             mode=getattr(config.dataset, "length_mode", "chars"),
             build_hint_fn=build_scienceqa_hint_text,
             build_qa_fn=build_question_text_with_letters,
@@ -313,7 +307,6 @@ class ScienceQA_Dataset(Dataset):
 
     def __len__(self):
         return len(self.keep_indices)
-        # return 32
 
     def _load_image(self, pil_img: Image.Image):
         pil_img = pil_img.convert("RGB")
@@ -336,28 +329,9 @@ class ScienceQA_Dataset(Dataset):
         n = len(choices)
 
         letters_for_question = LETTERS_POOL[:n]
-        #
-        # if self.split == "train":
-        #     target_pos = random.randrange(n)
-        #
-        #     perm = list(range(n))
-        #     perm[orig_correct_idx], perm[target_pos] = (
-        #         perm[target_pos],
-        #         perm[orig_correct_idx],
-        #     )
-        #
-        #     choices = [choices[i] for i in perm]
-        #     letters_for_question = [letters_for_question[i] for i in perm]
-        #
-        #     correct_idx = LETTERS_POOL.index(letters_for_question[target_pos])
-        # else:
         correct_idx = orig_correct_idx
 
-        qa_text = build_question_text_with_letters(
-            question=question,
-            choices=choices,
-            letters=letters_for_question,
-        )
+        qa_text = build_question_text_with_letters(question=question,choices=choices,letters=letters_for_question)
 
         label = torch.tensor(correct_idx, dtype=torch.long)
         sample_id = f"{self.split}_{real_idx}"
@@ -532,7 +506,7 @@ def compute_label_stats_and_weights(
         "weights": w,
         "keep_n": len(keep_indices),
         "total": total,
-    }
+    }gir
 
 
 

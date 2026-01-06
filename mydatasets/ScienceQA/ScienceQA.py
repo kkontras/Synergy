@@ -15,6 +15,7 @@ from datasets import load_dataset
 from collections import Counter
 import multiprocessing
 from accelerate import Accelerator
+import pynvml
 
 LETTERS_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -255,6 +256,17 @@ class ScienceQA_Dataloader:
 
         self.collate_fn = scienceqa_collate_qwen
 
+
+        def get_physical_gpu_count():
+            try:
+                pynvml.nvmlInit()
+                count = pynvml.nvmlDeviceGetCount()
+                pynvml.nvmlShutdown()
+                return count
+            except Exception as e:
+                return f"Could not query NVML: {e}"
+
+        print(f"Physical GPUs on this node: {get_physical_gpu_count()}")
         print(f"Visible GPUs: {torch.cuda.device_count()}")
         print(f"IDs assigned by Slurm: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#SBATCH --time=73:00:00
+#SBATCH --time=72:00:00
 #SBATCH --cluster=wice
 #SBATCH --nodes=1
 #SBATCH --cpus-per-gpu=16

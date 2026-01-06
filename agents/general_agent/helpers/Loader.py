@@ -90,8 +90,9 @@ class Loader():
         self._freeze_encoders(config_model=self.agent.config.model, model=self.agent.model)
         self.agent.model.cuda()
 
-        if self.agent.config.model.get("compile_model", False):
-            self.agent.model = torch.compile(self.agent.model, backend="eager")
+        # if self.agent.config.model.get("compile_model", False):
+        #     self.agent.model = torch.compile(self.agent.model, backend="eager")
+        self.agent.model = torch.compile(self.agent.model, mode="reduce-overhead")
 
         self._my_numel(self.agent.model, verbose=True)
 

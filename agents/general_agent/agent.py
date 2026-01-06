@@ -32,7 +32,7 @@ class Agent():
         self.config = config
 
         self.accelerator = Accelerator(
-            kwargs_handlers=[DistributedDataParallelKwargs(find_unused_parameters=True)],
+            kwargs_handlers=[DistributedDataParallelKwargs(find_unused_parameters=False)],
             cpu=False,
         )
 
@@ -146,4 +146,3 @@ class Agent():
 
 
         return self.logs["best_logs"]["loss"]["total"]
-

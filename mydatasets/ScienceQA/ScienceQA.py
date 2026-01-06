@@ -14,7 +14,6 @@ from torchvision.transforms.functional import to_tensor
 from datasets import load_dataset
 from collections import Counter
 import multiprocessing
-from accelerate import Accelerator
 import pynvml
 
 LETTERS_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -271,7 +270,7 @@ class ScienceQA_Dataloader:
         print(f"IDs assigned by Slurm: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
 
         total_cpus = multiprocessing.cpu_count()
-        num_gpus = Accelerator().num_processes
+        num_gpus = get_physical_gpu_count()
         workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
         print("Num CPUs= {}, Num_GPUs= {}, num_worker= {}".format(total_cpus, num_gpus, workers_per_gpu))
 

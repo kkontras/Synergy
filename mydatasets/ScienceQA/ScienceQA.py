@@ -147,7 +147,7 @@ class ScienceQA_Dataset(Dataset):
         self.eval_tf = self.train_tf
 
         stats = compute_label_stats_and_weights(config=config, split="train", weight_mode="inv_freq", normalize="mean1")
-        self.weights = torch.tensor(stats["weights"])
+        self.weights = stats["weights"].clone().detach()
 
     def __len__(self):
         return len(self.keep_indices)

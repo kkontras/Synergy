@@ -2631,11 +2631,6 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
         att_mask_0, att_mask_1 = self.apply_custom_masks(proc["attention_mask"][:len(images)], m1[:len(images)], m2[:len(images)], m1t, m2t)
         combined_mask = torch.cat([proc["attention_mask"][:len(images)], att_mask_0, att_mask_1], dim=0)
 
-        grid = proc["image_grid_thw"]  # [B,3]
-        patches = (grid[:, 0] * grid[:, 1] * grid[:, 2]).sum().item()
-        L = int(proc["input_ids"].shape[1])
-        print("sum_patches:", patches, "sum_text:", L)
-
         combined_hidden = self._encode(
             input_ids=proc["input_ids"],
             attention_mask=combined_mask,

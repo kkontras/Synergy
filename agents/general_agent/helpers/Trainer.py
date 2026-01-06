@@ -147,11 +147,11 @@ class Trainer():
             else:
                 optstep_done = True
 
-            alloc = torch.cuda.memory_allocated() / 1e9
-            reserv = torch.cuda.memory_reserved() / 1e9
-            peak = torch.cuda.max_memory_allocated() / 1e9
-            print(f"alloc={alloc:.2f}GB reserved={reserv:.2f}GB peak_alloc={peak:.2f}GB")
-            torch.cuda.reset_peak_memory_stats()
+            # alloc = torch.cuda.memory_allocated() / 1e9
+            # reserv = torch.cuda.memory_reserved() / 1e9
+            # peak = torch.cuda.max_memory_allocated() / 1e9
+            # print(f"alloc={alloc:.2f}GB reserved={reserv:.2f}GB peak_alloc={peak:.2f}GB")
+            # torch.cuda.reset_peak_memory_stats()
 
             if "c" in output["preds"] and "g" in output["preds"]:
                     if bias_method == "OGM-Mine_3d":

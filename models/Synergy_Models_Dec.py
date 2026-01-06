@@ -1398,15 +1398,13 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
         )
 
         # # CLS readout (stable position)
-        # h_cls = self._get_cls_token_repr(hidden, input_ids)
-        # h_cls = h_cls.to(self.enc_0.linear.weight.dtype)
+        h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
+        head_logits = self.enc_0(h_cls)
         #
-        # head_logits = self.enc_0(h_cls)
-        #
-        h_cls_combined = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
-        head_logits_combined = self.enc_0(h_cls_combined)
-        head_logits, head_logits_0, head_logits_1 = torch.chunk(head_logits_combined, chunks=3, dim=0)
-        h_cls, featcls_0, featcls_1 = torch.chunk(h_cls_combined, chunks=3, dim=0)
+        # h_cls_combined = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
+        # head_logits_combined = self.enc_0(h_cls_combined)
+        # head_logits, head_logits_0, head_logits_1 = torch.chunk(head_logits_combined, chunks=3, dim=0)
+        # h_cls, featcls_0, featcls_1 = torch.chunk(h_cls_combined, chunks=3, dim=0)
 
 
 

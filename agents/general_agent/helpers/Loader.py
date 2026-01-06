@@ -253,8 +253,8 @@ class Loader():
         if self.agent.accelerator.is_main_process:
             self.agent.logger.info("Loading checkpoint: {}".format(file_name))
 
-        checkpoint["model_state_dict"] = {key.replace("module.", ""): value for key, value in
-                                               checkpoint["model_state_dict"].items()}
+        # checkpoint["model_state_dict"] = {key.replace("module.", ""): value for key, value in
+        #                                        checkpoint["model_state_dict"].items()}
 
 
         self.agent.model.load_state_dict(checkpoint["model_state_dict"])
@@ -331,9 +331,9 @@ class Loader():
 
                 elif "best_model_state_dict" in checkpoint:
                     logging.info("Loading enc best model state dict from {}".format(file_path))
-                    if "VaVL" not in enc_args[num_enc]["model"]:
-                        logging.info("Replacing module")
-                        checkpoint["best_model_state_dict"] = {key.replace("module.", ""): value for key, value in checkpoint["best_model_state_dict"].items()}
+                    # if "VaVL" not in enc_args[num_enc]["model"]:
+                    #     logging.info("Replacing module")
+                    #     checkpoint["best_model_state_dict"] = {key.replace("module.", ""): value for key, value in checkpoint["best_model_state_dict"].items()}
                     missing_keys, unexpected_keys =  enc.load_state_dict(checkpoint["best_model_state_dict"], strict=False)
                     if missing_keys or unexpected_keys:
                         logging.warn(f"Missing keys in state_dict: {missing_keys}")

@@ -74,7 +74,7 @@ class Trainer():
                 all_outputs = self.agent.accelerator.gather(step_outcome)
                 self.agent.evaluators.train_evaluator.process(all_outputs)
                 del served_dict, step_outcome, all_outputs
-                torch.cuda.empty_cache()
+                # torch.cuda.empty_cache()
 
                 pbar_message = self.local_logging(batch_idx, False)
                 pbar.set_description(pbar_message)

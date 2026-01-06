@@ -8,3 +8,4 @@ sbatch  -A lp_biomed_mdv /scratch/leuven/350/vsc35057/projects/Synergy/condor_lo
 sbatch  -A lp_biomed_mdv /scratch/leuven/350/vsc35057/projects/Synergy/condor_logs/tier2_2026/vsc_single_H100.slurm "./configs/ScienceQA/synprom_lora.json" "./configs/ScienceQA/default_config_scienceqa_syn_tier2.json" 0 0.0001 0.001 None 8
 sbatch  -A lp_biomed_mdv /scratch/leuven/350/vsc35057/projects/Synergy/condor_logs/tier2_2026/vsc_single_H100.slurm "./configs/ScienceQA/synprom_lora.json" "./configs/ScienceQA/default_config_scienceqa_syn_tier2.json" 0 0.001 0.01 None 8
 sbatch  -A lp_biomed_mdv /scratch/leuven/350/vsc35057/projects/Synergy/condor_logs/tier2_2026/vsc_single_H100.slurm "./configs/ScienceQA/synprom_lora.json" "./configs/ScienceQA/default_config_scienceqa_syn_tier2.json" 0 0.001 0.001 None 8
+

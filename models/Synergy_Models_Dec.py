@@ -1169,6 +1169,45 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
 
         # NOTE: if you enabled synergy modules, mark them trainable here.
 
+
+    def load_cls_embedding(self, path, strict_dim=True):
+
+        assert os.path.isfile(path), f"CLS embedding file not found: {path}"
+
+        ckpt = torch.load(path, map_location="cpu")
+
+        if "cls_row" not in ckpt:
+            raise KeyError("CLS checkpoint must contain 'cls_row'")
+
+        cls_row = ckpt["cls_row"]
+        saved_cls_id = ckpt.get("cls_token_id", self.cls_token_id)
+
+        lm = self.backbone.model.language_model
+        if lm is None or not hasattr(lm, "embed_tokens"):
+            raise RuntimeError("Language model embedding table not found")
+
+        emb = lm.embed_tokens
+        current_cls_id = int(self.cls_token_id)
+
+        if strict_dim and cls_row.numel() != emb.weight.shape[1]:
+            raise ValueError(
+                f"CLS dim mismatch: saved {cls_row.numel()} vs model {emb.weight.shape[1]}"
+            )
+
+        if saved_cls_id != current_cls_id:
+            print(
+                f"[WARN] saved cls_token_id={saved_cls_id} "
+                f"!= current cls_token_id={current_cls_id} — copying to current index"
+            )
+
+        with torch.no_grad():
+            emb.weight[current_cls_id].copy_(
+                cls_row.to(emb.weight.device, emb.weight.dtype)
+            )
+
+        print(f"[OK] Loaded CLS embedding from {path}")
+
+
     def _load_cls_embedding(self):
 
         cls_path = getattr(self.args, "cls_emb_path", None)

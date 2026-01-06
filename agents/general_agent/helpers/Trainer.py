@@ -8,6 +8,9 @@ from utils.flattendict import flatten_loss_dict
 from utils.to_device import to_device, to_float
 import torch.profiler
 import wandb
+from torch.profiler import profile, record_function, ProfilerActivity
+wandb.init()
+
 
 class Trainer():
 
@@ -50,21 +53,23 @@ class Trainer():
         }
 
 
-        # 1. Standard Profiler setup
-        prof = torch.profiler.profile(
-            schedule=torch.profiler.schedule(wait=10, warmup=2, active=5, repeat=1),
-            on_trace_ready=torch.profiler.tensorboard_trace_handler('./log'),
-            with_stack=True
-        )
-        with prof:
-            for current_epoch in range(self.agent.logs["current_epoch"], self.agent.config.early_stopping.max_epoch):
-                self.agent.logs["current_epoch"] = copy.deepcopy(current_epoch)
-                self.agent.bias_infuser.on_epoch_begin(current_epoch = self.agent.logs["current_epoch"])
-                self.agent.evaluators.train_evaluator.reset()
 
+
+        for current_epoch in range(self.agent.logs["current_epoch"], self.agent.config.early_stopping.max_epoch):
+            self.agent.logs["current_epoch"] = copy.deepcopy(current_epoch)
+            self.agent.bias_infuser.on_epoch_begin(current_epoch = self.agent.logs["current_epoch"])
+            self.agent.evaluators.train_evaluator.reset()
+
+            sched = schedule(wait=10, warmup=10, active=30, repeat=1)
+            with profile(
+                    activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+                    schedule=sched,
+                    record_shapes=True,
+                    profile_memory=True,
+                    on_trace_ready=None,  # or torch.profiler.tensorboard_trace_handler("logdir")
+            ) as prof:
                 pbar = tqdm(enumerate(self.agent.data_loader.train_loader), total=len(self.agent.data_loader.train_loader), desc="Training", leave=None, disable=self.agent.config.training_params.tdqm_disable or not self.agent.accelerator.is_main_process, position=0)
                 for batch_idx, served_dict in pbar:
-
                     # if type(served_dict) == tuple: #FACTORCL DATASETS
                     #     served_dict = {"data":{"c":served_dict[0][0], "f":served_dict[0][1], "g":served_dict[0][2]}, "label":served_dict[3].squeeze(dim=1)}
                     #     if self.agent.config.get("task", "classification") == "classification" and len(served_dict["label"][served_dict["label"]==-1])>0:
@@ -90,22 +95,26 @@ class Trainer():
                     pbar.set_description(pbar_message)
                     pbar.refresh()
 
-                    if self.agent.evaluators.train_evaluator.get_early_stop(): return
+                    # if self.agent.evaluators.train_evaluator.get_early_stop(): return
                     self.agent.logs["current_step"] += 1
-                    if self.agent.logs["current_step"] - self.agent.logs["saved_step"] > self.agent.config.early_stopping.get("save_every_step", float("inf")):
-                        self.agent.accelerator.wait_for_everyone()
-                        if self.agent.accelerator.is_main_process:
-                            self.agent.monitor_n_saver.save(verbose=True)
+                    # if self.agent.logs["current_step"] - self.agent.logs["saved_step"] > self.agent.config.early_stopping.get("save_every_step", float("inf")):
+                    #         self.agent.accelerator.wait_for_everyone()
+                    #         if self.agent.accelerator.is_main_process:
+                    #             self.agent.monitor_n_saver.save(verbose=True)
 
+                    prof.step()
+                    print("We reached the step")
+                    if batch_idx >= 10 + 10 + 30 - 1:
+                        break
 
-                self.agent.logs["current_epoch"] += 1
-                self.local_logging(batch_idx, True)
-                self.agent.mem_loader._my_numel(self.agent.model, only_trainable=True)
+            print("Profiler Begin")
+            print(prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=30))
+            print("Profiler Done")
 
-    # 3. Upload to W&B after profiling is done
-    trace_artifact = wandb.Artifact("pytorch-trace", type="profile")
-    trace_artifact.add_dir("./log")
-    wandb.log_artifact(trace_artifact)
+            self.agent.logs["current_epoch"] += 1
+            self.local_logging(batch_idx, True)
+            self.agent.mem_loader._my_numel(self.agent.model, only_trainable=True)
+
 
     def train_one_step(self, served_dict, **kwargs):
 

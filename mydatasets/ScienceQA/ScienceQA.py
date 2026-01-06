@@ -311,8 +311,6 @@ class ScienceQA_Dataset(Dataset):
             stats = compute_label_stats_and_weights(self.raw_ds, self.keep_indices, weight_mode="inv_freq", normalize="mean1")
             self.weights = stats["weights"].clone().detach()
 
-
-
     def __len__(self):
         return len(self.keep_indices)
         # return 32
@@ -431,7 +429,7 @@ class ScienceQA_Dataloader:
         total_cpus = multiprocessing.cpu_count()
         num_gpus = get_physical_gpu_count()
         workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
-        workers_per_gpu = 16
+        # workers_per_gpu = 16
 
         print(
             f"[ScienceQA] GPUs: {torch.cuda.device_count()} (Phys: {num_gpus}) | SLURM: {os.environ.get('CUDA_VISIBLE_DEVICES', 'N/A')} | CPUs: {total_cpus} | Workers: {torch.cuda.device_count()}x{workers_per_gpu}={torch.cuda.device_count() * workers_per_gpu}")

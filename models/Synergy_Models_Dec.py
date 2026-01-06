@@ -1146,13 +1146,6 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
 
         lm = self.backbone.model.language_model
 
-        # Optionally train final norm (cheap and often stabilizes)
-        # if getattr(self.args, "train_lm_norm", False) and lm is not None and hasattr(lm, "norm"):
-        #     for p in lm.norm.parameters():
-        #         p.requires_grad = True
-
-        # Make <CLS> embedding learnable WITHOUT unfreezing whole embedding table
-        # (default True; set args.train_cls_row=False to disable)
         if self.args.cls_finetune:
             if getattr(self.args, "train_cls_row", True) and lm is not None and hasattr(lm, "embed_tokens"):
                 emb = lm.embed_tokens
@@ -1388,6 +1381,15 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
         pixel_values = proc["pixel_values"]
         image_grid_thw = proc.get("image_grid_thw")
 
+
+        def repeat3(t):
+            return torch.cat([t, t, t], dim=0)
+
+        input_ids = repeat3(proc["input_ids"])
+        attention_mask = repeat3(proc["attention_mask"])
+        pixel_values = repeat3(proc["pixel_values"])
+        image_grid_thw = repeat3(proc["image_grid_thw"]) if proc.get("image_grid_thw") is not None else None
+
         hidden = self._encode(
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -1395,11 +1397,18 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
             image_grid_thw=image_grid_thw,
         )
 
-        # CLS readout (stable position)
-        h_cls = self._get_cls_token_repr(hidden, input_ids)
-        h_cls = h_cls.to(self.enc_0.linear.weight.dtype)
+        # # CLS readout (stable position)
+        # h_cls = self._get_cls_token_repr(hidden, input_ids)
+        # h_cls = h_cls.to(self.enc_0.linear.weight.dtype)
+        #
+        # head_logits = self.enc_0(h_cls)
+        #
+        h_cls_combined = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
+        head_logits_combined = self.enc_0(h_cls_combined)
+        head_logits, head_logits_0, head_logits_1 = torch.chunk(head_logits_combined, chunks=3, dim=0)
+        h_cls, featcls_0, featcls_1 = torch.chunk(h_cls_combined, chunks=3, dim=0)
 
-        head_logits = self.enc_0(h_cls)
+
 
         losses = {}
         if label is not None:
@@ -1420,6 +1429,8 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
             preds["mc_from_text"] = mc_from_text
 
         return {"preds": preds, "features": features, "losses": losses}
+
+
 
 class SynIB_Qwen(nn.Module):
     def __init__(self, args, encs, main):
@@ -2613,41 +2624,30 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
 
         return head_logits, {"hidden": hidden, "h_cls": h_cls}, masks
 
-    def _compute_logits_synib(self, x, **kwargs):
-        hint_texts = x[0]
-        qa_texts = x[1]
-        images = x[2]
-        choices_list = x[3] if len(x) > 3 else kwargs.get("choices", None)
-        letters_list = x[4] if len(x) > 4 else kwargs.get("letters", None)
+    def _compute_logits_synib_from_proc(self, data, **kwargs):
+        device = self.backbone.device
 
-        if choices_list is None:
-            raise ValueError("choices_list (x[3] or kwargs['choices']) is required for MC setup.")
-        if letters_list is None:
-            raise ValueError("letters_list (x[4] or kwargs['letters']) is required for zero-shot parsing.")
+        proc = data["proc"]
+        meta = data["meta"]
 
-        device = images.device
+        # move tensors to device
+        proc = {k: (v.to(device) if torch.is_tensor(v) else v) for k, v in proc.items()}
 
-        prompts = self._build_prompts_with_choices(hint_texts, qa_texts, letters_list)
-        prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
-        image_list = [img for img in images]
+        if meta is not None:
+            att_mask_orig = self.debug_token_regions(
+                processor=self.processor,
+                proc=proc,
+                prompts_with_image=meta["prompts_with_image"],
+                hint_texts=meta["hint_texts"],
+                image_token_str=self.image_token_str,
+                max_print=0
+            )
+            m1, m2 = att_mask_orig["hint_mask"], att_mask_orig["image_mask"]
+        else:
+            # If you can't supply meta, you need another way to create masks.
+            # The simplest fallback is: don't do SynIB masking.
+            raise ValueError("meta is required for SynIB masking (hint/image masks).")
 
-        proc = self.processor(  text=prompts_with_image,
-                                images=image_list,
-                                padding=True,
-                                truncation=True,
-                                return_tensors="pt")
-        proc = {k: v.to(device) for k, v in proc.items()}
-
-        att_mask_orig = self.debug_token_regions(
-            processor=self.processor,
-            proc=proc,
-            prompts_with_image=prompts_with_image,
-            hint_texts=hint_texts,
-            image_token_str=self.image_token_str,
-            max_print=0
-        )
-
-        m1, m2 = att_mask_orig["hint_mask"], att_mask_orig["image_mask"]
         m1t, _ = self.synib._random_masks(m1, m2, True, False, **kwargs)
         _, m2t = self.synib._random_masks(m1, m2, False, True, **kwargs)
 
@@ -2656,32 +2656,52 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
 
         combined_mask = torch.cat([proc["attention_mask"], att_mask_0, att_mask_1], dim=0)
 
-        def repeat_batch(t): return torch.cat([t, t, t], dim=0)
+        def repeat3(t):
+            return torch.cat([t, t, t], dim=0)
 
-        input_ids = repeat_batch(proc["input_ids"])
-        if len(proc["pixel_values"].shape) == 2: proc["pixel_values"] = proc["pixel_values"].unsqueeze(dim=0)
-        pixel_values = repeat_batch(proc["pixel_values"])
-        # For image_grid_thw, ensure it is handled similarly if it's a tensor
-        image_grid_thw = repeat_batch(proc.get("image_grid_thw")) if proc.get("image_grid_thw") is not None else None
+        input_ids = repeat3(proc["input_ids"])
+        pixel_values = repeat3(proc["pixel_values"])
+        image_grid_thw = repeat3(proc["image_grid_thw"]) if proc.get("image_grid_thw") is not None else None
 
-        combined_hidden = self._encode(  input_ids=input_ids,
-                                attention_mask=combined_mask,
-                                pixel_values=pixel_values,
-                                image_grid_thw=image_grid_thw)
+        combined_hidden = self._encode(
+            input_ids=input_ids,
+            attention_mask=combined_mask,
+            pixel_values=pixel_values,
+            image_grid_thw=image_grid_thw
+        )
 
         h_cls_combined = self._get_cls_token_repr(combined_hidden, input_ids).to(self.enc_0.linear.weight.dtype)
         head_logits_combined = self.enc_0(h_cls_combined)
+
         head_logits_orig, head_logits_0, head_logits_1 = torch.chunk(head_logits_combined, chunks=3, dim=0)
         featcls_orig, featcls_0, featcls_1 = torch.chunk(h_cls_combined, chunks=3, dim=0)
+
         return {
-                "preds":{"combined":head_logits_orig,"mask0":head_logits_0,"mask1":head_logits_1},
-                "features":{"combined":featcls_orig,"mask0":featcls_0,"mask1":featcls_1}
+            "preds": {"combined": head_logits_orig, "mask0": head_logits_0, "mask1": head_logits_1},
+            "features": {"combined": featcls_orig, "mask0": featcls_0, "mask1": featcls_1},
         }
+
+    @torch._dynamo.disable
+    def _preprocess(self, hint_texts, qa_texts, images, letters_list):
+        prompts = self._build_prompts_with_choices(hint_texts, qa_texts, letters_list)
+        prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
+
+        # If images is a torch tensor [B,C,H,W], this list is fine, but keep it out of compile.
+        image_list = [img for img in images]
+
+        proc = self.processor(
+            text=prompts_with_image,
+            images=image_list,
+            padding=True,
+            truncation=True,
+            return_tensors="pt",
+        )
+        return proc, prompts_with_image
 
     def forward(self, x, label=None, **kwargs):
 
 
-        out = self._compute_logits_synib(x, **kwargs)
+        out = self._compute_logits_synib_from_proc(x, **kwargs)
         losses = {}
         if label is not None:
             losses["ce_head"] = self._mc_ce_loss(out["preds"]["combined"], label)

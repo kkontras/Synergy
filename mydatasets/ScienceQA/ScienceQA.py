@@ -14,14 +14,10 @@ from torchvision.transforms.functional import to_tensor
 from datasets import load_dataset
 from collections import Counter
 import multiprocessing
+from accelerate import Accelerator
 import pynvml
 
 LETTERS_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-
-# ================================================================
-#   LOAD + FILTER SCIENCEQA
-# ================================================================
 
 def load_scienceqa_filtered(
     data_root: str,
@@ -102,133 +98,36 @@ def build_question_text_with_letters(
 #   DATASET
 # ================================================================
 
-# class ScienceQA_Dataset(Dataset):
-#     """
-#     item = {
-#         "id": sample_id,
-#         "data": {
-#             0: hint_text,
-#             1: qa_text,          # question + lettered choices
-#             2: img_tensor,
-#             3: choices,          # permuted choice texts
-#             4: letters,          # permuted letters
-#         },
-#         "label": correct_index  # LongTensor scalar
-#     }
-#     """
-#
-#     def __init__(
-#         self,
-#         config: Dict[str, Any],
-#         split: str = "train",
-#         require_image: bool = True,
-#         require_outside_knowledge: bool = True,
-#         image_size: int = 224,
-#         drop_near_blank: bool = True,
-#         blank_std_thresh: float = 0.01,
-#     ):
-#         super().__init__()
-#         self.split = split.lower()
-#         self.image_size = image_size
-#
-#         self.raw_ds, self.keep_indices = load_scienceqa_filtered(
-#             data_root=config.dataset.data_roots,
-#             split=self.split,
-#             require_image=require_image,
-#             require_outside_knowledge=require_outside_knowledge,
-#             drop_near_blank=drop_near_blank,
-#             blank_std_thresh=blank_std_thresh,
-#         )
-#
-#         self.train_tf = transforms.Compose([
-#             transforms.Resize((image_size, image_size)),
-#             transforms.ToTensor(),
-#         ])
-#         self.eval_tf = self.train_tf
-#
-#         stats = compute_label_stats_and_weights(config=config, split="train", weight_mode="inv_freq", normalize="mean1")
-#         self.weights = stats["weights"].clone().detach()
-#
-#     def __len__(self):
-#         return len(self.keep_indices)
-#         # return 32
-#
-#     def _load_image(self, pil_img: Image.Image):
-#         pil_img = pil_img.convert("RGB")
-#         if self.split == "train":
-#             return self.train_tf(pil_img)
-#         else:
-#             return self.eval_tf(pil_img)
-#
-#     def __getitem__(self, idx: int):
-#         real_idx = self.keep_indices[idx]
-#         ex = self.raw_ds[real_idx]
-#
-#         pil_img = ex["image"]
-#         img_tensor = self._load_image(pil_img)
-#
-#         hint_text = build_scienceqa_hint_text(ex)
-#         choices = list(ex.get("choices", []))
-#         question = ex.get("question")
-#         orig_correct_idx = ex["answer"]
-#         n = len(choices)
-#
-#         letters_for_question = LETTERS_POOL[:n]
-#         #
-#         # if self.split == "train":
-#         #     target_pos = random.randrange(n)
-#         #
-#         #     perm = list(range(n))
-#         #     perm[orig_correct_idx], perm[target_pos] = (
-#         #         perm[target_pos],
-#         #         perm[orig_correct_idx],
-#         #     )
-#         #
-#         #     choices = [choices[i] for i in perm]
-#         #     letters_for_question = [letters_for_question[i] for i in perm]
-#         #
-#         #     correct_idx = LETTERS_POOL.index(letters_for_question[target_pos])
-#         # else:
-#         correct_idx = orig_correct_idx
-#
-#         qa_text = build_question_text_with_letters(
-#             question=question,
-#             choices=choices,
-#             letters=letters_for_question,
-#         )
-#
-#         label = torch.tensor(correct_idx, dtype=torch.long)
-#         sample_id = f"{self.split}_{real_idx}"
-#
-#         return {
-#             "id": sample_id,
-#             "data": {
-#                 0: hint_text,
-#                 1: qa_text,
-#                 2: img_tensor,
-#                 3: choices,
-#                 4: letters_for_question,
-#             },
-#             "label": label,
-#         }
-#
-
 class ScienceQA_Dataset(Dataset):
+    """
+    item = {
+        "id": sample_id,
+        "data": {
+            0: hint_text,
+            1: qa_text,          # question + lettered choices
+            2: img_tensor,
+            3: choices,          # permuted choice texts
+            4: letters,          # permuted letters
+        },
+        "label": correct_index  # LongTensor scalar
+    }
+    """
+
     def __init__(
-            self,
-            config: Dict[str, Any],
-            split: str = "train",
-            require_image: bool = True,
-            require_outside_knowledge: bool = True,
-            image_size: int = 224,
-            drop_near_blank: bool = True,
-            blank_std_thresh: float = 0.01,
+        self,
+        config: Dict[str, Any],
+        split: str = "train",
+        require_image: bool = True,
+        require_outside_knowledge: bool = True,
+        image_size: int = 224,
+        drop_near_blank: bool = True,
+        blank_std_thresh: float = 0.01,
     ):
         super().__init__()
         self.split = split.lower()
+        self.image_size = image_size
 
-        # 1. Load raw data
-        raw_ds, self.keep_indices = load_scienceqa_filtered(
+        self.raw_ds, self.keep_indices = load_scienceqa_filtered(
             data_root=config.dataset.data_roots,
             split=self.split,
             require_image=require_image,
@@ -237,67 +136,77 @@ class ScienceQA_Dataset(Dataset):
             blank_std_thresh=blank_std_thresh,
         )
 
-        # 2. Pre-cache transformed images and text
-        self.processed_data = []
-
-        # Optimization: Use a simpler transform once
-        preprocess_tf = transforms.Compose([
+        self.train_tf = transforms.Compose([
             transforms.Resize((image_size, image_size)),
             transforms.ToTensor(),
         ])
+        self.eval_tf = self.train_tf
 
-        print(f"Pre-processing {split} dataset...")
-        for idx in self.keep_indices:
-            ex = raw_ds[idx]
-
-            # Pre-process image
-            img_tensor = preprocess_tf(ex["image"].convert("RGB"))
-
-            # Pre-build text strings
-            hint_text = build_scienceqa_hint_text(ex)
-            choices = list(ex.get("choices", []))
-            question = ex.get("question")
-            n = len(choices)
-            letters = LETTERS_POOL[:n]
-
-            qa_text = build_question_text_with_letters(
-                question=question,
-                choices=choices,
-                letters=letters,
-            )
-
-            # Store in memory for instant access
-            self.processed_data.append({
-                "img": img_tensor,
-                "hint": hint_text,
-                "qa": qa_text,
-                "choices": choices,
-                "letters": letters,
-                "label": torch.tensor(ex["answer"], dtype=torch.long),
-                "sample_id": f"{self.split}_{idx}"
-            })
-
-        # Fix the tensor warning from before
-        stats = compute_label_stats_and_weights(config=config, split="train", weight_mode="inv_freq", normalize="mean1")
-        self.weights = stats["weights"].clone().detach()
+        if split=="train":
+            stats = compute_label_stats_and_weights(self.raw_ds, self.keep_indices, weight_mode="inv_freq", normalize="mean1")
+            self.weights = stats["weights"].clone().detach()
 
     def __len__(self):
-        return len(self.processed_data)
+        return len(self.keep_indices)
+        # return 32
+
+    def _load_image(self, pil_img: Image.Image):
+        pil_img = pil_img.convert("RGB")
+        if self.split == "train":
+            return self.train_tf(pil_img)
+        else:
+            return self.eval_tf(pil_img)
 
     def __getitem__(self, idx: int):
-        # This is now a near-instant O(1) memory access
-        item = self.processed_data[idx]
+        real_idx = self.keep_indices[idx]
+        ex = self.raw_ds[real_idx]
+
+        pil_img = ex["image"]
+        img_tensor = self._load_image(pil_img)
+
+        hint_text = build_scienceqa_hint_text(ex)
+        choices = list(ex.get("choices", []))
+        question = ex.get("question")
+        orig_correct_idx = ex["answer"]
+        n = len(choices)
+
+        letters_for_question = LETTERS_POOL[:n]
+        #
+        # if self.split == "train":
+        #     target_pos = random.randrange(n)
+        #
+        #     perm = list(range(n))
+        #     perm[orig_correct_idx], perm[target_pos] = (
+        #         perm[target_pos],
+        #         perm[orig_correct_idx],
+        #     )
+        #
+        #     choices = [choices[i] for i in perm]
+        #     letters_for_question = [letters_for_question[i] for i in perm]
+        #
+        #     correct_idx = LETTERS_POOL.index(letters_for_question[target_pos])
+        # else:
+        correct_idx = orig_correct_idx
+
+        qa_text = build_question_text_with_letters(
+            question=question,
+            choices=choices,
+            letters=letters_for_question,
+        )
+
+        label = torch.tensor(correct_idx, dtype=torch.long)
+        sample_id = f"{self.split}_{real_idx}"
 
         return {
-            "id": item["sample_id"],
+            "id": sample_id,
             "data": {
-                0: item["hint"],
-                1: item["qa"],
-                2: item["img"],
-                3: item["choices"],
-                4: item["letters"],
+                0: hint_text,
+                1: qa_text,
+                2: img_tensor,
+                3: choices,
+                4: letters_for_question,
             },
-            "label": item["label"],
+            "label": label,
         }
 
 def scienceqa_collate_qwen(batch):
@@ -343,7 +252,6 @@ class ScienceQA_Dataloader:
 
         self.collate_fn = scienceqa_collate_qwen
 
-
         def get_physical_gpu_count():
             try:
                 pynvml.nvmlInit()
@@ -365,9 +273,7 @@ class ScienceQA_Dataloader:
         self.train_loader = DataLoader(
             ScienceQA_Dataset(
                 config=config,
-                split="train",
-                require_image=True,
-                require_outside_knowledge=True,
+                split="train"
             ),
             batch_size=batch_size,
             shuffle=True,
@@ -384,9 +290,7 @@ class ScienceQA_Dataloader:
         self.valid_loader = DataLoader(
             ScienceQA_Dataset(
                 config=config,
-                split="validation",
-                require_image=True,
-                require_outside_knowledge=True,
+                split="validation"
             ),
             batch_size=batch_size,
             shuffle=False,
@@ -400,9 +304,7 @@ class ScienceQA_Dataloader:
         self.test_loader = DataLoader(
             ScienceQA_Dataset(
                 config=config,
-                split="test",
-                require_image=True,
-                require_outside_knowledge=True,
+                split="test"
             ),
             batch_size=batch_size,
             shuffle=False,
@@ -414,26 +316,13 @@ class ScienceQA_Dataloader:
         )
 
 def compute_label_stats_and_weights(
-    config,
-    split="train",
-    require_image=True,
-    require_outside_knowledge=True,
-    drop_near_blank=True,
-    blank_std_thresh=0.01,
+    ds,
+    keep_indices,
     weight_mode="inv_freq",   # "inv_freq" or "cui"
     beta=0.9999,              # only used for "cui"
     normalize="mean1",        # "none", "sumK", "mean1"
 ):
-    ds, keep_indices = load_scienceqa_filtered(
-        data_root=config.dataset.data_roots,
-        split=split,
-        require_image=require_image,
-        require_outside_knowledge=require_outside_knowledge,
-        drop_near_blank=drop_near_blank,
-        blank_std_thresh=blank_std_thresh,
-    )
 
-    # Count answers and track max number of choices (K)
     counts = Counter()
     K = 0
     for i in keep_indices:

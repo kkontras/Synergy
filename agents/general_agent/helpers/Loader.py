@@ -94,7 +94,7 @@ class Loader():
 
         # if self.agent.config.model.get("compile_model", False):
         #     self.agent.model = torch.compile(self.agent.model, backend="eager")
-        self.agent.model = torch.compile(self.agent.model, mode="default", dynamic=True)
+        # self.agent.model = torch.compile(self.agent.model, mode="default", dynamic=True, fullgraph=False)
         # Do NOT compile the whole self.agent.model
         # Instead, compile the internal sub-modules:
 

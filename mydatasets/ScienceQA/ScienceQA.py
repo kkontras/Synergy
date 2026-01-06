@@ -506,7 +506,7 @@ def compute_label_stats_and_weights(
         "weights": w,
         "keep_n": len(keep_indices),
         "total": total,
-    }gir
+    }
 
 
 

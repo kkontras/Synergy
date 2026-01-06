@@ -8,7 +8,7 @@ from utils.flattendict import flatten_loss_dict
 from utils.to_device import to_device, to_float
 import torch.profiler
 import wandb
-from torch.profiler import profile, record_function, ProfilerActivity
+from torch.profiler import profile, record_function, ProfilerActivity, schedule
 wandb.init()
 
 
@@ -60,11 +60,10 @@ class Trainer():
             self.agent.bias_infuser.on_epoch_begin(current_epoch = self.agent.logs["current_epoch"])
             self.agent.evaluators.train_evaluator.reset()
 
-            sched = schedule(wait=10, warmup=10, active=30, repeat=1)
+            # sched = schedule(wait=10, warmup=10, active=30, repeat=1)
             with profile(
                     activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-                    schedule=sched,
-                    record_shapes=True,
+                    # schedule=sched,
                     profile_memory=True,
                     on_trace_ready=None,  # or torch.profiler.tensorboard_trace_handler("logdir")
             ) as prof:
@@ -104,7 +103,7 @@ class Trainer():
 
                     prof.step()
                     print("We reached the step")
-                    if batch_idx >= 10 + 10 + 30 - 1:
+                    if batch_idx >= 1:
                         break
 
             print("Profiler Begin")

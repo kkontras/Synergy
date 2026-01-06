@@ -205,10 +205,8 @@ CUDA_VISIBLE_DEVICES=6,7 accelerate launch train.py --config ./configs/ScienceQA
 CUDA_VISIBLE_DEVICES=4,5 accelerate launch train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.001 --wd 0.001 --batch_size 12
 
 
-accelerate launch \
-    --mixed_precision bf16 \
-    train.py \
-    --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --lr 0.001 --wd 0.001 --batch_size 8
+accelerate launch train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --lr 0.001 --wd 0.001 --batch_size 3
+accelerate launch train.py --config ./configs/ScienceQA/synprom_lora_synibfaster.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --lr 0.001 --wd 0.001 --batch_size 3
 
 
 python train.py --config ./configs/CREMA_D/synergy/nov/synprom_IB_Dir_VAE.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --pre --frozen --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --perturb gen --start_over

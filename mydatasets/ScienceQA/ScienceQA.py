@@ -261,14 +261,12 @@ class ScienceQA_Dataloader:
             except Exception as e:
                 return f"Could not query NVML: {e}"
 
-        print(f"Physical GPUs on this node: {get_physical_gpu_count()}")
-        print(f"Visible GPUs: {torch.cuda.device_count()}")
-        print(f"IDs assigned by Slurm: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
-
         total_cpus = multiprocessing.cpu_count()
         num_gpus = get_physical_gpu_count()
         workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
-        print("Num CPUs= {}, Num_GPUs= {}, num_worker= {}".format(total_cpus, num_gpus, workers_per_gpu))
+
+        print(
+            f"[ScienceQA] GPUs: {torch.cuda.device_count()} (Phys: {get_physical_gpu_count()}) | SLURM: {os.environ.get('CUDA_VISIBLE_DEVICES', 'N/A')} | CPUs: {total_cpus} | Workers: {num_gpus}x{workers_per_gpu}={num_gpus * workers_per_gpu}")
 
         self.train_loader = DataLoader(
             ScienceQA_Dataset(

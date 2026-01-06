@@ -25,6 +25,7 @@ TORCH_LOGS = "+dynamo"
 torch._dynamo.config.cache_size_limit = 64
 torch._dynamo.config.suppress_errors = True
 torch._dynamo.config.verbose=False
+torch._logging.set_logs(graph_breaks=True)
 
 logger = logging.getLogger('torch._dynamo.symbolic_convert:')
 logger.setLevel(logging.WARNING)
@@ -93,16 +94,9 @@ class Loader():
 
         # if self.agent.config.model.get("compile_model", False):
         #     self.agent.model = torch.compile(self.agent.model, backend="eager")
-        # self.agent.model = torch.compile(self.agent.model, mode="reduce-overhead")
+        self.agent.model = torch.compile(self.agent.model, mode="default", dynamic=True)
         # Do NOT compile the whole self.agent.model
         # Instead, compile the internal sub-modules:
-
-        if hasattr(self.agent.model, 'visual_encoder'):
-            self.agent.model.visual_encoder = torch.compile(self.agent.model.visual_encoder)
-
-        if hasattr(self.agent.model, 'llm'):
-            # For LLMs, use "reduce-overhead" to help the Blackwell cards
-            self.agent.model.llm = torch.compile(self.agent.model.llm, mode="reduce-overhead")
 
         self._my_numel(self.agent.model, verbose=True)
 

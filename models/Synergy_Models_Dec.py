@@ -1382,13 +1382,13 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
         image_grid_thw = proc.get("image_grid_thw")
 
 
-        def repeat3(t):
-            return torch.cat([t, t, t], dim=0)
-
-        input_ids = repeat3(proc["input_ids"])
-        attention_mask = repeat3(proc["attention_mask"])
-        pixel_values = repeat3(proc["pixel_values"])
-        image_grid_thw = repeat3(proc["image_grid_thw"]) if proc.get("image_grid_thw") is not None else None
+        # def repeat3(t):
+        #     return torch.cat([t, t, t], dim=0)
+        #
+        # input_ids = repeat3(proc["input_ids"])
+        # attention_mask = repeat3(proc["attention_mask"])
+        # pixel_values = repeat3(proc["pixel_values"])
+        # image_grid_thw = repeat3(proc["image_grid_thw"]) if proc.get("image_grid_thw") is not None else None
 
         hidden = self._encode(
             input_ids=input_ids,

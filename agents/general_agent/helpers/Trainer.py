@@ -6,6 +6,8 @@ from collections import defaultdict
 from colorama import Fore
 from utils.flattendict import flatten_loss_dict
 from utils.to_device import to_device, to_float
+import torch.profiler
+import wandb
 
 class Trainer():
 
@@ -47,52 +49,63 @@ class Trainer():
             "val_loss": {"combined":0}
         }
 
-        for current_epoch in range(self.agent.logs["current_epoch"], self.agent.config.early_stopping.max_epoch):
-            self.agent.logs["current_epoch"] = copy.deepcopy(current_epoch)
-            self.agent.bias_infuser.on_epoch_begin(current_epoch = self.agent.logs["current_epoch"])
-            self.agent.evaluators.train_evaluator.reset()
 
-            pbar = tqdm(enumerate(self.agent.data_loader.train_loader), total=len(self.agent.data_loader.train_loader), desc="Training", leave=None, disable=self.agent.config.training_params.tdqm_disable or not self.agent.accelerator.is_main_process, position=0)
-            for batch_idx, served_dict in pbar:
+        # 1. Standard Profiler setup
+        prof = torch.profiler.profile(
+            schedule=torch.profiler.schedule(wait=10, warmup=2, active=5, repeat=1),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler('./log'),
+            with_stack=True
+        )
+        with prof:
+            for current_epoch in range(self.agent.logs["current_epoch"], self.agent.config.early_stopping.max_epoch):
+                self.agent.logs["current_epoch"] = copy.deepcopy(current_epoch)
+                self.agent.bias_infuser.on_epoch_begin(current_epoch = self.agent.logs["current_epoch"])
+                self.agent.evaluators.train_evaluator.reset()
 
-                # if type(served_dict) == tuple: #FACTORCL DATASETS
-                #     served_dict = {"data":{"c":served_dict[0][0], "f":served_dict[0][1], "g":served_dict[0][2]}, "label":served_dict[3].squeeze(dim=1)}
-                #     if self.agent.config.get("task", "classification") == "classification" and len(served_dict["label"][served_dict["label"]==-1])>0:
-                #         served_dict["label"][served_dict["label"] == -1] = 0
+                pbar = tqdm(enumerate(self.agent.data_loader.train_loader), total=len(self.agent.data_loader.train_loader), desc="Training", leave=None, disable=self.agent.config.training_params.tdqm_disable or not self.agent.accelerator.is_main_process, position=0)
+                for batch_idx, served_dict in pbar:
 
-                if self.agent.config.model.get("load_ongoing", False):
-                    if self.agent.logs["current_step"] > self.agent.logs["current_epoch"] * len(self.agent.data_loader.train_loader) + batch_idx:
-                        self.agent.logger.info(f"Skipping batch {batch_idx} due to load_ongoing experiment")
-                        continue
+                    # if type(served_dict) == tuple: #FACTORCL DATASETS
+                    #     served_dict = {"data":{"c":served_dict[0][0], "f":served_dict[0][1], "g":served_dict[0][2]}, "label":served_dict[3].squeeze(dim=1)}
+                    #     if self.agent.config.get("task", "classification") == "classification" and len(served_dict["label"][served_dict["label"]==-1])>0:
+                    #         served_dict["label"][served_dict["label"] == -1] = 0
 
-                self.agent.optimizer.zero_grad()
-                step_outcome, optstep_done = self.this_train_step_func(served_dict)
-                self._clip_grads()
-                if not optstep_done: self.agent.optimizer.step()
-                self.agent.scheduler.step(step=self.agent.logs["current_step"]+1, loss=step_outcome["loss"]["total"].item())
+                    if self.agent.config.model.get("load_ongoing", False):
+                        if self.agent.logs["current_step"] > self.agent.logs["current_epoch"] * len(self.agent.data_loader.train_loader) + batch_idx:
+                            self.agent.logger.info(f"Skipping batch {batch_idx} due to load_ongoing experiment")
+                            continue
 
-                all_outputs = self.agent.accelerator.gather(step_outcome)
-                self.agent.evaluators.train_evaluator.process(all_outputs)
-                del served_dict, step_outcome, all_outputs
-                # torch.cuda.empty_cache()
+                    self.agent.optimizer.zero_grad()
+                    step_outcome, optstep_done = self.this_train_step_func(served_dict)
+                    self._clip_grads()
+                    if not optstep_done: self.agent.optimizer.step()
+                    self.agent.scheduler.step(step=self.agent.logs["current_step"]+1, loss=step_outcome["loss"]["total"].item())
 
-                pbar_message = self.local_logging(batch_idx, False)
-                pbar.set_description(pbar_message)
-                pbar.refresh()
+                    all_outputs = self.agent.accelerator.gather(step_outcome)
+                    self.agent.evaluators.train_evaluator.process(all_outputs)
+                    del served_dict, step_outcome, all_outputs
+                    # torch.cuda.empty_cache()
 
-                if self.agent.evaluators.train_evaluator.get_early_stop(): return
-                self.agent.logs["current_step"] += 1
-                if self.agent.logs["current_step"] - self.agent.logs["saved_step"] > self.agent.config.early_stopping.get("save_every_step", float("inf")):
-                    self.agent.accelerator.wait_for_everyone()
-                    if self.agent.accelerator.is_main_process:
-                        self.agent.monitor_n_saver.save(verbose=True)
+                    pbar_message = self.local_logging(batch_idx, False)
+                    pbar.set_description(pbar_message)
+                    pbar.refresh()
 
-
-            self.agent.logs["current_epoch"] += 1
-            self.local_logging(batch_idx, True)
-            self.agent.mem_loader._my_numel(self.agent.model, only_trainable=True)
+                    if self.agent.evaluators.train_evaluator.get_early_stop(): return
+                    self.agent.logs["current_step"] += 1
+                    if self.agent.logs["current_step"] - self.agent.logs["saved_step"] > self.agent.config.early_stopping.get("save_every_step", float("inf")):
+                        self.agent.accelerator.wait_for_everyone()
+                        if self.agent.accelerator.is_main_process:
+                            self.agent.monitor_n_saver.save(verbose=True)
 
 
+                self.agent.logs["current_epoch"] += 1
+                self.local_logging(batch_idx, True)
+                self.agent.mem_loader._my_numel(self.agent.model, only_trainable=True)
+
+    # 3. Upload to W&B after profiling is done
+    trace_artifact = wandb.Artifact("pytorch-trace", type="profile")
+    trace_artifact.add_dir("./log")
+    wandb.log_artifact(trace_artifact)
 
     def train_one_step(self, served_dict, **kwargs):
 

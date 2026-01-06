@@ -431,6 +431,7 @@ class ScienceQA_Dataloader:
         total_cpus = multiprocessing.cpu_count()
         num_gpus = get_physical_gpu_count()
         workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
+        workers_per_gpu = 16
 
         print(
             f"[ScienceQA] GPUs: {torch.cuda.device_count()} (Phys: {num_gpus}) | SLURM: {os.environ.get('CUDA_VISIBLE_DEVICES', 'N/A')} | CPUs: {total_cpus} | Workers: {torch.cuda.device_count()}x{workers_per_gpu}={torch.cuda.device_count() * workers_per_gpu}")

@@ -68,7 +68,6 @@ class Trainer():
                 self.agent.optimizer.zero_grad()
                 step_outcome, optstep_done = self.this_train_step_func(served_dict)
                 self._clip_grads()
-
                 if not optstep_done: self.agent.optimizer.step()
                 self.agent.scheduler.step(step=self.agent.logs["current_step"]+1, loss=step_outcome["loss"]["total"].item())
 
@@ -148,6 +147,11 @@ class Trainer():
             else:
                 optstep_done = True
 
+            alloc = torch.cuda.memory_allocated() / 1e9
+            reserv = torch.cuda.memory_reserved() / 1e9
+            peak = torch.cuda.max_memory_allocated() / 1e9
+            print(f"alloc={alloc:.2f}GB reserved={reserv:.2f}GB peak_alloc={peak:.2f}GB")
+            torch.cuda.reset_peak_memory_stats()
 
             if "c" in output["preds"] and "g" in output["preds"]:
                     if bias_method == "OGM-Mine_3d":

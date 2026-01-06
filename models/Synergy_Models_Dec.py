@@ -2171,6 +2171,7 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
             device_map="cuda:0",
             cache_dir=HF_CACHE,
         )
+        self.backbone.config.use_cache = False
 
         if added > 0:
             self.backbone.resize_token_embeddings(len(tok))
@@ -2340,6 +2341,7 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
             pixel_values=pixel_values,
             image_grid_thw=image_grid_thw,
             output_hidden_states=True,
+            use_cache=False,
         )
         return outputs.hidden_states[-1]  # (B, T, d)
 
@@ -2629,12 +2631,18 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
         att_mask_0, att_mask_1 = self.apply_custom_masks(proc["attention_mask"][:len(images)], m1[:len(images)], m2[:len(images)], m1t, m2t)
         combined_mask = torch.cat([proc["attention_mask"][:len(images)], att_mask_0, att_mask_1], dim=0)
 
+        grid = proc["image_grid_thw"]  # [B,3]
+        patches = (grid[:, 0] * grid[:, 1] * grid[:, 2]).sum().item()
+        L = int(proc["input_ids"].shape[1])
+        print("sum_patches:", patches, "sum_text:", L)
+
         combined_hidden = self._encode(
             input_ids=proc["input_ids"],
             attention_mask=combined_mask,
             pixel_values=proc["pixel_values"],
             image_grid_thw=proc["image_grid_thw"],
         )
+
 
         h_cls_combined = self._get_cls_token_repr(combined_hidden, proc["input_ids"]).to(self.enc_0.linear.weight.dtype)
         head_logits_combined = self.enc_0(h_cls_combined)

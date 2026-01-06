@@ -94,9 +94,162 @@ def build_question_text_with_letters(
     return "\n\n".join(parts)
 
 
-# ================================================================
-#   DATASET
-# ================================================================
+from typing import Any, Dict, List, Tuple, Optional
+
+def compute_lengths_and_filter(
+    raw_ds,
+    keep_indices: List[int],
+    min_len: Optional[int] = None,
+    max_len: Optional[int] = None,
+    *,
+    mode: str = "chars",   # "chars" or "words"
+    include_hint: bool = True,
+    include_qa: bool = True,
+    build_hint_fn=None,
+    build_qa_fn=None,
+) -> Tuple[List[int], List[int]]:
+    if build_hint_fn is None or build_qa_fn is None:
+        raise ValueError("You must pass build_hint_fn and build_qa_fn.")
+    if mode not in {"chars", "words"}:
+        raise ValueError("mode must be 'chars' or 'words'")
+
+    do_min = (min_len is not None) and (int(min_len) > 0)
+    do_max = (max_len is not None) and (int(max_len) > 0)
+    min_len = int(min_len) if do_min else None
+    max_len = int(max_len) if do_max else None
+
+    lengths: List[int] = []
+    filtered_keep: List[int] = []
+
+    LETTERS_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    for ridx in keep_indices:
+        ex = raw_ds[ridx]
+
+        hint_text = build_hint_fn(ex) if include_hint else ""
+        choices = list(ex.get("choices", []))
+        n = len(choices)
+        letters = list(LETTERS_POOL[:n])
+        qa_text = build_qa_fn(ex.get("question"), choices, letters) if include_qa else ""
+
+        text = ""
+        if include_hint and hint_text:
+            text += str(hint_text)
+        if include_qa and qa_text:
+            if text:
+                text += "\n\n"
+            text += str(qa_text)
+
+        L = len(text) if mode == "chars" else len(text.split())
+        lengths.append(L)
+
+        if do_min and L < min_len:
+            continue
+        if do_max and L > max_len:
+            continue
+
+        filtered_keep.append(ridx)
+
+    return lengths, filtered_keep
+
+
+from typing import List, Dict, Any, Tuple, Optional
+import numpy as np
+
+
+def suggest_max_len_from_text_lens(
+    text_lens: List[int],
+    *,
+    drop_top_frac: float = 0.01,
+    round_to: int = 64,
+    min_len: Optional[int] = None,
+    max_len: Optional[int] = None,
+    verbose: bool = True,
+) -> Tuple[int, List[int], Dict[str, Any]]:
+    """
+    Suggest a max length cutoff from a list of proxy text lengths (chars or words),
+    while respecting user-provided min/max bounds.
+
+    Args:
+        text_lens: list of per-sample lengths
+        drop_top_frac: fraction of longest samples to drop (e.g. 0.01 = top 1%)
+        round_to: round suggested cutoff to a nice multiple (64/128)
+        min_len: lower bound (samples shorter than this are already filtered elsewhere)
+        max_len: hard upper bound (never suggest above this)
+        verbose: print stats
+
+    Returns:
+        suggested_max_len: int
+        outlier_positions: positions in text_lens that exceed suggested_max_len
+        stats: distribution + decision info
+    """
+    arr = np.asarray(text_lens, dtype=np.int64)
+    n = arr.size
+    if n == 0:
+        raise ValueError("text_lens is empty")
+
+    # ---- distribution stats ----
+    stats = {
+        "n": int(n),
+        "min": int(arr.min()),
+        "p50": int(np.percentile(arr, 50)),
+        "p90": int(np.percentile(arr, 90)),
+        "p95": int(np.percentile(arr, 95)),
+        "p97": int(np.percentile(arr, 97)),
+        "p99": int(np.percentile(arr, 99)),
+        "p995": int(np.percentile(arr, 99.5)),
+        "max": int(arr.max()),
+        "mean": float(arr.mean()),
+        "std": float(arr.std()),
+    }
+
+    # ---- percentile-based cutoff ----
+    drop_top_frac = float(np.clip(drop_top_frac, 0.0, 0.5))
+    keep_frac = 1.0 - drop_top_frac
+    keep_k = max(1, int(round(keep_frac * n)))
+
+    kth = np.partition(arr, keep_k - 1)[keep_k - 1]
+    suggested = int(kth)
+
+    # ---- clamp to user bounds ----
+    if min_len is not None:
+        suggested = max(int(min_len), suggested)
+    if max_len is not None:
+        suggested = min(int(max_len), suggested)
+
+    # ---- round nicely ----
+    if round_to and round_to > 1:
+        suggested = int(np.ceil(suggested / round_to) * round_to)
+
+    # ---- identify outliers ----
+    outlier_positions = np.where(arr > suggested)[0].tolist()
+
+    stats.update({
+        "drop_top_frac": drop_top_frac,
+        "suggested_max_len": int(suggested),
+        "would_drop": int(len(outlier_positions)),
+        "would_drop_frac": float(len(outlier_positions) / n),
+        "user_min_len": min_len,
+        "user_max_len": max_len,
+    })
+
+    if verbose:
+        print(
+            f"[lens] n={stats['n']} min={stats['min']} "
+            f"p95={stats['p95']} p99={stats['p99']} max={stats['max']}"
+        )
+        print(
+            f"[lens] suggested max_len={stats['suggested_max_len']} "
+            f"(drop_top_frac={drop_top_frac}, "
+            f"would_drop={stats['would_drop']} = {stats['would_drop_frac']*100:.2f}%)"
+        )
+        print(
+            f"[lens] candidates: p95={stats['p95']} "
+            f"p97={stats['p97']} p99={stats['p99']} p99.5={stats['p995']}"
+        )
+
+    return suggested, outlier_positions, stats
+
 
 class ScienceQA_Dataset(Dataset):
     """
@@ -136,6 +289,18 @@ class ScienceQA_Dataset(Dataset):
             blank_std_thresh=blank_std_thresh,
         )
 
+        self.text_lens, self.keep_indices = compute_lengths_and_filter(
+            raw_ds=self.raw_ds,
+            keep_indices=self.keep_indices,
+            min_len=getattr(config.dataset, "min_chars", 200),
+            max_len=getattr(config.dataset, "max_chars", 1500),
+            mode=getattr(config.dataset, "length_mode", "chars"),
+            build_hint_fn=build_scienceqa_hint_text,
+            build_qa_fn=build_question_text_with_letters,
+        )
+
+        print( f"[ScienceQA] length filter: kept {len(self.keep_indices)} / {len(self.text_lens)} ")
+
         self.train_tf = transforms.Compose([
             transforms.Resize((image_size, image_size)),
             transforms.ToTensor(),
@@ -145,6 +310,8 @@ class ScienceQA_Dataset(Dataset):
         if split=="train":
             stats = compute_label_stats_and_weights(self.raw_ds, self.keep_indices, weight_mode="inv_freq", normalize="mean1")
             self.weights = stats["weights"].clone().detach()
+
+
 
     def __len__(self):
         return len(self.keep_indices)
@@ -266,7 +433,7 @@ class ScienceQA_Dataloader:
         workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
 
         print(
-            f"[ScienceQA] GPUs: {torch.cuda.device_count()} (Phys: {get_physical_gpu_count()}) | SLURM: {os.environ.get('CUDA_VISIBLE_DEVICES', 'N/A')} | CPUs: {total_cpus} | Workers: {num_gpus}x{workers_per_gpu}={num_gpus * workers_per_gpu}")
+            f"[ScienceQA] GPUs: {torch.cuda.device_count()} (Phys: {num_gpus}) | SLURM: {os.environ.get('CUDA_VISIBLE_DEVICES', 'N/A')} | CPUs: {total_cpus} | Workers: {torch.cuda.device_count()}x{workers_per_gpu}={torch.cuda.device_count() * workers_per_gpu}")
 
         self.train_loader = DataLoader(
             ScienceQA_Dataset(

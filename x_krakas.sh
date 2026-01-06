@@ -186,18 +186,17 @@ scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/syner
 CUDA_VISIBLE_DEVICES=6 python train.py --config ./configs/ScienceQA/synprom_lora_synib.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --l 1
 CUDA_VISIBLE_DEVICES=6 --find_unused_parameters False python train.py --config ./configs/ScienceQA/synprom_lora_synib.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --l 1
 
-CUDA_VISIBLE_DEVICES=4 accelerate launch \
-    --mixed_precision bf16 \
+CUDA_VISIBLE_DEVICES=0 python\
     train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 
-CUDA_VISIBLE_DEVICES=3 accelerate launch \
+CUDA_VISIBLE_DEVICES=2 python\
     train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.001 --wd 0.01 --batch_size 8
 
-CUDA_VISIBLE_DEVICES=2 accelerate launch \
+CUDA_VISIBLE_DEVICES=3 python\
     --mixed_precision bf16 \
     train.py --config ./configs/ScienceQA/synprom_lora_synibfaster.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.001 --wd 0.001 --l 0.1 --batch_size 8
 
-CUDA_VISIBLE_DEVICES=1 accelerate launch \
+CUDA_VISIBLE_DEVICES=3 python\
     train.py --config ./configs/ScienceQA/synprom_lora_synibfaster.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.001 --wd 0.001  --l 1 --batch_size 8
 
 

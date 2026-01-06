@@ -4,7 +4,7 @@
 #SBATCH --cluster=wice
 #SBATCH --nodes=1
 #SBATCH --cpus-per-gpu=16
-#SBATCH --gpus-per-node=4
+#SBATCH --gpus-per-node=1
 #SBATCH --partition=gpu_h100
 #SBATCH --open-mode=appendj
 #SBATCH --output=/scratch/leuven/350/vsc35057/projects/Synergy/condor_logs/logs_vsc/slurmout_%J.txt
@@ -45,4 +45,4 @@ for var_name in "${variables[@]}"; do
     fi
 done
 
-accelerate launch --multi_gpu --num_processes=$num_gpus  /scratch/leuven/350/vsc35057/projects/Synergy/train.py --config $config --default_config $default_config --fold $fold --lr $lr --wd $wd --l $l --batch_size $bs
+accelerate launch /scratch/leuven/350/vsc35057/projects/Synergy/train.py --config $config --default_config $default_config --fold $fold --lr $lr --wd $wd --l $l --batch_size $bs

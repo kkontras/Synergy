@@ -2535,7 +2535,7 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
         device = images.device
 
         def expand_batch(x, k=3):
-            return x.unsqueeze(0).expand(k, *x.shape).reshape(k * x.shape[0], *x.shape[1:])
+            return x.unsqueeze(dim=0).expand(k,*x.shape).reshape(k * x.shape[0], *x.shape[1:])
 
         prompts = self._build_prompts_with_choices(hint_texts, qa_texts, letters_list)
         prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
@@ -2554,14 +2554,30 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
         m1, m2 = self.get_masks_only_B0(processor=self.processor, proc=proc, prompts_with_image=prompts_with_image, hint_texts=hint_texts, image_token_str=self.image_token_str)
         m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)
         att_mask_0, att_mask_1 = self.apply_custom_masks(proc["attention_mask"], m1, m2, m1t, m2t)
-        combined_mask = torch.cat([proc["attention_mask"], att_mask_0, att_mask_1], dim=0)
 
-        combined_hidden = self._encode(
-            input_ids=expand_batch(proc["input_ids"]),
-            attention_mask=combined_mask,
-            pixel_values=expand_batch(proc["pixel_values"]),
-            image_grid_thw=expand_batch(proc["image_grid_thw"]),
-        )
+        if self.args.get("run_multiple_forwards", False):
+            combined_mask = torch.cat(
+                [proc["attention_mask"].unsqueeze(dim=0), att_mask_0.unsqueeze(dim=0), att_mask_1.unsqueeze(dim=0)],
+                dim=0)
+
+            combined_hidden = torch.cat([self._encode(
+                input_ids=proc["input_ids"],
+                attention_mask=combined_mask[i],
+                pixel_values=proc["pixel_values"],
+                image_grid_thw=proc["image_grid_thw"],
+            )
+             for i in range(3)], dim=0)
+        else:
+            combined_mask = torch.cat(
+                [proc["attention_mask"], att_mask_0, att_mask_1],
+                dim=0)
+
+            combined_hidden = self._encode(
+                input_ids=expand_batch(proc["input_ids"]),
+                attention_mask=combined_mask,
+                pixel_values=expand_batch(proc["pixel_values"]),
+                image_grid_thw=expand_batch(proc["image_grid_thw"]),
+            )
 
 
         h_cls_combined = self._get_cls_token_repr(combined_hidden, expand_batch(proc["input_ids"]))
@@ -2606,7 +2622,6 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
             truncation=True,
             return_tensors="pt",
         )
-        print(proc["pixel_values"].shape)
 
         proc = {k: v.to(device) for k, v in proc.items()}
 

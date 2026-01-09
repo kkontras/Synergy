@@ -850,25 +850,45 @@ def make_plot(results_base, results_synib, results_synib_masks, results_synib_di
     plt.plot(alphas_sorted, syn_mean, color=color_syn, label=r'SynIB M^*', lw=2)
     plt.fill_between(alphas_sorted, np.clip(syn_mean - syn_std, 0, 1), np.clip(syn_mean + syn_std, 0, 1), color=color_syn, alpha=0.1)
 
-    # Plot SynIB Masks
-    for k in mask_keys:
-        label_i = r"$M_{Random}$"
-        plt.plot(alphas_sorted, synmask_means[k], color=mask_colors_blues[k],
-                 label=f'{label_i} (p={k})', marker='o', linestyle='--')
-        plt.fill_between(alphas_sorted, np.clip(synmask_means[k] - synmask_stds[k], 0, 1),
-                         np.clip(synmask_means[k] + synmask_stds[k], 0, 1), color=mask_colors_blues[k], alpha=0.05)
+    # Identify the best key for each category based on the highest average mean
+    best_mask_k = max(synmask_means.keys(), key=lambda k: synmask_means[k].mean())
+    best_diff_k = max(syndiff_means.keys(), key=lambda k: syndiff_means[k].mean())
 
-    for k in mask_keys_r:
-        label_i = r"$M_{Diff}$"
-        plt.plot(alphas_sorted, syndiff_means[k], color=mask_colors_reds[k],
-                 label=f'{label_i} (steps={k})', marker='D', linestyle='--')
-        plt.fill_between(
-            alphas_sorted,
-            np.clip(syndiff_means[k] - syndiff_stds[k], 0, 1),  # Clamp lower bound
-            np.clip(syndiff_means[k] + syndiff_stds[k], 0, 1),  # Clamp upper bound
-            color=mask_colors_reds[k],
-            alpha=0.05
-        )
+    # Plot Best Mask
+    plt.plot(alphas_sorted, synmask_means[best_mask_k], color=mask_colors_blues[best_mask_k],
+             label=fr"$M_{{Random}}$ (p={best_mask_k})", marker='o', linestyle='--')
+    plt.fill_between(alphas_sorted,
+                     np.clip(synmask_means[best_mask_k] - synmask_stds[best_mask_k], 0, 1),
+                     np.clip(synmask_means[best_mask_k] + synmask_stds[best_mask_k], 0, 1),
+                     color=mask_colors_blues[best_mask_k], alpha=0.1)
+
+    # Plot Best Diff
+    plt.plot(alphas_sorted, syndiff_means[best_diff_k], color=mask_colors_reds[best_diff_k],
+             label=fr"$M_{{Diff}}$ (steps={best_diff_k})", marker='D', linestyle='--')
+    plt.fill_between(alphas_sorted,
+                     np.clip(syndiff_means[best_diff_k] - syndiff_stds[best_diff_k], 0, 1),
+                     np.clip(syndiff_means[best_diff_k] + syndiff_stds[best_diff_k], 0, 1),
+                     color=mask_colors_reds[best_diff_k], alpha=0.1)
+
+    # Plot SynIB Masks
+    # for k in mask_keys:
+    #     label_i = r"$M_{Random}$"
+    #     plt.plot(alphas_sorted, synmask_means[k], color=mask_colors_blues[k],
+    #              label=f'{label_i} (p={k})', marker='o', linestyle='--')
+    #     plt.fill_between(alphas_sorted, np.clip(synmask_means[k] - synmask_stds[k], 0, 1),
+    #                      np.clip(synmask_means[k] + synmask_stds[k], 0, 1), color=mask_colors_blues[k], alpha=0.05)
+    #
+    # for k in mask_keys_r:
+    #     label_i = r"$M_{Diff}$"
+    #     plt.plot(alphas_sorted, syndiff_means[k], color=mask_colors_reds[k],
+    #              label=f'{label_i} (steps={k})', marker='D', linestyle='--')
+    #     plt.fill_between(
+    #         alphas_sorted,
+    #         np.clip(syndiff_means[k] - syndiff_stds[k], 0, 1),  # Clamp lower bound
+    #         np.clip(syndiff_means[k] + syndiff_stds[k], 0, 1),  # Clamp upper bound
+    #         color=mask_colors_reds[k],
+    #         alpha=0.05
+    #     )
     plt.xlabel(
         r"$\alpha$ (spurious strength in training set)"
     )
@@ -882,7 +902,7 @@ def make_plot(results_base, results_synib, results_synib_masks, results_synib_di
 
 
 if __name__ == "__main__":
-    alphas = [i / 10 for i in range(0, 11, 2)] + [2, 3, 4, 5]
+    alphas = [i / 10 for i in range(0, 11, 2)] + [2, 3, 4, 5, 10, 20]
     seeds = list(range(10))
 
     results = run_many(

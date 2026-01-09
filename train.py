@@ -141,6 +141,16 @@ def main(config_path, default_config_path, args):
             config.model.args.perturb = {}
         config.model.args.perturb.fill = args.perturb_fill
         m += "_fill{}".format(args.perturb_fill)
+    if "perturb_pmin" in args and args.perturb_pmin is not None:
+        if not hasattr(config.model.args, "perturb"):
+            config.model.args.perturb = {}
+        config.model.args.perturb.p_min = args.perturb_pmin
+        m += "_pmin{}".format(args.perturb_pmin)
+    if "perturb_pmax" in args and args.perturb_pmax is not None:
+        if not hasattr(config.model.args, "perturb"):
+            config.model.args.perturb = {}
+        config.model.args.perturb.p_max = args.perturb_pmax
+        m += "_pmax{}".format(args.perturb_pmax)
     if "optim_method" in args and args.optim_method is not None:
         config.model.args.bias_infusion.optim_method = args.optim_method
         m += "_optim{}".format(args.optim_method)
@@ -241,6 +251,8 @@ parser.add_argument('--mm', required=False, help="Optimizer Momentum", default=N
 parser.add_argument('--cls', required=False, help="CLS linear, nonlinear, highlynonlinear", default=None)
 parser.add_argument('--perturb', required=False, help="Perturbation type of MCR", default=None)
 parser.add_argument('--perturb_fill', required=False, help="Fill for mask type perturbation of MCR", default=None)
+parser.add_argument('--perturb_pmax', required=False, help="Fill for mask type perturbation of MCR", default=None)
+parser.add_argument('--perturb_pmin', required=False, help="Fill for mask type perturbation of MCR", default=None)
 parser.add_argument('--pre', action='store_true')
 parser.add_argument('--frozen', action='store_true')
 parser.add_argument('--tdqm_disable', action='store_true')

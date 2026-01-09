@@ -2,10 +2,12 @@ import os
 import json
 import random
 from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 from tqdm import tqdm
-
+import pynvml
+import multiprocessing
 import kagglehub
-
+import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
@@ -193,7 +195,7 @@ class MMIMDb_Dataset(Dataset):
         img = self._load_image(fname)
 
         caption = self.caption_dict[fname][0]
-        label = torch.tensor(self.labels[fname], dtype=torch.float32)
+        label = torch.tensor(self.labels[fname], dtype=torch.float32).argmax()
 
         sample_id = os.path.splitext(fname)[0]
 
@@ -264,27 +266,86 @@ class MMIMDb_Dataloader:
             batch, bert_tok, bert_tok
         )
 
+        # self.train_loader = DataLoader(
+        #     MMIMDb_Dataset(config, "train"),
+        #     batch_size=batch,
+        #     shuffle=True,
+        #     collate_fn=self.collate_fn
+        # )
+        #
+        # self.valid_loader = DataLoader(
+        #     MMIMDb_Dataset(config, "val"),
+        #     batch_size=batch,
+        #     shuffle=False,
+        #     collate_fn=self.collate_fn
+        # )
+        #
+        # self.test_loader = DataLoader(
+        #     MMIMDb_Dataset(config, "test"),
+        #     batch_size=batch,
+        #     shuffle=False,
+        #     collate_fn=self.collate_fn
+        # )
+
+        g = torch.Generator()
+        g.manual_seed(0)
+
+        def seed_worker(worker_id):
+            worker_seed = torch.initial_seed() % 2 ** 32
+            np.random.seed(worker_seed)
+            random.seed(worker_seed)
+
+        def get_physical_gpu_count():
+            try:
+                pynvml.nvmlInit()
+                count = pynvml.nvmlDeviceGetCount()
+                pynvml.nvmlShutdown()
+                return count
+            except Exception as e:
+                return f"Could not query NVML: {e}"
+
+        total_cpus = multiprocessing.cpu_count()
+        num_gpus = get_physical_gpu_count()
+        workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
+        # workers_per_gpu = 16
+
+
+
         self.train_loader = DataLoader(
             MMIMDb_Dataset(config, "train"),
             batch_size=batch,
             shuffle=True,
-            collate_fn=self.collate_fn
+            generator=g,
+            worker_init_fn=seed_worker,
+            collate_fn=self.collate_fn,
+            # --- ADD THESE FOR H100 PERFORMANCE ---
+            num_workers=workers_per_gpu,  # Start with 8-12 per GPU (e.g., 48 total if on one node)
+            pin_memory=True,  # Speeds up CPU-to-GPU transfer
+            prefetch_factor=4,  # Ensures workers stay ahead of the GPU
+            persistent_workers=True  # Keeps workers alive between epochs
         )
 
         self.valid_loader = DataLoader(
             MMIMDb_Dataset(config, "val"),
             batch_size=batch,
             shuffle=False,
-            collate_fn=self.collate_fn
+            collate_fn=self.collate_fn,
+            num_workers=workers_per_gpu,  # Start with 8-12 per GPU (e.g., 48 total if on one node)
+            pin_memory=True,  # Speeds up CPU-to-GPU transfer
+            prefetch_factor=4,  # Ensures workers stay ahead of the GPU
+            persistent_workers=True  # Keeps workers alive between epochs
         )
 
         self.test_loader = DataLoader(
             MMIMDb_Dataset(config, "test"),
             batch_size=batch,
             shuffle=False,
-            collate_fn=self.collate_fn
+            collate_fn=self.collate_fn,
+            num_workers=workers_per_gpu,  # Start with 8-12 per GPU (e.g., 48 total if on one node)
+            pin_memory=True,  # Speeds up CPU-to-GPU transfer
+            prefetch_factor=4,  # Ensures workers stay ahead of the GPU
+            persistent_workers=True  # Keeps workers alive between epochs
         )
-
 
 
 

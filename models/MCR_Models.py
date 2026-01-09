@@ -108,10 +108,12 @@ class Text_DistilBERT(nn.Module):
 
         model_name = "distilbert-base-uncased"
 
+        hf_cache = getattr(self.args, "hf_cache", None)
+
         if self.args.get("pretrained_encoder", True):
             self.text_model = DistilBertModel.from_pretrained(
                 model_name,
-                cache_dir=HF_CACHE
+                cache_dir=hf_cache
             )
         else:
             cfg = DistilBertConfig()
@@ -154,7 +156,7 @@ class TextToImage_SDmini(nn.Module):
             dtype=torch.float16,
             safety_checker=None,
             feature_extractor=None,
-            cache_dir=HF_CACHE,
+            cache_dir=args.save_base_dir,
         ).to(device)
 
         # Extra quality boosts
@@ -229,7 +231,7 @@ class TextToImage_SDXL(nn.Module):
             base_model,
             dtype=torch.float16,
             use_safetensors=True,
-            cache_dir=HF_CACHE,
+            cache_dir=args.save_base_dir,
         ).to("cpu")
 
         self.pipe_refiner = DiffusionPipeline.from_pretrained(
@@ -238,7 +240,7 @@ class TextToImage_SDXL(nn.Module):
             vae=self.pipe_base.vae,
             dtype=torch.float16,
             use_safetensors=True,
-            cache_dir=HF_CACHE,
+            cache_dir=args.save_base_dir,
         ).to("cpu")
 
         try:
@@ -584,7 +586,7 @@ class Audio_ResNet(nn.Module):
             pred_a = self.aclassifier(a)
 
 
-        return {"preds": {"combined": pred_a}, "features": {"combined": a}, "nonaggr_features":{"combined": audio_feat.flatten(start_dim=2)}}
+        return {"preds": {"combined": pred_a}, "features": {"combined": a}, "nonaggr_features":{"combined": audio_feat.flatten(start_dim=2).permute(0,2,1)}}
 class Video_ResNet(nn.Module):
     def __init__(self, args, encs):
         super(Video_ResNet, self).__init__()
@@ -632,7 +634,7 @@ class Video_ResNet(nn.Module):
         else:
             pred_v = self.vclassifier(v)
 
-        return {"preds":{"combined":pred_v}, "features":{"combined":v}, "nonaggr_features":{"combined": video_feat.flatten(start_dim=2)}}
+        return {"preds":{"combined":pred_v}, "features":{"combined":v}, "nonaggr_features":{"combined": video_feat.flatten(start_dim=2).permute(0,2,1)}}
 class Audio_Wav2Vec(nn.Module):
     def __init__(self, args, encs):
         super(Audio_Wav2Vec, self).__init__()
@@ -4490,8 +4492,8 @@ class TF_Fusion(nn.Module):
 
 
     def forward(self, x, **kwargs):
-        x_0 = x[0].permute(0,2,1)
-        x_1 = x[1].permute(0,2,1)
+        x_0 = x[0]
+        x_1 = x[1]
 
         x_0 = self.mod_0_token.repeat(x_0.shape[0], x_0.shape[1], 1) + x_0
         x_1 = self.mod_1_token.repeat(x_1.shape[0], x_1.shape[1], 1) + x_1
@@ -4507,6 +4509,11 @@ class TF_Fusion(nn.Module):
 
         feat_mm = torch.concatenate([xi for xi in xlist], dim=1)
         feat_mm = torch.concatenate([self.cls_token.repeat(feat_mm.shape[0], 1, 1), feat_mm], dim=1)
+
+        if "att_mask1" in kwargs and kwargs["att_mask1"] is not None:
+            print(feat_mm.shape)
+            print(kwargs["att_mask1"].shape)
+            print(kwargs["att_mask2"].shape)
         feat_mm = self.common_net(feat_mm)
         aggr_feat_mm = feat_mm[:,0]
 

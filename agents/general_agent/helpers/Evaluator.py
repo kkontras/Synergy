@@ -52,11 +52,9 @@ class General_Evaluator:
         self.best_acc = 0.0
         self.best_loss = 0.0
 
-        if set == "val":
-            with open('./conf_res_uni_val.pkl', 'rb') as f:
-                self.multi_fold_results = pickle.load(f)
-        elif set == "test":
-            with open('./cremad_ceu_test_res.pkl', 'rb') as f:
+        ceu = self.config.model.get("ceu",{})
+        if set in ceu and ceu[set] is not None:
+            with open(ceu[set], 'rb') as f:
                 self.multi_fold_results_test = pickle.load(f)["folds"]
 
 
@@ -243,46 +241,25 @@ class General_Evaluator:
             return cm
 
         this_fold = self.config.dataset.get("fold", 0)
+        if not hasattr(self, "multi_fold_results_test"): return None
 
-        if hasattr(self, "multi_fold_results"):
+        audio_preds = np.array(self.multi_fold_results_test[this_fold]["preds_combined"])
+        audio_targets = np.array(self.multi_fold_results_test[this_fold]["targets"])
+        video_preds = np.array(self.multi_fold_results_test[this_fold+3]["preds_combined"])
+        video_targets = np.array(self.multi_fold_results_test[this_fold+3]["targets"])
 
-            audio_preds = self.multi_fold_results[this_fold]["total_preds"]["combined"]
-            audio_targets = self.multi_fold_results[this_fold]["total_preds_target"]
-            video_preds = self.multi_fold_results[this_fold+3]["total_preds"]["combined"]
-            video_targets = self.multi_fold_results[this_fold+3]["total_preds_target"]
+        if len(targets_tens) == len(video_targets) == len(audio_targets) and (targets_tens.numpy() == video_targets).all() and (video_targets == audio_targets).all():
 
-            if len(targets_tens) == len(video_targets) == len(audio_targets) and (targets_tens.numpy() == video_targets).all() and (video_targets == audio_targets).all():
-
-                predictions = [ audio_preds.argmax(-1) == audio_targets,
-                                video_preds.argmax(-1) == video_targets,
-                                (total_preds.argmax(-1) == targets_tens).numpy(),]
-                cm = create_conf(predictions)
-                cm = np.round(cm, 2)
-                cue_audio = cm[1, 1] / (cm[1].sum())
-                cue_video = cm[2, 1] / (cm[2].sum())
-                synergy = cm[0, 1] / (cm[0].sum())
-                coexistence = cm[3, 1] / (cm[3].sum())
-                return {"cue_audio": cue_audio, "cue_video": cue_video, "synergy":synergy, "coexistence":coexistence}
-
-        if hasattr(self, "multi_fold_results_test"):
-
-            audio_preds = np.array(self.multi_fold_results_test[this_fold]["preds_combined"])
-            audio_targets = np.array(self.multi_fold_results_test[this_fold]["targets"])
-            video_preds = np.array(self.multi_fold_results_test[this_fold+3]["preds_combined"])
-            video_targets = np.array(self.multi_fold_results_test[this_fold+3]["targets"])
-
-            if len(targets_tens) == len(video_targets) == len(audio_targets) and (targets_tens.numpy() == video_targets).all() and (video_targets == audio_targets).all():
-
-                predictions = [ audio_preds.argmax(-1) == audio_targets,
-                                video_preds.argmax(-1) == video_targets,
-                                (total_preds.argmax(-1) == targets_tens).numpy(),]
-                cm = create_conf(predictions)
-                cm = np.round(cm, 2)
-                cue_audio = cm[1, 1] / (cm[1].sum())
-                cue_video = cm[2, 1] / (cm[2].sum())
-                synergy = cm[0, 1] / (cm[0].sum())
-                coexistence = cm[3, 1] / (cm[3].sum())
-                return {"cue_audio": cue_audio, "cue_video": cue_video, "synergy":synergy, "coexistence":coexistence}
+            predictions = [ audio_preds.argmax(-1) == audio_targets,
+                            video_preds.argmax(-1) == video_targets,
+                            (total_preds.argmax(-1) == targets_tens).numpy(),]
+            cm = create_conf(predictions)
+            cm = np.round(cm, 2)
+            cue_audio = cm[1, 1] / (cm[1].sum())
+            cue_video = cm[2, 1] / (cm[2].sum())
+            synergy = cm[0, 1] / (cm[0].sum())
+            coexistence = cm[3, 1] / (cm[3].sum())
+            return {"cue_audio": cue_audio, "cue_video": cue_video, "synergy":synergy, "coexistence":coexistence}
 
     def get_per_group_accuracy(self, total_preds, targets_tens):
         def calculate_stats(preds_correct, targets, m_preds):
@@ -344,20 +321,22 @@ class General_Evaluator:
 
         # Data extraction logic - FIXED: video_targets now loaded correctly
         this_fold = self.config.dataset.get("fold", 0)
+        if not hasattr(self, "multi_fold_results_test"): return None
 
-        if hasattr(self, "multi_fold_results"):
 
-            audio_preds = self.multi_fold_results[this_fold]["total_preds"]["combined"]
-            audio_targets = self.multi_fold_results[this_fold]["total_preds_target"]
-            video_preds = self.multi_fold_results[this_fold + 3]["total_preds"]["combined"]
-            video_targets = self.multi_fold_results[this_fold + 3]["total_preds_target"]
+        # if hasattr(self, "multi_fold_results"):
+        #
+        #     audio_preds = self.multi_fold_results[this_fold]["total_preds"]["combined"]
+        #     audio_targets = self.multi_fold_results[this_fold]["total_preds_target"]
+        #     video_preds = self.multi_fold_results[this_fold + 3]["total_preds"]["combined"]
+        #     video_targets = self.multi_fold_results[this_fold + 3]["total_preds_target"]
+        #
+        # if hasattr(self, "multi_fold_results_test"):
 
-        if hasattr(self, "multi_fold_results_test"):
-
-            audio_preds = np.array(self.multi_fold_results_test[this_fold]["preds_combined"])
-            audio_targets = np.array(self.multi_fold_results_test[this_fold]["targets"])
-            video_preds = np.array(self.multi_fold_results_test[this_fold+3]["preds_combined"])
-            video_targets = np.array(self.multi_fold_results_test[this_fold+3]["targets"])
+        audio_preds = np.array(self.multi_fold_results_test[this_fold]["preds_combined"])
+        audio_targets = np.array(self.multi_fold_results_test[this_fold]["targets"])
+        video_preds = np.array(self.multi_fold_results_test[this_fold+3]["preds_combined"])
+        video_targets = np.array(self.multi_fold_results_test[this_fold+3]["targets"])
 
 
         # Safety check for alignment

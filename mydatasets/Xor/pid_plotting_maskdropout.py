@@ -91,17 +91,18 @@ def draw_triangle(ax, left, right, top):
 def load_records_from_three(
     file_path_main,
     file_path_synib,
-    file_path_synib_rand,
-    file_path_syniblearned,
-):
+    file_path_synibrand,
+    file_path_mask_dropout_star,
+    file_path_mask_dropout_rand):
     def read(path):
         with open(path, "r") as f:
             return json.load(f)
 
     data_main = read(file_path_main)
     data_synib = read(file_path_synib)
-    data_synib_rand = read(file_path_synib_rand)
-    data_learned = read(file_path_syniblearned)
+    data_synib_rand = read(file_path_synibrand)
+    data_maskeddrop_star = read(file_path_mask_dropout_star)
+    data_maskeddrop_rand = read(file_path_mask_dropout_rand)
 
     # index by (pu1, pred, psyn)
     def build_index(data):
@@ -119,10 +120,11 @@ def load_records_from_three(
     idx_main = build_index(data_main)
     idx_synib = build_index(data_synib)
     idx_synib_rand = build_index(data_synib_rand)
-    idx_learned = build_index(data_learned)
+    idx_maskeddrop_star = build_index(data_maskeddrop_star)
+    idx_maskeddrop_rand = build_index(data_maskeddrop_rand)
 
     # merge keys across all three
-    all_keys = set(idx_main.keys()) | set(idx_synib.keys()) | set(idx_learned.keys())
+    all_keys = set(idx_main.keys()) | set(idx_synib.keys()) | set(idx_synib_rand.keys()) | set(idx_maskeddrop_star.keys()) | set(idx_maskeddrop_rand.keys())
 
     def safe_get(v, *path, default=np.nan):
         cur = v
@@ -136,8 +138,9 @@ def load_records_from_three(
     for (pu1, pred, psyn) in sorted(all_keys):
         vm = idx_main.get((pu1, pred, psyn), {})
         vs = idx_synib.get((pu1, pred, psyn), {})
-        vr = idx_synib_rand.get((pu1, pred, psyn), {})
-        vl = idx_learned.get((pu1, pred, psyn), {})
+        vl = idx_synib_rand.get((pu1, pred, psyn), {})
+        vmd_star = idx_maskeddrop_star.get((pu1, pred, psyn), {})
+        vmd_rand = idx_maskeddrop_rand.get((pu1, pred, psyn), {})
 
         records.append({
             "u1": pu1,
@@ -151,42 +154,59 @@ def load_records_from_three(
             # synib metrics
             "synib_acc_fusion": safe_get(vs, "summary_meanstd", "synib_tuned", "test_tot_mean"),
             "synib_acc_syn":    safe_get(vs, "summary_meanstd", "synib_tuned", "test_syn_mean"),
-            # synib metrics
-            "synib_random_acc_fusion": safe_get(vr, "summary_meanstd", "synib_RM_tuned", "test_tot_mean"),
-            "synib_random_acc_syn":    safe_get(vr, "summary_meanstd", "synib_RM_tuned", "test_syn_mean"),
 
             # learned metrics
             # "synib_learned_acc_fusion": safe_get(vl, "summary_meanstd", "learned_tuned", "test_tot_mean"),
             # "synib_learned_acc_syn":    safe_get(vl, "summary_meanstd", "learned_tuned", "test_syn_mean"),
 
+            # synib metrics
+            "synib_random_acc_fusion": safe_get(vl, "summary_meanstd", "synib_RM_tuned", "test_tot_mean"),
+            "synib_random_acc_syn": safe_get(vl, "summary_meanstd", "synib_RM_tuned", "test_syn_mean"),
+            # synib metrics
+            "maskeddropout_star_acc_fusion": safe_get(vmd_star, "summary_meanstd", "main", "test_tot_mean"),
+            "maskeddropout_star_acc_syn": safe_get(vmd_star, "summary_meanstd", "main", "test_syn_mean"),
+            # synib metrics
+            "maskeddropout_random_acc_fusion": safe_get(vmd_rand, "summary_meanstd", "main", "test_tot_mean"),
+            "maskeddropout_random_acc_syn": safe_get(vmd_rand, "summary_meanstd", "main", "test_syn_mean"),
+
             # learned metrics
-            "synib_learned_acc_fusion": safe_get(vl, "summary_meanstd", "synib_RM_tuned", "test_tot_mean"),
-            "synib_learned_acc_syn":    safe_get(vl, "summary_meanstd", "synib_RM_tuned", "test_syn_mean"),
+            # "synib_learned_acc_fusion": safe_get(vl, "summary_meanstd", "main", "test_tot_mean"),
+            # "synib_learned_acc_fusion": safe_get(vl, "summary_meanstd", "synib_RM_tuned", "test_tot_mean"),
+            # "synib_learned_acc_syn":    safe_get(vl, "summary_meanstd", "main", "test_syn_mean"),
+            # "synib_learned_acc_syn":    safe_get(vl, "summary_meanstd", "synib_RM_tuned", "test_syn_mean"),
         })
 
     return pd.DataFrame(records)
 
 
+# file_path_main = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_main.json"
+# file_path_synib = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_tunedkl_synib.json"
+
 
 file_path_main = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_main_snr3_v3.json"
-file_path_synib = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_tunedkl_synib_snr3_v2.json"
-file_path_synib_random = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_tunedkl_synib_random05_snr3_v3.json"
-# file_path_synibleaned = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_tunedkl_synibleaned_snr3_v3.json"
-file_path_synibleaned = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_tunedkl_synib_random03diff_100-04-09_snr3_v3.json"
+file_path_synib = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_tunedkl_synib_snr3_v3.json"
+file_path_synibrand = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_tunedkl_synib_random03_snr3_v3.json"
+file_path_mask_dropout_star = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_mainmask03starboth_snr3_v3_v2.json"
+file_path_mask_dropout_rand = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_mainmask03randboth_snr3_v3_v2.json"
+# file_path_mask_dropout_star = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_mainmask03star_snr3_v3_v2.json"
+# file_path_mask_dropout_rand = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_mainmask03rand_snr3_v3_v2.json"
+# file_path_synibleaned = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/runs_refactor/sweep_nonoverlap_probs_tunedkl_synib_random05_snr3_v3.json"
 
-df = load_records_from_three(file_path_main, file_path_synib, file_path_synib_random, file_path_synibleaned)
+df = load_records_from_three(file_path_main, file_path_synib, file_path_synibrand, file_path_mask_dropout_star, file_path_mask_dropout_rand)
+
 
 
 # make a 2x3 grid (top: total acc, bottom: synergy acc)
-fig, axes = plt.subplots(2, 4, figsize=(12, 5))
+fig, axes = plt.subplots(2, 5, figsize=(14, 5))
 
 # ---------- ROW 1: Total Accuracy ----------
 main_name = "acc_fusion"
 synib_name = "synib_acc_fusion"
-synib_random_name = "synib_random_acc_fusion"
-synib_learned_name = "synib_learned_acc_fusion"
+synib_name_rand = "synib_random_acc_fusion"
+mask_dropout_star = "maskeddropout_star_acc_fusion"
+mask_dropout_rand = "maskeddropout_random_acc_fusion"
 
-global_min = min(df[main_name].min(), df[synib_name].min(), df[synib_random_name].min(), df[synib_learned_name].min())
+global_min = min(df[main_name].min(), df[synib_name].min(), df[synib_name_rand].min(), df[mask_dropout_star].min(), df[mask_dropout_rand].min())
 global_max = 1.0
 norm1 = Normalize(vmin=global_min, vmax=global_max)
 
@@ -203,53 +223,57 @@ axes[0, 1].scatter(x, y, c=df[synib_name], s=sizes, cmap="RdPu", norm=norm1,
                    edgecolors="gray", linewidths=0.5)
 
 draw_triangle(axes[0, 2], "Unique 1", "Redundancy", "Synergy")
-axes[0, 2].scatter(x, y, c=df[synib_random_name], s=sizes, cmap="RdPu", norm=norm1,
+axes[0, 2].scatter(x, y, c=df[synib_name_rand], s=sizes, cmap="RdPu", norm=norm1,
                    edgecolors="gray", linewidths=0.5)
 
 draw_triangle(axes[0, 3], "Unique 1", "Redundancy", "Synergy")
-axes[0, 3].scatter(x, y, c=df[synib_learned_name], s=sizes, cmap="RdPu", norm=norm1,
+axes[0, 3].scatter(x, y, c=df[mask_dropout_star], s=sizes, cmap="RdPu", norm=norm1,
+                   edgecolors="gray", linewidths=0.5)
+
+draw_triangle(axes[0, 4], "Unique 1", "Redundancy", "Synergy")
+axes[0, 4].scatter(x, y, c=df[mask_dropout_rand], s=sizes, cmap="RdPu", norm=norm1,
                    edgecolors="gray", linewidths=0.5)
 
 title_fs = 9
 axes[0, 0].set_title("(a) No Regularization", fontweight="semibold", fontsize=title_fs, pad=12)
-axes[0, 1].set_title(r"(b) SynIB $M^*_s$",          fontweight="semibold", fontsize=title_fs, pad=12)
+axes[0, 1].set_title(r"(b) SynIB $M^*$",          fontweight="semibold", fontsize=title_fs, pad=12)
 axes[0, 2].set_title(r"(c) SynIB $M_{Random}$",   fontweight="semibold", fontsize=title_fs, pad=12)
-axes[0, 3].set_title(r"(d) SynIB $M_{Diff}$",   fontweight="semibold", fontsize=title_fs, pad=12)
+axes[0, 3].set_title(r"(d) Masked Input $M^*$",   fontweight="semibold", fontsize=title_fs, pad=12)
+axes[0, 4].set_title(r"(e) Masked Input $M_{Random}$",   fontweight="semibold", fontsize=title_fs, pad=12)
 
 # ---------- ROW 2: Accuracy on Synergy ----------
 main_name = "acc_syn"
 synib_name = "synib_acc_syn"
-synib_random_name = "synib_random_acc_syn"
-synib_learned_name = "synib_learned_acc_syn"
+synib_name_rand = "synib_random_acc_syn"
+mask_dropout_star = "maskeddropout_star_acc_syn"
+mask_dropout_rand = "maskeddropout_random_acc_syn"
 
-global_min = min(df[main_name].min(), df[synib_name].min(), df[synib_random_name].min(), df[synib_learned_name].min())
+
+global_min = min(df[main_name].min(), df[synib_name].min(), df[synib_name_rand].min(), df[mask_dropout_star].min(), df[mask_dropout_rand].min())
 global_max = 1.0
 norm2 = Normalize(vmin=global_min, vmax=global_max)
 
 draw_triangle(axes[1, 0], "Unique 1", "Redundancy", "Synergy")
-sc2 = axes[1, 0].scatter(x, y, c=df[main_name], s=sizes, cmap="RdPu", norm=norm2,
-                         edgecolors="gray", linewidths=0.5)
-
 draw_triangle(axes[1, 1], "Unique 1", "Redundancy", "Synergy")
-axes[1, 1].scatter(x, y, c=df[synib_name], s=sizes, cmap="RdPu", norm=norm2,
-                   edgecolors="gray", linewidths=0.5)
-
 draw_triangle(axes[1, 2], "Unique 1", "Redundancy", "Synergy")
-axes[1, 2].scatter(x, y, c=df[synib_random_name], s=sizes, cmap="RdPu", norm=norm2,
-                   edgecolors="gray", linewidths=0.5)
-
 draw_triangle(axes[1, 3], "Unique 1", "Redundancy", "Synergy")
-axes[1, 3].scatter(x, y, c=df[synib_learned_name], s=sizes, cmap="RdPu", norm=norm2,
-                   edgecolors="gray", linewidths=0.5)
+draw_triangle(axes[1, 4], "Unique 1", "Redundancy", "Synergy")
+
+sc2 = axes[1, 0].scatter(x, y, c=df[main_name], s=sizes, cmap="RdPu", norm=norm2, edgecolors="gray", linewidths=0.5)
+axes[1, 1].scatter(x, y, c=df[synib_name], s=sizes, cmap="RdPu", norm=norm2, edgecolors="gray", linewidths=0.5)
+axes[1, 2].scatter(x, y, c=df[synib_name_rand], s=sizes, cmap="RdPu", norm=norm2, edgecolors="gray", linewidths=0.5)
+axes[1, 3].scatter(x, y, c=df[mask_dropout_star], s=sizes, cmap="RdPu", norm=norm2, edgecolors="gray", linewidths=0.5)
+axes[1, 4].scatter(x, y, c=df[mask_dropout_rand], s=sizes, cmap="RdPu", norm=norm2, edgecolors="gray", linewidths=0.5)
 
 # axes[1, 0].set_title("(a) No Regularization", fontweight="semibold", fontsize=title_fs, pad=12)
 # axes[1, 1].set_title(r"(b) SynIB $M^*$",          fontweight="semibold", fontsize=title_fs, pad=12)
 # axes[1, 2].set_title(r"(c) SynIB $M_{Random}$",   fontweight="semibold", fontsize=title_fs, pad=12)
-# axes[1, 3].set_title(r"(d) SynIB $M_{Diff}$",   fontweight="semibold", fontsize=title_fs, pad=12)
+# axes[1, 3].set_title(r"(d) Masked Input $M^*$",   fontweight="semibold", fontsize=title_fs, pad=12)
+# axes[1, 4].set_title(r"(e) Masked Input $M_{Random}$",   fontweight="semibold", fontsize=title_fs, pad=12)
 
 # ---------- Row titles (general titles) ----------
 # fig.text(0.5, 0.905, "Total Accuracy", ha="center", va="top", fontsize=11, fontweight="semibold")
-# fig.text(0.5, 0.505,  "Accuracy on Synergy-Required Samples", ha="center", va="top", fontsize=11, fontweight="semibold")
+# fig.text(0.5, 0.505,  "Accuracy on Synergy", ha="center", va="top", fontsize=11, fontweight="semibold")
 
 # Optional annotation (keep if you want it once for the whole figure)
 fig.text(0.12, 0.51, "PID p = (Unique1, Redundancy, Synergy)", ha="left", va="top", fontsize=6)
@@ -277,4 +301,5 @@ cb2.update_ticks()
 # Smaller hspace => smaller gap. Try 0.05, 0.02, 0.0
 plt.subplots_adjust(hspace=0.05, wspace=0.25)
 
-plt.savefig("pid_mainvssynibrandlearned_snr3_v3.png", dpi=300, bbox_inches="tight")
+plt.savefig("pid_maskeddropout_total.png", dpi=300, bbox_inches="tight")
+plt.savefig("pid_maskeddropout_total.pdf", dpi=300, bbox_inches="tight")

@@ -1,7 +1,7 @@
 {
   "training_params": {
-    "batch_size": 32,
-    "test_batch_size": 32,
+    "batch_size": 128,
+    "test_batch_size": 128,
     "tdqm_disable": false
   },
   "early_stopping": {
@@ -38,6 +38,7 @@
       "d_model": 512,
       "num_classes": 6,
       "fc_inner": 64,
+      "in_dim": 64,
       "dropout": 0.1,
       "cls_type": "mlp",
       "norm_decision": false,
@@ -50,7 +51,7 @@
       },
       "synergy_type": "gaussian"
     },
-
+    "ceu": {"val": "./cremad_ceu_val_res.pkl", "test": "./cremad_ceu_test_res.pkl"},
     "load_ongoing": false,
     "save_dir": "SynIB_RMask_fold{}.pth.tar",
     "save_base_dir": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask",

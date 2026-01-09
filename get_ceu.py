@@ -18,16 +18,24 @@ device = "cuda:0"
 # -------------------------
 # USER-PROVIDED CONFIGS
 # -------------------------
-DEFAULT_CONFIG_PATH = "configs/CREMA_D/default_config_cremad_res_syn.json"
+# DEFAULT_CONFIG_PATH = "configs/CREMA_D/default_config_cremad_res_syn.json"
+DEFAULT_CONFIG_PATH = "configs/AVE/default_config_ave_res_syn.json"
 
 # Pick ONE of these per run (you said you'll run twice: once audio, once video).
 # CONFIG_PATH = "configs/CREMA_D/release/res/unimodal_audio.json"
 # CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold{}_lr0.001_wd0.0001.pth.tar"
 
-CONFIG_PATH = "configs/CREMA_D/release/res/unimodal_video.json"
-CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold{}_lr0.001_wd0.0001.pth.tar"
+CONFIG_PATH = "configs/AVE/release/res/unimodal_audio.json"
+CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Rmask/AVE/unimodal_audio_fold{}.pth.tar"
 
-OUTPUT_JSON = "cremad_ceu_test_res.pkl"
+# CONFIG_PATH = "configs/CREMA_D/release/res/unimodal_video.json"
+# CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold{}_lr0.001_wd0.0001.pth.tar"
+
+# CONFIG_PATH = "configs/AVE/release/res/unimodal_video.json"
+# CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Rmask/AVE/unimodal_video_fold{}.pth.tar"
+
+# OUTPUT_JSON = "cremad_ceu_test_res.pkl"
+OUTPUT_JSON = "ave_ceu_val_res.pkl"
 
 FOLDS = [0, 1, 2]
 
@@ -153,7 +161,8 @@ def run_fold(fold: int) -> dict:
     data_loader = importer.get_dataloaders()
 
     validator = Validator(model=best_model, data_loader=data_loader, config=importer.config, device=device)
-    test_results = validator.get_results(set="Test", print_results=True)
+    test_results = validator.get_results(set="Validation", print_results=True)
+    # test_results = validator.get_results(set="Test", print_results=True)
 
     # Pull out preds/targets in the structure you described (if present)
     preds = None
@@ -193,7 +202,7 @@ def main():
     for fold in FOLDS:
         print(f"\n========== Running fold {fold} ==========")
         fold_res = run_fold(fold)
-        reform_fold = int(fold+3)
+        reform_fold = int(fold)
         all_results["folds"][reform_fold] = fold_res
 
     with open(OUTPUT_JSON, "wb") as f:

@@ -6,10 +6,10 @@ from collections import defaultdict
 from colorama import Fore
 from utils.flattendict import flatten_loss_dict
 from utils.to_device import to_device, to_float
-import torch.profiler
-import wandb
-from torch.profiler import profile, record_function, ProfilerActivity, schedule
-wandb.init()
+# import torch.profiler
+# import wandb
+# from torch.profiler import profile, record_function, ProfilerActivity, schedule
+# wandb.init()
 
 
 class Trainer():

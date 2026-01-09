@@ -63,10 +63,40 @@
 #done
 #done
 
-cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae/enc_2_fusion_trunk_fold0.pth.tar /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask/enc_2_fusion_trunk_fold0.pth.tar
-cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae/enc_3_fusion_head_fold0.pth.tar /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask/enc_3_fusion_head_fold0.pth.tar
-cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae/enc_4_unimodal1_fold0.pth.tar /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask/enc_4_unimodal1_fold0.pth.tar
-cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae/enc_5_unimodal2_fold0.pth.tar /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask/enc_5_unimodal2_fold0.pth.tar
+#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae/enc_2_fusion_trunk_fold0.pth.tar /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask/enc_2_fusion_trunk_fold0.pth.tar
+#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae/enc_3_fusion_head_fold0.pth.tar /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask/enc_3_fusion_head_fold0.pth.tar
+#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae/enc_4_unimodal1_fold0.pth.tar /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask/enc_4_unimodal1_fold0.pth.tar
+#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/synrem_vae/enc_5_unimodal2_fold0.pth.tar /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask/enc_5_unimodal2_fold0.pth.tar
+#
+#python examine_vae_linearprob.py --config ./configs/CREMA_D/synergy/nov/synprom_generator_diffusiontf.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.001 --wd 0.0001 --perturb gen
+#python examine_vae_linearprob.py --config ./configs/CREMA_D/synergy/nov/synprom_generator_diffusiontf_2.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.001 --wd 0.0001 --perturb gen
 
-python examine_vae_linearprob.py --config ./configs/CREMA_D/synergy/nov/synprom_generator_diffusiontf.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.001 --wd 0.0001 --perturb gen
-python examine_vae_linearprob.py --config ./configs/CREMA_D/synergy/nov/synprom_generator_diffusiontf_2.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.001 --wd 0.0001 --perturb gen
+
+#python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#
+python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb diff --perturb_fill ema --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb diff --perturb_fill ema --perturb_pmin 0.1 --perturb_pmax 0.9 --num_samples 5
+python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb diff --perturb_fill ema --perturb_pmin 0.1 --perturb_pmax 0.5 --num_samples 5
+python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32
+
+python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.1 --perturb_pmax 0.9 --num_samples 5
+python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.1 --perturb_pmax 0.5 --num_samples 5
+python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32
+
+
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb diff --perturb_pmin 0.5 --perturb_pmin 0.8 --num_samples 10
+
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 100 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 10 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0.01 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0.01 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16 --perturb None --perturb_fill token --perturb_pmin 0.5
+
+#python show.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 100 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python show.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 10 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python show.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python show.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python show.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0.01 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python show.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0.01 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16 --perturb None --perturb_fill token --perturb_pmin 0.5

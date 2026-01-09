@@ -143,6 +143,7 @@ done
 done
 done
 
+#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/Balance_Final/AVE/res/unimodal_* /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Rmask/AVE
 
 #cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold0_lr0.001_wd0.0001.pth.tar /esat/smcdata/users/kkontras/Rafael/trained_models
 #cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold0_lr0.001_wd0.0001.pth.tar /esat/smcdata/users/kkontras/Rafael/trained_models
@@ -171,6 +172,10 @@ python train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --de
 
 python train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 1 --lr 0.00001 --wd 0.0001 --cls mlp --perturb mask --num_samples 32
 python train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 0 --lr 0.00001 --wd 0.0001 --cls mlp --perturb mask
+
+python train.py --config ./configs/CREMA_D/synergy/dec/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 1 --lr 0.00001 --wd 0.0001 --cls mlp --batch_size 64
+
+python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
 
 
 scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA kkontras@mib.media.mit.edu:/scratch/kkontras/data

@@ -85,6 +85,7 @@ MASK_RED = 2
 MASK_SYN = 3
 # DESTROY_MASK = [MASK_NOISE, MASK_UNIQUE_1, MASK_RED, MASK_SYN]
 DESTROY_MASK = [MASK_SYN]
+INV_DESTROY_MASK = [MASK_RED, MASK_UNIQUE]
 
 def _block_sizes(dim: int, frac_unique: float, frac_red: float, frac_syn: float) -> Tuple[int, int, int, int]:
     u = int(round(dim * frac_unique))
@@ -643,17 +644,27 @@ def train_mainmask(cfg, train_loader: DataLoader, device: str, val_loader: Optio
             x1 = b["x1"].to(device)
             y = b["y"].to(device)
 
-            m0_random = torch.rand_like(x0)
-            m1_random = torch.rand_like(x1)
-            m0_random = (m0_random < cfg.random_mask_proportion).float()
-            m1_random = (m1_random < cfg.random_mask_proportion).float()
+            # m0_random = torch.rand_like(x0)
+            # m1_random = torch.rand_like(x1)
+            # m0_random = (m0_random > cfg.random_mask_proportion).float()#Inverse mask
+            # m1_random = (m1_random > cfg.random_mask_proportion).float()#Inverse mask
+            # x0_t = destroy_block(x0, m0_random, 1, noise_std=1.0)
+            # x1_t = destroy_block(x1, m1_random, 1, noise_std=1.0)
 
-            x0_t = destroy_block(x0, m0_random, 1, noise_std=4.0)
-            x1_t = destroy_block(x1, m1_random, 1, noise_std=4.0)
 
-            x0_t = torch.concatenate([x0, x0_t],dim=0)
-            x1_t = torch.concatenate([x1, x1_t],dim=0)
-            y_t = torch.concatenate([y,y],dim=0)
+            m0 = b["mask0"].to(device)
+            m1 = b["mask1"].to(device)
+            x0_t = destroy_block(x0, m0, INV_DESTROY_MASK, noise_std=1.0)
+            x1_t = destroy_block(x1, m1, INV_DESTROY_MASK, noise_std=1.0)
+
+            # x0_t = torch.concatenate([x0, x0_t],dim=0)
+            # x1_t = torch.concatenate([x1, x1_t],dim=0)
+            # y_t = torch.concatenate([y,y],dim=0)
+
+
+            x0_t = torch.concatenate([x0, x0_t, x0],dim=0)
+            x1_t = torch.concatenate([x1, x1, x1_t],dim=0)
+            y_t = torch.concatenate([y,y,y],dim=0)
 
             f, u0, u1 = model.forward_logits(x0_t, x1_t)
 
@@ -911,7 +922,6 @@ def train_synib( cfg, train_loader: DataLoader, device: str, val_loader: Optiona
         model.load_state_dict(best_state)
 
     return model, history
-
 def train_synib_random( cfg, train_loader: DataLoader, device: str, val_loader: Optional[DataLoader] = None ) -> Tuple["FusionModel", Dict[str, Any]]:
 
     model = FusionModel(cfg.dim0, cfg.dim1, cfg.hidden).to(device)
@@ -968,6 +978,156 @@ def train_synib_random( cfg, train_loader: DataLoader, device: str, val_loader: 
             f_t0, _, _ = model.forward_logits(x0_t, x1)
             f_t1, _, _ = model.forward_logits(x0, x1_t)
             l_cf = bern_kl_to_uniform_from_logits(f_t0) + bern_kl_to_uniform_from_logits(f_t1)
+
+            l_total = l_base + float(cfg.lambda_kl) * l_cf #+ float(cfg.lambda_shortcut_inv) * l_inv
+
+            opt.zero_grad()
+            l_total.backward()
+            opt.step()
+
+            bs = y.size(0)
+            n += bs
+
+            sum_l_base += float(l_base.item()) * bs
+            sum_l_f += float(lf.item()) * bs
+            sum_l_u0 += float(lu0.item()) * bs
+            sum_l_u1 += float(lu1.item()) * bs
+            sum_l_cf += float(l_cf.item()) * bs
+            sum_l_total += float(l_total.item()) * bs
+
+            sum_acc_f += _acc_from_logits(f, y) * bs
+            sum_acc_u0 += _acc_from_logits(u0, y) * bs
+            sum_acc_u1 += _acc_from_logits(u1, y) * bs
+
+        train_metrics = {
+            "epoch": epoch,
+            "loss_total": sum_l_total / max(1, n),
+            "loss_base":  sum_l_base / max(1, n),
+            "loss_fusion": sum_l_f / max(1, n),
+            "loss_uni0":  sum_l_u0 / max(1, n),
+            "loss_uni1":  sum_l_u1 / max(1, n),
+            "loss_cf":    sum_l_cf / max(1, n),
+            "acc_fusion": sum_acc_f / max(1, n),
+            "acc_uni0":   sum_acc_u0 / max(1, n),
+            "acc_uni1":   sum_acc_u1 / max(1, n),
+        }
+        history["train"].append(train_metrics)
+
+        # -------------------- val epoch + checkpoint --------------------
+        if val_loader is not None:
+            val_metrics = _eval_epoch_synib(model, val_loader, device, cfg)
+            val_metrics["epoch"] = epoch
+            history["val"].append(val_metrics)
+
+            # Best model based ONLY on clean fusion loss
+            cur = float(val_metrics["acc_fusion"])
+            if cur > history["best_val_fusion_acc"]:
+                history["best_val_fusion_acc"] = cur
+                history["best_val_fusion_loss"] = val_metrics["loss_fusion"]
+                history["best_epoch"] = epoch
+                best_state = copy.deepcopy(model.state_dict())
+
+        # Optional: print progress here if you want
+        # print(f"Epoch {epoch}: train_fusion_loss={train_metrics['loss_fusion']:.4f} "
+        #       f"train_acc_f={train_metrics['acc_fusion']:.3f} "
+        #       f"val_fusion_loss={history['val'][-1]['loss_fusion'] if val_loader else float('nan'):.4f}")
+
+    if best_state is not None:
+        model.load_state_dict(best_state)
+
+    return model, history
+def train_synib_randomdiff( cfg, train_loader: DataLoader, device: str, val_loader: Optional[DataLoader] = None ) -> Tuple["FusionModel", Dict[str, Any]]:
+
+    model = FusionModel(cfg.dim0, cfg.dim1, cfg.hidden).to(device)
+    opt = optim.Adam(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay_synib)
+
+    history = {
+        "train": [],
+        "val": [],
+        "best_epoch": None,
+        "best_val_fusion_acc": 0.0,
+        "best_val_fusion_loss": float("inf"),
+    }
+    best_state = None
+
+    for epoch in range(cfg.epochs):
+        # -------------------- train epoch --------------------
+        model.train()
+
+        n = 0
+        sum_l_base = 0.0
+        sum_l_f = 0.0
+        sum_l_u0 = 0.0
+        sum_l_u1 = 0.0
+        sum_l_cf = 0.0
+        sum_l_inv = 0.0
+        sum_l_total = 0.0
+
+        sum_acc_f = 0.0
+        sum_acc_u0 = 0.0
+        sum_acc_u1 = 0.0
+
+        for b in train_loader:
+            x0 = b["x0"].to(device)
+            x1 = b["x1"].to(device)
+            y  = b["y"].to(device)
+            m0 = b["mask0"].to(device)
+            m1 = b["mask1"].to(device)
+
+            f, u0, u1 = model.forward_logits(x0, x1)
+
+            lf  = F.binary_cross_entropy_with_logits(f, y)
+            lu0 = F.binary_cross_entropy_with_logits(u0, y)
+            lu1 = F.binary_cross_entropy_with_logits(u1, y)
+            l_base = lf + float(cfg.lambda_uni) * (lu0 + lu1)
+
+
+            def make_tilde_diff(z):
+                K = cfg.K
+                cosine_s = cfg.cosine_s
+                p_min = cfg.p_min
+                p_max = cfg.p_max
+
+                def _get_diff_p(t):
+                    """
+                    Returns p(t) shaped as a scalar tensor.
+                    p(t) ~= alpha_bar(t) with cosine schedule:
+                      alpha_bar(t) = cos^2( ((t/T)+s)/(1+s) * pi/2 )
+                    This decreases from ~1 to ~0, matching increasing noise over time.
+
+                    Scale to [p_min, p_max].
+                    """
+                    u = (torch.as_tensor(t) / (K - 1)).clamp(0.0, 1.0)
+
+                    s = cosine_s
+                    alpha_bar = torch.cos(((u + s) / (1.0 + s)) * (math.pi / 2.0)) ** 2  # ~1 -> ~0
+                    p = p_min + (p_max - p_min) * alpha_bar
+                    return p
+
+                def make_keep(z, p):
+                    return (torch.rand_like(z) < p).to(z.dtype)
+
+
+                keep = torch.cat([make_keep(z, _get_diff_p(k)) for k in range(K)], dim=0)
+                return keep
+
+            def repeat_k(z, K):
+                return z.unsqueeze(0).expand(K, *z.shape).reshape(K * z.shape[0], *z.shape[1:])
+
+            m0_random = make_tilde_diff(x0)
+            m1_random = make_tilde_diff(x1)
+            x0 = repeat_k(x0, cfg.K)
+            x1 = repeat_k(x1, cfg.K)
+
+            x0_t = destroy_block(x0, m0_random, 1, noise_std=1.0)
+            x1_t = destroy_block(x1, m1_random, 1, noise_std=1.0)
+
+            f_t0, _, _ = model.forward_logits(x0_t, x1)
+            f_t1, _, _ = model.forward_logits(x0, x1_t)
+            l_cf = bern_kl_to_uniform_from_logits(f_t0) + bern_kl_to_uniform_from_logits(f_t1)
+
+            # f_t, _, _ = model.forward_logits(x0_t, x1_t)
+            # l_cf = bern_kl_to_uniform_from_logits(f_t)
 
             l_total = l_base + float(cfg.lambda_kl) * l_cf #+ float(cfg.lambda_shortcut_inv) * l_inv
 
@@ -2447,6 +2607,16 @@ def select_best_lambda_kl_on_val( cfg0: Config,  *, seed: int, kl_vals: list, me
 
             test_stats = syn_out["stats"]
             test_by    = syn_out["by_source"]
+        elif method == "synib_randomdiff":
+            # run_synib should train + keep best checkpoint based on VAL fusion loss
+            syn_out = run_synib_randomdiff(cfg, train_loader, val_loader, test_loader, device, verbose=False)
+            # best val metric is in history (preferred) if available
+            val_hist = syn_out.get("history", {}).get("val", [])
+            best_val_loss = float(min([v["loss_fusion"] for v in val_hist])) if len(val_hist) else float("inf")
+            best_val_acc  = float(max([v["acc_fusion"] for v in val_hist])) if len(val_hist) else float("-inf")
+
+            test_stats = syn_out["stats"]
+            test_by    = syn_out["by_source"]
 
         elif method == "learned":
             model, hist = train_synib_learned(cfg, train_loader, device, val_loader=val_loader)
@@ -3157,6 +3327,144 @@ def main_sweep_nonoverlap_probs_synib_random( *, seeds: list = [0, 1, 2, 3, 4], 
     _save_results_json(results_path, db)
     print(f"[LOG] saved: {results_path} (total entries: {len(db['results'])})")
     return db
+def main_sweep_nonoverlap_probs_synib_randomdiff( *, seeds: list = [0, 1, 2, 3, 4], kl_vals: list = [1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3],):
+
+    cfg0 = Config()
+    cfg0.device = cfg0.device or ("cuda" if torch.cuda.is_available() else "cpu")
+    mkdirp(cfg0.out_dir)
+
+    results_path = os.path.join(cfg0.out_dir, "sweep_nonoverlap_probs_tunedkl_synib_random03diff_10-07-1_snr3_v3.json")
+    db = _load_results_json(results_path)
+    if "results" not in db:
+        db["results"] = {}
+
+    print_config(cfg0, "DEFAULT CONFIG (tuned kl: synib random M)")
+    print("[RUN] sweep non-overlap source probs + tune lambda_kl (val) for SynIB RM")
+    print(f"[LOG] append/dedupe json: {results_path}")
+    print(f"[SEEDS] {seeds}")
+    print("pu1 pu2 pred psyn | SynIB(tuned)Tot RM | SynIBSyn RM | status")
+    print("--------------------------------------------------------------------------------------------------------")
+
+    step = 0.05  # <--- smaller than 0.1
+    prior_u2 = 0.0
+    targets = [0.1, 0.2, 0.3, 0.4]  # prioritize these values for element index 2 (psyn)
+
+    prob_settings = (
+            [(round(u1, 3), prior_u2, t, round(1 - u1 - prior_u2 - t, 3))
+             for t in targets
+             for u1 in np.arange(0, 1 - prior_u2 - t + 1e-12, step)]
+            +
+            [(round(u1, 3), prior_u2, round(psyn, 3), round(1 - u1 - prior_u2 - psyn, 3))
+             for psyn in np.arange(0, 1 - prior_u2 + 1e-12, step)
+             for u1 in np.arange(0, 1 - prior_u2 - psyn + 1e-12, step)
+             if round(psyn, 3) not in targets]
+    )
+
+    def _mean_std(xs):
+        xs = np.asarray(xs, dtype=float)
+        return float(xs.mean()), float(xs.std())
+
+    def _acc_parts_from_by(by_source_dict):
+        # returns dict with u1,u2,red,syn (NaN if missing)
+        out = {"u1": float("nan"), "u2": float("nan"), "red": float("nan"), "syn": float("nan")}
+        for k in out.keys():
+            if k in by_source_dict and by_source_dict[k].get("n", 0) > 0:
+                out[k] = float(by_source_dict[k].get("acc", float("nan")))
+        return out
+
+    def _tune_one_method(cfg_base, *, seed, method):
+        """
+        method in {"synib","learned"}
+        returns dict:
+          best_kl, best_test_stats, best_test_by_source, table
+        """
+        return select_best_lambda_kl_on_val(
+            cfg_base,
+            seed=seed,
+            kl_vals=kl_vals,
+            method=method,
+            verbose=False,
+        )
+
+    for (pu1, pu2, psyn, pred) in prob_settings:
+        key = _prob_key(pu1, pu2, pred, psyn, 0.0)  # reuse your stable key function
+
+        if key in db["results"]:
+            summ = db["results"][key]["summary_meanstd"]
+            print(f"{pu1:.2f} {pu2:.2f} {pred:.2f} {psyn:.2f} | "
+                  f"{summ['synib_RM_tuned']['test_tot_mean']:.3f} | "
+                  f"{summ['synib_RM_tuned']['test_syn_mean']:.3f} | "
+                  f" SKIP(existing)")
+            continue
+
+        cfg_base = deepcopy(cfg0)
+        _set_nonoverlap_signal_probs(cfg_base, pu1, pu2, pred, psyn, pnone=0.0)
+
+        # store per-seed results
+        per_seed = {
+            "main": [],
+            "synib_tuned": [],
+            "synib_RM_tuned": [],
+            "learned_tuned": [],
+        }
+
+        for seed in seeds:
+            syn_best = _tune_one_method(cfg_base, seed=seed, method="synib_randomdiff")
+            syn_stats = syn_best["best_test_stats"]
+            syn_by = syn_best["best_test_by_source"]
+            per_seed["synib_RM_tuned"].append({
+                "seed": int(seed),
+                "best_lambda_kl": float(syn_best["best_lambda_kl"]),
+                "val_best_fusion_loss": float(syn_best["best_val_fusion_loss"]),
+                "test_acc_fusion": float(syn_stats["acc_fusion"]),
+                "test_acc_syn": float(_syn_acc_from_by_source(syn_by)),
+                "test_acc_parts": _acc_parts_from_by(syn_by),
+                "val_table": syn_best["table"],  # keep for reproducibility
+            })
+
+        # ---- aggregate mean/std across seeds ----
+        def _agg(block, field):
+            vals = [r[field] for r in per_seed[block]]
+            return _mean_std(vals)
+
+        def _agg_part(block, part):
+            vals = [r["test_acc_parts"][part] for r in per_seed[block]]
+            return _mean_std(vals)
+
+        summary = {"synib_RM_tuned": {}}
+        for block in ["synib_RM_tuned"]:
+            m_tot, s_tot = _agg(block, "test_acc_fusion")
+            m_syn, s_syn = _agg(block, "test_acc_syn")
+            summary[block]["test_tot_mean"] = m_tot
+            summary[block]["test_tot_std"] = s_tot
+            summary[block]["test_syn_mean"] = m_syn
+            summary[block]["test_syn_std"] = s_syn
+            summary[block]["parts_meanstd"] = {
+                p: {"mean": _agg_part(block, p)[0], "std": _agg_part(block, p)[1]}
+                for p in ["u1", "u2", "red", "syn"]
+            }
+
+        # one-line print (means only)
+        print(f"{pu1:.2f} {pu2:.2f} {pred:.2f} {psyn:.2f} | "
+              f"{summary['synib_RM_tuned']['test_tot_mean']:.3f} | "
+              f"{summary['synib_RM_tuned']['test_syn_mean']:.3f} | "
+              f"ADD")
+
+        # save
+        db["results"][key] = {
+            "timestamp": time.time(),
+            "probs": {"pu1": pu1, "pu2": pu2, "pred": pred, "psyn": psyn, "pnone": 0.0},
+            "seeds": list(seeds),
+            "kl_vals": list(kl_vals),
+            "cfg": getattr(cfg_base, "__dict__", {}),   # lightweight; or use asdict if cfg is dataclass
+            "per_seed": per_seed,
+            "summary_meanstd": summary,
+        }
+        _save_results_json(results_path, db)
+
+    _save_results_json(results_path, db)
+    print(f"[LOG] saved: {results_path} (total entries: {len(db['results'])})")
+    return db
 
 def main_sweep_nonoverlap_probs_main( *, seeds: list = [0, 1, 2, 3, 4], kl_vals: list = [1e-1, 1e0, 1e1, 1e2],):
     """
@@ -3312,7 +3620,7 @@ def main_sweep_nonoverlap_probs_mainmask( *, seeds: list = [0, 1, 2, 3, 4], kl_v
     cfg0.device = cfg0.device or ("cuda" if torch.cuda.is_available() else "cpu")
     mkdirp(cfg0.out_dir)
 
-    results_path = os.path.join(cfg0.out_dir, "sweep_nonoverlap_probs_mainmask03_snr3_v3_v2.json")
+    results_path = os.path.join(cfg0.out_dir, "sweep_nonoverlap_probs_mainmask03star_snr3_v3_v2.json")
     db = _load_results_json(results_path)
     if "results" not in db:
         db["results"] = {}
@@ -3654,6 +3962,20 @@ def run_synib_random(cfg: Config, train_loader: DataLoader, val_loader: DataLoad
         "by_source": syn_by,
         "ablations": ab,
     }
+def run_synib_randomdiff(cfg: Config, train_loader: DataLoader, val_loader: DataLoader, test_loader: DataLoader, device: str, *, verbose: bool = True):
+    synib_model, synib_hist = train_synib_randomdiff(cfg, train_loader, device, val_loader=val_loader)
+    synib_stats = eval_clean(synib_model, test_loader, device)
+    ab = eval_block_ablations(synib_model, test_loader, device, noise_std=1.0)
+    syn_by = eval_by_source(synib_model, test_loader, device)
+    if verbose:
+        print_by_source("SynIB", syn_by, min_n=10)
+    return {
+        "model": synib_model,
+        "stats": synib_stats,
+        "history": synib_hist,
+        "by_source": syn_by,
+        "ablations": ab,
+    }
 def run_once(cfg: Config, *, seed: int, dont_compute_main: bool = False, verbose: bool = True) -> Dict[str, Any]:
     """
     Orchestrates:
@@ -3924,6 +4246,11 @@ class Config:
     inv_destroy_unique: bool = False
     inv_destroy_red: bool = False
 
+    K = 10
+    p_min = 0.7
+    p_max = 1.0
+    cosine_s = 0.008
+
     # Device / outputs
     device: Optional[str] = None
     out_dir: str = "runs_refactor"
@@ -3954,7 +4281,8 @@ if __name__ == "__main__":
     # main_sweep_nonoverlap_probs_mainmask(seeds=[0, 1, 2])
     # main_sweep_nonoverlap_probs_synib(seeds=[0, 1, 2])
     # main_sweep_nonoverlap_probs_synib_random(seeds=[0, 1, 2])
-    main_sweep_nonoverlap_probs_synib_learned(seeds=[0, 1, 2])
+    main_sweep_nonoverlap_probs_synib_randomdiff(seeds=[0, 1, 2])
+    # main_sweep_nonoverlap_probs_synib_learned(seeds=[0, 1, 2])
 
     # main_sweep_nonoverlap_probs_tuned_kl(seeds=[0, 1, 2])
     # main_sweep_nonoverlap_probs()

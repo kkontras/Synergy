@@ -81,16 +81,16 @@ python show.py --config ./configs/AVE/release/res/MLB.json  --default_config ./c
 python show.py --config ./configs/AVE/release/res/MMPareto.json --default_config ./configs/AVE/default_config_ave_res.json --fold 0 --lr 0.001 --wd 0.0001 --alpha 0.5
 python show.py --config ./configs/AVE/release/res/ReconBoost.json --default_config ./configs/AVE/default_config_ave_res.json --fold 0 --lr 0.001 --wd 0.0001 --alpha 0.5 --recon_weight1 5 --recon_weight2 1 --recon_epochstages 1 --recon_ensemblestages 1
 python show.py --config ./configs/AVE/release/res/DnR.json --default_config ./configs/AVE/default_config_ave_res.json --fold 0 --lr 0.001 --wd 0.0001 --alpha 3.0 --kmepoch 5
-python show.py --config ./configs/AVE/release/res/MCR_pre.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0.01 --multil 0.01 --num_samples 32 --regby greedy --batch_size 32 --contr_coeff 1
+python show.py --config ./configs/AVE/release/res/MCR.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0.01 --multil 0.01 --num_samples 32 --regby greedy --batch_size 32 --contr_coeff 1 --pre
 
 #Ablations
-python show.py --config ./configs/AVE/release/res/MCR_pre.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0.01 --multil 0.01 --num_samples 32 --regby colab --batch_size 32 --contr_coeff 1
-python show.py --config ./configs/AVE/release/res/MCR_pre.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0.01 --multil 0.01 --num_samples 32 --regby ind --batch_size 32 --contr_coeff 1
+python show.py --config ./configs/AVE/release/res/MCR.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0.01 --multil 0.01 --num_samples 32 --regby colab --batch_size 32 --contr_coeff 1 --pre
+python show.py --config ./configs/AVE/release/res/MCR.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0.01 --multil 0.01 --num_samples 32 --regby ind --batch_size 32 --contr_coeff 1 --pre
 
-python show.py --config ./configs/AVE/release/res/MCR_pre.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0 --multil 0.01 --num_samples 32 --regby greedy --batch_size 32 --contr_coeff 0
-python show.py --config ./configs/AVE/release/res/MCR_pre.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0 --multil 0.01 --num_samples 32 --regby greedy --batch_size 32 --contr_coeff 1
-python show.py --config ./configs/AVE/release/res/MCR_pre.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0.01 --multil 0.01 --num_samples 32 --regby greedy --batch_size 32 --contr_coeff 0
-python show.py --config ./configs/AVE/release/res/MCR_pre.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0.01 --multil 0.01 --num_samples 32 --regby greedy --batch_size 32 --contr_coeff 1 --lib 1
+python show.py --config ./configs/AVE/release/res/MCR.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0 --multil 0.01 --num_samples 32 --regby greedy --batch_size 32 --contr_coeff 0 --pre
+python show.py --config ./configs/AVE/release/res/MCR.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0 --multil 0.01 --num_samples 32 --regby greedy --batch_size 32 --contr_coeff 1 --pre
+python show.py --config ./configs/AVE/release/res/MCR.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0.01 --multil 0.01 --num_samples 32 --regby greedy --batch_size 32 --contr_coeff 0 --pre
+python show.py --config ./configs/AVE/release/res/MCR.json --default_config ./configs/AVE/default_config_ave_res.json   --fold 0 --lr 0.0001 --wd 0.0001 --l 0.01 --multil 0.01 --num_samples 32 --regby greedy --batch_size 32 --contr_coeff 1 --lib 1 --pre
 
 python show.py --config ./configs/AVE/release/res/MCR_NoiseInput.json  --default_config ./configs/AVE/default_config_ave_res.json --fold 0 --lr 0.0001 --wd 0.0001 --l 0.01 --multil 0.01  --num_samples 16 --regby greedy --batch_size 16 --contr_coeff 1
 python show.py --config ./configs/AVE/release/res/MCR_NoiseInput.json  --default_config ./configs/AVE/default_config_ave_res.json --fold 0 --lr 0.0001 --wd 0.0001 --l 0.01 --multil 0.01  --num_samples 8 --regby greedy --batch_size 8 --contr_coeff 1

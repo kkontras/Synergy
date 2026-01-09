@@ -88,6 +88,15 @@ def print_search(config_path, default_config_path, args):
     if "beta_var" in args and args.beta_var is not None and args.beta_var != "None":
         m += "_betavar{}".format(args.beta_var)
 
+    if "perturb" in args and args.perturb is not None:
+        m += "_perturb{}".format(args.perturb)
+    if "perturb_fill" in args and args.perturb_fill is not None:
+        m += "_fill{}".format(args.perturb_fill)
+    if "perturb_pmin" in args and args.perturb_pmin is not None:
+        m += "_pmin{}".format(args.perturb_pmin)
+    if "perturb_pmax" in args and args.perturb_pmax is not None:
+        m += "_pmax{}".format(args.perturb_pmax)
+
     if "lr" in args and args.lr is not None:
         m += "_lr{}".format(args.lr)
     if "wd" in args and args.wd is not None:
@@ -95,7 +104,7 @@ def print_search(config_path, default_config_path, args):
     if "mm" in args and args.mm is not None:
         m += "_mm{}".format(args.mm)
     if "cls" in args and args.cls is not None:
-        m += "_{}".format(args.cls)
+        m += "_cls{}".format(args.cls)
     if "batch_size" in args and args.batch_size is not None:
         m += "_bs{}".format(args.batch_size)
     if "pre" in args and args.pre:
@@ -137,7 +146,6 @@ def print_search(config_path, default_config_path, args):
     #     message += Fore.GREEN + "Step: {}  ".format(val_metrics["step"])
     # if test_flag:
     #     message += Fore.RED + "Test  "
-    print(test_metric.keys())
     if "current_epoch" in val_metrics:
         message += Fore.GREEN + "Epoch: {}  ".format(val_metrics["current_epoch"])
     if "steps_no_improve" in val_metrics:
@@ -319,6 +327,10 @@ if __name__ == "__main__":
     parser.add_argument('--mm', required=False, help="Optimizer Momentum", default=None)
     parser.add_argument('--cls', required=False, help="CLS linear, nonlinear, highlynonlinear", default=None)
     parser.add_argument('--printing', required=False, help="print_results", default=True)
+    parser.add_argument('--perturb', required=False, help="Perturbation type of MCR")
+    parser.add_argument('--perturb_fill', required=False, help="Fill for mask type perturbation of MCR")
+    parser.add_argument('--perturb_pmax', required=False, help="Fill for mask type perturbation of MCR")
+    parser.add_argument('--perturb_pmin', required=False, help="Fill for mask type perturbation of MCR")
     parser.add_argument('--pre', action='store_true')
     parser.add_argument('--frozen', action='store_true')
     parser.add_argument('--tdqm_disable', action='store_true')

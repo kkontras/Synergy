@@ -19,9 +19,25 @@ fold=0
 #    python test_model_2mod.py --leak_prob $leak_prob --val_corr 0.0 --noise_std 0.1 --weight_decay 0 --l 1 #--verbose
 #done
 
-for l in 0.001 0.01 0.1 1.0 10; do
-  for fill in mean zero noise; do
-#      python train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l $l --lr 0.00001 --wd 0.0001 --cls mlp --perturb mask --perturb_fill $fill --contrcoeff $contrcoeff --num_samples 32
-      echo "--config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l $l --lr 0.00001 --wd 0.0001 --cls mlp --perturb mask --perturb_fill $fill --num_samples 32"
-  done
-done
+#for l in 0.001 0.01 0.1 1.0 10; do
+#  for fill in mean zero noise; do
+##      python train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l $l --lr 0.00001 --wd 0.0001 --cls mlp --perturb mask --perturb_fill $fill --contrcoeff $contrcoeff --num_samples 32
+#      echo "--config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l $l --lr 0.00001 --wd 0.0001 --cls mlp --perturb mask --perturb_fill $fill --num_samples 32"
+#  done
+#done
+
+
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 100 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16 --perturb None --perturb_fill token --perturb_pmin 0.5
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 10 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16 --perturb None --perturb_fill token --perturb_pmin 0.5
+python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16 --perturb None --perturb_fill token --perturb_pmin 0.5
+python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16 --perturb None --perturb_fill token --perturb_pmin 0.2
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16 --perturb None --perturb_fill token --perturb_pmin 0.5
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0.01 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16 --perturb None --perturb_fill token --perturb_pmin 0.5
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0.001 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16 --perturb None --perturb_fill token --perturb_pmin 0.5
+
+python show.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 100 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16  --perturb_fill token --perturb_pmin 0.5
+python show.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 10 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16  --perturb_fill token --perturb_pmin 0.5
+python show.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16  --perturb_fill token --perturb_pmin 0.5
+python show.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16  --perturb_fill token --perturb_pmin 0.5
+python show.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0.01 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16  --perturb_fill token --perturb_pmin 0.5
+python show.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0.001 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 16  --perturb_fill token --perturb_pmin 0.5

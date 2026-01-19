@@ -1658,9 +1658,7 @@ class QwenVL_ScienceQA_Unimodal_Text(nn.Module):
         if letters_list is None:
             raise ValueError("letters_list (x[4] or kwargs['letters']) is required for zero-shot parsing.")
 
-        print(hint_texts)
-        print(qa_texts)
-        device = hint_texts.device
+        device = self.enc_0.linear.weight.device
 
         prompts = self._build_prompts_with_choices(hint_texts, qa_texts, letters_list)
         prompts_with_image = [p for p in prompts]

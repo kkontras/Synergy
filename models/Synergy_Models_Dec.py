@@ -1186,12 +1186,10 @@ class QwenVL_ScienceQA_Unimodal_Image(nn.Module):
 
         self.backbone = get_peft_model(self.backbone, lora_cfg)
 
-    def _build_prompts_with_choices(self, hint_texts, qa_texts, letters_list):
+    def _build_prompts_with_choices(self, qa_texts, letters_list):
         prompts = []
-        for hint, qa, letters in zip(hint_texts, qa_texts, letters_list):
+        for qa, letters in zip(qa_texts, letters_list):
             parts = []
-            if hint is not None and hint.strip():
-                parts.append(hint.strip())
             if qa is not None and qa.strip():
                 parts.append(qa.strip())
 
@@ -1318,7 +1316,7 @@ class QwenVL_ScienceQA_Unimodal_Image(nn.Module):
 
         device = images.device
 
-        prompts = self._build_prompts_with_choices(None, qa_texts, letters_list)
+        prompts = self._build_prompts_with_choices(qa_texts, letters_list)
         prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
         image_list = [img for img in images]
 
@@ -1660,7 +1658,7 @@ class QwenVL_ScienceQA_Unimodal_Text(nn.Module):
         if letters_list is None:
             raise ValueError("letters_list (x[4] or kwargs['letters']) is required for zero-shot parsing.")
 
-        device = hint_texts.device
+        device = qa_texts.device
 
         prompts = self._build_prompts_with_choices(hint_texts, qa_texts, letters_list)
         prompts_with_image = [p for p in prompts]

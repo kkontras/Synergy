@@ -1555,7 +1555,6 @@ class QwenVL_ScienceQA_Unimodal_Text(nn.Module):
         outputs = self.backbone(
             input_ids=input_ids,
             attention_mask=attention_mask,
-            pixel_values=pixel_values,
             image_grid_thw=image_grid_thw,
             output_hidden_states=True,
         )
@@ -1673,13 +1672,11 @@ class QwenVL_ScienceQA_Unimodal_Text(nn.Module):
 
         input_ids = proc["input_ids"]
         attention_mask = proc["attention_mask"]
-        pixel_values = proc["pixel_values"]
         image_grid_thw = proc.get("image_grid_thw")
 
         hidden = self._encode(
             input_ids=input_ids,
             attention_mask=attention_mask,
-            pixel_values=pixel_values,
             image_grid_thw=image_grid_thw,
         )
 

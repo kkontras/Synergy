@@ -64,8 +64,8 @@ def print_search(config_path, default_config_path, args):
         m += "_pow{}".format(args.pow)
     if "nstep" in args and args.nstep is not None and args.nstep != "None":
         m += "_nstep{}".format(args.nstep)
-    if "contr_coeff" in args and args.contr_coeff is not None and args.contr_coeff != "None":
-        m += "_contrcoeff{}".format(args.contr_coeff)
+    if "contrcoeff" in args and args.contrcoeff is not None and args.contrcoeff != "None":
+        m += "_contrcoeff{}".format(args.contrcoeff)
     if "kde_coeff" in args and args.kde_coeff is not None and args.kde_coeff != "None":
         m += "_kde_coeff{}".format(args.kde_coeff)
     if "etube" in args and args.etube is not None and args.etube != "None":
@@ -171,6 +171,11 @@ def print_search(config_path, default_config_path, args):
         for i, v in test_metric["acc"].items():
             # if i == "combined":
                 message += Fore.MAGENTA + "Test_Acc_{}: {:.1f} ".format(i, v * 100)
+
+    if test_metric and "f1" in test_metric:
+        for i, v in test_metric["f1"].items():
+            # if i == "combined":
+                message += Fore.MAGENTA + "Test_F1_{}: {:.1f} ".format(i, v * 100)
 
     if test_metric and "ceu" in val_metrics:
         message += Fore.LIGHTGREEN_EX + "V_CEU_{}: {:.2f} ".format("S", val_metrics["ceu"]["combined"]["synergy"])
@@ -312,7 +317,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_samples', help="Number of samples for Gat")
     parser.add_argument('--pow', help="ShuffleGrad power")
     parser.add_argument('--nstep', help="ShuffleGrad nstep Reg-Dist-Sep")
-    parser.add_argument('--contr_coeff', help="ShuffleGrad Contrastive Coefficient")
+    parser.add_argument('--contrcoeff', help="ShuffleGrad Contrastive Coefficient")
     parser.add_argument('--kde_coeff', help="ShuffleGrad kde_coeff Coefficient")
     parser.add_argument('--etube', help="ShuffleGrad Etube")
     parser.add_argument('--temperature', help="ShuffleGrad Contrastive Temperature")

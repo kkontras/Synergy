@@ -293,7 +293,7 @@ class ScienceQA_Dataset(Dataset):
         #     build_qa_fn=build_question_text_with_letters,
         # )
 
-        print( f"[ScienceQA] length filter: kept {len(self.keep_indices)} / {len(self.text_lens)} ")
+        # print( f"[ScienceQA] length filter: kept {len(self.keep_indices)} / {len(self.text_lens)} ")
 
         self.train_tf = transforms.Compose([
             transforms.Resize((image_size, image_size)),

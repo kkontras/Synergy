@@ -67,7 +67,7 @@
         },
         "pretrainedEncoder": {
           "use": true,
-          "dir": "unimodal_audio_fold{}_lr0.001_wd0.0001_bs64.pth.tar"
+          "dir": "unimodal_audio_fold{}_lr0.001_wd0.0001_clsmlp_bs64.pth.tar"
         },
         "save_encoder": false
       },
@@ -83,7 +83,7 @@
         },
         "pretrainedEncoder": {
           "use": true,
-          "dir": "unimodal_video_fold{}_lr0.0001_wd0.0001_bs64.pth.tar"
+          "dir": "unimodal_video_fold{}_lr0.0001_wd0.0001_clsmlp_bs64.pth.tar"
         },
         "save_encoder": false
       },

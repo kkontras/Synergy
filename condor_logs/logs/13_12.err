@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 2217, in <module>
-    if cfg.train_method=="synib_mlearned":
-AttributeError: 'Config' object has no attribute 'train_method'. Did you mean: 'val_method'?

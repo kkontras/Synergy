@@ -27,7 +27,7 @@ from mydatasets.MSCOCO.MSCOCOLoader import *
 from mydatasets.CUB200.CUB200Loader import *
 from mydatasets.MMIMDB.MMIMDBLoader import *
 from mydatasets.ScienceQA.ScienceQA import *
-from mydatasets.ESNLI.ESNLIDataset import *
+# from mydatasets.ESNLI.ESNLIDataset import *
 
 import os
 import wandb

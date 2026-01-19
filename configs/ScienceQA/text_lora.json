@@ -51,7 +51,7 @@
       }
     },
     "load_ongoing": false,
-    "save_dir": "Uni_Text_LoRa_{}.pth.tar",g
+    "save_dir": "Uni_Text_LoRa_{}.pth.tar",
     "encoders": [
       {
         "model": "LinearHead_Qwen",

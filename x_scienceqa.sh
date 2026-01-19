@@ -101,114 +101,25 @@
 #  python train.py --config ./configs/CREMA_D/synergy/nov/synprom_generatorVAEOtherSide.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.001 --wd 0.0 --perturb gen --start_over --cls mlp --lib 1
 
 
-
-#!/bin/bash
-
-#!/bin/bash
-
-CONFIG_ONE="./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json"
-CONFIG_OTHER="./configs/CREMA_D/synergy/nov/synprom_generatorVAEOtherSide.json"
-DEFAULT_CONFIG="./configs/CREMA_D/default_config_cremad_res_syn.json"
-
-LRS=("0.001" "0.0003" "0.0001")
-WDS=("0.0" "1e-5" "1e-4")
-LIBS=("1.0" "0.1" "0.01")
-FOLDS=("0" "1" "2")
-
-
-echo "====== Generating Commands for OneSide (z2→z1) ======"
-for fold in "${FOLDS[@]}"; do
-for lr in "${LRS[@]}"; do
-for wd in "${WDS[@]}"; do
-for lib in "${LIBS[@]}"; do
-
-    echo "python train.py --config $CONFIG_ONE --default_config $DEFAULT_CONFIG --fold $fold --lr $lr --wd $wd --perturb gen --start_over --cls mlp --lib $lib"
-
-done
-done
-done
-done
-
-
-echo "====== Generating Commands for OtherSide (z1→z2) ======"
-for fold in "${FOLDS[@]}"; do
-for lr in "${LRS[@]}"; do
-for wd in "${WDS[@]}"; do
-for lib in "${LIBS[@]}"; do
-
-    echo "python train.py --config $CONFIG_OTHER --default_config $DEFAULT_CONFIG --fold $fold --lr $lr --wd $wd --perturb gen --start_over --cls mlp --lib $lib"
-
-done
-done
-done
-done
-
-#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/Balance_Final/AVE/res/unimodal_* /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Rmask/AVE
-
-#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold0_lr0.001_wd0.0001.pth.tar /esat/smcdata/users/kkontras/Rafael/trained_models
-#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold0_lr0.001_wd0.0001.pth.tar /esat/smcdata/users/kkontras/Rafael/trained_models
-#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/Balance_Final/CREMA-D/res/MCR_fold0_regbygreedy_l0.1_multil0.01_numsamples32_contrcoeff1_lr0.0001_wd0.0001_bs32_pre.pth.tar /esat/smcdata/users/kkontras/Rafael/trained_models
-#
-#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold1_lr0.001_wd0.0001.pth.tar /esat/smcdata/users/kkontras/Rafael/trained_models
-#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold1_lr0.001_wd0.0001.pth.tar /esat/smcdata/users/kkontras/Rafael/trained_models
-#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/Balance_Final/CREMA-D/res/MCR_fold1_regbygreedy_l0.1_multil0.01_numsamples32_contrcoeff1_lr0.0001_wd0.0001_bs32_pre.pth.tar /esat/smcdata/users/kkontras/Rafael/trained_models
-#
-#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold2_lr0.001_wd0.0001.pth.tar /esat/smcdata/users/kkontras/Rafael/trained_models
-#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold2_lr0.001_wd0.0001.pth.tar /esat/smcdata/users/kkontras/Rafael/trained_models
-#cp /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/Balance_Final/CREMA-D/res/MCR_fold2_regbygreedy_l0.1_multil0.01_numsamples32_contrcoeff1_lr0.0001_wd0.0001_bs32_pre.pth.tar /esat/smcdata/users/kkontras/Rafael/trained_models
-
-
-#--config ./configs/CREMA_D/synergy/nov/synprom_generatorVAE.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.001 --wd 0.0 --perturb gen --start_over --cls mlp --lib 1
-
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_Dir_SupRem.json  --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --pre --frozen --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --start_over
-
 python train.py --config ./configs/ScienceQA/synprom_ib_gen.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --start_over
 python train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --lr 0.0001 --wd 0.01
 python train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --lr 0.001 --wd 0.001
 python train.py --config ./configs/ScienceQA/synprom_lora_synib.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --lr 0.0001 --wd 0.01 --l 1
 python train.py --config ./configs/ScienceQA/synprom_lora_synib.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --l 1
 
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --perturb mask
-
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 1 --lr 0.00001 --wd 0.0001 --cls mlp --perturb mask --num_samples 32
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 0 --lr 0.00001 --wd 0.0001 --cls mlp --perturb mask
-
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 1 --lr 0.00001 --wd 0.0001 --cls mlp --batch_size 64
-
-python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
-
-
-scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA kkontras@mib.media.mit.edu:/scratch/kkontras/data
-scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Qwen3VL_LHead_fold0.pth.tar kkontras@mib.media.mit.edu:/scratch/kkontras/checkpoints/synergy/ScienceQA/
-scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_LoRaFT_fold0_lr0.0001_wd0.01.pth.tar kkontras@mib.media.mit.edu:/scratch/kkontras/checkpoints/synergy/ScienceQA/
-scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_IBInput2_fold0_lr0.0001_wd0.0001_cls_embedding.pt kkontras@mib.media.mit.edu:/scratch/kkontras/checkpoints/synergy/ScienceQA/
-
-
-scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Qwen3VL_LHead_fold0.pth.tar vsc35057@login-genius.hpc.kuleuven.be:/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/
-scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_IBInput2_fold0_lr0.0001_wd0.0001_cls_embedding.pt vsc35057@login-genius.hpc.kuleuven.be:/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/
-
 
 CUDA_VISIBLE_DEVICES=0 python train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 CUDA_VISIBLE_DEVICES=1 python train.py --config ./configs/ScienceQA/image_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 CUDA_VISIBLE_DEVICES=3 python train.py --config ./configs/ScienceQA/text_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
-
+CUDA_VISIBLE_DEVICES=0 python train.py --config ./configs/ScienceQA/synprom_lora_synibfaster.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --lr 0.0001 --wd 0.000001 --batch_size 2
 
 
 CUDA_VISIBLE_DEVICES=6 python train.py --config ./configs/ScienceQA/synprom_lora_synib.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --l 1
-CUDA_VISIBLE_DEVICES=6 --find_unused_parameters False python train.py --config ./configs/ScienceQA/synprom_lora_synib.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --l 1
 
-CUDA_VISIBLE_DEVICES=0 python\
-    train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
-
-CUDA_VISIBLE_DEVICES=2 python\
-    train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.001 --wd 0.01 --batch_size 8
-
-CUDA_VISIBLE_DEVICES=3 python\
-    --mixed_precision bf16 \
-    train.py --config ./configs/ScienceQA/synprom_lora_synibfaster.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.001 --wd 0.001 --l 0.1 --batch_size 8
-
-CUDA_VISIBLE_DEVICES=3 python\
-    train.py --config ./configs/ScienceQA/synprom_lora_synibfaster.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.001 --wd 0.001  --l 1 --batch_size 8
+CUDA_VISIBLE_DEVICES=0 python train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
+CUDA_VISIBLE_DEVICES=2 python train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.001 --wd 0.01 --batch_size 8
+CUDA_VISIBLE_DEVICES=3 python --mixed_precision bf16 train.py --config ./configs/ScienceQA/synprom_lora_synibfaster.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.001 --wd 0.001 --l 0.1 --batch_size 8
+CUDA_VISIBLE_DEVICES=3 python train.py --config ./configs/ScienceQA/synprom_lora_synibfaster.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.001 --wd 0.001  --l 1 --batch_size 8
 
 
 python show.py  --config ./configs/ScienceQA/synprom_lora_synibfaster.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --lr 0.0001 --wd 0.01   --l 1

@@ -1555,8 +1555,6 @@ class QwenVL_ScienceQA_Unimodal_Text(nn.Module):
         outputs = self.backbone(
             input_ids=input_ids,
             attention_mask=attention_mask,
-            pixel_values=pixel_values,
-            image_grid_thw=image_grid_thw,
             output_hidden_states=True,
         )
         return outputs.hidden_states[-1]  # (B, T, d)
@@ -1788,6 +1786,174 @@ class SynIB_QwenFaster(nn.Module):
 
         return m1_t, m2_t
 
+    def _learned_masks(self, m1, m2, px1, px2, **kwargs):
+        """
+        Learn per-token keep/mask gates on the subset indicated by m1/m2.
+
+        Returns:
+          m1_t, m2_t: bool [B,T] masks, where True means KEEP
+        """
+        label = kwargs["label"]  # [B]
+        proc = kwargs["proc"]  # dict with input_ids, attention_mask
+        debug = bool(kwargs.get("debug", True))
+        debug_every = int(kwargs.get("debug_every", 5))
+
+        pcfg = getattr(self, "perturb", {}) if hasattr(self, "perturb") else getattr(self.main.args, "perturb", {})
+        steps = int(pcfg.get("steps", 10))
+        lr = float(pcfg.get("lr", 1e-1))
+        tau = float(pcfg.get("tau", 1.0))
+        lsparse = float(pcfg.get("lsparse", 1.0))
+        hard = bool(pcfg.get("hard", True))
+        hard_thresh = float(pcfg.get("hard_thresh", 0.5))
+        noise_std = float(pcfg.get("noise_std", 1.0))
+        fill_mode = pcfg.get("fill", "noise")  # "noise"/"zeros"
+
+        input_ids = proc["input_ids"]
+        attn = proc["attention_mask"]
+        device = input_ids.device
+        B, T = input_ids.shape
+
+        def _pct(num, den):
+            den = float(den)
+            return 0.0 if den <= 0 else 100.0 * float(num) / den
+
+        if debug:
+            print(f"[learned_masks] B={B} T={T} steps={steps} lr={lr} tau={tau} lsparse={lsparse} "
+                  f"hard={hard} hard_thresh={hard_thresh} fill={fill_mode} noise_std={noise_std}")
+            if m1 is not None:
+                print(
+                    f"[learned_masks] m1 eligible: {int(m1.sum().item())} / {B * T} ({_pct(m1.sum().item(), B * T):.2f}%)")
+            if m2 is not None:
+                print(
+                    f"[learned_masks] m2 eligible: {int(m2.sum().item())} / {B * T} ({_pct(m2.sum().item(), B * T):.2f}%)")
+
+        # Freeze backbone + head while learning gates
+        req = [p.requires_grad for p in self.main.parameters()]
+        for p in self.main.parameters():
+            p.requires_grad_(False)
+
+        try:
+            with torch.no_grad():
+                lm = self.main.backbone.model.language_model
+                emb = lm.embed_tokens(input_ids)  # (B,T,D)
+
+            def make_eps_like(x):
+                if fill_mode == "zeros":
+                    return torch.zeros_like(x)
+                return torch.randn_like(x) * noise_std
+
+            def apply_gate(emb0, g_keep):
+                eps = make_eps_like(emb0)
+                return g_keep * emb0 + (1.0 - g_keep) * eps
+
+            def run_logits_from_embeds(emb_t):
+                hidden = self.main._forward_from_embeds(emb_t, attn)
+                h_cls = self.main._get_cls_token_repr(hidden, input_ids).to(self.main.enc_0.linear.weight.dtype)
+                logits = self.main.enc_0(h_cls)
+                return logits
+
+            # Optional: baseline CE on clean embeddings (for comparison)
+            if debug:
+                with torch.no_grad():
+                    logits_clean = run_logits_from_embeds(emb)
+                    ce_clean = float(F.cross_entropy(logits_clean, label).item())
+                    print(f"[learned_masks] clean CE: {ce_clean:.4f}")
+
+            def optimize_for(mask_eligible, name="m?"):
+                if mask_eligible is None or mask_eligible.sum() == 0:
+                    if debug:
+                        print(f"[learned_masks:{name}] no eligible tokens -> skip")
+                    return None
+
+                eligible = int(mask_eligible.sum().item())
+                grad_mask = mask_eligible.float()  # (B,T)
+
+                ell = torch.zeros((B, T), device=device, dtype=torch.float32, requires_grad=True)
+                opt = torch.optim.Adam([ell], lr=lr)
+
+                for i in range(steps):
+                    g = torch.sigmoid(ell / tau)  # (B,T) keep-prob
+                    g3 = g.unsqueeze(-1)  # (B,T,1)
+
+                    emb_t = apply_gate(emb, g3)
+                    logits_t = run_logits_from_embeds(emb_t)
+
+                    ce = F.cross_entropy(logits_t, label)
+                    sparsity = ((1.0 - g) * grad_mask).sum() / (grad_mask.sum() + 1e-6)  # mean mask rate over eligible
+                    obj = (-ce) + lsparse * sparsity
+
+                    opt.zero_grad(set_to_none=True)
+                    obj.backward()
+
+                    if ell.grad is not None:
+                        ell.grad.mul_(grad_mask)
+
+                    torch.nn.utils.clip_grad_norm_([ell], 1.0)
+                    opt.step()
+
+                    if debug and (i == 0 or i == steps - 1 or (debug_every > 0 and (i + 1) % debug_every == 0)):
+                        with torch.no_grad():
+                            # how many eligible tokens are currently being "kept" vs "masked"
+                            keep_frac = (g * grad_mask).sum() / (grad_mask.sum() + 1e-6)
+                            mask_frac = 1.0 - keep_frac
+                            ce_val = float(ce.item())
+                            obj_val = float(obj.item())
+                            sp_val = float(sparsity.item())
+                            print(f"[learned_masks:{name}] step {i + 1:02d}/{steps} "
+                                  f"CE={ce_val:.4f} obj={obj_val:.4f} "
+                                  f"mask%={100.0 * mask_frac.item():.2f} keep%={100.0 * keep_frac.item():.2f} "
+                                  f"sparsity={sp_val:.4f}")
+
+                            if torch.isnan(g).any() or torch.isnan(ell).any():
+                                print(f"[learned_masks:{name}] WARNING: NaNs detected (g or ell)")
+
+                g_final = torch.sigmoid(ell / tau).detach()  # (B,T)
+                if hard:
+                    keep = (g_final >= hard_thresh)
+                else:
+                    keep = (g_final > 0.5)
+
+                keep_full = torch.ones((B, T), device=device, dtype=torch.bool)
+                keep_full[mask_eligible] = keep[mask_eligible]
+
+                if debug:
+                    with torch.no_grad():
+                        kept_eligible = int(keep_full[mask_eligible].sum().item())
+                        masked_eligible = eligible - kept_eligible
+                        print(f"[learned_masks:{name}] final eligible={eligible} "
+                              f"kept={kept_eligible} ({_pct(kept_eligible, eligible):.2f}%) "
+                              f"masked={masked_eligible} ({_pct(masked_eligible, eligible):.2f}%) "
+                              f"overall_masked={_pct(masked_eligible, B * T):.2f}% of all tokens")
+
+                return keep_full
+
+            m1_t = optimize_for(m1, name="m1") if px1 else None
+            m2_t = optimize_for(m2, name="m2") if px2 else None
+
+            if m1_t is None:
+                m1_t = torch.ones_like(m1, dtype=torch.bool)
+            if m2_t is None:
+                m2_t = torch.ones_like(m2, dtype=torch.bool)
+
+            if debug:
+                # quick check: only eligible positions should differ from True
+                if m1 is not None:
+                    changed_outside = (~m1) & (~m1_t)  # would be bad: masking outside eligible
+                    if changed_outside.any():
+                        print(
+                            f"[learned_masks] WARNING: m1_t masked outside eligible: {int(changed_outside.sum().item())}")
+                if m2 is not None:
+                    changed_outside = (~m2) & (~m2_t)
+                    if changed_outside.any():
+                        print(
+                            f"[learned_masks] WARNING: m2_t masked outside eligible: {int(changed_outside.sum().item())}")
+
+            return m1_t, m2_t
+
+        finally:
+            for p, r in zip(self.main.parameters(), req):
+                p.requires_grad_(r)
+
     def _kl_pass(self, base_output, px1, px2, **kwargs):
         if px1:
             feat = base_output["features"]["mask0"]
@@ -1884,6 +2050,35 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
         self._setup_trainables()
 
         self.synib = SynIB_QwenFaster(args, [], self)
+
+        self._precompute_mask_token_ids()
+
+    def _precompute_mask_token_ids(self):
+        tok = self.processor.tokenizer
+
+        # tokens that indicate vision placeholders
+        vision_candidates = [
+            "<|vision_start|>", "<|vision_end|>", "<|image_pad|>", "<|video_pad|>",
+            "<image>", "<img>", "<|image|>"
+        ]
+        vision_ids = set()
+        for s in vision_candidates:
+            tid = tok.convert_tokens_to_ids(s)
+            if tid is not None and tid != tok.unk_token_id:
+                vision_ids.add(int(tid))
+
+        # also include the model's configured image token string (might be multi-token)
+        for tid in tok(self.image_token_str, add_special_tokens=False).input_ids:
+            vision_ids.add(int(tid))
+
+        self._vision_ids = torch.tensor(sorted(vision_ids), dtype=torch.long)  # keep on CPU; move later
+
+        # tokenize separators used by your prompt builder
+        self._nl_id = tok("\n", add_special_tokens=False).input_ids
+        self._nlnl_id = tok("\n\n", add_special_tokens=False).input_ids
+
+        # tokenize "<image>\n" prefix in token space (whatever your image_token_str is)
+        self._image_prefix_ids = tok(self.image_token_str + "\n", add_special_tokens=False).input_ids
 
     def _setup_trainables(self):
         # Freeze everything
@@ -2212,7 +2407,90 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
 
         return hint_mask, image_mask
 
-    def _compute_logits_synib_from_proc(self, x, *, label=None, **kwargs ):
+    def get_masks_from_input_ids_only(self, proc, hint_texts):
+        """
+        Returns:
+          hint_mask:  (B,T) tokens belonging to hint span
+          image_mask: (B,T) tokens belonging to vision placeholders
+        No extra tokenization.
+        """
+        input_ids = proc["input_ids"]
+        device = input_ids.device
+        B, T = input_ids.shape
+
+        # --- image mask: vectorized ---
+        if getattr(self, "_vision_ids", None) is None:
+            self._precompute_mask_token_ids()
+
+        vision_ids_t = self._vision_ids.to(device=device, dtype=input_ids.dtype)
+        image_mask = torch.isin(input_ids, vision_ids_t)
+
+        # --- hint mask ---
+        # If hint is empty -> all false for that row
+        hint_clean = [("" if h is None else str(h).strip()) for h in hint_texts]
+        has_hint = torch.tensor([len(h) > 0 for h in hint_clean], device=device)  # (B,)
+
+        hint_mask = torch.zeros((B, T), dtype=torch.bool, device=device)
+
+        # We assume: prefix is "<image_token>\n" then hint tokens until the first "\n\n".
+        prefix_ids = torch.tensor(self._image_prefix_ids, device=device, dtype=input_ids.dtype)
+        sep_ids = torch.tensor(self._nlnl_id, device=device, dtype=input_ids.dtype)
+
+        # Helper: find first occurrence of a short pattern in each row (small, cheap loop over B)
+        # B is small vs T, and pattern lengths are tiny; this is *way* cheaper than tokenizing strings again.
+        for b in range(B):
+            if not has_hint[b]:
+                continue
+
+            row = input_ids[b]
+
+            # find where the prefix ends (we expect it at the beginning, but be robust)
+            # match prefix_ids at some position; usually 0
+            start = 0
+            # (optional robustness: verify prefix match)
+            if len(prefix_ids) > 0 and not torch.equal(row[: len(prefix_ids)], prefix_ids):
+                # if not found at beginning, try to find it once
+                found = False
+                for i in range(0, T - len(prefix_ids) + 1):
+                    if torch.equal(row[i:i + len(prefix_ids)], prefix_ids):
+                        start = i + len(prefix_ids)
+                        found = True
+                        break
+                if not found:
+                    continue
+            else:
+                start = len(prefix_ids)
+
+            # find first separator "\n\n" after start
+            end = None
+            for i in range(start, T - len(sep_ids) + 1):
+                if torch.equal(row[i:i + len(sep_ids)], sep_ids):
+                    end = i
+                    break
+
+            # if no separator found, fall back: mark until padding (attention_mask==0) if exists
+            if end is None:
+                attn = proc.get("attention_mask", None)
+                if attn is not None:
+                    end = int(attn[b].sum().item())
+                else:
+                    end = T
+
+            if end > start:
+                hint_mask[b, start:end] = True
+
+        return hint_mask, image_mask
+
+    def _forward_from_embeds(self, inputs_embeds, attention_mask):
+        outputs = self.backbone(
+            inputs_embeds=inputs_embeds,
+            attention_mask=attention_mask,
+            output_hidden_states=True,
+        )
+        hidden = outputs.hidden_states[-1]
+        return hidden
+
+    def _compute_logits_synib_from_proc(self, x, **kwargs ):
         hint_texts = x[0]
         qa_texts = x[1]
         images = x[2]
@@ -2237,8 +2515,13 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
 
         proc = {k: v.to(device) for k, v in proc.items()}
 
+
         m1, m2 = self.get_masks_only_B0(processor=self.processor, proc=proc, prompts_with_image=prompts_with_image, hint_texts=hint_texts, image_token_str=self.image_token_str)
-        m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)
+
+        if self.args.get("perturb", {}).get("type", "rand") == "rand":
+            m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)
+        elif self.args.get("perturb", {}).get("type", "rand") == "learned":
+            m1t, m2t = self.synib._learned_masks(m1, m2, True, True, proc=proc, **kwargs)
         att_mask_0, att_mask_1 = self.apply_custom_masks(proc["attention_mask"], m1, m2, m1t, m2t)
 
         if self.args.get("run_multiple_forwards", False):
@@ -2273,8 +2556,8 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
         h_cls, featcls_0, featcls_1 = torch.chunk(h_cls_combined, chunks=3, dim=0)
 
         losses = {}
-        if label is not None:
-            losses["ce_head"] = self._mc_ce_loss(head_logits, label)
+        if "label" in kwargs and kwargs["label"] is not None:
+            losses["ce_head"] = self._mc_ce_loss(head_logits, kwargs["label"])
 
         preds = {"combined": head_logits, "mask0":head_logits_0, "mask1":head_logits_1}
         features = {"h_cls": h_cls, "mask0":featcls_0, "mask1":featcls_1}

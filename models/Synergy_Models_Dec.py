@@ -1550,11 +1550,12 @@ class QwenVL_ScienceQA_Unimodal_Text(nn.Module):
     # ============================================================
     #  Encoding / readout
     # ============================================================
-    def _encode(self, input_ids, attention_mask, pixel_values, image_grid_thw=None):
+    def _encode(self, input_ids, attention_mask, pixel_values=None, image_grid_thw=None):
         # IMPORTANT: no torch.no_grad() here; we need grads at least to CLS row + head
         outputs = self.backbone(
             input_ids=input_ids,
             attention_mask=attention_mask,
+            pixel_values=pixel_values,
             image_grid_thw=image_grid_thw,
             output_hidden_states=True,
         )

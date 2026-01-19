@@ -1662,11 +1662,9 @@ class QwenVL_ScienceQA_Unimodal_Text(nn.Module):
 
         prompts = self._build_prompts_with_choices(hint_texts, qa_texts, letters_list)
         prompts_with_image = [p for p in prompts]
-        image_list = []
 
         proc = self.processor(
             text=prompts_with_image,
-            images=image_list,
             padding=True,
             truncation=True,
             return_tensors="pt",

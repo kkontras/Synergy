@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import argparse
 
 sys.exc_info()
-os.chdir('/users/sista/kkontras/Documents/Balance/')
+# os.chdir('/users/sista/kkontras/Documents/Balance/')
 
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import ConfusionMatrixDisplay
@@ -92,7 +92,6 @@ def main(config_path, default_config_path, args):
         importer.config.model.args.bias_infusion.l_diffsq = float(args.l_diffsq)
         m += "_ldiffsq{}".format(args.l_diffsq)
 
-    "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2023_data/SyntheticGaussian_models/uni0__tanhmodetrial5_numclasses2_ratio1_bs64.pth.tar"
     if "lib" in args and args.lib is not None:
         importer.config.model.args.bias_infusion.lib = float(args.lib)
         m += "_lib{}".format(args.lib)
@@ -184,6 +183,11 @@ def main(config_path, default_config_path, args):
                 m_enc += "_basebeta{}".format(args.base_beta)
                 m_enc += "_betavar{}".format(args.beta_var)
                 importer.config.model.encoders[i].pretrainedEncoder.dir = importer.config.model.encoders[i].pretrainedEncoder.dir.format(m_enc)
+
+    if "ironic_rate" in args and args.ironic_rate is not None:
+        importer.config.dataset.ironic_rate = float(args.ironic_rate)
+        m += "_ir{}".format(float(args.ironic_rate))
+
     if "optim_method" in args and args.optim_method is not None:
         importer.config.model.args.bias_infusion.optim_method = args.optim_method
         m += "_optim{}".format(args.optim_method)
@@ -197,7 +201,7 @@ def main(config_path, default_config_path, args):
         enc_m += "_wd{}".format(args.wd)
     if "cls" in args and args.cls is not None:
         importer.config.model.args.cls_type = args.cls
-        m += "_{}".format(args.cls)
+        m += "_cls{}".format(args.cls)
     if "batch_size" in args and args.batch_size is not None:
         importer.config.training_params.batch_size = int(args.batch_size)
         m += "_bs{}".format(args.batch_size)
@@ -255,8 +259,8 @@ def main(config_path, default_config_path, args):
     # total_results[importer.config.dataset.dataloader_class][config_path.split("/")[-1].split(".")[0]][args.fold] = test_results
 
     # save result in pickle
-    with open('./game_conf_matrix.pkl', 'wb') as f:
-        pickle.dump(total_results, f)
+    # with open('./game_conf_matrix.pkl', 'wb') as f:
+    #     pickle.dump(total_results, f)
 
 
 parser = argparse.ArgumentParser(description="My Command Line Program")
@@ -297,6 +301,7 @@ parser.add_argument('--ilr_g', help="Initial Learning Rate Video")
 parser.add_argument('--mmcosine_scaling', help="mmcosine_scaling")
 parser.add_argument('--ending_epoch', help="Ending epoch")
 parser.add_argument('--load_ongoing', help="Ending epoch")
+parser.add_argument('--ironic_rate', help="Perturbation type of MCR")
 parser.add_argument('--commonlayers', help="Fusion with Conformer Layers")
 parser.add_argument('--recon_weight1', help="ReconBoost Parameters")
 parser.add_argument('--recon_weight2', help="ReconBoost Parameters")

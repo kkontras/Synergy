@@ -53,6 +53,6 @@
     "data_roots": "/scratch/kkontras/ScienceQA"
   },
   "model": {
-    "save_base_dir": "/scratch/kkontras/checkpoints/synergy/ScienceQA"
+    "save_base_dir": "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2"
   }
 }

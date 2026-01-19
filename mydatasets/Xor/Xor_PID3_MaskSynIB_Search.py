@@ -52,6 +52,27 @@ from copy import deepcopy
 from typing import Dict, Any, Optional, Set, List, Tuple, Literal
 import json
 import time
+import numpy as np
+from copy import deepcopy
+
+import os
+import math
+from copy import deepcopy
+
+import numpy as np
+
+MASK_NOISE = 0
+MASK_UNIQUE = 1
+MASK_RED = 2
+MASK_SYN = 3
+# DESTROY_MASK = [MASK_NOISE, MASK_UNIQUE_1, MASK_RED, MASK_SYN]
+DESTROY_MASK = [MASK_SYN]
+INV_DESTROY_MASK = [MASK_RED, MASK_UNIQUE]
+Method = Literal["kl_uniform_fusion", "flip_fusion", "fusion_more_than_unimodal"]
+
+_SOURCES = ("u1", "u2", "red", "syn")
+_SRC2IDX = {s: i for i, s in enumerate(_SOURCES)}
+
 
 def mkdirp(path: str) -> None:
     os.makedirs(path, exist_ok=True)
@@ -78,15 +99,6 @@ def entropy_from_logits_binary(logits: torch.Tensor) -> torch.Tensor:
     """Binary entropy H(Bern(sigmoid(logits))) averaged over batch."""
     p = torch.sigmoid(logits).clamp(1e-6, 1 - 1e-6)
     return (-(p * torch.log(p) + (1 - p) * torch.log(1 - p))).mean()
-
-MASK_NOISE = 0
-MASK_UNIQUE = 1
-MASK_RED = 2
-MASK_SYN = 3
-# DESTROY_MASK = [MASK_NOISE, MASK_UNIQUE_1, MASK_RED, MASK_SYN]
-DESTROY_MASK = [MASK_SYN]
-INV_DESTROY_MASK = [MASK_RED, MASK_UNIQUE]
-
 def _block_sizes(dim: int, frac_unique: float, frac_red: float, frac_syn: float) -> Tuple[int, int, int, int]:
     u = int(round(dim * frac_unique))
     r = int(round(dim * frac_red))
@@ -101,7 +113,6 @@ def _block_sizes(dim: int, frac_unique: float, frac_red: float, frac_syn: float)
             take = min(u, overflow); u -= take; overflow -= take
     noise = dim - (u + r + s)
     return u, r, s, noise
-
 def _choose_blocks(dim: int, u: int, r: int, s: int, *, rng: torch.Generator, randomize: bool) -> Dict[int, torch.Tensor]:
     if (u + r + s) > dim:
         raise ValueError("Block sizes exceed dim.")
@@ -117,10 +128,6 @@ def _choose_blocks(dim: int, u: int, r: int, s: int, *, rng: torch.Generator, ra
         idx_s = torch.arange(u+r, u+r+s)
         idx_n = torch.arange(u+r+s, dim)
     return {MASK_UNIQUE: idx_u, MASK_RED: idx_r, MASK_SYN: idx_s, MASK_NOISE: idx_n}
-
-
-_SOURCES = ("u1", "u2", "red", "syn")
-_SRC2IDX = {s: i for i, s in enumerate(_SOURCES)}
 def _parse_subset_key(key: str) -> Set[str]:
     key = key.strip().lower()
     if key in ("none", ""):
@@ -386,11 +393,8 @@ class FusionModel(nn.Module):
         h0 = self.enc0(x0)
         h1 = self.enc1(x1)
 
-        h0 = self.dropout(h0)
-        h1 = self.dropout(h1)
-
-        u0 = self.score0(h0)  # unimodal logit
-        u1 = self.score1(h1)  # unimodal logit
+        u0 = self.score0(h0.detach())  # unimodal logit
+        u1 = self.score1(h1.detach())  # unimodal logit
 
         z = torch.cat([h0, h1], dim=-1)
         f = self.fuse(z)  # fusion logit
@@ -1190,7 +1194,6 @@ def train_synib_randomdiff( cfg, train_loader: DataLoader, device: str, val_load
 
 
 
-Method = Literal["kl_uniform_fusion", "flip_fusion", "fusion_more_than_unimodal"]
 def _bern_kl(p: torch.Tensor, q: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
     """KL(Bern(p) || Bern(q)), elementwise then mean."""
     p = p.clamp(eps, 1 - eps)
@@ -1267,7 +1270,7 @@ def get_learned_destroy_mask( model: torch.nn.Module, x0: torch.Tensor, x1: torc
 
         raise ValueError(f"Unknown method: {method}")
 
-    def _learn_one(which: str, methods: str) -> torch.Tensor:
+    def _learn_one(which: str, method: str) -> torch.Tensor:
         d = d0 if which == "x0" else d1
         ell = torch.zeros(d, device=device, requires_grad=True)
         opt = torch.optim.Adam([ell], lr=lr)
@@ -1310,8 +1313,133 @@ def get_learned_destroy_mask( model: torch.nn.Module, x0: torch.Tensor, x1: torc
                     if stall >= patience:
                         break
                 prev_g = g_now.clone()
-            with torch.no_grad():
                 lam = max(0.0, lam + eta_lam * (sparsity.item() - s_target))
+
+        return torch.sigmoid(ell / float(tau)).detach()
+
+    g0 = _learn_one("x0", "fusion_more_than_unimodal")
+    g1 = _learn_one("x1", "fusion_more_than_unimodal")
+
+    g0_uni = _learn_one("x0", "unimodal")
+    g1_uni = _learn_one("x1", "unimodal")
+
+    if hard:
+        thr = float(hard_thresh)
+        g0 = (g0 > thr).float()
+        g1 = (g1 > thr).float()
+        g0_uni = (g0_uni > thr).float()
+        g1_uni = (g1_uni > thr).float()
+
+    return {"g0": g0, "g1": g1, "g0_uni": g0_uni, "g1_uni": g1_uni}
+def get_learned_destroy_unimask( model: torch.nn.Module, x0: torch.Tensor, x1: torch.Tensor,method: Method, device: str, *, steps: int = 80, lr: float = 5e-2,  tau: float = 1.0,  noise_std: float = 1.0,  lam_sparsity: float = 1e-2,  alpha_unimodal: float = 1.0,  hard: bool = False,  hard_thresh: float = 0.5,) -> Dict[str, torch.Tensor]:
+    """
+    Sequential mask learning:
+      1) learn g0 while only x0 is destroyed (x1 clean) -> unimodal penalty uses u0 only
+      2) learn g1 while only x1 is destroyed (x0 clean) -> unimodal penalty uses u1 only
+    """
+    model = model.to(device)
+    model.eval()
+    _freeze_model(model)
+
+    x0 = x0.to(device)
+    x1 = x1.to(device)
+    B, d0 = x0.shape
+    _, d1 = x1.shape
+
+    with torch.no_grad():
+        f_clean, u0_clean, u1_clean = model.forward_logits(x0, x1)
+        p_f_clean = torch.sigmoid(f_clean).view(-1)
+        p_u0_clean = torch.sigmoid(u0_clean).view(-1)
+        p_u1_clean = torch.sigmoid(u1_clean).view(-1)
+
+    def _apply_destroy(x: torch.Tensor, g_row: torch.Tensor) -> torch.Tensor:
+        ns = float(noise_std) if noise_std is not None else 1.0
+        eps = torch.randn_like(x) * ns
+        return (1.0 - g_row) * x + g_row * eps
+
+    def _obj_one(
+        method,
+        which: str,                 # "x0" or "x1"
+        p_f_t: torch.Tensor,        # [B]
+        p_u_t: torch.Tensor,        # [B] (corresponding unimodal only)
+        sparsity: torch.Tensor,     # scalar
+        lam_sparsity
+    ) -> torch.Tensor:
+        if method == "kl_uniform_fusion":
+            return _bern_kl_to_uniform(p_f_t) + float(lam_sparsity) * sparsity
+
+        if method == "flip_fusion":
+            div = _bern_kl(p_f_clean, p_f_t)
+            return -div + float(lam_sparsity) * sparsity
+
+        if method == "fusion_more_than_unimodal":
+            div_f = _bern_kl(p_f_clean, p_f_t)
+
+            if which == "x0":
+                div_u = _bern_kl(p_u0_clean, p_u_t)
+            else:
+                div_u = _bern_kl(p_u1_clean, p_u_t)
+
+            score = div_f - float(alpha_unimodal) * div_u
+            return -score + float(lam_sparsity) * sparsity
+
+        if method == "unimodal":
+            if which == "x0":
+                div_u =  _bern_kl_to_uniform(p_u_t)
+                # div_u = _bern_kl(p_u0_clean, p_u_t)
+            else:
+                div_u =  _bern_kl_to_uniform(p_u_t)
+                # div_u = _bern_kl(p_u1_clean, p_u_t)
+
+            score = div_u
+            return -score + float(lam_sparsity) * sparsity
+
+        raise ValueError(f"Unknown method: {method}")
+
+    def _learn_one(which: str, method: str) -> torch.Tensor:
+        d = d0 if which == "x0" else d1
+        ell = torch.rand((B,d), device=device, requires_grad=True)
+        opt = torch.optim.Adam([ell], lr=lr)
+        sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=steps, eta_min=lr * 0.1)
+        patience = 10
+        small_change = 1e-4
+        prev_g = None
+        lam = 0.1
+        # eta_lam = 0.02  # 0.01–0.05 works well
+        # s_target = 0.20  # choose desired sparsity
+        # lam = eta_lam
+
+        for _ in range(int(steps)):
+            g = torch.sigmoid(ell / float(tau)).view(B, d)  # [1,d]
+            if which == "x0":
+                x0_t, x1_t = _apply_destroy(x0, g), x1
+            else:
+                x0_t, x1_t = x0, _apply_destroy(x1, g)
+
+            f_t, u0_t, u1_t = model.forward_logits(x0_t, x1_t)
+            p_f_t = torch.sigmoid(f_t).view(-1)
+
+            # only the corresponding unimodal
+            p_u_t = torch.sigmoid(u0_t).view(-1) if which == "x0" else torch.sigmoid(u1_t).view(-1)
+
+            sparsity = g.mean()
+            obj = _obj_one(method=method, which=which, p_f_t=p_f_t, p_u_t=p_u_t, sparsity=sparsity, lam_sparsity=lam)
+
+            opt.zero_grad(set_to_none=True)
+            obj.backward()
+            torch.nn.utils.clip_grad_norm_([ell], 1.0)
+            opt.step()
+            sched.step()
+
+            with torch.no_grad():
+                g_now = torch.sigmoid(ell / tau)
+                if prev_g is not None:
+                    dg = (g_now - prev_g).abs().mean().item()
+                    stall = stall + 1 if dg < small_change else 0
+                    if stall >= patience:
+                        break
+                prev_g = g_now.clone()
+                # lam = max(0.0, lam + eta_lam * (sparsity.item() - s_target))
 
         return torch.sigmoid(ell / float(tau)).detach()
 
@@ -1396,7 +1524,7 @@ def _eval_epoch_synib_learned(    model: "FusionModel",    loader: DataLoader,  
         model.eval()
         try:
             with torch.enable_grad():
-                masks = get_learned_destroy_mask(
+                masks = get_learned_destroy_unimask(
                     model,
                     x0.detach(),
                     x1.detach(),
@@ -1416,8 +1544,8 @@ def _eval_epoch_synib_learned(    model: "FusionModel",    loader: DataLoader,  
                 model.train()
             _restore_model_params(model, req)
 
-        g0 = masks["g0"].detach()
-        g1 = masks["g1"].detach()
+        g0 = masks["g0_uni"].detach()
+        g1 = masks["g1_uni"].detach()
 
         x0_t = _apply_learned_destroy(x0, g0, noise_std=getattr(cfg, "learned_mask_noise_std", 1.0))
         x1_t = _apply_learned_destroy(x1, g1, noise_std=getattr(cfg, "learned_mask_noise_std", 1.0))
@@ -1535,9 +1663,10 @@ def train_synib_learned( cfg, train_loader: DataLoader, device: str, val_loader:
             req = _freeze_model_params(model)
             was_training = model.training
             model.eval()
+
             try:
                 with torch.enable_grad():  # robust even if caller wraps in no_grad
-                    masks = get_learned_destroy_mask(
+                    masks = get_learned_destroy_unimask(
                         model,
                         x0.detach(),
                         x1.detach(),
@@ -1556,6 +1685,7 @@ def train_synib_learned( cfg, train_loader: DataLoader, device: str, val_loader:
                 if was_training:
                     model.train()
                 _restore_model_params(model, req)
+
 
             g0 = masks["g0"].detach()
             g1 = masks["g1"].detach()
@@ -1604,19 +1734,19 @@ def train_synib_learned( cfg, train_loader: DataLoader, device: str, val_loader:
                 nb += 1
 
             # ---- counterfactual: destroy learned mask => fusion uncertainty ----
-            x0_t = _apply_learned_destroy(x0, g0, noise_std=getattr(cfg, "learned_mask_noise_std", 1.0))
-            x1_t = _apply_learned_destroy(x1, g1, noise_std=getattr(cfg, "learned_mask_noise_std", 1.0))
-            x0_t_uni = _apply_learned_destroy(x0, g0_uni, noise_std=getattr(cfg, "learned_mask_noise_std", 1.0))
-            x1_t_uni = _apply_learned_destroy(x1, g1_uni, noise_std=getattr(cfg, "learned_mask_noise_std", 1.0))
+            x0_t = _apply_learned_destroy(x0, ~g0_uni.bool(), noise_std=getattr(cfg, "learned_mask_noise_std", 1.0))
+            x1_t = _apply_learned_destroy(x1, ~g0_uni.bool(), noise_std=getattr(cfg, "learned_mask_noise_std", 1.0))
+            # x0_t_uni = _apply_learned_destroy(x0, g0_uni, noise_std=getattr(cfg, "learned_mask_noise_std", 1.0))
+            # x1_t_uni = _apply_learned_destroy(x1, g1_uni, noise_std=getattr(cfg, "learned_mask_noise_std", 1.0))
 
-            f_t0_uni = model.forward_secondfusion(x0_t_uni, x1_t_uni)
-            lf_uni = F.binary_cross_entropy_with_logits(f_t0_uni, y)
+            # f_t0_uni = model.forward_secondfusion(x0_t_uni, x1_t_uni)
+            # lf_uni = F.binary_cross_entropy_with_logits(f_t0_uni, y)
 
 
             f_t0, _, _ = model.forward_logits(x0_t, x1)
             f_t1, _, _ = model.forward_logits(x0, x1_t)
             l_cf = bern_kl_to_uniform_from_logits(f_t0) + bern_kl_to_uniform_from_logits(f_t1)
-            l_total = l_base + float(cfg.lambda_kl) * l_cf + lf_uni
+            l_total = l_base + float(cfg.lambda_kl) * l_cf
 
             opt.zero_grad()
             l_total.backward()
@@ -1631,7 +1761,7 @@ def train_synib_learned( cfg, train_loader: DataLoader, device: str, val_loader:
             sum_l_u0 += float(lu0.item()) * bs
             sum_l_u1 += float(lu1.item()) * bs
             sum_l_cf += float(l_cf.item()) * bs
-            sum_lf_uni += float(lf_uni.item()) * bs
+            # sum_lf_uni += float(lf_uni.item()) * bs
             sum_l_total += float(l_total.item()) * bs
 
             subset_syn_flag = (b["mask0"]==MASK_SYN).any(dim=1)
@@ -2120,68 +2250,6 @@ def main_sweep_lambda_kl_learned():
 
     sweep_plot = _plot_acc_vs_kl(cfg0.out_dir, kl_vals, main_total, main_syn, learned_total, learned_syn)
     print(f"[SAVED] {sweep_plot}")
-
-def _plot_acc_vs_kl_three(
-    out_dir: str,
-    kl_vals: list,
-    main_total: list, main_syn: list,
-    synib_total: list, synib_syn: list,
-    learned_total: list, learned_syn: list,
-    *,
-    fname: str = "sweep_acc_vs_kl_three.png",
-):
-    """
-    One figure with TWO subplots:
-      (left)  total accuracy vs lambda_kl
-      (right) synergy accuracy vs lambda_kl
-
-    Styling:
-      - Main: dashed line
-      - SynIB + SynIB-Learned: solid, distinct colors (matplotlib default cycle)
-      - log-scale x-axis (lambda_kl)
-    """
-    import os
-    import matplotlib.pyplot as plt
-
-    assert len(kl_vals) == len(main_total) == len(synib_total) == len(learned_total)
-    assert len(kl_vals) == len(main_syn)   == len(synib_syn)   == len(learned_syn)
-
-    xs = [float(x) for x in kl_vals]
-
-    fig = plt.figure(figsize=(10, 4.2))
-
-    # ---- total accuracy ----
-    ax1 = fig.add_subplot(1, 2, 1)
-    ax1.set_xscale("log")
-    ax1.plot(xs, main_total, linestyle="--", label="Main (total)")
-    ax1.plot(xs, synib_total, label="SynIB (total)")
-    ax1.plot(xs, learned_total, label="SynIB-Learned (total)")
-    ax1.set_xlabel(r"$\lambda_{kl}$")
-    ax1.set_ylabel("Accuracy (fusion)")
-    ax1.set_title("Total / overall accuracy")
-    ax1.grid(True, which="both", linestyle=":", linewidth=0.7)
-
-    # ---- synergy accuracy ----
-    ax2 = fig.add_subplot(1, 2, 2)
-    ax2.set_xscale("log")
-    ax2.plot(xs, main_syn, linestyle="--", label="Main (syn)")
-    ax2.plot(xs, synib_syn, label="SynIB (syn)")
-    ax2.plot(xs, learned_syn, label="SynIB-Learned (syn)")
-    ax2.set_xlabel(r"$\lambda_{kl}$")
-    ax2.set_ylabel("Accuracy (synergy subset)")
-    ax2.set_title("Synergy-only accuracy")
-    ax2.grid(True, which="both", linestyle=":", linewidth=0.7)
-
-    # shared legend (single legend for whole figure)
-    handles, labels = ax2.get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.02))
-
-    fig.tight_layout(rect=(0, 0.08, 1, 1))
-
-    path = os.path.join(out_dir, fname)
-    fig.savefig(path, dpi=180)
-    plt.close(fig)
-    return path
 def main_sweep_lambda_kl_both():
     cfg0 = Config()
     cfg0.device = cfg0.device or ("cuda" if torch.cuda.is_available() else "cpu")
@@ -2294,88 +2362,7 @@ def main_sweep_lambda_kl_both():
         "synib_total": synib_total, "synib_syn": synib_syn,
         "learned_total": learned_total, "learned_syn": learned_syn,
     }
-
-import os
-import math
-from copy import deepcopy
-
-import numpy as np
-
-
-def _plot_acc_vs_kl_three_ms(
-    out_dir: str,
-    kl_vals: list,
-    main_total_ms: Tuple[list, list], main_syn_ms: Tuple[list, list],
-    synib_total_ms: Tuple[list, list], synib_syn_ms: Tuple[list, list],
-    learned_total_ms: Tuple[list, list], learned_syn_ms: Tuple[list, list],
-    *,
-    fname: str = "sweep_acc_vs_kl_three_ms.png",
-):
-    """
-    Multi-seed plot: mean ± std (shaded).
-    Two subplots:
-      (left) total accuracy vs lambda_kl
-      (right) synergy-subset accuracy vs lambda_kl
-
-    Styling:
-      - Main: dashed line (mean), shaded std
-      - SynIB + SynIB-Learned: solid lines, shaded std
-      - log-scale x-axis
-    """
-    import matplotlib.pyplot as plt
-
-    xs = np.asarray([float(x) for x in kl_vals], dtype=float)
-
-    def _plot_with_band(ax, mean, std, *, label, linestyle="-"):
-        mean = np.asarray(mean, dtype=float)
-        std = np.asarray(std, dtype=float)
-        ax.plot(xs, mean, linestyle=linestyle, label=label)
-        ax.fill_between(xs, mean - std, mean + std, alpha=0.2)
-
-    (m_mt, m_st) = main_total_ms
-    (m_ms, m_ss) = main_syn_ms
-    (s_mt, s_st) = synib_total_ms
-    (s_ms, s_ss) = synib_syn_ms
-    (l_mt, l_st) = learned_total_ms
-    (l_ms, l_ss) = learned_syn_ms
-
-    fig = plt.figure(figsize=(10, 4.2))
-
-    ax1 = fig.add_subplot(1, 2, 1)
-    ax1.set_xscale("log")
-    _plot_with_band(ax1, m_mt, m_st, label="Main (total)", linestyle="--")
-    _plot_with_band(ax1, s_mt, s_st, label="SynIB (total)", linestyle="-")
-    _plot_with_band(ax1, l_mt, l_st, label="SynIB-Learned (total)", linestyle="-")
-    ax1.set_xlabel(r"$\lambda_{kl}$")
-    ax1.set_ylabel("Accuracy (fusion)")
-    ax1.set_title("Total / overall accuracy")
-    ax1.grid(True, which="both", linestyle=":", linewidth=0.7)
-
-    ax2 = fig.add_subplot(1, 2, 2)
-    ax2.set_xscale("log")
-    _plot_with_band(ax2, m_ms, m_ss, label="Main (syn)", linestyle="--")
-    _plot_with_band(ax2, s_ms, s_ss, label="SynIB (syn)", linestyle="-")
-    _plot_with_band(ax2, l_ms, l_ss, label="SynIB-Learned (syn)", linestyle="-")
-    ax2.set_xlabel(r"$\lambda_{kl}$")
-    ax2.set_ylabel("Accuracy (synergy subset)")
-    ax2.set_title("Synergy-only accuracy")
-    ax2.grid(True, which="both", linestyle=":", linewidth=0.7)
-
-    handles, labels = ax2.get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.02))
-    fig.tight_layout(rect=(0, 0.08, 1, 1))
-
-    path = os.path.join(out_dir, fname)
-    fig.savefig(path, dpi=180)
-    plt.close(fig)
-    return path
-
-
-def main_sweep_lambda_kl_both_multiseed(
-    *,
-    seeds=(0, 1, 2, 3, 4),
-    learned_mask_steps_default: int = 5,
-):
+def main_sweep_lambda_kl_both_multiseed( seeds=(0, 1, 2, 3, 4), learned_mask_steps_default: int = 5,):
     cfg0 = Config()
     cfg0.device = cfg0.device or ("cuda" if torch.cuda.is_available() else "cpu")
     mkdirp(cfg0.out_dir)
@@ -2481,9 +2468,6 @@ def main_sweep_lambda_kl_both_multiseed(
         "learned_syn":   {"mean": lea_syn_mean, "std": lea_syn_std},
         "plot": plot_path,
     }
-
-import numpy as np
-from copy import deepcopy
 
 def select_best_kl_on_val(cfg0: Config,    *, seed: int, kl_vals: list, method: str, verbose: bool = False,):
     """
@@ -2907,7 +2891,7 @@ def main_sweep_nonoverlap_probs_synib_learned( *, seeds: list = [0, 1, 2, 3, 4],
     cfg0.device = cfg0.device or ("cuda" if torch.cuda.is_available() else "cpu")
     mkdirp(cfg0.out_dir)
 
-    results_path = os.path.join(cfg0.out_dir, "sweep_nonoverlap_probs_tunedkl_synibleaned_snr3_v3_vf.json")
+    results_path = os.path.join(cfg0.out_dir, "sweep_nonoverlap_probs_tunedkl_synibleaneduni_snr3_v3_vf.json")
     db = _load_results_json(results_path)
     if "results" not in db:
         db["results"] = {}
@@ -3347,7 +3331,7 @@ def main_sweep_nonoverlap_probs_synib_randomdiff( *, seeds: list = [0, 1, 2, 3, 
 
     step = 0.05  # <--- smaller than 0.1
     prior_u2 = 0.0
-    targets = [0.1, 0.2, 0.3, 0.4]  # prioritize these values for element index 2 (psyn)
+    targets = [0.05, 0.1, 0.2, 0.3, 0.4]  # prioritize these values for element index 2 (psyn)
 
     prob_settings = (
             [(round(u1, 3), prior_u2, t, round(1 - u1 - prior_u2 - t, 3))
@@ -4238,7 +4222,7 @@ class Config:
     hidden: int = 256
 
     # Loss weights
-    lambda_uni: float = 0.0
+    lambda_uni: float = 1.0
     lambda_kl: float = 10.0
 
     # # Optional: discourage reliance on shortcuts by enforcing invariance to destroying them
@@ -4256,7 +4240,7 @@ class Config:
     out_dir: str = "runs_refactor"
 
     learned_mask_method="fusion_more_than_unimodal"
-    learned_mask_steps = 1
+    learned_mask_steps = 30
     learned_mask_lr = 5e-2
     learned_mask_tau = 1.0
     learned_mask_noise_std = 1.0
@@ -4281,8 +4265,8 @@ if __name__ == "__main__":
     # main_sweep_nonoverlap_probs_mainmask(seeds=[0, 1, 2])
     # main_sweep_nonoverlap_probs_synib(seeds=[0, 1, 2])
     # main_sweep_nonoverlap_probs_synib_random(seeds=[0, 1, 2])
-    main_sweep_nonoverlap_probs_synib_randomdiff(seeds=[0, 1, 2])
-    # main_sweep_nonoverlap_probs_synib_learned(seeds=[0, 1, 2])
+    # main_sweep_nonoverlap_probs_synib_randomdiff(seeds=[0, 1, 2])
+    main_sweep_nonoverlap_probs_synib_learned(seeds=[0, 1, 2])
 
     # main_sweep_nonoverlap_probs_tuned_kl(seeds=[0, 1, 2])
     # main_sweep_nonoverlap_probs()

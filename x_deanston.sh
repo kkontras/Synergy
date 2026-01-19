@@ -42,35 +42,61 @@
 #done
 
 
-for l in 0.01 0.1 1.0 10; do
-  for fill in mean zero; do
-    for contrcoeff in 0.0 0.1 1.0; do
-      python train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l $l --lr 0.00001 --wd 0.0001 --cls mlp --perturb mask --perturb_fill $fill --contrcoeff $contrcoeff --num_samples 32
-    done
-  done
-done
+#for l in 0.01 0.1 1.0 10; do
+#  for fill in mean zero; do
+#    for contrcoeff in 0.0 0.1 1.0; do
+#      python train.py --config ./configs/CREMA_D/synergy/dec/synprom_IB_mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l $l --lr 0.00001 --wd 0.0001 --cls mlp --perturb mask --perturb_fill $fill --contrcoeff $contrcoeff --num_samples 32
+#    done
+#  done
+#done
+#
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESyn_warmup.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --start_over
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESyn_z1.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --start_over
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESyn_z2.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --start_over
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESyn.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --start_over --l 0.01 --cls mlp
+#
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU_z1.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --start_over
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --start_over --l 0.1 --cls mlp
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.00001 --wd 0.0001 --start_over --l 10 --cls mlp
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU_unfre.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.00001 --wd 0.0001 --start_over --l 10 --cls mlp
+#
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU_unfre.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.00001 --wd 0.0001 --start_over --l 0 --cls mlp
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU_unpre.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.00001 --wd 0.0001 --start_over --l 0 --cls mlp
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU_unpre.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.00001 --wd 0.0001 --start_over --l 1 --cls mlp
+#
+#
+#python train.py --config ./configs/CREMA_D/synergy/dec/synprom_Mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.00001 --wd 0.0001 --start_over --l 1 --cls mlp
+#
+#python examine_vae_syn.py \
+#  --config ./configs/CREMA_D/synergy/dec/synprom_VAESyn.json \
+#  --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json \
+#  --fold 0 \
+#  --set Validation \
+#  --perplexity 30 \
+#  --save_path tsne_fold0.png
 
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESyn_warmup.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --start_over
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESyn_z1.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --start_over
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESyn_z2.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --start_over
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESyn.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --start_over --l 0.01 --cls mlp
-
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU_z1.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --start_over
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --start_over --l 0.1 --cls mlp
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.00001 --wd 0.0001 --start_over --l 10 --cls mlp
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU_unfre.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.00001 --wd 0.0001 --start_over --l 10 --cls mlp
-
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU_unfre.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.00001 --wd 0.0001 --start_over --l 0 --cls mlp
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU_unpre.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.00001 --wd 0.0001 --start_over --l 0 --cls mlp
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_VAESynU_unpre.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.00001 --wd 0.0001 --start_over --l 1 --cls mlp
+#for l in 1; do for lsparse in 4 5 10; do python train.py --config ./configs/CREMA_D/synergy/dec/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l $l --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse $lsparse; done; done
+#for l in 1; do for lsparse in 0.1 0.5 1 2 3 4 5 10; do python show.py --config ./configs/CREMA_D/synergy/dec/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l $l --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse $lsparse; done; done
+#
+#
+#for lr in 0.001 0.0001 0.00001;
+#for wd in 0.001 0.0001 0.00001;
+#  python train.py --config ./configs/CREMA_D/synergy/dec/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 0 --lr $lr --wd $wd --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse $lsparse
+#  for l in 0.1 1 10 100; do for lsparse in 0.1 1 5 10; do
+#  python train.py --config ./configs/CREMA_D/synergy/dec/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l $l --lr $lr --wd $wd --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse $lsparse
+#  done; done
+#done; done
 
 
-python train.py --config ./configs/CREMA_D/synergy/dec/synprom_Mask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.00001 --wd 0.0001 --start_over --l 1 --cls mlp
 
-python examine_vae_syn.py \
-  --config ./configs/CREMA_D/synergy/dec/synprom_VAESyn.json \
-  --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json \
-  --fold 0 \
-  --set Validation \
-  --perplexity 30 \
-  --save_path tsne_fold0.png
+#python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 0.1 --validate_with syn_accuracy
+#python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 1 --validate_with syn_accuracy
+#python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 1 --validate_with syn_accuracy
+#python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 5 --validate_with syn_accuracy
+#python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 10 --validate_with syn_accuracy
+
+
+python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 1 --validate_with syn_accuracy
+python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 1 --validate_with syn_accuracy
+python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 3 --validate_with syn_accuracy
+python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 10 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 1 --validate_with syn_accuracy --start_over

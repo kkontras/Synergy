@@ -88,14 +88,23 @@ def print_search(config_path, default_config_path, args):
     if "beta_var" in args and args.beta_var is not None and args.beta_var != "None":
         m += "_betavar{}".format(args.beta_var)
 
+    if "ironic_rate" in args and args.ironic_rate is not None:
+        m += "_ir{}".format(float(args.ironic_rate))
+
     if "perturb" in args and args.perturb is not None:
         m += "_perturb{}".format(args.perturb)
+    if "ending_epoch" in args and args.ending_epoch is not None:
+        m += "_endingepoch{}".format(args.ending_epoch)
     if "perturb_fill" in args and args.perturb_fill is not None:
         m += "_fill{}".format(args.perturb_fill)
     if "perturb_pmin" in args and args.perturb_pmin is not None:
         m += "_pmin{}".format(args.perturb_pmin)
+    if "perturb_lsparse" in args and args.perturb_lsparse is not None:
+        m += "_lsparse{}".format(args.perturb_lsparse)
     if "perturb_pmax" in args and args.perturb_pmax is not None:
         m += "_pmax{}".format(args.perturb_pmax)
+
+
 
     if "lr" in args and args.lr is not None:
         m += "_lr{}".format(args.lr)
@@ -163,14 +172,17 @@ def print_search(config_path, default_config_path, args):
             # if i == "combined":
                 message += Fore.MAGENTA + "Test_Acc_{}: {:.1f} ".format(i, v * 100)
 
-    elif "synergy_gap_uni" in test_metric:
-        message += Fore.LIGHTBLUE_EX + "SyG_Uni: {:.2f} ".format(test_metric["synergy_gap_uni"])
-    elif "synergy_gap_ens" in test_metric:
-        message += Fore.LIGHTBLUE_EX + "SyG_Ens: {:.2f} ".format(test_metric["synergy_gap_ens"])
+    if test_metric and "ceu" in val_metrics:
+        message += Fore.LIGHTGREEN_EX + "V_CEU_{}: {:.2f} ".format("S", val_metrics["ceu"]["combined"]["synergy"])
+        # for i, v in val_metrics["ceu"]["combined"].items(): message += Fore.LIGHTGREEN_EX + "V_CEU_{}: {:.2f} ".format(i, v)
 
+    if test_metric and "ceu" in test_metric:
+        message += Fore.LIGHTGREEN_EX + "T_CEU_{}: {:.2f} ".format("S", test_metric["ceu"]["combined"]["synergy"])
+        # for i, v in test_metric["ceu"]["combined"].items(): message += Fore.LIGHTGREEN_EX + "T_CEU_{}: {:.2f} ".format(i, v)
 
-    # if "ceu" in val_metrics:
-    #     for i, v in val_metrics["ceu"]["combined"].items(): message += Fore.LIGHTGREEN_EX + "CEU_{}: {:.2f} ".format(i, v)
+    if test_metric and "f1_perclass" in test_metric:
+        rounded_v = ["{:.1f}".format(v * 100) for v in test_metric["f1_perclass"]["combined"]]
+        message += Fore.BLUE + "F1_perclass: {} ".format("-".join(rounded_v)) + Fore.RESET
 
     # if "top5_acc" in val_metrics:
     #     for i, v in val_metrics["top5_acc"].items(): message += Fore.LIGHTBLUE_EX + "Top5_Acc_{}: {:.2f} ".format(i,
@@ -327,10 +339,12 @@ if __name__ == "__main__":
     parser.add_argument('--mm', required=False, help="Optimizer Momentum", default=None)
     parser.add_argument('--cls', required=False, help="CLS linear, nonlinear, highlynonlinear", default=None)
     parser.add_argument('--printing', required=False, help="print_results", default=True)
-    parser.add_argument('--perturb', required=False, help="Perturbation type of MCR")
-    parser.add_argument('--perturb_fill', required=False, help="Fill for mask type perturbation of MCR")
-    parser.add_argument('--perturb_pmax', required=False, help="Fill for mask type perturbation of MCR")
-    parser.add_argument('--perturb_pmin', required=False, help="Fill for mask type perturbation of MCR")
+    parser.add_argument('--ironic_rate', required=False, help="Perturbation type of MCR", default=None)
+    parser.add_argument('--perturb', required=False, help="Perturbation type of MCR", default=None)
+    parser.add_argument('--perturb_fill', required=False, help="Fill for mask type perturbation of MCR", default=None)
+    parser.add_argument('--perturb_pmax', required=False, help="Fill for mask type perturbation of MCR", default=None)
+    parser.add_argument('--perturb_pmin', required=False, help="Fill for mask type perturbation of MCR", default=None)
+    parser.add_argument('--perturb_lsparse', required=False, help="Fill for mask type perturbation of MCR", default=None)
     parser.add_argument('--pre', action='store_true')
     parser.add_argument('--frozen', action='store_true')
     parser.add_argument('--tdqm_disable', action='store_true')
@@ -359,7 +373,7 @@ if __name__ == "__main__":
                 val[0] = val_metric
                 test[0] = test_metric
             else:
-                for i in range(3):
+                for i in range(1):
                     args.fold = i
                     val_metric, test_metric = print_search(config_path=args.config, default_config_path=args.default_config, args=args)
                     val[i] = val_metric
@@ -372,15 +386,15 @@ if __name__ == "__main__":
 
 
     # sys.exit()
-    try:
-        mean_val, std_val = print_mean(val, val=True)
-        mean_test, std_test = print_mean(test, val=False)
-        # print(round(mean_val*100,1), round(std_val*100,1), round(mean_test*100,1), round(std_test*100,1))
-        print(round(mean_test*100,1), round(std_test*100,1), "--")
-        import sys
-        sys.exit(mean_test, std_test)
-    except:
-        print("")
-        # if args.printing is True:
-        #     print("There was an error in the print_mean function")
-        pass
+    # try:
+    #     mean_val, std_val = print_mean(val, val=True)
+    #     mean_test, std_test = print_mean(test, val=False)
+    #     # print(round(mean_val*100,1), round(std_val*100,1), round(mean_test*100,1), round(std_test*100,1))
+    #     print(round(mean_test*100,1), round(std_test*100,1), "--")
+    #     import sys
+    #     sys.exit(mean_test, std_test)
+    # except:
+    #     print("")
+    #     # if args.printing is True:
+    #     #     print("There was an error in the print_mean function")
+    #     pass

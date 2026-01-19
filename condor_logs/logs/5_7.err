@@ -1,36 +1,116 @@
-Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
-The following values were not passed to `accelerate launch` and had defaults used instead:
-	`--num_processes` was set to a value of `1`
-	`--num_machines` was set to a value of `1`
-	`--mixed_precision` was set to a value of `'no'`
-	`--dynamo_backend` was set to a value of `'no'`
-To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
-Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:283: UserWarning: 
+    Found GPU0 Tesla P100-PCIE-16GB which is of cuda capability 6.0.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (7.0) - (12.0)
+    
+  warnings.warn(
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:304: UserWarning: 
+    Please install PyTorch with a following CUDA
+    configurations:  12.6 following instructions at
+    https://pytorch.org/get-started/locally/
+    
+  warnings.warn(matched_cuda_warn.format(matched_arches))
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:326: UserWarning: 
+Tesla P100-PCIE-16GB with CUDA capability sm_60 is not compatible with the current PyTorch installation.
+The current PyTorch install supports CUDA capabilities sm_70 sm_75 sm_80 sm_86 sm_90 sm_100 sm_120.
+If you want to use the Tesla P100-PCIE-16GB GPU with PyTorch, please check the instructions at https://pytorch.org/get-started/locally/
+
+  warnings.warn(
 Traceback (most recent call last):
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 3, in <module>
-    from agents.general_agent import *
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/__init__.py", line 7, in <module>
-    mod = __import__('.'.join([__name__, py]), fromlist=[py])
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 4, in <module>
-    from agents.general_agent.helpers.Loader import Loader
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/__init__.py", line 7, in <module>
-    mod = __import__('.'.join([__name__, py]), fromlist=[py])
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Loader.py", line 11, in <module>
-    from models.MCR_Models import *
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/__init__.py", line 7, in <module>
-    mod = __import__('.'.join([__name__, py]), fromlist=[py])
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models.py", line 4, in <module>
-    from models.MCR_Models import TF_Fusion
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/MCR_Models.py", line 14, in <module>
-    from diffusers import StableDiffusionPipeline
-ModuleNotFoundError: No module named 'diffusers'
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 286, in <module>
+    main(config_path=args.config, default_config_path=args.default_config, args=args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 209, in main
+    agent.run()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 120, in run
+    self.trainer.train_steps()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Trainer.py", line 37, in train_steps
+    self.agent.validator_tester.validate()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Validator_Tester.py", line 45, in validate
+    step_outcome = self.this_valtest_step_func(served_dict)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Validator_Tester.py", line 76, in valtest_one_step
+    output = self.agent.model(data, label=label, current_epoch=self.agent.logs["current_epoch"])
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_SVAE.py", line 3273, in forward
+    output =  self._base_forward(x, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_SVAE.py", line 3192, in _base_forward
+    uni_pred_1, uni_pred_2, z1, z2, na_z1, na_z2 = self._get_features(x, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_SVAE.py", line 3171, in _get_features
+    out0 = self.enc_0(x, detach_pred=True, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/MCR_Models.py", line 584, in forward
+    audio_feat = self.audio_net(x[0].unsqueeze(dim=1))
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/model_utils/backbone.py", line 149, in forward
+    x = self.conv1(x)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 548, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 543, in _conv_forward
+    return F.conv2d(
+torch.AcceleratorError: CUDA error: no kernel image is available for execution on the device
+Search for `cudaErrorNoKernelImageForDevice' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
 Traceback (most recent call last):
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/accelerate", line 8, in <module>
-    sys.exit(main())
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
-    args.func(args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 1198, in launch_command
-    simple_launcher(args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 785, in simple_launcher
-    raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
-subprocess.CalledProcessError: Command '['/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python', '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py', '--config', './configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json', '--default_config', './configs/CREMA_D/default_config_cremad_res_syn.json', '--fold', '0', '--lr', '0.001', '--wd', '1e-4', '--perturb', 'gen', '--start_over', '--cls', 'mlp', '--lib', '0.1']' returned non-zero exit status 1.
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 286, in <module>
+    main(config_path=args.config, default_config_path=args.default_config, args=args)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 209, in main
+    agent.run()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 120, in run
+    self.trainer.train_steps()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Trainer.py", line 37, in train_steps
+    self.agent.validator_tester.validate()
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Validator_Tester.py", line 45, in validate
+    step_outcome = self.this_valtest_step_func(served_dict)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Validator_Tester.py", line 76, in valtest_one_step
+    output = self.agent.model(data, label=label, current_epoch=self.agent.logs["current_epoch"])
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_SVAE.py", line 3273, in forward
+    output =  self._base_forward(x, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_SVAE.py", line 3192, in _base_forward
+    uni_pred_1, uni_pred_2, z1, z2, na_z1, na_z2 = self._get_features(x, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_SVAE.py", line 3171, in _get_features
+    out0 = self.enc_0(x, detach_pred=True, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/MCR_Models.py", line 584, in forward
+    audio_feat = self.audio_net(x[0].unsqueeze(dim=1))
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/model_utils/backbone.py", line 149, in forward
+    x = self.conv1(x)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 548, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 543, in _conv_forward
+    return F.conv2d(
+torch.AcceleratorError: CUDA error: no kernel image is available for execution on the device
+Search for `cudaErrorNoKernelImageForDevice' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+

@@ -74,15 +74,62 @@
 
 #python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
 #
-python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb diff --perturb_fill ema --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
-python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb diff --perturb_fill ema --perturb_pmin 0.1 --perturb_pmax 0.9 --num_samples 5
-python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb diff --perturb_fill ema --perturb_pmin 0.1 --perturb_pmax 0.5 --num_samples 5
-python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32
+#python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb diff --perturb_fill ema --perturb_pmin 0.9 --perturb_pmax 1.0 --num_samples 5
+#python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb diff --perturb_fill ema --perturb_pmin 0.1 --perturb_pmax 0.9 --num_samples 5
+#python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb diff --perturb_fill ema --perturb_pmin 0.1 --perturb_pmax 0.5 --num_samples 5
+#python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32
+#
+#python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.1 --perturb_pmax 0.9 --num_samples 5
+#python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.1 --perturb_pmax 0.5 --num_samples 5
+#python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32
+#
+#python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb_fill ema --perturb_pmin 1.0 --ending_epoch 15
+#python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb_fill ema --perturb_pmin 1.0 --ending_epoch 15
+#
+#
+#python show.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb diff --perturb_fill ema --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python show.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb diff --perturb_fill ema --perturb_pmin 0.1 --perturb_pmax 0.9 --num_samples 5
+#python show.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb diff --perturb_fill ema --perturb_pmin 0.1 --perturb_pmax 0.5 --num_samples 5
+#python show.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32
+#
+#python show.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
+#python show.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.1 --perturb_pmax 0.9 --num_samples 5
+#python show.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.1 --perturb_pmax 0.5 --num_samples 5
+#python show.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32
 
-python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.4 --perturb_pmax 0.9 --num_samples 5
-python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.1 --perturb_pmax 0.9 --num_samples 5
-python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0.1 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32 --perturb diff --perturb_fill token --perturb_pmin 0.1 --perturb_pmax 0.5 --num_samples 5
-python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l 0 --lr 0.0001 --wd 0.0001 --cls tf --batch_size 32
+#for l in 0.001 0.01 0.1 1 10 100; do for lsparse in 0.001 0.01 0.1 1 10 100; do python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l $l --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb_fill ema --perturb_lsparse $lsparse --start_over; done; done
+#for l in 0.01 0.1 1 10 100; do for lsparse in 0.001 0.01 0.1 1 10 100; do python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l $l --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb_fill ema --perturb_lsparse $lsparse --start_over; done; done
+#for l in 0.1; do for lsparse in 0.001 0.01 0.1 1 10 100; do python train.py --config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l $l --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb_fill ema --perturb_lsparse $lsparse --start_over; done; done
+#
+#for l in 0.001 0.01 0.1 1 10 100; do
+#  for lsparse in 0.01 0.1 1 10 100; do
+#    echo "--config ./configs/MMIMDB/synprom_SynIB_RMask.json --default_config ./configs/MMIMDB/default_config_mmimdb_syn.json --fold 0 --l $l --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 32 --perturb_fill ema --perturb_lsparse $lsparse --start_over"
+#  done
+#done
+
+
+#for lr in 0.001 0.0001 0.00001; do
+#for wd in 0.001 0.0001 0.00001; do
+#  echo "--config ./configs/AVE/synergy/dec/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0 --lr $lr --wd $wd --cls mlp --batch_size 64"
+#  for l in 0.1 1 10 100; do for lsparse in 0.1 1 5 10; do
+#  echo "--config ./configs/AVE/synergy/dec/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l $l --lr $lr --wd $wd --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse $lsparse"
+#  done; done
+#done; done
+
+
+
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 0 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 5
+#python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_config ./configs/AVE/default_config_ave_res_syn.json --fold 0 --l 10 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 5
+
+for l in 0.1 0.5 1 5 10 100; do for lsparse in 0.1 0.5 1 5 10; do
+python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l $l --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse $lsparse --start_over
+done; done
+
+for l in 0.1 0.5 1 5 10 100; do for lsparse in 0.1 0.5 1 5 10; do
+python show.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l $l --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse $lsparse --start_over
+done; done
 
 
 #python train.py --config ./configs/CREMA_D/synergy/dec/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb diff --perturb_pmin 0.5 --perturb_pmin 0.8 --num_samples 10

@@ -1,7 +1,7 @@
 import logging
 import torch
 import torch.nn as nn
-import torch.functional as F
+import torch.nn.functional as F
 import numpy as np
 from collections import defaultdict
 import copy
@@ -166,6 +166,7 @@ class Bias_Infusion_MMPareto(General_Bias_Infusion):
         super(Bias_Infusion_MMPareto, self).__init__(agent)
         logging.info("Bias Infusion MMPareto is being employed")
         self._initialize_logs_n_utils()
+        self.cosine_sim = nn.CosineSimilarity(dim=0, eps=1e-6)
 
     def _initialize_logs_n_utils(self):
         pass
@@ -242,8 +243,8 @@ class Bias_Infusion_MMPareto(General_Bias_Infusion):
             return total, output_losses, True
 
     def _compute_ratio(self, grads_audio, grads_visual):
-        this_cos_audio = F.cosine_similarity(grads_audio['both']["concat"], grads_audio['audio']["concat"], dim=0)
-        this_cos_visual = F.cosine_similarity(grads_visual['both']["concat"], grads_visual['visual']["concat"], dim=0)
+        this_cos_audio = self.cosine_sim(grads_audio['both']["concat"], grads_audio['audio']["concat"])
+        this_cos_visual = self.cosine_sim(grads_visual['both']["concat"], grads_visual['visual']["concat"])
 
         audio_task = ['both', 'audio']
         visual_task = ['both', 'visual']

@@ -1,3 +1,5 @@
+import copy
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,6 +9,10 @@ from models.Synergy_Models_Dec import *
 # Utilities
 # ============================================================
 import math
+from typing import Any, Dict, List, Optional, Literal, Tuple
+from peft import LoraConfig, get_peft_model, TaskType
+import torch.nn as nn
+from models.model_utils.backbone import resnet18
 
 def _cfg(args, key, default=None):
     """Support args as dict-like or namespace-like."""
@@ -32,6 +38,22 @@ def _as_tensor_features(enc_out):
             non_aggr_features = enc_out["nonaggr_features"]["combined"]
         return features, non_aggr_features
     raise ValueError("Encoder output must be a Tensor or a dict with ['features']['combined'].")
+
+def _as_tensor_preds(enc_out):
+    """
+    Accept either:
+      - tensor (B,d)
+      - dict with enc_out["features"]["combined"] (B,d)
+      - dict with enc_out["combined"] (B,d)
+    """
+    if torch.is_tensor(enc_out):
+        return enc_out
+    if isinstance(enc_out, dict):
+        preds = None
+        if "preds" in enc_out and isinstance(enc_out["preds"], dict) and "combined" in enc_out["preds"]:
+            preds = enc_out["preds"]["combined"]
+        return preds
+    raise ValueError("Encoder output must be a Tensor or a dict with ['preds']['combined'].")
 
 
 def _kl_normal(mu, logvar):
@@ -752,11 +774,13 @@ class FusionIBModel_VAE(nn.Module):
         out1 = self.enc_1(x, **kwargs)
         z1, na_z1 = _as_tensor_features(out0)
         z2, na_z2 = _as_tensor_features(out1)
+        preds1 = _as_tensor_preds(out0)
+        preds2 = _as_tensor_preds(out1)
         z1 = F.layer_norm(z1, (z1.shape[-1],))
         z2 = F.layer_norm(z2, (z2.shape[-1],))
         na_z1 = F.layer_norm(na_z1, (na_z1.shape[-1],))
         na_z2 = F.layer_norm(na_z2, (na_z2.shape[-1],))
-        return z1, z2, na_z1, na_z2
+        return preds1, preds2, z1, z2, na_z1, na_z2
 
     def _compute_logits(self, z1, z2, na_z1, na_z2, **kwargs):
         # if self.cls_type == "mlp":
@@ -780,8 +804,6 @@ class FusionIBModel_VAE(nn.Module):
         logits = self.enc_3(feat)
         return logits, feat
 
-
-
     def _compute_logits_unimodal(self, z, na_z, direction, **kwargs):
         if direction == "z1":
             # pred = self.cls_1_uni(z.detach())
@@ -793,11 +815,8 @@ class FusionIBModel_VAE(nn.Module):
         return pred
 
     def _base_forward(self, x, **kwargs):
-        z1, z2, na_z1, na_z2 = self._get_features(x, **kwargs)
+        uni_pred_1, uni_pred_2, z1, z2, na_z1, na_z2 = self._get_features(x, **kwargs)
         pred, feat = self._compute_logits(z1, z2, na_z1, na_z2)
-
-        uni_pred_1 = self._compute_logits_unimodal(z1, na_z1, direction="z1")
-        uni_pred_2 = self._compute_logits_unimodal(z2, na_z2, direction="z2")
 
         return {
             "preds": {
@@ -1687,621 +1706,840 @@ class FusionIBModel_SVAEU_Phased(nn.Module):
 #         std = (m2.sqrt() * float(noise_scale)).view(*([1] * (z1.dim() - 1)), -1)
 #         mu = mu.view(*([1] * (z1.dim() - 1)), -1)
 #         return mu + torch.randn_like(z1) * std
-
-class SynIB_Mask(nn.Module):
-    """
-    Same interface as SynIB, but uses pretrained VAEs as skew samplers.
-    IMPORTANT: VAEs are used under torch.no_grad(); no VAE losses are returned.
-
-    Expected encs layout:
-      encs[0] = modality-1 encoder (main model uses)
-      encs[1] = modality-2 encoder (main model uses)
-      encs[2] = VAE posterior for z1
-      encs[3] = VAE decoder   for z1
-      encs[4] = VAE posterior for z2
-      encs[5] = VAE decoder   for z2
-    """
-    def __init__(self, args, encs, main):
-        super().__init__()
-        object.__setattr__(self, "main", main)
-
-        self.perturb = _cfg(args, "perturb", {}) or {}
-        self.reestimate_features = bool(self.perturb.get("reestimate_features", False))
-
-        bias = _cfg(args, "bias_infusion", {}) or {}
-        self.synergy_weight = float(bias.get("l", 0.0))
-        self.contrastive_weight = float(bias.get("contrcoeff", 0.0) or 0.0)
-        self.synergy_type = getattr(args, "synergy_type", "gaussian")  # "gaussian" or "dirichlet"
-
-
-        fc_inner = int(_cfg(args, "fc_inner"))
-        num_classes = int(_cfg(args, "num_classes"))
-
-        if self.synergy_type == "gaussian":
-            self.logvar_head = nn.Linear(fc_inner, num_classes)
-            self.dirichlet_prior_conc = None
-        elif self.synergy_type == "dirichlet":
-            self.evidence_head = nn.Linear(fc_inner, num_classes)
-            self.dirichlet_prior_conc = float(_cfg(args, "dirichlet_prior_conc", 1.0))
-        else:
-            raise ValueError(f"Unknown synergy_type: {self.synergy_type}")
-
-        self.stats_z1 = FeatureStatsMasker(d1=512, ema_beta=0.99)
-        self.stats_z2 = FeatureStatsMasker(d1=512, ema_beta=0.99)
-
-
-    @staticmethod
-    def _gaussian_kl(mu, logvar):
-        return 0.5 * torch.sum(torch.exp(logvar) + mu**2 - 1 - logvar, dim=1).mean()
-
-    @staticmethod
-    def _dirichlet_kl(alpha, prior_conc=1.0):
-        alpha0 = torch.full_like(alpha, prior_conc) if isinstance(prior_conc, float) else prior_conc
-        alpha0_sum = alpha0.sum(dim=1, keepdim=True)
-        alpha_sum = alpha.sum(dim=1, keepdim=True)
-
-        lgamma = torch.lgamma
-        digamma = torch.digamma
-
-        logB_alpha = torch.sum(lgamma(alpha), dim=1) - lgamma(alpha_sum.squeeze(1))
-        logB_alpha0 = torch.sum(lgamma(alpha0), dim=1) - lgamma(alpha0_sum.squeeze(1))
-
-        term1 = logB_alpha0 - logB_alpha
-        term2 = torch.sum((alpha - alpha0) * (digamma(alpha) - digamma(alpha_sum)), dim=1)
-        return (term1 + term2).mean()
-
-    @staticmethod
-    def _cat_kl(p: torch.Tensor, q: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
-        p = F.softmax(p, dim=-1)
-        q = F.softmax(q, dim=-1)
-        p = p.clamp_min(eps)
-        q = q.clamp_min(eps)
-        return (p * (p.log() - q.log())).sum(dim=-1).mean()
-
-    @staticmethod
-    def kl_to_uniform_multiclass_from_logits(logits: torch.Tensor) -> torch.Tensor:
-        logp = F.log_softmax(logits, dim=-1)
-        p = logp.exp()
-        K = logits.size(-1)
-        return (p * logp).sum(dim=-1).mean() + torch.log(torch.tensor(float(K), device=logits.device))
-
-    def _encode_and_perturb(self, x, features, **kwargs):
-        self.main.eval()
-        losses = {}
-        out = self._perturb_masked(features, **kwargs)
-
-        features.update({
-            "tz1": out["z1_tilde"],
-            "tz2": out["z2_tilde"],
-            "ez1": features["z1"],
-            "ez2": features["z2"],
-            "ey1": kwargs["label"]
-        })
-
-        self.main.train()
-        return features, losses
-
-    def _repeat_tensor(self, t, K):
-        if t is None: return None
-        return t.repeat_interleave(K, dim=0)
-
-    def _logit_kl(self, pred_logits, target_logits):
-        return F.kl_div(
-            F.log_softmax(pred_logits, dim=-1),
-            F.softmax(target_logits, dim=-1),
-            reduction="batchmean"
-        )
-
-    def _freeze_model(self, model):
-        snap = {}
-        for name, p in model.named_parameters():
-            snap[name] = bool(p.requires_grad)
-            p.requires_grad_(False)
-        return snap
-
-    def _unfreeze_model(self, model, snap=None, default=True):
-        for name, p in model.named_parameters():
-            if snap is None:
-                p.requires_grad_(bool(default))
-            else:
-                p.requires_grad_(bool(snap.get(name, default)))
-
-    @torch.no_grad()
-    def track_step(self, history, **kv):
-        def _add(k, x):
-            history.setdefault(k, []).append(x)
-
-        def _tensor_stats(t: torch.Tensor):
-            t = t.detach()
-            t = t.float()
-            return {
-                "mean": t.mean().item(),
-                "std": t.std(unbiased=False).item() if t.numel() > 1 else 0.0,
-                "min": t.min().item(),
-                "max": t.max().item(),
-            }
-
-        for k, v in kv.items():
-            if v is None:
-                continue
-
-            if isinstance(v, dict):
-                for kk, vv in v.items():
-                    self.track_step(history, **{f"{k}.{kk}": vv})
-                continue
-
-            if torch.is_tensor(v):
-                if v.numel() == 1:
-                    _add(k, float(v.detach().item()))
-                else:
-                    stats = _tensor_stats(v)
-                    for sk, sv in stats.items():
-                        _add(f"{k}.{sk}", float(sv))
-                continue
-
-            if isinstance(v, (float, int)):
-                _add(k, float(v))
-                continue
-
-            if isinstance(v, (list, tuple)):
-                if len(v) == 0:
-                    continue
-                if all(torch.is_tensor(x) for x in v):
-                    for j, x in enumerate(v):
-                        self.track_step(history, **{f"{k}[{j}]": x})
-                elif all(isinstance(x, (float, int)) for x in v):
-                    _add(k, [float(x) for x in v])
-                else:
-                    _add(k, v)
-                continue
-
-            _add(k, v)
-
-    @torch.no_grad()
-    @staticmethod
-    def progress_report(self, i, steps, history):
-        def last(key, default=None):
-            xs = history.get(key, None)
-            if not xs:
-                return default
-            return xs[-1]
-
-        keys = [
-            "obj", "score", "div_f", "div_u0", "div_u1", "sparsity", "g0m", "g1m", "e_f_t", "grad0", "grad1",
-            "m.f0.mean", "m.f0.std", "m.f0.min", "m.f0.max",
-            "m.f1.mean", "m.f1.std", "m.f1.min", "m.f1.max",
-        ]
-
-        parts = [f"[{i + 1:03d}/{steps}]"]
-        for k in keys:
-            v = last(k, None)
-            if v is None:
-                continue
-            if isinstance(v, (float, int)):
-                parts.append(f"{k}={v:.4f}")
-            else:
-                parts.append(f"{k}={v}")
-        print(" ".join(parts))
-
-    @torch.no_grad()
-    @staticmethod
-    def _entropy_from_logits(self, logits: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
-        p = F.softmax(logits, dim=-1).clamp_min(eps)
-        return -(p * p.log()).sum(dim=-1).mean()
-
-    @torch.no_grad()
-    def check_marginals(self, x0, x1, x0_t, x1_t, g0, g1, eps=1e-6):
-        def _rel_change(a, b):
-            na = a.float().pow(2).mean().sqrt()
-            nb = (a.float() - b.float()).pow(2).mean().sqrt()
-            return nb / (na + eps)
-
-        def _zscore_mean(x, mu, m2):
-            std = (m2.float().clamp_min(eps)).sqrt()
-            z = (x.float() - mu.float()) / std
-            return z.abs().mean()
-
-        def _std_ratio(x, m2_ref):
-            std_x = x.float().std(dim=0, unbiased=False).mean()
-            std_r = (m2_ref.float().clamp_min(eps)).sqrt().mean()
-            return std_x / (std_r + eps)
-
-        g0 = g0.detach()
-        g1 = g1.detach()
-        g0m = g0.float().mean()
-        g1m = g1.float().mean()
-        g_sat0 = ((g0 < 0.05) | (g0 > 0.95)).float().mean()
-        g_sat1 = ((g1 < 0.05) | (g1 > 0.95)).float().mean()
-
-        rel0 = _rel_change(x0, x0_t)
-        rel1 = _rel_change(x1, x1_t)
-
-        mu0, m20 = self.stats_z1.feature_stats()
-        mu1, m21 = self.stats_z2.feature_stats()
-
-        mu0 = mu0.view(*([1] * (x0_t.dim() - 1)), -1)
-        m20 = m20.view(*([1] * (x0_t.dim() - 1)), -1)
-        mu1 = mu1.view(*([1] * (x1_t.dim() - 1)), -1)
-        m21 = m21.view(*([1] * (x1_t.dim() - 1)), -1)
-
-        z0 = _zscore_mean(x0_t, mu0, m20)
-        z1 = _zscore_mean(x1_t, mu1, m21)
-
-        sr0 = _std_ratio(x0_t, m20.squeeze(0) if x0_t.dim() == 2 else m20.view(-1))
-        sr1 = _std_ratio(x1_t, m21.squeeze(0) if x1_t.dim() == 2 else m21.view(-1))
-
-        return {
-            "m": {
-                "rel0": float(rel0),
-                "rel1": float(rel1),
-                "z0": float(z0),
-                "z1": float(z1),
-                "std_ratio0": float(sr0),
-                "std_ratio1": float(sr1),
-                "g_sat0": float(g_sat0),
-                "g_sat1": float(g_sat1),
-                "g0m": float(g0m),
-                "g1m": float(g1m),
-            }
-        }
-
-    # def get_learned_destroy_mask_multiclass(
-    #         self,
-    #         x0: torch.Tensor,
-    #         x1: torch.Tensor,
-    #         device: str,
-    #         *,
-    #         method="kl_uniform",
-    #         steps: int = 200,
-    #         lr: float = 5e-2,
-    #         tau: float = 1.0,
-    #         noise_std: float = 1.0,
-    #         lam_sparsity: float = 5e-3,
-    #         alpha_unimodal: float = 5.0,
-    #         hard: bool = True,
-    #         hard_thresh: float = 0.5,
-    #         **kwargs
-    # ) -> Dict[str, torch.Tensor]:
-    #
-    #     self.main.eval()
-    #     snap = self._freeze_model(self.main)
-    #
-    #     x0, x1 = x0.to(device), x1.to(device)
-    #     B, d0 = x0.shape
-    #     _, d1 = x1.shape
-    #
-    #     self.stats_z1.ema_update(x0)
-    #     self.stats_z2.ema_update(x1)
-    #
-    #     # Mask parameters
-    #     # ell0 = torch.zeros(d0, device=device, requires_grad=True)
-    #     # ell1 = torch.zeros(d1, device=device, requires_grad=True)
-    #
-    #     with torch.no_grad():
-    #         # Clean targets must be detached from the graph
-    #         f_clean, _ = self.main._compute_logits(x0, x1)
-    #         u0_clean = self.main._compute_logits_unimodal(x0, x1, direction="z1")
-    #         u1_clean = self.main._compute_logits_unimodal(x0, x1, direction="z2")
-    #
-    #         f_target = f_clean.detach()
-    #         u0_target = u0_clean.detach()
-    #         u1_target = u1_clean.detach()
-    #
-    #     ell0 = torch.zeros(x0.shape[1], device=device).requires_grad_(True)
-    #     ell1 = torch.zeros(x1.shape[1], device=device).requires_grad_(True)
-    #
-    #     opt = torch.optim.Adam([ell0, ell1], lr=lr)
-    #     history = {}
-    #     with torch.enable_grad():
-    #         for i in range(steps):
-    #
-    #             beta = 5.0  # try 2, 5, 10, 20
-    #             g0 = torch.sigmoid(beta * ell0)
-    #             g1 = torch.sigmoid(beta * ell1)
-    #
-    #             x0_t = (1 - g0) * x0 + g0 * self.stats_z1.noise_like(x0, noise_scale=noise_std)
-    #             x1_t = (1 - g1) * x1 + g1 * self.stats_z2.noise_like(x1, noise_scale=noise_std)
-    #
-    #             f_t, _ = self.main._compute_logits(x0_t, x1_t)
-    #             u0_t = self.main._compute_logits_unimodal(x0_t, x1_t, direction="z1")
-    #             u1_t = self.main._compute_logits_unimodal(x0_t, x1_t, direction="z2")
-    #
-    #             sparsity = g0.mean() + g1.mean()
-    #
-    #             # obj = self.kl_to_uniform_multiclass_from_logits(f_t) + lam_sparsity * sparsity
-    #
-    #             div_f = self._cat_kl(f_clean, f_t)
-    #             div_u0 = self._cat_kl(u0_clean, u0_t)
-    #             div_u1 = self._cat_kl(u1_clean, u1_t)
-    #             score = div_f - float(alpha_unimodal) * (div_u0 + div_u1)
-    #             obj = -score + float(lam_sparsity) * sparsity
-    #
-    #             opt.zero_grad()
-    #
-    #             obj.backward()
-    #
-    #             def _normalize_grad_(p, eps=1e-12, max_norm=None):
-    #                 if p.grad is None:
-    #                     return
-    #                 g = p.grad
-    #                 n = g.norm().clamp_min(eps)
-    #                 g.div_(n)
-    #                 if max_norm is not None:
-    #                     g.mul_(float(max_norm))
-    #
-    #             # _normalize_grad_(ell0, max_norm=1.0)
-    #             # _normalize_grad_(ell1, max_norm=1.0)
-    #             opt.step()
-    #
-    #             grad0 = ell0.grad.norm()
-    #             grad1 = ell1.grad.norm()
-    #
-    #             m = self.check_marginals(x0, x1, x0_t, x1_t, g0, g1)
-    #
-    #             self.track_step(
-    #                 history,
-    #                 obj=obj,
-    #                 score=score,
-    #                 div_f=div_f,
-    #                 div_u0=div_u0,
-    #                 div_u1=div_u1,
-    #                 sparsity=sparsity,
-    #                 g0m=g0.mean(),
-    #                 g1m=g1.mean(),
-    #                 e_f_t=self._entropy_from_logits(f_t),
-    #                 grad0=grad0,
-    #                 grad1=grad1,
-    #                 m = m
-    #             )
-    #
-    #             if (i + 1) % steps == 0 or i == 0:
-    #                 self.progress_report(i, steps, history)
-    #     if "current_step" in kwargs:
-    #         latest_history = {k: v[-1] for k, v in history.items()}
-    #         wandb.log(latest_history, step=kwargs["current_step"]+1)
-    #
-    #     # Detach and threshold
-    #     final_g0 = torch.sigmoid(ell0 / tau).detach()
-    #     final_g1 = torch.sigmoid(ell1 / tau).detach()
-    #
-    #     if hard:
-    #         final_g0 = (final_g0 > hard_thresh).float()
-    #         final_g1 = (final_g1 > hard_thresh).float()
-    #
-    #     self._unfreeze_model(self.main, snap=snap)
-    #
-    #     return {"g0": final_g0, "g1": final_g1}
-
-    def get_learned_destroy_mask_multiclass(
-            self,
-            x0: torch.Tensor,
-            x1: torch.Tensor,
-            device: str,
-            method="kl_uniform",
-            steps: int = 200,
-            lr: float = 5e-2,
-            tau: float = 1.0,
-            noise_std: float = 1.0,
-            lam_sparsity: float = 5e-3,
-            alpha_unimodal: float = 5.0,
-            hard: bool = True,
-            hard_thresh: float = 0.5,
-            **kwargs
-    ) -> Dict[str, torch.Tensor]:
-        """
-        Sequential, decoupled mask learning:
-
-          Phase A (learn g0): corrupt x0 only, keep x1 clean.
-            objective uses div_f - alpha * div_u0  + sparsity(g0)
-
-          Phase B (learn g1): corrupt x1 only, keep x0 clean.
-            objective uses div_f - alpha * div_u1  + sparsity(g1)
-
-        No "other" mask is used while learning a given mask.
-        """
-
-        # ---- setup ----
-        self.main.eval()
-        snap = self._freeze_model(self.main)
-
-        x0, x1 = x0.to(device), x1.to(device)
-        d0, d1 = x0.shape[1], x1.shape[1]
-
-        self.stats_z1.ema_update(x0)
-        self.stats_z2.ema_update(x1)
-
-        # ---- clean reference logits (detached) ----
-        with torch.no_grad():
-            f_clean, _ = self.main._compute_logits(x0, x1)
-            u0_clean = self.main._compute_logits_unimodal(x0, x1, direction="z1")
-            u1_clean = self.main._compute_logits_unimodal(x0, x1, direction="z2")
-
-        # ---- small helpers ----
-        beta = 5.0  # sigmoid sharpness during optimization
-
-        def gates_from_ell(ell: torch.Tensor) -> torch.Tensor:
-            return torch.sigmoid(beta * ell)
-
-        def destroy(x: torch.Tensor, g: torch.Tensor, noise_fn) -> torch.Tensor:
-            # g is (d,) and broadcasts over batch
-            return (1 - g) * x + g * noise_fn(x, noise_scale=noise_std)
-
-        history = {}
-
-        def learn_one_mask(
-                *,
-                phase: str,
-                ell: torch.Tensor,
-                opt: torch.optim.Optimizer,
-                corrupt: str,  # "x0" or "x1"
-        ) -> torch.Tensor:
-            for i in range(steps):
-                g = gates_from_ell(ell)
-
-                if corrupt == "x0":
-                    x0_t = destroy(x0, g, self.stats_z1.noise_like)
-                    x1_t = x1
-                    f_t, _ = self.main._compute_logits(x0_t, x1_t)
-                    u_t = self.main._compute_logits_unimodal(x0_t, x1_t, direction="z1")
-                    div_u = self._cat_kl(u0_clean, u_t)  # only the corresponding unimodal term
-                elif corrupt == "x1":
-                    x0_t = x0
-                    x1_t = destroy(x1, g, self.stats_z2.noise_like)
-                    f_t, _ = self.main._compute_logits(x0_t, x1_t)
-                    u_t = self.main._compute_logits_unimodal(x0_t, x1_t, direction="z2")
-                    div_u = self._cat_kl(u1_clean, u_t)
-                else:
-                    raise ValueError("corrupt must be 'x0' or 'x1'")
-
-                div_f = self._cat_kl(f_clean, f_t)
-                sparsity = g.mean()
-
-                score = div_f - float(alpha_unimodal) * div_u
-                obj = -score + float(lam_sparsity) * sparsity
-
-                opt.zero_grad()
-                obj.backward()
-                opt.step()
-
-                gradn = ell.grad.norm() if ell.grad is not None else torch.tensor(0.0, device=device)
-                m = self.check_marginals(x0, x1, x0_t, x1_t,
-                                         g0=(g if corrupt == "x0" else torch.zeros(d0, device=device)),
-                                         g1=(g if corrupt == "x1" else torch.zeros(d1, device=device)))
-
-                # keep logging keys consistent-ish with your previous code
-                self.track_step(
-                    history,
-                    phase=phase,
-                    obj=obj,
-                    score=score,
-                    div_f=div_f,
-                    div_u=div_u,
-                    sparsity=sparsity,
-                    gm=g.mean(),
-                    e_f_t=self._entropy_from_logits(f_t),
-                    grad=gradn,
-                    m=m,
-                )
-
-                if i == 0 or (i + 1) == steps:
-                    self.progress_report(i, steps, history)
-
-            # return final soft gate for this phase (still continuous)
-            return ell.detach(), history
-
-        with torch.enable_grad():
-            # ---- Phase A: learn g0 (corrupt x0 only) ----
-            ell0 = torch.zeros(d0, device=device).requires_grad_(True)
-            opt0 = torch.optim.Adam([ell0], lr=lr)
-            ell0, h0 = learn_one_mask(phase="learn_g0", ell=ell0, opt=opt0, corrupt="x0")
-
-            # ---- Phase B: learn g1 (corrupt x1 only) ----
-            ell1 = torch.zeros(d1, device=device).requires_grad_(True)
-            opt1 = torch.optim.Adam([ell1], lr=lr)
-            ell1, h1 = learn_one_mask(phase="learn_g1", ell=ell1, opt=opt1, corrupt="x1")
-
-        if "current_step" in kwargs:
-            latest_h_0 = {k: v[-1] for k, v in h0.items()}
-            latest_h_1 = {k: v[-1] for k, v in h1.items()}
-            lh = {"g0":latest_h_0, "g1":latest_h_1}
-            wandb.log(lh, step=kwargs["current_step"] + 1)
-
-        # ---- final: detach + (optional) hard threshold ----
-        final_g0 = torch.sigmoid(ell0 / tau).detach()
-        final_g1 = torch.sigmoid(ell1 / tau).detach()
-
-        if hard:
-            final_g0 = (final_g0 > hard_thresh).float()
-            final_g1 = (final_g1 > hard_thresh).float()
-
-        self._unfreeze_model(self.main, snap=snap)
-        return {"g0": final_g0, "g1": final_g1}
-
-    def _perturb_masked(self, features, **kwargs):
-        mask_dict = self.get_learned_destroy_mask_multiclass(features["z1"].detach(),
-                                                             features["z2"].detach(),
-                                                             device = features["z1"].device, **kwargs)
-        z1 = features["z1"].detach()
-        z2 = features["z2"].detach()
-        na_z1 = features.get("na_z1", None)
-        na_z2 = features.get("na_z2", None)
-        g1 = mask_dict["g0"]
-        g2 = mask_dict["g1"]
-
-        baseline1 = torch.zeros_like(z1)
-        baseline2 = torch.zeros_like(z2)
-        g1 = g1.view(1, -1)
-        g2 = g2.view(1, -1)
-
-        z1_tilde = (1 - g1) * z1 + g1 * baseline1
-        z2_tilde = (1 - g2) * z2 + g2 * baseline2
-
-        return {
-            "z1_tilde": z1_tilde,
-            "z2_tilde": z2_tilde,
-            "losses": {},
-            "masks": mask_dict
-        }
-    def _kl_loss(self, mu, feat):
-        if self.synergy_type == "gaussian":
-            logvar = self.logvar_head(feat)
-            kl = self._gaussian_kl(mu, logvar)
-        else:
-            evidence = F.softplus(self.evidence_head(feat))
-            alpha = evidence + 1.0
-            kl = self._dirichlet_kl(alpha, prior_conc=self.dirichlet_prior_conc)
-        return kl * self.synergy_weight
-    def _kl_pass(self, base_output, **kwargs):
-
-        feat = base_output["features"]["mask0"]
-        mu = base_output["preds"]["mask0"]
-        kl_loss_1 = self._kl_loss(mu, feat)
-
-
-        feat = base_output["features"]["mask1"]
-        mu = base_output["preds"]["mask1"]
-        kl_loss_2 = self._kl_loss(mu, feat)
-
-
-        features, losses = self._encode_and_perturb(x, features, **kwargs)
-        # z1_tilde = features["tz1"]
-        # z2_tilde = features["tz2"]
-        # z1 = features["ez1"]
-        # z2 = features["ez2"]
-
-
-        # mu, feat = self.main._compute_logits(z1_tilde, z2, features["na_z1"], features["na_z2"])
-        # mu, feat = self.main._compute_logits(z1, z2_tilde, features["na_z1"], features["na_z2"])
-
-
-        losses.update({"kl_synergy_1": kl_loss_1, "kl_synergy_2": kl_loss_2})
-        return losses
-
-    def compute_training_losses(self, x, base_output, **kwargs):
-
-        losses = self._kl_pass(x, base_output["features"], **kwargs)
-
-        # z1, z2 = base_output["features"]["z1"], base_output["features"]["z2"]
-        # infonce = nt_xent_loss(z1, z2, temperature=1.0)
-        # losses["sl_sqdiff"] = (kl1 - kl2).pow(2.0).mean() * self.synergy_weight*10000
-        # losses["infonce"] = infonce * self.contrastive_weight
-
-        if self.training:
-            if "current_step" in kwargs:
-                wandb.log(losses, step=kwargs.get("current_step", 0)+1)
-
-        return losses
-
+#
+# class SynIB_Mask(nn.Module):
+#     """
+#     Same interface as SynIB, but uses pretrained VAEs as skew samplers.
+#     IMPORTANT: VAEs are used under torch.no_grad(); no VAE losses are returned.
+#
+#     Expected encs layout:
+#       encs[0] = modality-1 encoder (main model uses)
+#       encs[1] = modality-2 encoder (main model uses)
+#       encs[2] = VAE posterior for z1
+#       encs[3] = VAE decoder   for z1
+#       encs[4] = VAE posterior for z2
+#       encs[5] = VAE decoder   for z2
+#     """
+#     def __init__(self, args, encs, main):
+#         super().__init__()
+#         object.__setattr__(self, "main", main)
+#
+#         self.perturb = _cfg(args, "perturb", {}) or {}
+#         self.reestimate_features = bool(self.perturb.get("reestimate_features", False))
+#
+#         bias = _cfg(args, "bias_infusion", {}) or {}
+#         self.synergy_weight = float(bias.get("l", 0.0))
+#         self.contrastive_weight = float(bias.get("contrcoeff", 0.0) or 0.0)
+#         self.synergy_type = getattr(args, "synergy_type", "gaussian")  # "gaussian" or "dirichlet"
+#
+#
+#         fc_inner = int(_cfg(args, "fc_inner"))
+#         num_classes = int(_cfg(args, "num_classes"))
+#
+#         if self.synergy_type == "gaussian":
+#             self.logvar_head = nn.Linear(fc_inner, num_classes)
+#             self.dirichlet_prior_conc = None
+#         elif self.synergy_type == "dirichlet":
+#             self.evidence_head = nn.Linear(fc_inner, num_classes)
+#             self.dirichlet_prior_conc = float(_cfg(args, "dirichlet_prior_conc", 1.0))
+#         else:
+#             raise ValueError(f"Unknown synergy_type: {self.synergy_type}")
+#
+#         self.stats_z1 = FeatureStatsMasker(d1=512, ema_beta=0.99)
+#         self.stats_z2 = FeatureStatsMasker(d1=512, ema_beta=0.99)
+#
+#
+#     @staticmethod
+#     def _gaussian_kl(mu, logvar):
+#         return 0.5 * torch.sum(torch.exp(logvar) + mu**2 - 1 - logvar, dim=1).mean()
+#
+#     @staticmethod
+#     def _dirichlet_kl(alpha, prior_conc=1.0):
+#         alpha0 = torch.full_like(alpha, prior_conc) if isinstance(prior_conc, float) else prior_conc
+#         alpha0_sum = alpha0.sum(dim=1, keepdim=True)
+#         alpha_sum = alpha.sum(dim=1, keepdim=True)
+#
+#         lgamma = torch.lgamma
+#         digamma = torch.digamma
+#
+#         logB_alpha = torch.sum(lgamma(alpha), dim=1) - lgamma(alpha_sum.squeeze(1))
+#         logB_alpha0 = torch.sum(lgamma(alpha0), dim=1) - lgamma(alpha0_sum.squeeze(1))
+#
+#         term1 = logB_alpha0 - logB_alpha
+#         term2 = torch.sum((alpha - alpha0) * (digamma(alpha) - digamma(alpha_sum)), dim=1)
+#         return (term1 + term2).mean()
+#
+#     @staticmethod
+#     def _cat_kl(p: torch.Tensor, q: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
+#         p = F.softmax(p, dim=-1)
+#         q = F.softmax(q, dim=-1)
+#         p = p.clamp_min(eps)
+#         q = q.clamp_min(eps)
+#         return (p * (p.log() - q.log())).sum(dim=-1).mean()
+#
+#     @staticmethod
+#     def kl_to_uniform_multiclass_from_logits(logits: torch.Tensor) -> torch.Tensor:
+#         logp = F.log_softmax(logits, dim=-1)
+#         p = logp.exp()
+#         K = logits.size(-1)
+#         return (p * logp).sum(dim=-1).mean() + torch.log(torch.tensor(float(K), device=logits.device))
+#
+#     def _encode_and_perturb(self, x, features, **kwargs):
+#         self.main.eval()
+#         losses = {}
+#         out = self._perturb_masked(features, **kwargs)
+#
+#         features.update({
+#             "tz1": out["z1_tilde"],
+#             "tz2": out["z2_tilde"],
+#             "ez1": features["z1"],
+#             "ez2": features["z2"],
+#             "ey1": kwargs["label"]
+#         })
+#
+#         self.main.train()
+#         return features, losses
+#
+#     def _repeat_tensor(self, t, K):
+#         if t is None: return None
+#         return t.repeat_interleave(K, dim=0)
+#
+#     def _logit_kl(self, pred_logits, target_logits):
+#         return F.kl_div(
+#             F.log_softmax(pred_logits, dim=-1),
+#             F.softmax(target_logits, dim=-1),
+#             reduction="batchmean"
+#         )
+#
+#     def _freeze_model(self, model):
+#         snap = {}
+#         for name, p in model.named_parameters():
+#             snap[name] = bool(p.requires_grad)
+#             p.requires_grad_(False)
+#         return snap
+#
+#     def _unfreeze_model(self, model, snap=None, default=True):
+#         for name, p in model.named_parameters():
+#             if snap is None:
+#                 p.requires_grad_(bool(default))
+#             else:
+#                 p.requires_grad_(bool(snap.get(name, default)))
+#
+#     @torch.no_grad()
+#     def track_step(self, history, **kv):
+#         def _add(k, x):
+#             history.setdefault(k, []).append(x)
+#
+#         def _tensor_stats(t: torch.Tensor):
+#             t = t.detach()
+#             t = t.float()
+#             return {
+#                 "mean": t.mean().item(),
+#                 "std": t.std(unbiased=False).item() if t.numel() > 1 else 0.0,
+#                 "min": t.min().item(),
+#                 "max": t.max().item(),
+#             }
+#
+#         for k, v in kv.items():
+#             if v is None:
+#                 continue
+#
+#             if isinstance(v, dict):
+#                 for kk, vv in v.items():
+#                     self.track_step(history, **{f"{k}.{kk}": vv})
+#                 continue
+#
+#             if torch.is_tensor(v):
+#                 if v.numel() == 1:
+#                     _add(k, float(v.detach().item()))
+#                 else:
+#                     stats = _tensor_stats(v)
+#                     for sk, sv in stats.items():
+#                         _add(f"{k}.{sk}", float(sv))
+#                 continue
+#
+#             if isinstance(v, (float, int)):
+#                 _add(k, float(v))
+#                 continue
+#
+#             if isinstance(v, (list, tuple)):
+#                 if len(v) == 0:
+#                     continue
+#                 if all(torch.is_tensor(x) for x in v):
+#                     for j, x in enumerate(v):
+#                         self.track_step(history, **{f"{k}[{j}]": x})
+#                 elif all(isinstance(x, (float, int)) for x in v):
+#                     _add(k, [float(x) for x in v])
+#                 else:
+#                     _add(k, v)
+#                 continue
+#
+#             _add(k, v)
+#
+#     @torch.no_grad()
+#     @staticmethod
+#     def progress_report(self, i, steps, history):
+#         def last(key, default=None):
+#             xs = history.get(key, None)
+#             if not xs:
+#                 return default
+#             return xs[-1]
+#
+#         keys = [
+#             "obj", "score", "div_f", "div_u0", "div_u1", "sparsity", "g0m", "g1m", "e_f_t", "grad0", "grad1",
+#             "m.f0.mean", "m.f0.std", "m.f0.min", "m.f0.max",
+#             "m.f1.mean", "m.f1.std", "m.f1.min", "m.f1.max",
+#         ]
+#
+#         parts = [f"[{i + 1:03d}/{steps}]"]
+#         for k in keys:
+#             v = last(k, None)
+#             if v is None:
+#                 continue
+#             if isinstance(v, (float, int)):
+#                 parts.append(f"{k}={v:.4f}")
+#             else:
+#                 parts.append(f"{k}={v}")
+#         print(" ".join(parts))
+#
+#     @torch.no_grad()
+#     @staticmethod
+#     def _entropy_from_logits(self, logits: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
+#         p = F.softmax(logits, dim=-1).clamp_min(eps)
+#         return -(p * p.log()).sum(dim=-1).mean()
+#
+#     @torch.no_grad()
+#     def check_marginals(self, x0, x1, x0_t, x1_t, g0, g1, eps=1e-6):
+#         def _rel_change(a, b):
+#             na = a.float().pow(2).mean().sqrt()
+#             nb = (a.float() - b.float()).pow(2).mean().sqrt()
+#             return nb / (na + eps)
+#
+#         def _zscore_mean(x, mu, m2):
+#             std = (m2.float().clamp_min(eps)).sqrt()
+#             z = (x.float() - mu.float()) / std
+#             return z.abs().mean()
+#
+#         def _std_ratio(x, m2_ref):
+#             std_x = x.float().std(dim=0, unbiased=False).mean()
+#             std_r = (m2_ref.float().clamp_min(eps)).sqrt().mean()
+#             return std_x / (std_r + eps)
+#
+#         g0 = g0.detach()
+#         g1 = g1.detach()
+#         g0m = g0.float().mean()
+#         g1m = g1.float().mean()
+#         g_sat0 = ((g0 < 0.05) | (g0 > 0.95)).float().mean()
+#         g_sat1 = ((g1 < 0.05) | (g1 > 0.95)).float().mean()
+#
+#         rel0 = _rel_change(x0, x0_t)
+#         rel1 = _rel_change(x1, x1_t)
+#
+#         mu0, m20 = self.stats_z1.feature_stats()
+#         mu1, m21 = self.stats_z2.feature_stats()
+#
+#         mu0 = mu0.view(*([1] * (x0_t.dim() - 1)), -1)
+#         m20 = m20.view(*([1] * (x0_t.dim() - 1)), -1)
+#         mu1 = mu1.view(*([1] * (x1_t.dim() - 1)), -1)
+#         m21 = m21.view(*([1] * (x1_t.dim() - 1)), -1)
+#
+#         z0 = _zscore_mean(x0_t, mu0, m20)
+#         z1 = _zscore_mean(x1_t, mu1, m21)
+#
+#         sr0 = _std_ratio(x0_t, m20.squeeze(0) if x0_t.dim() == 2 else m20.view(-1))
+#         sr1 = _std_ratio(x1_t, m21.squeeze(0) if x1_t.dim() == 2 else m21.view(-1))
+#
+#         return {
+#             "m": {
+#                 "rel0": float(rel0),
+#                 "rel1": float(rel1),
+#                 "z0": float(z0),
+#                 "z1": float(z1),
+#                 "std_ratio0": float(sr0),
+#                 "std_ratio1": float(sr1),
+#                 "g_sat0": float(g_sat0),
+#                 "g_sat1": float(g_sat1),
+#                 "g0m": float(g0m),
+#                 "g1m": float(g1m),
+#             }
+#         }
+#
+#     # def get_learned_destroy_mask_multiclass(
+#     #         self,
+#     #         x0: torch.Tensor,
+#     #         x1: torch.Tensor,
+#     #         device: str,
+#     #         *,
+#     #         method="kl_uniform",
+#     #         steps: int = 200,
+#     #         lr: float = 5e-2,
+#     #         tau: float = 1.0,
+#     #         noise_std: float = 1.0,
+#     #         lsparse: float = 5e-3,
+#     #         alpha_unimodal: float = 5.0,
+#     #         hard: bool = True,
+#     #         hard_thresh: float = 0.5,
+#     #         **kwargs
+#     # ) -> Dict[str, torch.Tensor]:
+#     #
+#     #     self.main.eval()
+#     #     snap = self._freeze_model(self.main)
+#     #
+#     #     x0, x1 = x0.to(device), x1.to(device)
+#     #     B, d0 = x0.shape
+#     #     _, d1 = x1.shape
+#     #
+#     #     self.stats_z1.ema_update(x0)
+#     #     self.stats_z2.ema_update(x1)
+#     #
+#     #     # Mask parameters
+#     #     # ell0 = torch.zeros(d0, device=device, requires_grad=True)
+#     #     # ell1 = torch.zeros(d1, device=device, requires_grad=True)
+#     #
+#     #     with torch.no_grad():
+#     #         # Clean targets must be detached from the graph
+#     #         f_clean, _ = self.main._compute_logits(x0, x1)
+#     #         u0_clean = self.main._compute_logits_unimodal(x0, x1, direction="z1")
+#     #         u1_clean = self.main._compute_logits_unimodal(x0, x1, direction="z2")
+#     #
+#     #         f_target = f_clean.detach()
+#     #         u0_target = u0_clean.detach()
+#     #         u1_target = u1_clean.detach()
+#     #
+#     #     ell0 = torch.zeros(x0.shape[1], device=device).requires_grad_(True)
+#     #     ell1 = torch.zeros(x1.shape[1], device=device).requires_grad_(True)
+#     #
+#     #     opt = torch.optim.Adam([ell0, ell1], lr=lr)
+#     #     history = {}
+#     #     with torch.enable_grad():
+#     #         for i in range(steps):
+#     #
+#     #             beta = 5.0  # try 2, 5, 10, 20
+#     #             g0 = torch.sigmoid(beta * ell0)
+#     #             g1 = torch.sigmoid(beta * ell1)
+#     #
+#     #             x0_t = (1 - g0) * x0 + g0 * self.stats_z1.noise_like(x0, noise_scale=noise_std)
+#     #             x1_t = (1 - g1) * x1 + g1 * self.stats_z2.noise_like(x1, noise_scale=noise_std)
+#     #
+#     #             f_t, _ = self.main._compute_logits(x0_t, x1_t)
+#     #             u0_t = self.main._compute_logits_unimodal(x0_t, x1_t, direction="z1")
+#     #             u1_t = self.main._compute_logits_unimodal(x0_t, x1_t, direction="z2")
+#     #
+#     #             sparsity = g0.mean() + g1.mean()
+#     #
+#     #             # obj = self.kl_to_uniform_multiclass_from_logits(f_t) + lsparse * sparsity
+#     #
+#     #             div_f = self._cat_kl(f_clean, f_t)
+#     #             div_u0 = self._cat_kl(u0_clean, u0_t)
+#     #             div_u1 = self._cat_kl(u1_clean, u1_t)
+#     #             score = div_f - float(alpha_unimodal) * (div_u0 + div_u1)
+#     #             obj = -score + float(lsparse) * sparsity
+#     #
+#     #             opt.zero_grad()
+#     #
+#     #             obj.backward()
+#     #
+#     #             def _normalize_grad_(p, eps=1e-12, max_norm=None):
+#     #                 if p.grad is None:
+#     #                     return
+#     #                 g = p.grad
+#     #                 n = g.norm().clamp_min(eps)
+#     #                 g.div_(n)
+#     #                 if max_norm is not None:
+#     #                     g.mul_(float(max_norm))
+#     #
+#     #             # _normalize_grad_(ell0, max_norm=1.0)
+#     #             # _normalize_grad_(ell1, max_norm=1.0)
+#     #             opt.step()
+#     #
+#     #             grad0 = ell0.grad.norm()
+#     #             grad1 = ell1.grad.norm()
+#     #
+#     #             m = self.check_marginals(x0, x1, x0_t, x1_t, g0, g1)
+#     #
+#     #             self.track_step(
+#     #                 history,
+#     #                 obj=obj,
+#     #                 score=score,
+#     #                 div_f=div_f,
+#     #                 div_u0=div_u0,
+#     #                 div_u1=div_u1,
+#     #                 sparsity=sparsity,
+#     #                 g0m=g0.mean(),
+#     #                 g1m=g1.mean(),
+#     #                 e_f_t=self._entropy_from_logits(f_t),
+#     #                 grad0=grad0,
+#     #                 grad1=grad1,
+#     #                 m = m
+#     #             )
+#     #
+#     #             if (i + 1) % steps == 0 or i == 0:
+#     #                 self.progress_report(i, steps, history)
+#     #     if "current_step" in kwargs:
+#     #         latest_history = {k: v[-1] for k, v in history.items()}
+#     #         wandb.log(latest_history, step=kwargs["current_step"]+1)
+#     #
+#     #     # Detach and threshold
+#     #     final_g0 = torch.sigmoid(ell0 / tau).detach()
+#     #     final_g1 = torch.sigmoid(ell1 / tau).detach()
+#     #
+#     #     if hard:
+#     #         final_g0 = (final_g0 > hard_thresh).float()
+#     #         final_g1 = (final_g1 > hard_thresh).float()
+#     #
+#     #     self._unfreeze_model(self.main, snap=snap)
+#     #
+#     #     return {"g0": final_g0, "g1": final_g1}
+#
+#     def get_learned_destroy_mask_multiclass(
+#             self,
+#             x0: torch.Tensor,
+#             x1: torch.Tensor,
+#             device: str,
+#             method="kl_uniform",
+#             steps: int = 200,
+#             lr: float = 5e-2,
+#             tau: float = 1.0,
+#             noise_std: float = 1.0,
+#             lsparse: float = 5e-3,
+#             alpha_unimodal: float = 5.0,
+#             hard: bool = True,
+#             hard_thresh: float = 0.5,
+#             **kwargs
+#     ) -> Dict[str, torch.Tensor]:
+#         """
+#         Sequential, decoupled mask learning:
+#
+#           Phase A (learn g0): corrupt x0 only, keep x1 clean.
+#             objective uses div_f - alpha * div_u0  + sparsity(g0)
+#
+#           Phase B (learn g1): corrupt x1 only, keep x0 clean.
+#             objective uses div_f - alpha * div_u1  + sparsity(g1)
+#
+#         No "other" mask is used while learning a given mask.
+#         """
+#
+#         # ---- setup ----
+#         self.main.eval()
+#         snap = self._freeze_model(self.main)
+#
+#         x0, x1 = x0.to(device), x1.to(device)
+#         d0, d1 = x0.shape[1], x1.shape[1]
+#
+#         self.stats_z1.ema_update(x0)
+#         self.stats_z2.ema_update(x1)
+#
+#         # ---- clean reference logits (detached) ----
+#         with torch.no_grad():
+#             f_clean, _ = self.main._compute_logits(x0, x1)
+#             u0_clean = self.main._compute_logits_unimodal(x0, x1, direction="z1")
+#             u1_clean = self.main._compute_logits_unimodal(x0, x1, direction="z2")
+#
+#         # ---- small helpers ----
+#         beta = 5.0  # sigmoid sharpness during optimization
+#
+#         def gates_from_ell(ell: torch.Tensor) -> torch.Tensor:
+#             return torch.sigmoid(beta * ell)
+#
+#         def destroy(x: torch.Tensor, g: torch.Tensor, noise_fn) -> torch.Tensor:
+#             # g is (d,) and broadcasts over batch
+#             return (1 - g) * x + g * noise_fn(x, noise_scale=noise_std)
+#
+#         history = {}
+#
+#         def learn_one_mask(
+#                 *,
+#                 phase: str,
+#                 ell: torch.Tensor,
+#                 opt: torch.optim.Optimizer,
+#                 corrupt: str,  # "x0" or "x1"
+#         ) -> torch.Tensor:
+#             for i in range(steps):
+#                 g = gates_from_ell(ell)
+#
+#                 if corrupt == "x0":
+#                     x0_t = destroy(x0, g, self.stats_z1.noise_like)
+#                     x1_t = x1
+#                     f_t, _ = self.main._compute_logits(x0_t, x1_t)
+#                     u_t = self.main._compute_logits_unimodal(x0_t, x1_t, direction="z1")
+#                     div_u = self._cat_kl(u0_clean, u_t)  # only the corresponding unimodal term
+#                 elif corrupt == "x1":
+#                     x0_t = x0
+#                     x1_t = destroy(x1, g, self.stats_z2.noise_like)
+#                     f_t, _ = self.main._compute_logits(x0_t, x1_t)
+#                     u_t = self.main._compute_logits_unimodal(x0_t, x1_t, direction="z2")
+#                     div_u = self._cat_kl(u1_clean, u_t)
+#                 else:
+#                     raise ValueError("corrupt must be 'x0' or 'x1'")
+#
+#                 div_f = self._cat_kl(f_clean, f_t)
+#                 sparsity = g.mean()
+#
+#                 score = div_f - float(alpha_unimodal) * div_u
+#                 obj = -score + float(lsparse) * sparsity
+#
+#                 opt.zero_grad()
+#                 obj.backward()
+#                 opt.step()
+#
+#                 gradn = ell.grad.norm() if ell.grad is not None else torch.tensor(0.0, device=device)
+#                 m = self.check_marginals(x0, x1, x0_t, x1_t,
+#                                          g0=(g if corrupt == "x0" else torch.zeros(d0, device=device)),
+#                                          g1=(g if corrupt == "x1" else torch.zeros(d1, device=device)))
+#
+#                 # keep logging keys consistent-ish with your previous code
+#                 self.track_step(
+#                     history,
+#                     phase=phase,
+#                     obj=obj,
+#                     score=score,
+#                     div_f=div_f,
+#                     div_u=div_u,
+#                     sparsity=sparsity,
+#                     gm=g.mean(),
+#                     e_f_t=self._entropy_from_logits(f_t),
+#                     grad=gradn,
+#                     m=m,
+#                 )
+#
+#                 if i == 0 or (i + 1) == steps:
+#                     self.progress_report(i, steps, history)
+#
+#             # return final soft gate for this phase (still continuous)
+#             return ell.detach(), history
+#
+#         with torch.enable_grad():
+#             # ---- Phase A: learn g0 (corrupt x0 only) ----
+#             ell0 = torch.ones(d0, device=device).requires_grad_(True)
+#             opt0 = torch.optim.Adam([ell0], lr=lr)
+#             ell0, h0 = learn_one_mask(phase="learn_g0", ell=ell0, opt=opt0, corrupt="x0")
+#
+#             # ---- Phase B: learn g1 (corrupt x1 only) ----
+#             ell1 = torch.ones(d1, device=device).requires_grad_(True)
+#             opt1 = torch.optim.Adam([ell1], lr=lr)
+#             ell1, h1 = learn_one_mask(phase="learn_g1", ell=ell1, opt=opt1, corrupt="x1")
+#
+#         if "current_step" in kwargs:
+#             latest_h_0 = {k: v[-1] for k, v in h0.items()}
+#             latest_h_1 = {k: v[-1] for k, v in h1.items()}
+#             lh = {"g0":latest_h_0, "g1":latest_h_1}
+#             wandb.log(lh, step=kwargs["current_step"] + 1)
+#
+#         # ---- final: detach + (optional) hard threshold ----
+#         final_g0 = torch.sigmoid(ell0 / tau).detach()
+#         final_g1 = torch.sigmoid(ell1 / tau).detach()
+#
+#         if hard:
+#             final_g0 = (final_g0 > hard_thresh).float()
+#             final_g1 = (final_g1 > hard_thresh).float()
+#
+#         self._unfreeze_model(self.main, snap=snap)
+#         return {"g0": final_g0, "g1": final_g1}
+#
+#     def _kl_loss(self, mu, feat):
+#         if self.synergy_type == "gaussian":
+#             logvar = self.logvar_head(feat)
+#             kl = self._gaussian_kl(mu, logvar)
+#         else:
+#             evidence = F.softplus(self.evidence_head(feat))
+#             alpha = evidence + 1.0
+#             kl = self._dirichlet_kl(alpha, prior_conc=self.dirichlet_prior_conc)
+#         return kl * self.synergy_weight
+#     def _kl_pass(self, base_output, **kwargs):
+#
+#         feat = base_output["features"]["mask0"]
+#         mu = base_output["preds"]["mask0"]
+#         kl_loss_1 = self._kl_loss(mu, feat)
+#
+#
+#         feat = base_output["features"]["mask1"]
+#         mu = base_output["preds"]["mask1"]
+#         kl_loss_2 = self._kl_loss(mu, feat)
+#
+#
+#         features, losses = self._encode_and_perturb(x, features, **kwargs)
+#         # z1_tilde = features["tz1"]
+#         # z2_tilde = features["tz2"]
+#         # z1 = features["ez1"]
+#         # z2 = features["ez2"]
+#
+#
+#         # mu, feat = self.main._compute_logits(z1_tilde, z2, features["na_z1"], features["na_z2"])
+#         # mu, feat = self.main._compute_logits(z1, z2_tilde, features["na_z1"], features["na_z2"])
+#
+#
+#         losses.update({"kl_synergy_1": kl_loss_1, "kl_synergy_2": kl_loss_2})
+#         return losses
+#
+#     def compute_training_losses(self, x, base_output, **kwargs):
+#
+#         losses = self._kl_pass(x, base_output["features"], **kwargs)
+#
+#         # z1, z2 = base_output["features"]["z1"], base_output["features"]["z2"]
+#         # infonce = nt_xent_loss(z1, z2, temperature=1.0)
+#         # losses["sl_sqdiff"] = (kl1 - kl2).pow(2.0).mean() * self.synergy_weight*10000
+#         # losses["infonce"] = infonce * self.contrastive_weight
+#
+#         if self.training:
+#             if "current_step" in kwargs:
+#                 wandb.log(losses, step=kwargs.get("current_step", 0)+1)
+#
+#         return losses
+
+
+# class TF_Fusion_Transformer(nn.Module):
+#     """
+#     PyTorch Transformer fusion (batch_first) with:
+#       - modality tokens + CLS token
+#       - optional per-modality padding masks (att_mask1/2/3) combined + CLS slot prepended
+#       - optional attn_mask (S,S) expanded to include CLS -> (S+1,S+1)
+#     Mask conventions:
+#       - src_key_padding_mask / att_mask*: (B,S) bool where True = PAD/IGNORE
+#       - attn_mask: (S,S) bool True=BLOCK or float with -inf=BLOCK, 0=ALLOW
+#     """
+#
+#     def __init__(
+#         self,
+#         input_dim: int,
+#         dim: int,
+#         layers: int,
+#         output_dim: int,
+#         nhead: int = 8,
+#         dropout: float = 0.1,
+#         ff_mult: int = 4,
+#         norm_first: bool = True,
+#         activation: str = "gelu",
+#     ):
+#         super().__init__()
+#
+#         self.in_proj = nn.Identity() if input_dim == dim else nn.Linear(input_dim, dim)
+#
+#         enc_layer = nn.TransformerEncoderLayer(
+#             d_model=dim,
+#             nhead=nhead,
+#             dim_feedforward=ff_mult * dim,
+#             dropout=dropout,
+#             batch_first=True,
+#             norm_first=norm_first,
+#             activation=activation,
+#         )
+#         self.common_net = nn.TransformerEncoder(enc_layer, num_layers=layers)
+#
+#         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
+#
+#         self.mod_0_token = nn.Parameter(torch.randn(1, 1, input_dim))
+#         self.mod_1_token = nn.Parameter(torch.randn(1, 1, input_dim))
+#         self.mod_2_token = nn.Parameter(torch.randn(1, 1, input_dim))
+#
+#         self.common_fc = nn.Linear(dim, output_dim)
+#
+#     @staticmethod
+#     def _prepend_cls_padding(pad_mask: torch.Tensor, device) -> torch.Tensor:
+#         if pad_mask is None:
+#             return None
+#         pad_mask = pad_mask.to(device=device, dtype=torch.bool)
+#         cls_col = torch.zeros((pad_mask.shape[0], 1), device=device, dtype=torch.bool)
+#         return torch.cat([cls_col, pad_mask], dim=1)  # (B, S+1)
+#
+#     @staticmethod
+#     def _prepend_cls_attn(attn_mask: torch.Tensor, device) -> torch.Tensor:
+#         if attn_mask is None:
+#             return None
+#         attn_mask = attn_mask.to(device=device)
+#         S = attn_mask.shape[0]
+#         if attn_mask.dtype == torch.bool:
+#             out = torch.zeros((S + 1, S + 1), device=device, dtype=torch.bool)
+#             out[1:, 1:] = attn_mask
+#             return out
+#         else:
+#             out = torch.zeros((S + 1, S + 1), device=device, dtype=attn_mask.dtype)
+#             out[1:, 1:] = attn_mask
+#             return out
+#
+#     def _build_src_key_padding_mask(self, masks, lengths, B, device):
+#         """
+#         masks:   list like [m1, m2, m3], each either None or (B, Li) bool (True=pad/ignore)
+#         lengths: list like [L1, L2, L3] matching the concatenated segments
+#         Returns:
+#           None if all masks are None,
+#           else (B, 1 + sum(lengths)) bool with CLS prepended as False.
+#         """
+#         if all(m is None for m in masks):
+#             return None
+#
+#         parts = []
+#         for m, L in zip(masks, lengths):
+#             if L == 0:
+#                 continue
+#             if m is None:
+#                 parts.append(torch.zeros((B, L), device=device, dtype=torch.bool))  # keep all
+#             else:
+#                 parts.append(m.to(device=device, dtype=torch.bool))
+#                 if parts[-1].shape != (B, L):
+#                     raise ValueError(f"Mask shape {parts[-1].shape} does not match expected {(B, L)}")
+#
+#         combined = torch.cat(parts, dim=1) if parts else None
+#         if combined is None:
+#             return None
+#
+#         cls_pad = torch.zeros((B, 1), device=device, dtype=torch.bool)  # CLS never ignored
+#         return torch.cat([cls_pad, combined], dim=1)  # (B, 1+S_total)
+#
+#     def _debug_print_ignored(self, masks, lengths, names=("att_mask1", "att_mask2", "att_mask3")):
+#         """
+#         Print ignored-token stats per modality.
+#
+#         masks:   list of per-modality padding masks, each either None or (B, Li)
+#                  Convention: True = PAD/IGNORE
+#         lengths: list of Li matching the concatenated segments
+#         names:   modality names (same length as masks/lengths)
+#
+#         If at least one mask is provided, None masks are treated as all-False of the proper size.
+#         Reports % ignored across the whole batch for each modality.
+#         """
+#         if all(m is None for m in masks):
+#             print("[mask dbg] all modality masks are None -> no ignored tokens (no masking).")
+#             return
+#
+#         # infer B/device
+#         B, device = None, None
+#         for m in masks:
+#             if m is not None:
+#                 B, device = m.shape[0], m.device
+#                 break
+#
+#         if B is None:
+#             print("[mask dbg] no usable masks found.")
+#             return
+#
+#         for m, L, name in zip(masks, lengths, names):
+#             if L == 0:
+#                 print(f"[mask dbg] {name}: length=0 (skipped)")
+#                 continue
+#
+#             if m is None:
+#                 mm = torch.zeros((B, L), device=device, dtype=torch.bool)
+#                 provided = False
+#             else:
+#                 mm = m.to(device=device, dtype=torch.bool)
+#                 provided = True
+#                 if mm.shape != (B, L):
+#                     raise ValueError(f"[mask dbg] {name}: expected mask shape {(B, L)} but got {tuple(mm.shape)}")
+#
+#             ignored = mm.sum().item()
+#             total = B * L
+#             pct = 100.0 * ignored / max(total, 1)
+#
+#             # per-sample distribution (optional but useful)
+#             ignored_per_row = mm.sum(dim=1).float()
+#             pct_min = 100.0 * ignored_per_row.min().item() / max(L, 1)
+#             pct_mean = 100.0 * ignored_per_row.mean().item() / max(L, 1)
+#             pct_max = 100.0 * ignored_per_row.max().item() / max(L, 1)
+#
+#             print(
+#                 f"[mask dbg] {name}: provided={provided} "
+#                 f"ignored={int(ignored)}/{int(total)} ({pct:.2f}%) | "
+#                 f"per-sample ignored% (min/mean/max)={pct_min:.2f}/{pct_mean:.2f}/{pct_max:.2f}"
+#             )
+#
+#     def forward_unimodal(self, x, direction="x1", **kwargs):
+#         if direction == "x0":
+#             x0 = self.mod_0_token.repeat(x0.shape[0], x0.shape[1], 1) + x0
+#             feat = self.in_proj(x0)  # (B, S, dim)
+#         elif
+#             feat = self.in_proj(x)               # (B, S_total, dim)
+#
+#         cls = self.cls_token.repeat(feat.shape[0], 1, 1)  # (B,1,dim)
+#         feat = torch.cat([cls, feat], dim=1)              # (B,1+S_total,dim)
+#
+#         m = kwargs.get("att_mask", None)
+#         feat = self.common_net(feat, src_key_padding_mask=m)
+#
+#         cls_feat = feat[:, 0]
+#         pred = self.common_fc(cls_feat)
+#
+#         if kwargs.get("return_all", False):
+#             return pred, cls_feat, feat
+#         return pred
+#
+#     def forward(self, x, **kwargs):
+#         # ---- inputs + modality tokens ----
+#         x0, x1 = x[0], x[1]  # expected (B,S,input_dim)
+#         x0 = self.mod_0_token.repeat(x0.shape[0], x0.shape[1], 1) + x0
+#         x1 = self.mod_1_token.repeat(x1.shape[0], x1.shape[1], 1) + x1
+#         xlist = [x0, x1]
+#
+#         if len(x) > 2:
+#             x2 = x[2]
+#             x2 = self.mod_2_token.repeat(x2.shape[0], x2.shape[1], 1) + x2
+#             xlist.append(x2)
+#
+#         if kwargs.get("detach_a", False):
+#             xlist[0] = xlist[0].detach()
+#         if kwargs.get("detach_v", False):
+#             xlist[1] = xlist[1].detach()
+#
+#         feat = torch.cat(xlist, dim=1)          # (B, S_total, input_dim)
+#         feat = self.in_proj(feat)               # (B, S_total, dim)
+#
+#         cls = self.cls_token.repeat(feat.shape[0], 1, 1)  # (B,1,dim)
+#         feat = torch.cat([cls, feat], dim=1)              # (B,1+S_total,dim)
+#
+#         B = feat.shape[0]
+#         lengths = [xi.shape[1] for xi in xlist]  # [L1, L2, (L3)]
+#         m1 = kwargs.get("att_mask1", None)
+#         m2 = kwargs.get("att_mask2", None)
+#         m3 = kwargs.get("att_mask3", None) if len(xlist) > 2 else None
+#
+#         src_key_padding_mask = kwargs.get("src_key_padding_mask", None)
+#         if src_key_padding_mask is None:
+#             src_key_padding_mask = self._build_src_key_padding_mask(
+#                 masks=[m1, m2, m3],
+#                 lengths=lengths,
+#                 B=B,
+#                 device=feat.device,
+#             )
+#         else:
+#             src_key_padding_mask = src_key_padding_mask.to(device=feat.device, dtype=torch.bool)
+#             # if user forgot CLS, prepend it
+#             if src_key_padding_mask.shape[1] == feat.shape[1] - 1:
+#                 cls_pad = torch.zeros((B, 1), device=feat.device, dtype=torch.bool)
+#                 src_key_padding_mask = torch.cat([cls_pad, src_key_padding_mask], dim=1)
+#
+#         # self._debug_print_ignored([m1, m2, m3], lengths, names=("att_mask1", "att_mask2", "att_mask3"))
+#
+#         # ---- transformer ----
+#         feat = self.common_net(feat, src_key_padding_mask=src_key_padding_mask)
+#
+#         cls_feat = feat[:, 0]
+#         pred = self.common_fc(cls_feat)
+#
+#         if kwargs.get("return_all", False):
+#             return pred, cls_feat, feat
+#         return pred
+#
+# import torch
+# import torch.nn as nn
+
+
+from typing import Dict, Optional, Union, List, Tuple
 
 class TF_Fusion_Transformer(nn.Module):
     """
-    PyTorch Transformer fusion (batch_first) with:
-      - modality tokens + CLS token
-      - optional per-modality padding masks (att_mask1/2/3) combined + CLS slot prepended
-      - optional attn_mask (S,S) expanded to include CLS -> (S+1,S+1)
-    Mask conventions:
-      - src_key_padding_mask / att_mask*: (B,S) bool where True = PAD/IGNORE
-      - attn_mask: (S,S) bool True=BLOCK or float with -inf=BLOCK, 0=ALLOW
+    Accepts x as:
+      - Tensor (B,S,D)
+      - list/tuple of tensors
+      - dict {mod_id: tensor}
+
+    Also accepts masks either as:
+      - att_masks: dict {mod_id: (B,Si)} OR list aligned with modalities
+      - OR legacy att_mask1/att_mask2/att_mask3 kwargs (works with dict/list inputs)
+      - OR src_key_padding_mask: (B,S_total) or (B,1+S_total)
+
+    Adds:
+      - modality tokens (per modality, in input_dim space)
+      - CLS token
+      - learnable positional embeddings (in dim space)
     """
 
     def __init__(
@@ -2315,8 +2553,16 @@ class TF_Fusion_Transformer(nn.Module):
         ff_mult: int = 4,
         norm_first: bool = True,
         activation: str = "gelu",
+        max_seq_len: int = 4096,
+        max_modalities: int = 16,
+        use_pos_emb: bool = True,
     ):
         super().__init__()
+        self.input_dim = input_dim
+        self.dim = dim
+        self.max_seq_len = max_seq_len
+        self.max_modalities = max_modalities
+        self.use_pos_emb = use_pos_emb
 
         self.in_proj = nn.Identity() if input_dim == dim else nn.Linear(input_dim, dim)
 
@@ -2333,9 +2579,13 @@ class TF_Fusion_Transformer(nn.Module):
 
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
 
-        self.mod_0_token = nn.Parameter(torch.randn(1, 1, input_dim))
-        self.mod_1_token = nn.Parameter(torch.randn(1, 1, input_dim))
-        self.mod_2_token = nn.Parameter(torch.randn(1, 1, input_dim))
+        # index by modality id
+        self.mod_tokens = nn.Parameter(torch.randn(max_modalities, 1, 1, input_dim))
+
+        if use_pos_emb:
+            self.pos_emb = nn.Parameter(torch.randn(1, 1 + max_seq_len, dim) * 0.02)
+        else:
+            self.register_parameter("pos_emb", None)
 
         self.common_fc = nn.Linear(dim, output_dim)
 
@@ -2345,157 +2595,209 @@ class TF_Fusion_Transformer(nn.Module):
             return None
         pad_mask = pad_mask.to(device=device, dtype=torch.bool)
         cls_col = torch.zeros((pad_mask.shape[0], 1), device=device, dtype=torch.bool)
-        return torch.cat([cls_col, pad_mask], dim=1)  # (B, S+1)
+        return torch.cat([cls_col, pad_mask], dim=1)  # (B,1+S)
 
     @staticmethod
     def _prepend_cls_attn(attn_mask: torch.Tensor, device) -> torch.Tensor:
         if attn_mask is None:
             return None
         attn_mask = attn_mask.to(device=device)
+        if attn_mask.ndim != 2 or attn_mask.shape[0] != attn_mask.shape[1]:
+            raise ValueError(f"attn_mask must be square (S,S); got {tuple(attn_mask.shape)}")
         S = attn_mask.shape[0]
         if attn_mask.dtype == torch.bool:
             out = torch.zeros((S + 1, S + 1), device=device, dtype=torch.bool)
             out[1:, 1:] = attn_mask
             return out
-        else:
-            out = torch.zeros((S + 1, S + 1), device=device, dtype=attn_mask.dtype)
-            out[1:, 1:] = attn_mask
-            return out
+        out = torch.zeros((S + 1, S + 1), device=device, dtype=attn_mask.dtype)
+        out[1:, 1:] = attn_mask
+        return out
 
-    def _build_src_key_padding_mask(self, masks, lengths, B, device):
+    def _add_positional_embeddings(self, feat: torch.Tensor) -> torch.Tensor:
+        if not self.use_pos_emb:
+            return feat
+        S1 = feat.shape[1]  # includes CLS
+        if S1 > self.pos_emb.shape[1]:
+            raise ValueError(
+                f"Sequence too long for pos_emb: got (1+S)={S1}, "
+                f"but pos_emb supports up to {self.pos_emb.shape[1]}."
+            )
+        return feat + self.pos_emb[:, :S1, :].to(device=feat.device, dtype=feat.dtype)
+
+    def _normalize_inputs(
+        self,
+        x: Union[torch.Tensor, List[torch.Tensor], Tuple[torch.Tensor, ...], Dict[int, torch.Tensor]],
+    ) -> Tuple[List[int], List[torch.Tensor]]:
+        if torch.is_tensor(x):
+            return [0], [x]
+
+        if isinstance(x, dict):
+            if len(x) == 0:
+                raise ValueError("Empty multimodal dict input.")
+            mod_ids = sorted(x.keys())
+            xlist = [x[mid] for mid in mod_ids]
+            return mod_ids, xlist
+
+        if isinstance(x, (list, tuple)):
+            if len(x) == 0:
+                raise ValueError("Empty multimodal list/tuple input.")
+            mod_ids = list(range(len(x)))
+            return mod_ids, list(x)
+
+        raise TypeError("x must be a Tensor, a list/tuple of Tensors, or a dict {mod_id: Tensor}.")
+
+    def _normalize_per_mod_masks_from_kwargs(
+        self,
+        kwargs: dict,
+        mod_ids: List[int],
+    ) -> Optional[Union[Dict[int, torch.Tensor], List[Optional[torch.Tensor]]]]:
         """
-        masks:   list like [m1, m2, m3], each either None or (B, Li) bool (True=pad/ignore)
-        lengths: list like [L1, L2, L3] matching the concatenated segments
-        Returns:
-          None if all masks are None,
-          else (B, 1 + sum(lengths)) bool with CLS prepended as False.
+        Supports your legacy call:
+          att_mask1, att_mask2, att_mask3
+
+        We interpret these as "first/second/third modality in sorted(mod_ids)".
+        So with x={0:...,1:...}, att_mask1 -> mod_id 0, att_mask2 -> mod_id 1.
         """
-        if all(m is None for m in masks):
+        m1 = kwargs.get("att_mask1", None)
+        m2 = kwargs.get("att_mask2", None)
+        m3 = kwargs.get("att_mask3", None)
+
+        if m1 is None and m2 is None and m3 is None:
+            return None
+
+        masks = [m1, m2, m3]
+        masks = masks[: len(mod_ids)]
+        # return list aligned with modalities (ordered by mod_ids)
+        return masks
+
+    def _combine_att_masks(
+        self,
+        masks_ordered: List[Optional[torch.Tensor]],
+        lengths: List[int],
+        B: int,
+        device,
+    ) -> Optional[torch.Tensor]:
+        if all(m is None for m in masks_ordered):
             return None
 
         parts = []
-        for m, L in zip(masks, lengths):
+        for m, L in zip(masks_ordered, lengths):
             if L == 0:
                 continue
             if m is None:
-                parts.append(torch.zeros((B, L), device=device, dtype=torch.bool))  # keep all
+                parts.append(torch.zeros((B, L), device=device, dtype=torch.bool))
             else:
-                parts.append(m.to(device=device, dtype=torch.bool))
-                if parts[-1].shape != (B, L):
-                    raise ValueError(f"Mask shape {parts[-1].shape} does not match expected {(B, L)}")
+                mm = m.to(device=device, dtype=torch.bool)
+                if mm.shape != (B, L):
+                    raise ValueError(f"Mask shape {tuple(mm.shape)} does not match expected {(B, L)}")
+                parts.append(mm)
 
         combined = torch.cat(parts, dim=1) if parts else None
         if combined is None:
             return None
+        return self._prepend_cls_padding(combined, device=device)  # (B,1+S_total)
 
-        cls_pad = torch.zeros((B, 1), device=device, dtype=torch.bool)  # CLS never ignored
-        return torch.cat([cls_pad, combined], dim=1)  # (B, 1+S_total)
-
-    def _debug_print_ignored(self, masks, lengths, names=("att_mask1", "att_mask2", "att_mask3")):
+    def forward(
+        self,
+        x: Union[torch.Tensor, List[torch.Tensor], Tuple[torch.Tensor, ...], Dict[int, torch.Tensor]],
+        **kwargs,
+    ):
         """
-        Print ignored-token stats per modality.
+        Works with your call:
+          self.enc_2({0:na_z1, 1:na_z2}, att_mask1=..., att_mask2=...)
 
-        masks:   list of per-modality padding masks, each either None or (B, Li)
-                 Convention: True = PAD/IGNORE
-        lengths: list of Li matching the concatenated segments
-        names:   modality names (same length as masks/lengths)
-
-        If at least one mask is provided, None masks are treated as all-False of the proper size.
-        Reports % ignored across the whole batch for each modality.
+        Also supports:
+          att_masks=... (dict or list)
+          src_key_padding_mask=...
+          attn_mask=...
+          detach_mods=...
+          return_all=True
         """
-        if all(m is None for m in masks):
-            print("[mask dbg] all modality masks are None -> no ignored tokens (no masking).")
-            return
+        mod_ids, xlist = self._normalize_inputs(x)
+        if len(mod_ids) > self.max_modalities:
+            raise ValueError(f"Got {len(mod_ids)} modalities but max_modalities={self.max_modalities}")
 
-        # infer B/device
-        B, device = None, None
-        for m in masks:
-            if m is not None:
-                B, device = m.shape[0], m.device
-                break
+        # Validate shapes + batch consistency
+        B = xlist[0].shape[0]
+        for mid, xi in zip(mod_ids, xlist):
+            if xi.ndim != 3:
+                raise ValueError(f"Modality {mid} must be (B,S,D); got {tuple(xi.shape)}")
+            if xi.shape[0] != B:
+                raise ValueError(f"Batch mismatch: expected B={B} but modality {mid} has B={xi.shape[0]}")
+            if xi.shape[2] != self.input_dim:
+                raise ValueError(
+                    f"Input dim mismatch: expected input_dim={self.input_dim} but modality {mid} has D={xi.shape[2]}"
+                )
 
-        if B is None:
-            print("[mask dbg] no usable masks found.")
-            return
+        device = xlist[0].device
 
-        for m, L, name in zip(masks, lengths, names):
-            if L == 0:
-                print(f"[mask dbg] {name}: length=0 (skipped)")
-                continue
-
-            if m is None:
-                mm = torch.zeros((B, L), device=device, dtype=torch.bool)
-                provided = False
-            else:
-                mm = m.to(device=device, dtype=torch.bool)
-                provided = True
-                if mm.shape != (B, L):
-                    raise ValueError(f"[mask dbg] {name}: expected mask shape {(B, L)} but got {tuple(mm.shape)}")
-
-            ignored = mm.sum().item()
-            total = B * L
-            pct = 100.0 * ignored / max(total, 1)
-
-            # per-sample distribution (optional but useful)
-            ignored_per_row = mm.sum(dim=1).float()
-            pct_min = 100.0 * ignored_per_row.min().item() / max(L, 1)
-            pct_mean = 100.0 * ignored_per_row.mean().item() / max(L, 1)
-            pct_max = 100.0 * ignored_per_row.max().item() / max(L, 1)
-
-            print(
-                f"[mask dbg] {name}: provided={provided} "
-                f"ignored={int(ignored)}/{int(total)} ({pct:.2f}%) | "
-                f"per-sample ignored% (min/mean/max)={pct_min:.2f}/{pct_mean:.2f}/{pct_max:.2f}"
-            )
-
-    def forward(self, x, **kwargs):
-        # ---- inputs + modality tokens ----
-        x0, x1 = x[0], x[1]  # expected (B,S,input_dim)
-        x0 = self.mod_0_token.repeat(x0.shape[0], x0.shape[1], 1) + x0
-        x1 = self.mod_1_token.repeat(x1.shape[0], x1.shape[1], 1) + x1
-        xlist = [x0, x1]
-
-        if len(x) > 2:
-            x2 = x[2]
-            x2 = self.mod_2_token.repeat(x2.shape[0], x2.shape[1], 1) + x2
-            xlist.append(x2)
-
+        # Detach controls
+        detach_mods = set(kwargs.get("detach_mods", []))
         if kwargs.get("detach_a", False):
-            xlist[0] = xlist[0].detach()
-        if kwargs.get("detach_v", False):
-            xlist[1] = xlist[1].detach()
+            detach_mods.add(mod_ids[0] if len(mod_ids) > 0 else 0)
+        if kwargs.get("detach_v", False) and len(mod_ids) > 1:
+            detach_mods.add(mod_ids[1])
 
-        feat = torch.cat(xlist, dim=1)          # (B, S_total, input_dim)
-        feat = self.in_proj(feat)               # (B, S_total, dim)
+        # Add modality tokens
+        xlist_tok = []
+        for mid, xi in zip(mod_ids, xlist):
+            if mid < 0 or mid >= self.max_modalities:
+                raise ValueError(f"modality id {mid} out of range [0, {self.max_modalities-1}]")
+            if mid in detach_mods:
+                xi = xi.detach()
+            tok = self.mod_tokens[mid].to(device=xi.device, dtype=xi.dtype).squeeze(0)  # (1,1,input_dim)
+            xlist_tok.append(xi + tok)  # (B,S,input_dim)
 
-        cls = self.cls_token.repeat(feat.shape[0], 1, 1)  # (B,1,dim)
-        feat = torch.cat([cls, feat], dim=1)              # (B,1+S_total,dim)
+        lengths = [xi.shape[1] for xi in xlist_tok]
+        S_total = sum(lengths)
 
-        B = feat.shape[0]
-        lengths = [xi.shape[1] for xi in xlist]  # [L1, L2, (L3)]
-        m1 = kwargs.get("att_mask1", None)
-        m2 = kwargs.get("att_mask2", None)
-        m3 = kwargs.get("att_mask3", None) if len(xlist) > 2 else None
-
+        # # --- masks ---
         src_key_padding_mask = kwargs.get("src_key_padding_mask", None)
-        if src_key_padding_mask is None:
-            src_key_padding_mask = self._build_src_key_padding_mask(
-                masks=[m1, m2, m3],
-                lengths=lengths,
-                B=B,
-                device=feat.device,
-            )
-        else:
-            src_key_padding_mask = src_key_padding_mask.to(device=feat.device, dtype=torch.bool)
-            # if user forgot CLS, prepend it
-            if src_key_padding_mask.shape[1] == feat.shape[1] - 1:
-                cls_pad = torch.zeros((B, 1), device=feat.device, dtype=torch.bool)
-                src_key_padding_mask = torch.cat([cls_pad, src_key_padding_mask], dim=1)
+        # if src_key_padding_mask is not None:
+        #     src_key_padding_mask = src_key_padding_mask.to(device=device, dtype=torch.bool)
+        #     if src_key_padding_mask.shape == (B, S_total):
+        #         src_key_padding_mask = self._prepend_cls_padding(src_key_padding_mask, device=device)
+        #     elif src_key_padding_mask.shape != (B, 1 + S_total):
+        #         raise ValueError(
+        #             f"src_key_padding_mask must be (B,S_total) or (B,1+S_total). "
+        #             f"Got {tuple(src_key_padding_mask.shape)}; expected {(B, S_total)} or {(B, 1+S_total)}."
+        #         )
+        # else:
+        #     # Prefer explicit att_masks=..., otherwise accept legacy att_mask1/2/3
+        #     att_masks = kwargs.get("att_masks", None)
+        #     if att_masks is None:
+        #         masks_ordered = self._normalize_per_mod_masks_from_kwargs(kwargs, mod_ids)
+        #     else:
+        #         # att_masks can be dict or list/tuple
+        #         if isinstance(att_masks, dict):
+        #             masks_ordered = [att_masks.get(mid, None) for mid in mod_ids]
+        #         elif isinstance(att_masks, (list, tuple)):
+        #             if len(att_masks) != len(mod_ids):
+        #                 raise ValueError(f"att_masks length {len(att_masks)} must match #modalities {len(mod_ids)}")
+        #             masks_ordered = list(att_masks)
+        #         else:
+        #             raise TypeError("att_masks must be a dict {mod_id: mask} or a list/tuple aligned with modalities.")
+        #
+        #     if masks_ordered is None:
+        #         src_key_padding_mask = None
+        #     else:
+        #         src_key_padding_mask = self._combine_att_masks(masks_ordered, lengths, B, device=device)
 
-        # self._debug_print_ignored([m1, m2, m3], lengths, names=("att_mask1", "att_mask2", "att_mask3"))
+        attn_mask = kwargs.get("attn_mask", None)
+        if attn_mask is not None:
+            if attn_mask.shape != (S_total, S_total):
+                raise ValueError(f"attn_mask must be (S_total,S_total)={(S_total,S_total)}; got {tuple(attn_mask.shape)}")
+            attn_mask = self._prepend_cls_attn(attn_mask, device=device)
 
-        # ---- transformer ----
-        feat = self.common_net(feat, src_key_padding_mask=src_key_padding_mask)
+        # --- forward ---
+        feat = torch.cat(xlist_tok, dim=1)      # (B,S_total,input_dim)
+        feat = self.in_proj(feat)               # (B,S_total,dim)
+
+        cls = self.cls_token.to(device=device, dtype=feat.dtype).repeat(B, 1, 1)  # (B,1,dim)
+        feat = torch.cat([cls, feat], dim=1)                                      # (B,1+S_total,dim)
+        feat = self._add_positional_embeddings(feat)
+
+        feat = self.common_net(feat, mask=attn_mask, src_key_padding_mask=src_key_padding_mask)
 
         cls_feat = feat[:, 0]
         pred = self.common_fc(cls_feat)
@@ -2504,6 +2806,73 @@ class TF_Fusion_Transformer(nn.Module):
             return pred, cls_feat, feat
         return pred
 
+
+
+class UnimodalWrapper(nn.Module):
+    """
+    Renamed version of your FusionIBModel:
+      enc_0, enc_1 : modality encoders (same as before)
+      enc_2        : fusion trunk (was common_fc_1)
+      enc_3        : fusion projector (was common_fc_2)
+      enc_4        : fusion head (was mu_head)
+      synergy      : SynIB_VAE (or SynIB) using main=self
+    """
+    # def __init__(self, args, encs):
+    #     super().__init__()
+    #     self.args = args
+    #     self.cls_type = _cfg(args, "cls_type")
+    #     self.norm_decision = _cfg(args, "norm_decision", False)
+    #
+    #     # main encoders
+    #     self.enc_0 = encs[0]
+    #     self.enc_1 = LinearHead(args)
+
+    def __init__(self, args, encs):
+        super().__init__()
+        self.args = args
+        self.cls_type = _cfg(args, "cls_type")
+        self.norm_decision = _cfg(args, "norm_decision", False)
+
+        self.enc_0 = encs[0]
+        self.enc_1 = LinearHead(args)
+
+    def _get_features(self, x, **kwargs):
+        out0 = self.enc_0(x, **kwargs)
+        z1, na_z1 = _as_tensor_features(out0)
+        z1 = F.layer_norm(z1, (z1.shape[-1],))
+        na_z1 = F.layer_norm(na_z1, (na_z1.shape[-1],))
+        return z1, na_z1
+
+    def _compute_logits_unimodal(self, z, na_z=None, direction="z1", detach_it=True,**kwargs):
+        if detach_it:
+            this_z = z.detach()
+        else:
+            this_z = z
+        pred = self.enc_1(this_z, **kwargs)
+
+        return pred
+    def _base_forward(self, x, **kwargs):
+        z1, na_z1 = self._get_features(x, **kwargs)
+
+        uni_pred_1 = self._compute_logits_unimodal(z1, na_z1, direction="z1")
+
+        return {
+            "preds": {
+                "combined": uni_pred_1,
+            },
+            "features": {
+                "combined": z1,
+                "z1": z1,
+                "na_z1":na_z1,
+            },
+            "losses": {},
+        }
+
+    def forward(self, x, **kwargs):
+
+        output =  self._base_forward(x, **kwargs)
+
+        return output
 
 class FeatureStatsMasker(nn.Module):
     def __init__(self, d1, ema_beta=0.99, eps=1e-6, device=None, dtype=None):
@@ -2579,6 +2948,7 @@ class SynIB_RandomMask(nn.Module):
         super().__init__()
         object.__setattr__(self, "main", main)
 
+        self.args = args
         self.perturb = _cfg(args, "perturb", {}) or {}
         self.reestimate_features = bool(self.perturb.get("reestimate_features", False))
 
@@ -2678,11 +3048,7 @@ class SynIB_RandomMask(nn.Module):
         p = self.p_min + (self.p_max - self.p_min) * alpha_bar
         return p
 
-    def get_random_mask_multiclass(
-            self,
-            features,
-            **kwargs
-    ) -> Dict[str, torch.Tensor]:
+    def get_random_mask_multiclass( self, features, **kwargs) -> Dict[str, torch.Tensor]:
         """
         Sequential, decoupled mask learning:
 
@@ -2715,13 +3081,15 @@ class SynIB_RandomMask(nn.Module):
                 return ema.noise_like(z, self.noise_std)
 
         def fill_func(z, keep, ema=None):
-            return (1 - keep) * z + keep * noise_fn(z, ema=ema)
+            eps = z[torch.randperm(z.size(0))]
+            # return (1 - keep) * z + keep * noise_fn(z, ema=ema)
+            return (1 - keep) * z + keep * eps
 
         def make_tilde_once(z, ema):
             zK = repeat_k(z)
             if self.fill == "token":
                 token_mask = make_keep_token(zK, self.p)
-                return zK, token_mask
+                return zK, None, token_mask
             keep = make_keep(zK, self.p)
             tzK = fill_func(zK, keep, ema)
             return zK, tzK
@@ -2768,6 +3136,231 @@ class SynIB_RandomMask(nn.Module):
             "mask2": token_mask2
         }
 
+    def get_learnable_mask_multiclass(self, x, features, preds, **kwargs) -> Dict[str, torch.Tensor]:
+
+        y = kwargs["label"]
+        device = y.device
+        pcfg = self.args.perturb
+        steps = int(getattr(pcfg, "steps", 20))
+        lr = float(getattr(pcfg, "lr", 1e-1))
+        tau = float(getattr(pcfg, "tau", 1.0))
+        noise_std = float(getattr(pcfg, "noise_std", 1.0))
+        lsparse = float(getattr(pcfg, "lsparse", 1))
+        alpha_unimodal = float(getattr(pcfg, "alpha_unimodal", 1.0))
+        method = getattr(pcfg, "method", "adv_unimodal")
+        gate_shape = getattr(pcfg, "gate_shape", "per_example")  # "global" or "per_example"
+        hard = bool(getattr(pcfg, "hard", True))
+        hard_thresh = float(getattr(pcfg, "hard_thresh", 0.5))
+        fill_mode = getattr(pcfg, "fill", "ema")  # e.g. "noise" / "zeros" / "ema" / "token" (token optional)
+
+        # -------------------------
+        # 2) Helpers (small + local)
+        # -------------------------
+        def _init_gate_logits(B: int, d: int) -> torch.Tensor:
+            return torch.ones((B, d), device=device)
+
+        def _gate_probs_from_logits(ell: torch.Tensor, B: int, d: int) -> torch.Tensor:
+
+            if gate_shape == "global":
+                return torch.sigmoid(ell / tau).view(1, d)
+            return torch.sigmoid(ell / tau).view(B, d)
+
+        def _mask_objective(method, which: Literal["z1", "z2"], p_f_clean: torch.Tensor,
+                           p_u0_clean: torch.Tensor, p_u1_clean: torch.Tensor, p_f_t: torch.Tensor, p_u_t: torch.Tensor,
+                           y: torch.Tensor, sparsity: torch.Tensor, lsparse: float,
+                           alpha_unimodal: float) -> torch.Tensor:
+            if method == "adv_unimodal":
+                return -F.cross_entropy(p_u_t, y) + float(
+                lsparse) * sparsity
+            raise ValueError(f"Unknown method {method}")
+        def _apply_destroy(z: torch.Tensor, g: torch.Tensor, ema_stats=None, inv_mask=False) -> torch.Tensor:
+            if g.dim() == 1:
+                g_ = g.view(1, -1)
+            else:
+                g_ = g
+            g_ = g_.to(z.device).type_as(z)
+
+            if fill_mode == "zeros":
+                eps = torch.zeros_like(z)
+            elif fill_mode == "ema":
+                eps = ema_stats.noise_like(z, noise_std) if ema_stats is not None else (torch.randn_like(z) * noise_std)
+            elif fill_mode == "shuffle":
+                eps = z[torch.randperm(z.size(0))]
+            else:
+                raise ValueError(f"Unknown fill mode {fill_mode}")
+
+            if inv_mask:
+                return g_ * z + (1 - g_) * eps
+            return (1 - g_) * z + g_ * eps
+        def acc_from_logits_multiclass(logits: torch.Tensor, y: torch.Tensor) -> float:
+
+            preds = logits.argmax(dim=1)
+            return float((preds == y).float().mean().item())
+        def _forward_probs(feat_dict: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+            p_f, _ = self.main._compute_logits(feat_dict["z1"], feat_dict["z2"], feat_dict["na_z1"], feat_dict["na_z2"])  # <-- implement in your class
+            p_u1 = self.main.enc_0.forward_uni(feat_dict["z1"], feat_dict["na_z1"], detach_pred=False)  # <-- implement in your class
+            p_u2 = self.main.enc_1.forward_uni(feat_dict["z2"], feat_dict["na_z2"], detach_pred=False)  # <-- implement in your class
+            return p_f, p_u1, p_u2
+        def gate_to_hard_mask(g: torch.Tensor, hard_thresh: float, ref_shape: torch.Size,
+                              inv_mask: bool = False) -> torch.Tensor:
+            pred = (g >= float(hard_thresh)) if g.dtype.is_floating_point else g.bool()
+            if pred.dim() == 1: pred = pred.view(1, -1)
+            if pred.shape[0] == 1 and ref_shape[0] > 1: pred = pred.expand(ref_shape[0], ref_shape[1])
+            if inv_mask: pred = ~pred
+            return pred
+
+        def hard_concrete(ell, tau=2 / 3, l=-0.1, r=1.1, training=True):
+            if training:
+                u = torch.rand_like(ell)
+                s = torch.sigmoid((ell + torch.log(u) - torch.log(1 - u)) / tau)
+            else:
+                s = torch.sigmoid(ell)  # deterministic at test time
+            s_bar = s * (r - l) + l
+            z = s_bar.clamp(0, 1)
+            return z
+
+        def freeze_model_(m: nn.Module) -> None:
+            for p in m.parameters(): p.requires_grad_(False)
+
+        req = [p.requires_grad for p in self.main.parameters()]
+        freeze_model_(self.main)
+        try:
+
+            p_u1_clean, p_u2_clean, p_f_clean = preds["c"], preds["g"], preds["combined"]
+            z1, z2, na_z1, na_z2 = features["z1"], features["z2"], features["na_z1"], features["na_z2"]
+            z1 = z1.detach(); z2 = z2.detach()
+            p_u1_clean = p_u1_clean.detach(); p_u2_clean = p_u2_clean.detach()
+            p_f_clean = p_f_clean.detach()
+
+            #make a new forward pass
+            p_f_clean, p_u1_clean, p_u2_clean = _forward_probs(features)
+
+            # if self.cls_type == "mlp":
+            #     self.stats_z1.ema_update(z1)
+            #     self.stats_z2.ema_update(z2)
+            # elif self.cls_type == "tf":
+            #     self.stats_na_z1.ema_update(na_z1)
+            #     self.stats_na_z2.ema_update(na_z2)
+            #
+            with torch.enable_grad():
+                this_z1 = z1 if self.cls_type == "mlp" else na_z1
+                this_key = 'z1' if self.cls_type == "mlp" else 'na_z1'
+                this_stats1 = self.stats_z1 if self.cls_type == "mlp" else self.stats_na_z1
+                this_stats1.ema_update(this_z1)
+                ell1 = torch.nn.Parameter(torch.ones(this_z1.shape, device=device), requires_grad=True)
+                opt1 = torch.optim.Adam([ell1], lr=lr)
+
+                for i in range(steps):
+                    g1 = torch.sigmoid(ell1 / tau)
+                    tz1 = _apply_destroy(this_z1, g1, ema_stats=this_stats1, inv_mask=True)
+                    feat_t = dict(features)
+                    feat_t[this_key] = tz1
+
+                    p_f_t, p_u_t, _ = _forward_probs(feat_t)
+                    sparsity = (1-g1).mean()
+                    obj1 = -F.cross_entropy(p_u_t, y) + float(lsparse) * sparsity
+                    opt1.zero_grad(set_to_none=True)
+                    obj1.backward(retain_graph=True)
+                    torch.nn.utils.clip_grad_norm_([ell1], 1.0)
+                    opt1.step()
+                    # if i==0 or i==steps-1:
+                    #     with torch.no_grad():
+                    #         pred = _gate_probs_from_logits(ell1, B, d1)
+                    #         sp = float((1-pred).float().mean().item())
+                    #         tz1 = _apply_destroy(z1, pred, ema_stats=getattr(self, "stats_z1", None), inv_mask=True)
+                    #         feat_t = dict(this_features)
+                    #         feat_t["z1"] = tz1
+                    #         p_f_t, p_u1_t, p_u2_t = _forward_probs(feat_t)
+                    #
+                    #         acc_u1_t = acc_from_logits_multiclass(p_u1_t, y)
+                    #         acc_u_clean = acc_from_logits_multiclass(p_u1_clean, y)
+                    #
+                    #     print(f"Z1 -{i}- Obj: {obj}, Sparsity:{sparsity}, uni_perf_clean:{acc_u_clean}, uni_perf_t: {acc_u1_t}, hard_sparsity: {sp}")
+
+                g1_final = torch.sigmoid(ell1 / tau)
+
+
+                this_z2 = z2 if self.cls_type == "mlp" else na_z2
+                this_key = 'z2' if self.cls_type == "mlp" else 'na_z2'
+                this_stats2 = self.stats_z2 if self.cls_type == "mlp" else self.stats_na_z2
+                this_stats2.ema_update(this_z2)
+                ell2 = torch.nn.Parameter(torch.ones(this_z2.shape, device=device), requires_grad=True)
+                opt2 = torch.optim.Adam([ell2], lr=lr)
+
+                for i in range(steps):
+                    g2 = torch.sigmoid(ell2 / tau)
+                    tz2 = _apply_destroy(this_z2, g2, ema_stats=this_stats2, inv_mask=True)
+                    feat_t = dict(features)
+                    feat_t[this_key] = tz2
+
+                    p_f_t, _, p_u_t = _forward_probs(feat_t)
+                    sparsity = (1-g2).mean()
+
+                    obj2 = -F.cross_entropy(p_u_t, y) + float(lsparse) * sparsity
+                    opt2.zero_grad(set_to_none=True)
+                    obj2.backward(retain_graph=True)
+                    torch.nn.utils.clip_grad_norm_([ell2], 1.0)
+                    opt2.step()
+                    # if i==0 or i==steps-1:
+                    #
+                    #     with torch.no_grad():
+                    #         pred = _gate_probs_from_logits(ell2, B, d2)
+                    #         sp = float((1-pred).float().mean().item())
+                    #         tz2 = _apply_destroy(z2, pred, ema_stats=getattr(self, "stats_z2", None), inv_mask=True)
+                    #         feat_t = dict(this_features)
+                    #         feat_t["z2"] = tz2
+                    #         p_f_t, p_u1_t, p_u2_t = _forward_probs(feat_t)
+                    #
+                    #         acc_u2_t = acc_from_logits_multiclass(p_u2_t, y)
+                    #         acc_u_clean = acc_from_logits_multiclass(p_u1_clean, y)
+                    #
+                    #     print(f"Z2 -{i}- Obj: {obj}, Sparsity:{sparsity}, uni_perf_clean:{acc_u_clean}, uni_perf_t: {acc_u2_t}, hard_sparsity: {sp}")
+
+                g2_final = torch.sigmoid(ell2 / tau)
+
+                # -------------------------
+                # 6) Build outputs (keep same keys as your old function)
+                # -------------------------
+                # Keep K behavior: if you rely on K>1, we can expand later.
+
+        finally:
+            self.main.train()
+            for p, r in zip(self.main.parameters(), req):
+                p.requires_grad_(r)
+
+        if self.cls_type == "mlp":
+            z1K, z2K = z1, z2
+            tz1K = _apply_destroy(this_z1, g1_final, ema_stats=this_stats1, inv_mask=True)
+            tz2K = _apply_destroy(this_z2, g2_final, ema_stats=this_stats2, inv_mask=True)
+            na_z1K, na_z2K = na_z1, na_z2
+            na_tz1K, na_tz2K = na_z1, na_z2
+        elif self.cls_type == "tf":
+            na_z1K, na_z2K = na_z1, na_z2
+            na_tz1K = _apply_destroy(this_z1, g1_final, ema_stats=this_stats1, inv_mask=True)
+            na_tz2K = _apply_destroy(this_z2, g2_final, ema_stats=this_stats2, inv_mask=True)
+            z1K, z2K = z1, z2
+            tz1K, tz2K = z1, z2
+
+        # For compatibility: if your old code returned token masks, you can interpret these as "corrupt mask"
+        # mask1/mask2 shapes should match your expectations:
+        # - if fill=="token" you previously returned [K*B,T]; here we return [B,d]
+        mask1 = g1_final.detach()
+        mask2 = g2_final.detach()
+
+        return {
+            "z1K": z1K,
+            "tz1K": tz1K,
+            "z2K": z2K,
+            "tz2K": tz2K,
+            "na_z1K": na_z1K,
+            "na_tz1K": na_tz1K,
+            "na_z2K": na_z2K,
+            "na_tz2K": na_tz2K,
+            "mask1": mask1,
+            "mask2": mask2,
+        }
+
+
     def _perturb_masked(self, features, **kwargs):
         mask_dict = self.get_random_mask_multiclass(features, **kwargs)
         z1 = features["z1"].detach()
@@ -2812,13 +3405,30 @@ class SynIB_RandomMask(nn.Module):
 
     def compute_training_losses(self, base_output, **kwargs):
         losses = {}
-        # losses.update(self._kl_pass(base_output["features"]["mask0"], base_output["preds"]["mask0"], name="kl_synergy_1", **kwargs))
-        # losses.update(self._kl_pass(base_output["features"]["mask1"], base_output["preds"]["mask1"], name="kl_synergy_2", **kwargs))
-        losses.update(self._kl_pass(base_output["features"]["mask01"], base_output["preds"]["mask01"], name="kl_synergy_12", **kwargs))
 
-        if self.perturb.get("type", None) == "competition":
-            losses.update(self._kl_pass(base_output["features"]["combined"], base_output["features"]["combined"], name="kl_synergy_combined",**kwargs))
-            losses.update(self.ce_losses(base_output, **kwargs))
+        #draw uniformly 0-1 random number
+        # r = torch.bernoulli(torch.tensor(0.5)).item()
+        # if r > 0.5:
+        #     ce_losses = self.ce_losses(base_output, **kwargs)
+        #     losses.update({"ce_mask0":ce_losses["mask0"]})
+        #     losses.update({"ce_mask1":ce_losses["mask1"]})
+        #     losses.update({"kl_synergy_1":torch.tensor(0.0)})
+        #     losses.update({"kl_synergy_2":torch.tensor(0.0)})
+        # else:
+        #     losses.update({"ce_mask0":torch.tensor(0.0)})
+        #     losses.update({"ce_mask1":torch.tensor(0.0)})
+        ce_losses = self.ce_losses(base_output, **kwargs)
+        losses.update({"ce_mask0": ce_losses["mask0"]})
+        losses.update({"ce_mask1": ce_losses["mask1"]})
+        losses.update(self._kl_pass(base_output["features"]["mask0"], base_output["preds"]["mask0"], name="kl_synergy_1", **kwargs))
+        losses.update(self._kl_pass(base_output["features"]["mask1"], base_output["preds"]["mask1"], name="kl_synergy_2", **kwargs))
+        # losses.update(self._kl_pass(base_output["features"]["mask01"], base_output["preds"]["mask01"], name="kl_synergy_12", **kwargs))
+
+
+
+        # if self.perturb.get("type", None) == "competition":
+        #     losses.update(self._kl_pass(base_output["features"]["combined"], base_output["features"]["combined"], name="kl_synergy_combined",**kwargs))
+        #     losses.update(self.ce_losses(base_output, **kwargs))
 
         # z1, z2 = base_output["features"]["z1"], base_output["features"]["z2"]
         # infonce = nt_xent_loss(z1, z2, temperature=1.0)
@@ -2853,6 +3463,7 @@ class FusionIBModel_Mask(nn.Module):
         dropout = float(_cfg(args, "dropout", 0.1))
 
         self.synergy_weight = float(_cfg(args, "bias_infusion", {}).get("l", 0.0))
+        self.ending_epoch = int(_cfg(args, "perturb", {}).get("ending_epoch", 1000.0))
 
         # main encoders
         self.enc_0 = encs[0]
@@ -2883,15 +3494,17 @@ class FusionIBModel_Mask(nn.Module):
     # original interfaces kept
     # -------------------------
     def _get_features(self, x, **kwargs):
-        out0 = self.enc_0(x, **kwargs)
-        out1 = self.enc_1(x, **kwargs)
+        out0 = self.enc_0(x, detach_pred=True, **kwargs)
+        out1 = self.enc_1(x, detach_pred=True, **kwargs)
         z1, na_z1 = _as_tensor_features(out0)
         z2, na_z2 = _as_tensor_features(out1)
+        preds1 = _as_tensor_preds(out0)
+        preds2 = _as_tensor_preds(out1)
         z1 = F.layer_norm(z1, (z1.shape[-1],))
         z2 = F.layer_norm(z2, (z2.shape[-1],))
         na_z1 = F.layer_norm(na_z1, (na_z1.shape[-1],))
         na_z2 = F.layer_norm(na_z2, (na_z2.shape[-1],))
-        return z1, z2, na_z1, na_z2
+        return preds1, preds2, z1, z2, na_z1, na_z2
 
     def _compute_logits(self, z1, z2, na_z1=None, na_z2=None, att_mask1=None, att_mask2=None,**kwargs):
         if self.cls_type == "tf":
@@ -2901,25 +3514,9 @@ class FusionIBModel_Mask(nn.Module):
         logits = self.enc_3(feat)
         return logits, feat
 
-    def _compute_logits_unimodal(self, z, na_z=None, direction="z1", detach_it=True,**kwargs):
-        if detach_it:
-            this_z = z.detach()
-        else:
-            this_z = z
-        if direction == "z1":
-            # pred = self.cls_1_uni(z.detach())
-            pred = self.enc_4(this_z)
-        elif direction == "z2":
-            # pred = self.cls_2_uni(z.detach())
-            pred = self.enc_5(this_z)
-
-        return pred
     def _base_forward(self, x, **kwargs):
-        z1, z2, na_z1, na_z2 = self._get_features(x, **kwargs)
+        uni_pred_1, uni_pred_2, z1, z2, na_z1, na_z2 = self._get_features(x, **kwargs)
         pred, feat = self._compute_logits(z1, z2, na_z1, na_z2)
-
-        uni_pred_1 = self._compute_logits_unimodal(z1, na_z1, direction="z1")
-        uni_pred_2 = self._compute_logits_unimodal(z2, na_z2, direction="z2")
 
         return {
             "preds": {
@@ -2938,49 +3535,70 @@ class FusionIBModel_Mask(nn.Module):
         }
 
     def _base_forward_synib(self, x, **kwargs):
-        z1, z2, na_z1, na_z2 = self._get_features(x, **kwargs)
+        uni_pred_1, uni_pred_2, z1, z2, na_z1, na_z2 = self._get_features(x, **kwargs)
         pred, feat = self._compute_logits(z1, z2, na_z1, na_z2)
 
-        uni_pred_1 = self._compute_logits_unimodal(z1, na_z1, direction="z1")
-        uni_pred_2 = self._compute_logits_unimodal(z2, na_z2, direction="z2")
+        # uni_pred_1 = self._compute_logits_unimodal(z1, na_z1, direction="z1")
+        # uni_pred_2 = self._compute_logits_unimodal(z2, na_z2, direction="z2")
 
         features = {"combined": feat,
                     "z1": z1,
                     "z2": z2,
                     "na_z1":na_z1,
                     "na_z2":na_z2}
-
-        feat_tilde = self.synib.get_random_mask_multiclass(features)
-
-        pred_mask0, feat_mask0 = self._compute_logits(feat_tilde["z1K"], feat_tilde["tz2K"], feat_tilde["na_z1K"], feat_tilde["na_tz2K"],
-                                                      att_mask1=feat_tilde["mask1"], att_mask2=None)
-        pred_mask1, feat_mask1 = self._compute_logits(feat_tilde["tz1K"], feat_tilde["z2K"], feat_tilde["na_tz1K"], feat_tilde["na_z2K"],
-                                                      att_mask1=None, att_mask2=feat_tilde["mask2"])
-        pred_mask01, feat_mask01 = self._compute_logits(feat_tilde["tz1K"], feat_tilde["tz2K"], feat_tilde["na_tz1K"], feat_tilde["na_tz2K"],
-                                                      att_mask1=feat_tilde["mask1"], att_mask2=feat_tilde["mask2"])
-
         preds = {"combined": pred,
-                 "mask0":pred_mask0,
-                 "mask1":pred_mask1,
-                 "mask01":pred_mask01,
                  "c":uni_pred_1,
                  "g":uni_pred_2}
-        features.update({"mask0":feat_mask0,"mask1":feat_mask1,"mask01":feat_mask01})
+        feat_tilde_random = self.synib.get_random_mask_multiclass(features)
+        feat_tilde = self.synib.get_learnable_mask_multiclass(x, features, preds, **kwargs)
+
+        pred_mask0, feat_mask0 = self._compute_logits(feat_tilde["z1K"], feat_tilde["tz2K"], feat_tilde["na_z1K"], feat_tilde["na_tz2K"], att_mask1=feat_tilde["mask1"], att_mask2=None)
+        pred_mask1, feat_mask1 = self._compute_logits(feat_tilde["tz1K"], feat_tilde["z2K"], feat_tilde["na_tz1K"], feat_tilde["na_z2K"], att_mask1=None, att_mask2=feat_tilde["mask2"])
+        pred_mask01, feat_mask01 = self._compute_logits(feat_tilde["tz1K"], feat_tilde["tz2K"], feat_tilde["na_tz1K"], feat_tilde["na_tz2K"], att_mask1=feat_tilde["mask1"], att_mask2=feat_tilde["mask2"])
+
+
+        pred_randmask0, feat_randmask0 = self._compute_logits(feat_tilde_random["z1K"], feat_tilde_random["tz2K"], feat_tilde_random["na_z1K"], feat_tilde_random["na_tz2K"], att_mask1=feat_tilde_random["mask1"], att_mask2=None)
+        pred_randmask1, feat_randmask1 = self._compute_logits(feat_tilde_random["tz1K"], feat_tilde_random["z2K"], feat_tilde_random["na_tz1K"], feat_tilde_random["na_z2K"], att_mask1=None, att_mask2=feat_tilde_random["mask2"])
+        pred_randmask01, feat_randmask01 = self._compute_logits(feat_tilde_random["tz1K"], feat_tilde_random["tz2K"], feat_tilde_random["na_tz1K"], feat_tilde_random["na_tz2K"], att_mask1=feat_tilde_random["mask1"], att_mask2=feat_tilde_random["mask2"])
+
+        preds.update({"mask0":pred_mask0,
+                     "mask1":pred_mask1,
+                     "mask01":pred_mask01,
+                      "randmask0": pred_randmask0,
+                      "randmask1": pred_randmask1,
+                      "randmask01": pred_randmask01,
+                      })
+        features.update({
+                        "mask0":feat_mask0,
+                         "mask1":feat_mask1,
+                         "mask01":feat_mask01,
+                        "randmask0":feat_randmask0,
+                         "randmask1":feat_randmask1,
+                         "randmask01":feat_randmask01
+                         })
+        losses = {}
+        ce_losses = self.synib.ce_losses({"preds": preds, "features": features}, **kwargs)
+        losses.update({"ce_mask0": ce_losses["randmask0"]})
+        losses.update({"ce_mask1": ce_losses["randmask1"]})
+        losses.update(self.synib._kl_pass(feat_mask0, pred_mask0, name="kl_synergy_1", **kwargs))
+        losses.update(self.synib._kl_pass(feat_mask1, pred_mask1, name="kl_synergy_2", **kwargs))
+
+
         return {
             "preds": preds,
             "features": features,
-            "losses": {},
+            "losses": losses,
         }
 
     def forward(self, x, **kwargs):
 
-        if self.training and self.synergy_weight > 0:
+        okay_epoch = False if "current_epoch" in kwargs and self.ending_epoch<kwargs["current_epoch"] else True
+        if self.synergy_weight > 0 and okay_epoch:
             output = self._base_forward_synib(x, **kwargs)
-            synergy_losses = self.synib.compute_training_losses(output, **kwargs)
-            output["losses"].update(synergy_losses)
         else:
             output =  self._base_forward(x, **kwargs)
 
 
         return output
+
 

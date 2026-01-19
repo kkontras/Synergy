@@ -1,28 +1,28 @@
-000 (008.015.000) 2025-11-03 10:25:35 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+000 (008.015.000) 2026-01-17 07:17:55 Job submitted from host: <10.87.28.151:9618?addrs=10.87.28.151-9618&alias=brigand.esat.kuleuven.be&noUDP&sock=schedd_1447_19a1>
 ...
-001 (008.015.000) 2025-11-03 19:16:50 Job executing on host: <10.87.24.140:9618?addrs=10.87.24.140-9618&alias=hawberry.esat.kuleuven.be&noUDP&sock=startd_2099_5161>
-	SlotName: slot1_1@hawberry.esat.kuleuven.be
-	AvailableGPUs = { GPUs_GPU_6bf32b01 }
-	CondorScratchDir = "/usr/data/condor/execute/dir_1866699"
+001 (008.015.000) 2026-01-17 07:18:10 Job executing on host: <10.87.24.26:9618?addrs=10.87.24.26-9618&alias=topaz.esat.kuleuven.be&noUDP&sock=startd_1583_6282>
+	SlotName: slot1_1@topaz.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_08518bd6 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1527740/scratch"
 	Cpus = 8
-	Disk = 1049600
+	Disk = 1048576
 	GPUs = 1
-	GPUs_GPU_6bf32b01 = [ Id = "GPU-6bf32b01"; ClockMhz = 1695.0; Capability = 8.6; CoresPerCU = 128; DeviceName = "NVIDIA GeForce RTX 3090"; DeviceUuid = "6bf32b01-56ae-80bd-52e0-98456c572cb9"; ECCEnabled = false; ComputeUnits = 82; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:09:00.0"; GlobalMemoryMb = 24124; MaxSupportedVersion = 13000 ]
-	Memory = 71680
+	GPUs_GPU_08518bd6 = [ Id = "GPU-08518bd6"; ClockMhz = 1455.0; Capability = 7.0; CoresPerCU = 64; DeviceName = "NVIDIA TITAN V"; DeviceUuid = "08518bd6-262a-d129-1cb1-87856879b83f"; ECCEnabled = false; ComputeUnits = 80; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:01:00.0"; GlobalMemoryMb = 12048; MaxSupportedVersion = 13000 ]
+	Memory = 20480
 ...
-006 (008.015.000) 2025-11-03 19:16:58 Image size of job updated: 314068
-	307  -  MemoryUsage of job (MB)
-	314068  -  ResidentSetSize of job (KB)
+006 (008.015.000) 2026-01-17 07:18:19 Image size of job updated: 35592
+	35  -  MemoryUsage of job (MB)
+	35592  -  ResidentSetSize of job (KB)
 ...
-006 (008.015.000) 2025-11-03 19:17:24 Image size of job updated: 1117528
-	307  -  MemoryUsage of job (MB)
-	314068  -  ResidentSetSize of job (KB)
+006 (008.015.000) 2026-01-17 07:18:50 Image size of job updated: 324864
+	35  -  MemoryUsage of job (MB)
+	35592  -  ResidentSetSize of job (KB)
 ...
-005 (008.015.000) 2025-11-03 19:17:25 Job terminated.
+005 (008.015.000) 2026-01-17 07:18:50 Job terminated.
 	(1) Normal termination (return value 0)
-		Usr 0 00:00:11, Sys 0 00:00:06  -  Run Remote Usage
+		Usr 0 00:00:06, Sys 0 00:00:01  -  Run Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
-		Usr 0 00:00:11, Sys 0 00:00:06  -  Total Remote Usage
+		Usr 0 00:00:06, Sys 0 00:00:01  -  Total Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
 	0  -  Run Bytes Sent By Job
 	0  -  Run Bytes Received By Job
@@ -30,96 +30,9 @@
 	0  -  Total Bytes Received By Job
 	Partitionable Resources :    Usage  Request Allocated Assigned
 	   Cpus                 :        0        8         8 
-	   Disk (KB)            :        2  1048576   1049600 
-	   GPUs                 :        0        1         1 "GPU-6bf32b01"
-	   Memory (MB)          :      307    71680     71680 
-	   TimeExecute (s)      :       34                    
-	   TimeSlotBusy (s)     :       34                    
-...
-000 (008.015.000) 2025-12-16 01:22:21 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
-...
-001 (008.015.000) 2025-12-16 01:23:39 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_2572_c1ad>
-	SlotName: slot1_7@aristoteles.esat.kuleuven.be
-	AvailableGPUs = { GPUs_GPU_1ba53048 }
-	CondorScratchDir = "/usr/data/condor/execute/dir_1723865/scratch"
-	Cpus = 8
-	Disk = 1048576
-	GPUs = 1
-	GPUs_GPU_1ba53048 = [ Id = "GPU-1ba53048"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "1ba53048-c5a1-3226-7f78-7a6cb9cbaa42"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.105.08"; DriverVersion = 13.0; DevicePciBusId = "0000:C7:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
-	Memory = 71680
-...
-006 (008.015.000) 2025-12-16 01:23:48 Image size of job updated: 381344
-	373  -  MemoryUsage of job (MB)
-	381344  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 01:28:49 Image size of job updated: 2145684
-	2026  -  MemoryUsage of job (MB)
-	2073828  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 01:33:49 Image size of job updated: 2166604
-	2032  -  MemoryUsage of job (MB)
-	2080548  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 01:38:50 Image size of job updated: 2217996
-	2083  -  MemoryUsage of job (MB)
-	2132464  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 01:43:50 Image size of job updated: 2218444
-	2083  -  MemoryUsage of job (MB)
-	2132464  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 01:48:50 Image size of job updated: 2218444
-	2102  -  MemoryUsage of job (MB)
-	2152136  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 01:53:51 Image size of job updated: 2218444
-	2117  -  MemoryUsage of job (MB)
-	2167656  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 02:08:53 Image size of job updated: 2218444
-	2118  -  MemoryUsage of job (MB)
-	2168276  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 02:13:53 Image size of job updated: 2218444
-	2123  -  MemoryUsage of job (MB)
-	2173808  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 02:18:54 Image size of job updated: 2222548
-	2123  -  MemoryUsage of job (MB)
-	2173808  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 02:33:56 Image size of job updated: 2254756
-	2202  -  MemoryUsage of job (MB)
-	2254756  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 03:08:59 Image size of job updated: 2255628
-	2202  -  MemoryUsage of job (MB)
-	2254756  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 03:29:01 Image size of job updated: 2256840
-	2202  -  MemoryUsage of job (MB)
-	2254756  -  ResidentSetSize of job (KB)
-...
-006 (008.015.000) 2025-12-16 04:39:08 Image size of job updated: 2257868
-	2202  -  MemoryUsage of job (MB)
-	2254756  -  ResidentSetSize of job (KB)
-...
-005 (008.015.000) 2025-12-16 04:50:53 Job terminated.
-	(1) Normal termination (return value 0)
-		Usr 0 21:21:38, Sys 0 00:43:49  -  Run Remote Usage
-		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
-		Usr 0 21:21:38, Sys 0 00:43:49  -  Total Remote Usage
-		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
-	0  -  Run Bytes Sent By Job
-	0  -  Run Bytes Received By Job
-	0  -  Total Bytes Sent By Job
-	0  -  Total Bytes Received By Job
-	Partitionable Resources :    Usage  Request Allocated Assigned
-	   Cpus                 :     6.54        8         8 
-	   Disk (KB)            :     2     1048576   1048576 
-	   GPUs                 :     0.17        1         1 "GPU-1ba53048"
-	   GpusMemory (MB)      :  2243                       
-	   Memory (MB)          :  2202       71680     71680 
-	   TimeExecute (s)      : 12434                       
-	   TimeSlotBusy (s)     : 12434                       
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :                 1         1 "GPU-08518bd6"
+	   Memory (MB)          :       35    20480     20480 
+	   TimeExecute (s)      :       40                    
+	   TimeSlotBusy (s)     :       40                    
 ...

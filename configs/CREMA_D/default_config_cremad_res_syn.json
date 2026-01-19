@@ -13,7 +13,7 @@
     "async_loading": true,
     "validation": true,
     "rec_test": true,
-    "test_on_bottoms": true,
+    "test_on_bottoms": false,
     "use_test_set": true,
     "tdqm_disable": true,
     "wandb_disable": false,

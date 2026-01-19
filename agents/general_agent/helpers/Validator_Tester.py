@@ -73,7 +73,7 @@ class Validator_Tester():
 
             self.agent.model.eval()
 
-            output = self.agent.model(data, label=label)
+            output = self.agent.model(data, label=label, current_epoch=self.agent.logs["current_epoch"])
 
             total_loss =  torch.zeros(1).squeeze().cuda()
             output_losses, ce_loss = {}, {}

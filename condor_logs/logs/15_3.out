@@ -1,125 +1,34 @@
 Starting Job
-/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
-/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python
-Python 3.9.18
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python
+Python 3.10.19
 /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy
 We have 1 GPU
-/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
-config-./configs/CREMA_D/synergy/nov/synprom_ib.json
-Executing command: accelerate launch /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py --config ./configs/CREMA_D/synergy/nov/synprom_ib.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --pre  --l 0.05 --contrcoeff 0 --lr 0.0001 --wd 0.0001 --cls mlp --perturb gennoise
-Namespace(config='./configs/CREMA_D/synergy/nov/synprom_ib.json', default_config='./configs/CREMA_D/default_config_cremad_res_syn.json', fold='0', alpha=None, tanh_mode=None, tanh_mode_beta=None, regby=None, clip=None, batch_size=None, l='0.05', multil=None, l_diffsq=None, lib=None, ratio_us=None, ratio_snr=None, kmepoch=None, num_samples=None, pow=None, nstep=None, contrcoeff='0', kde_coeff=None, etube=None, temperature=None, contr_type=None, shuffle_type=None, validate_with=None, transform_type=None, trasform_before=None, num_classes=None, base_alpha=None, alpha_var=None, base_beta=None, beta_var=None, optim_method=None, ilr_c=None, ilr_g=None, mmcosine_scaling=None, ending_epoch=None, load_ongoing=None, commonlayers=None, recon_weight1=None, recon_weight2=None, recon_epochstages=None, recon_ensemblestages=None, lr='0.0001', wd='0.0001', mm=None, cls='mlp', perturb='gennoise', pre=True, frozen=False, tdqm_disable=False, start_over=False)
-2025-11-08 22:42:04,155 - Config - INFO - ./configs/CREMA_D/synergy/nov/synprom_ib.json
-2025-11-08 22:42:04,158 - Config - INFO -  THE Configuration of your experiment ..
-{'agent': 'Agent',
- 'dataset': {'data_roots': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D',
-             'data_split': {'fold': 0, 'method': 'non_inclusive'},
-             'dataloader_class': 'CramedD_Dataloader',
-             'fps': 1,
-             'norm': False,
-             'norm_face_path': './mydatasets/CREMAD/norm_face_path_fold{}.pkl',
-             'norm_wav_path': './mydatasets/CREMAD/wav_norm_16000_fold{}.pkl',
-             'num_frame': 3,
-             'return_data': {'audio': False,
-                             'face': False,
-                             'spectrogram': True,
-                             'video': True},
-             'sampling_rate': 22050},
- 'early_stopping': {'end_of_epoch_check': True,
-                    'log_interval': 10,
-                    'max_epoch': 1500,
-                    'n_steps_stop': 20,
-                    'n_steps_stop_after': 0,
-                    'save_every_step': 3000,
-                    'save_every_valstep': 10,
-                    'validate_after': 0,
-                    'validate_every': 25,
-                    'validate_with': 'accuracy'},
- 'exp_name': 'CREMAD Experiment',
- 'model': {'args': {'bias_infusion': {'ending_epoch': 1500,
-                                      'l': 0.1,
-                                      'method': 'false',
-                                      'plot': False,
-                                      'starting_epoch': 0,
-                                      'use': True},
-                    'clip_grad': False,
-                    'cls_type': 'linear',
-                    'd_model': 512,
-                    'dropout': 0.1,
-                    'fc_inner': 64,
-                    'multi_loss': {'multi_supervised_w': {'c': 0,
-                                                          'combined': 1,
-                                                          'g': 0}},
-                    'num_classes': 6},
-           'encoders': [{'args': {'d_model': 512,
-                                  'dropout': 0.1,
-                                  'fc_inner': 64,
-                                  'freeze_encoder': False,
-                                  'num_classes': 6},
-                         'model': 'Audio_ResNet',
-                         'pretrainedEncoder': {'dir': 'unimodal_audio_fold{}_lr0.001_wd0.0001.pth.tar',
-                                               'use': False}},
-                        {'args': {'d_model': 512,
-                                  'dropout': 0.1,
-                                  'fc_inner': 64,
-                                  'freeze_encoder': False,
-                                  'num_classes': 6},
-                         'model': 'Video_ResNet',
-                         'pretrainedEncoder': {'dir': 'unimodal_video_fold{}_lr0.001_wd0.0001.pth.tar',
-                                               'use': False}}],
-           'load_ongoing': False,
-           'model_class': 'Fusion_Synprom_IB',
-           'save_base_dir': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy',
-           'save_dir': 'Synprom_IB_{}.pth.tar'},
- 'optimizer': {'beta1': 0.9,
-               'beta2': 0.999,
-               'learning_rate': 1e-05,
-               'momentum': 0.9,
-               'type': 'Adam',
-               'weight_decay': 1e-05},
- 'scheduler': {'max_lr': 0.03, 'type': 'cosanneal', 'warm_up_steps': 780},
- 'training_params': {'adversarial_training': {'adv_epsilon': 0.01,
-                                              'use': False},
-                     'async_loading': True,
-                     'batch_size': 32,
-                     'cuda': True,
-                     'data_loader_workers': 8,
-                     'gpu_device': [0],
-                     'pin_memory': False,
-                     'rec_test': True,
-                     'res': True,
-                     'seed': 109,
-                     'tdqm_disable': False,
-                     'test_batch_size': 32,
-                     'test_on_bottoms': False,
-                     'use_test_set': True,
-                     'validation': True,
-                     'verbose': True,
-                     'wandb_disable': False}}
-2025-11-08 22:42:04,160 - Config - INFO -  *************************************** 
-2025-11-08 22:42:04,160 - Config - INFO - The experiment name is CREMAD Experiment
-2025-11-08 22:42:04,160 - Config - INFO -  *************************************** 
-2025-11-08 22:42:04,160 - root - INFO - save_dir: Synprom_IB_fold0_l0.05_contrcoeff0_perturbgennoise_lr0.0001_wd0.0001_clsmlp_pre.pth.tar
-2025-11-08 22:42:04,706 - Cuda Statistics - INFO - __Python VERSION:  3.9.18 (main, Sep 11 2023, 13:41:44) 
-[GCC 11.2.0]
-2025-11-08 22:42:04,706 - Cuda Statistics - INFO - __pyTorch VERSION:  2.0.1+cu118
-2025-11-08 22:42:04,706 - Cuda Statistics - INFO - __CUDA VERSION
-2025-11-08 22:42:04,709 - Cuda Statistics - INFO - __CUDNN VERSION:  8700
-2025-11-08 22:42:04,745 - Cuda Statistics - INFO - __Number CUDA Devices:  1
-2025-11-08 22:42:04,746 - Cuda Statistics - INFO - __Devices
-2025-11-08 22:42:04,746 - Cuda Statistics - INFO - index, name, driver_version, memory.total [MiB], memory.used [MiB], memory.free [MiB]
-2025-11-08 22:42:04,746 - Cuda Statistics - INFO - 0, NVIDIA A100-SXM4-80GB, 580.95.05, 81920 MiB, 4 MiB, 81150 MiB
-2025-11-08 22:42:04,749 - Cuda Statistics - INFO - Active CUDA Device: GPU 0
-2025-11-08 22:42:04,749 - Cuda Statistics - INFO - Available devices  1
-2025-11-08 22:42:04,749 - Cuda Statistics - INFO - Current cuda device  0
-This path does not exist /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/AudioWAV/1076_MTI_SAD_XX.wav or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Image-01-FPS/1076_MTI_SAD_XX or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Face_features/1076_MTI_SAD_XX.npy
-2025-11-08 22:42:05,121 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
-2025-11-08 22:42:05,125 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
-2025-11-08 22:42:05,220 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
-2025-11-08 22:42:05,221 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
-2025-11-08 22:42:05,314 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
-2025-11-08 22:42:05,315 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
-Available cores 8
-We are changing dataloader workers to num of cores 0
-2025-11-08 22:42:05,317 - Agent - INFO - Device: cuda:0
-2025-11-08 22:42:05,317 - Agent - INFO - Total training batches: 127, validate every 25 batches, steps per epoch: 6
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py
+
+Executing command: python /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py
+[LOAD] path=pid_synthetic_tuning/synib_mstar_valsynacc_nlrwddr.jsonl
+[LOAD] abs_path=/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/pid_synthetic_tuning/synib_mstar_valsynacc_nlrwddr.jsonl
+[LOAD] size_bytes=2010 mtime=1768631645.7128773
+[LOAD] head_preview(400)={"key":"(0.2, 0.0, 0.3, 0.5)","ts":1768631645.7102704,"host":"lausu.esat.kuleuven.be","pid":17,"value":{"timestamp":1768631645.7102704,"probs":{"pu1":0.2,"pu2":0.0,"pred":0.3,"psyn":0.5,"pnone":0.0},"seeds":[0,1,2],"lr_vals":[0.0003],"wd_vals":[1e-05],"dropout_vals":[0.0],"cfg0":{"n_train":2000,"n_test":4000,"dim0":32,"dim1":32,"frac_unique":0.2,"frac_red":0.2,"frac_syn":0.2,"random_block_position
+[LOAD] tail_preview(400)=val_syn_acc":1.0,"test_syn_acc":0.9805057955742887,"val_n":4.0},{"seed":2,"lr":0.0003,"wd":1e-05,"dropout":0.0,"val_acc":0.99,"test_acc":0.98725,"val_loss":0.3690944123268127,"val_syn_acc":1.0,"test_syn_acc":0.9919028340080972,"val_n":2.0}],"summary":{"main_tuned":{"acc_fusion_mean":0.9868333333333332,"acc_fusion_syn_mean":0.9871417016231518,"best_lr":0.0003,"best_wd":1e-05,"best_dropout":0.0}}}}\n
+[LOAD] first_nonempty_prefix={"key":"(0.2, 0.0, 0.3, 0.5)","ts":1768631645.7102704,"host":"lausu.esat.kuleuven.be","pid":17,"value":{"timestamp":1768631645.7102704,"probs":{"pu1":0.2,"pu2":0.0,"pred":0.3,"psyn":0.5,"pnone":0.0},"
+[LOAD] mode=jsonl (line-by-line json.loads)
+[LOAD] counters: read_lines kept unique_keys skipped_empty skipped_decode skipped_json skipped_key skipped_shape
+[LOAD] done: read_lines=1 kept=1 unique_keys=1 skipped_empty=0 skipped_decode=0 skipped_json=0 skipped_key=0 skipped_shape=0
+[LOAD] example_keys=['(0.2, 0.0, 0.3, 0.5)']
+==============================================================================================================
+[DEFAULT CONFIG]
+  dims: dim0=32 dim1=32
+  blocks0: unique=6 red=6 syn=6 noise=14 | random_pos=False
+  blocks1: unique=6 red=6 syn=6 noise=14 | random_pos=False
+  SNR: unique_strength=3 red_strength=3 syn_strength=3 noise_std=1
+  train: n_train=2000 n_test=4000 batch=64 epochs=30 lr=3.0e-04
+  loss: lambda_uni=1 lambda_kl=10 lambda_shortcut_inv=0
+  probs: u1=0.3, u2=0.3, red=0.3, syn=0.1
+==============================================================================================================
+[RUN] sweep non-overlap source probs (u1/u2/red/syn)
+[LOG] append/dedupe json: pid_synthetic_tuning/synib_mstar_valsynacc_nlrwddr.jsonl
+pu1 pu2 pred psyn | MainTot SynIBTot | Main(u1,u2,red,syn) | SynIB(u1,u2,red,syn) | det | status
+---------------------------------------------------------------------------------------------------
 Job finished

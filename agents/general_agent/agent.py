@@ -1,3 +1,9 @@
+import warnings
+import os
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning, module="pkg_resources")
+os.environ["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
 
 from utils.deterministic_pytorch import deterministic
 from utils.misc import print_cuda_statistics
@@ -9,6 +15,7 @@ from agents.general_agent.helpers.Bias_Infusion import pick_bias_infuser
 from agents.general_agent.helpers.Evaluator import All_Evaluator
 
 from mydatasets.CREMAD.CREMAD_Dataset import *
+from mydatasets.CREMAD.CREMADPlus_Dataset import *
 from mydatasets.AVE.AVE_Dataset import *
 from mydatasets.UCF101.UCF101_Dataset import *
 from mydatasets.SthSth.SthSth_Dataloader import *
@@ -20,6 +27,7 @@ from mydatasets.MSCOCO.MSCOCOLoader import *
 from mydatasets.CUB200.CUB200Loader import *
 from mydatasets.MMIMDB.MMIMDBLoader import *
 from mydatasets.ScienceQA.ScienceQA import *
+from mydatasets.ESNLI.ESNLIDataset import *
 
 import os
 import wandb
@@ -35,8 +43,8 @@ class Agent():
             kwargs_handlers=[DistributedDataParallelKwargs(find_unused_parameters=False)],
             cpu=False,
         )
-
         deterministic(self.config.training_params.seed)
+
 
         if self.accelerator.is_main_process: print_cuda_statistics()
 
@@ -57,6 +65,8 @@ class Agent():
         self.mem_loader.get_scheduler()
 
         wandb.watch(self.model, log_freq=100)
+
+
 
     def initialize_logs(self):
         self.logger = logging.getLogger('Agent')
@@ -82,7 +92,13 @@ class Agent():
 
         if "weights" not in vars(self).keys(): self.weights = None
 
-        self.logs = {"current_epoch":0,"current_step":0,"steps_no_improve":0, "saved_step": 0, "train_logs":{},"val_logs":{},"test_logs":{},"best_logs":{"loss":{"total":100, "ce_loss_combined":100}, "acc":{"combined":0}} , "seed":self.config.training_params.seed, "weights": self.weights}
+        best_logs_init = {"loss":{"total":100, "ce_loss_combined":100},
+                               "acc":{"combined":0},
+                               "pg_acc":{"combined":{"group_metrics":{"synergy":{"internal_acc":0}}}}}
+
+        self.logs = {"current_epoch":0,"current_step":0,"steps_no_improve":0, "saved_step": 0, "train_logs":{},"val_logs":{},"test_logs":{},
+                     "best_logs": {"best_vaccuracy":best_logs_init, "best_vloss":best_logs_init,  "best_vsyn_accuracy":best_logs_init},
+                     "seed":self.config.training_params.seed, "weights": self.weights}
         if self.config.training_params.wandb_disable:
             self.wandb_run = wandb.init(reinit=True, project="synergy", config=self.config, mode = "disabled", name= self.config.model.save_dir.split("/")[-1][:-8])
         else:
@@ -137,12 +153,6 @@ class Agent():
                 self.validator_tester.validate(test_set=True)
                 best_test_metrics = self.evaluators.test_evaluator.evaluate()
                 self.monitor_n_saver.print_valid_results(best_test_metrics, -1, test=True)
-
-                if self.logs["best_logs"].get("loss", {"total":100}).get("total",100) == 100:
-                    self.logs["best_logs"] = best_val_metrics
                 self.monitor_n_saver.save(model_save=False, verbose=True, post_test_results=best_test_metrics)
             else:
                 self.monitor_n_saver.save(model_save=False, verbose=True, post_test_results=best_val_metrics)
-
-
-        return self.logs["best_logs"]["loss"]["total"]

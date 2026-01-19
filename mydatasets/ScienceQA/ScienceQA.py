@@ -283,15 +283,15 @@ class ScienceQA_Dataset(Dataset):
             blank_std_thresh=blank_std_thresh,
         )
 
-        self.text_lens, self.keep_indices = compute_lengths_and_filter(
-            raw_ds=self.raw_ds,
-            keep_indices=self.keep_indices,
-            min_len=getattr(config.dataset, "min_chars", 200),
-            max_len=getattr(config.dataset, "max_chars", 1800),
-            mode=getattr(config.dataset, "length_mode", "chars"),
-            build_hint_fn=build_scienceqa_hint_text,
-            build_qa_fn=build_question_text_with_letters,
-        )
+        # self.text_lens, self.keep_indices = compute_lengths_and_filter(
+        #     raw_ds=self.raw_ds,
+        #     keep_indices=self.keep_indices,
+        #     min_len=getattr(config.dataset, "min_chars", 200),
+        #     max_len=getattr(config.dataset, "max_chars", 1800),
+        #     mode=getattr(config.dataset, "length_mode", "chars"),
+        #     build_hint_fn=build_scienceqa_hint_text,
+        #     build_qa_fn=build_question_text_with_letters,
+        # )
 
         print( f"[ScienceQA] length filter: kept {len(self.keep_indices)} / {len(self.text_lens)} ")
 

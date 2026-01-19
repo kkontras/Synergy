@@ -15,7 +15,7 @@ from diffusers import StableDiffusionPipeline
 from torchvision.utils import make_grid
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-
+from models.Synergy_Models_SVAE import TF_Fusion_Transformer
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 import torch
 
@@ -544,6 +544,7 @@ class Audio_ResNet(nn.Module):
         super(Audio_ResNet, self).__init__()
 
         self.args = args
+        print(args)
         num_classes = args.num_classes
         d_model = args.d_model
         fc_inner = args.fc_inner
@@ -556,18 +557,26 @@ class Audio_ResNet(nn.Module):
         # self.acaster = nn.Conv2d(1,3,1)
         # self.visual_net = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', verbose=False, pretrained=False)
         # self.audio_net = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', verbose=False, pretrained=False)
-        self.aclassifier = nn.Linear(512, num_classes)
+        if args.get("cls_type", None) == "tf":
+            self.aclassifier = TF_Fusion_Transformer(512, d_model, 2, num_classes)
+        else:
+            self.aclassifier = nn.Linear(512, num_classes)
 
+    def forward_uni(self, x, na_x=None, **kwargs):
+        detach_it = False
+        if "detach_pred" in kwargs and kwargs["detach_pred"]:
+            detach_it = True
 
-        # self.common_fc = nn.Sequential(
-        #     nn.Linear(d_model, fc_inner),
-        #     nn.ReLU(),
-        #     nn.Dropout(dropout),
-        #     nn.Linear(fc_inner, fc_inner),
-        #     nn.ReLU(),
-        #     nn.Dropout(dropout),
-        #     nn.Linear(fc_inner, num_classes)
-        # )
+        if self.args.get("cls_type", None) == "tf":
+            this_input = na_x
+            if detach_it: this_input = this_input.detach()
+            pred_a = self.aclassifier(this_input)
+        else:
+            this_input = x
+            if detach_it: this_input = this_input.detach()
+            pred_a = self.aclassifier(this_input)
+
+        return pred_a
 
     def forward(self, x, **kwargs):
 
@@ -577,16 +586,14 @@ class Audio_ResNet(nn.Module):
         audio_feat = self.audio_net(x[0].unsqueeze(dim=1))
         a = F.adaptive_avg_pool2d(audio_feat, 1)
         a = torch.flatten(a, 1)
+        na_a = audio_feat.flatten(start_dim=2).permute(0,2,1)
         if "detach_enc0" in kwargs and kwargs["detach_enc0"]:
             a = a.detach()
-            audio_feat = audio_feat.detach()
-        if "detach_pred" in kwargs and kwargs["detach_pred"]:
-            pred_a = self.aclassifier(a.detach())
-        else:
-            pred_a = self.aclassifier(a)
+            na_a = na_a.detach()
 
+        pred_a = self.forward_uni(a, na_a, **kwargs)
 
-        return {"preds": {"combined": pred_a}, "features": {"combined": a}, "nonaggr_features":{"combined": audio_feat.flatten(start_dim=2).permute(0,2,1)}}
+        return {"preds": {"combined": pred_a}, "features": {"combined": a}, "nonaggr_features":{"combined": na_a}}
 class Video_ResNet(nn.Module):
     def __init__(self, args, encs):
         super(Video_ResNet, self).__init__()
@@ -604,15 +611,27 @@ class Video_ResNet(nn.Module):
         # self.vclassifier = nn.Linear(512, num_classes)
         # self.vclassifier = nn.Linear(1000, num_classes)
 
-        self.vclassifier =  nn.Sequential(
-        #     nn.Linear(d_model, fc_inner),
-        #     nn.ReLU(),
-        #     nn.Dropout(dropout),
-        #     nn.Linear(fc_inner, fc_inner),
-        #     nn.ReLU(),
-        #     nn.Dropout(dropout),
-            nn.Linear(d_model, num_classes)
-        )
+        if args.get("cls_type", None) == "tf":
+            self.vclassifier = TF_Fusion_Transformer(512, d_model, 2, num_classes)
+        else:
+            self.vclassifier = nn.Sequential(nn.Linear(d_model, num_classes))
+
+    def forward_uni(self, x, na_x=None, **kwargs):
+        detach_it = False
+        if "detach_pred" in kwargs and kwargs["detach_pred"]:
+            detach_it = True
+
+        if self.args.get("cls_type", None) == "tf":
+            this_input = na_x
+            if detach_it: this_input = this_input.detach()
+            pred_v = self.vclassifier(this_input)
+        else:
+            this_input = x
+            if detach_it: this_input = this_input.detach()
+            pred_v = self.vclassifier(this_input)
+
+
+        return pred_v
 
     def forward(self, x, **kwargs):
 
@@ -624,17 +643,16 @@ class Video_ResNet(nn.Module):
         video_feat = v.permute(0, 2, 1, 3, 4)
         v = F.adaptive_avg_pool3d(video_feat, 1)
         v = torch.flatten(v, 1)
+        na_v = video_feat.flatten(start_dim=2).permute(0,2,1)
 
         if "detach_enc1" in kwargs and kwargs["detach_enc1"]:
             v = v.detach()
-            video_feat = video_feat.detach()
+            na_v = na_v.detach()
 
-        if "detach_pred" in kwargs and kwargs["detach_pred"]:
-            pred_v = self.vclassifier(v.detach())
-        else:
-            pred_v = self.vclassifier(v)
 
-        return {"preds":{"combined":pred_v}, "features":{"combined":v}, "nonaggr_features":{"combined": video_feat.flatten(start_dim=2).permute(0,2,1)}}
+        pred_v = self.forward_uni(v, na_v, **kwargs)
+
+        return {"preds":{"combined":pred_v}, "features":{"combined":v}, "nonaggr_features":{"combined": na_v}}
 class Audio_Wav2Vec(nn.Module):
     def __init__(self, args, encs):
         super(Audio_Wav2Vec, self).__init__()

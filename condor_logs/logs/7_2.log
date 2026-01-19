@@ -1,121 +1,55 @@
-000 (007.002.000) 2025-11-23 17:36:53 Job submitted from host: <10.87.28.3:9618?addrs=10.87.28.3-9618&alias=deanston.esat.kuleuven.be&noUDP&sock=schedd_1644_39c9>
+000 (007.002.000) 2026-01-16 21:39:18 Job submitted from host: <10.87.28.151:9618?addrs=10.87.28.151-9618&alias=brigand.esat.kuleuven.be&noUDP&sock=schedd_1447_19a1>
 ...
-001 (007.002.000) 2025-11-23 17:36:59 Job executing on host: <10.87.28.117:9618?addrs=10.87.28.117-9618&alias=stadius-nc-4.esat.kuleuven.be&noUDP&sock=startd_3356_83ed>
-	SlotName: slot1_1@stadius-nc-4.esat.kuleuven.be
-	AvailableGPUs = { GPUs_GPU_1236270c }
-	CondorScratchDir = "/volume1/condor/execute/dir_31718"
+001 (007.002.000) 2026-01-16 21:39:20 Job executing on host: <10.87.24.162:9618?addrs=10.87.24.162-9618&alias=citrine.esat.kuleuven.be&noUDP&sock=startd_1502_d356>
+	SlotName: slot1_1@citrine.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_a61293c7 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1288405/scratch"
 	Cpus = 8
-	Disk = 1050150
+	Disk = 1048576
 	GPUs = 1
-	GPUs_GPU_1236270c = [ Id = "GPU-1236270c"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "1236270c-ad23-648a-e65a-80b2ab2cf0c3"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "570.153.02"; DriverVersion = 12.8; DevicePciBusId = "0000:25:00.0"; GlobalMemoryMb = 10823; MaxSupportedVersion = 12080 ]
-	Memory = 71680
+	GPUs_GPU_a61293c7 = [ Id = "GPU-a61293c7"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "a61293c7-2d11-0d82-97e0-da03d876fdfd"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:01:00.0"; GlobalMemoryMb = 10821; MaxSupportedVersion = 13000 ]
+	Memory = 20480
 ...
-006 (007.002.000) 2025-11-23 17:37:07 Image size of job updated: 319952
-	313  -  MemoryUsage of job (MB)
-	319952  -  ResidentSetSize of job (KB)
+006 (007.002.000) 2026-01-16 21:39:29 Image size of job updated: 36204
+	36  -  MemoryUsage of job (MB)
+	36204  -  ResidentSetSize of job (KB)
 ...
-006 (007.002.000) 2025-11-23 17:42:07 Image size of job updated: 3660860
-	3340  -  MemoryUsage of job (MB)
-	3419708  -  ResidentSetSize of job (KB)
+006 (007.002.000) 2026-01-16 21:44:30 Image size of job updated: 820248
+	801  -  MemoryUsage of job (MB)
+	819472  -  ResidentSetSize of job (KB)
 ...
-006 (007.002.000) 2025-11-23 17:47:08 Image size of job updated: 3696972
-	3340  -  MemoryUsage of job (MB)
-	3419708  -  ResidentSetSize of job (KB)
+006 (007.002.000) 2026-01-16 21:49:30 Image size of job updated: 834236
+	801  -  MemoryUsage of job (MB)
+	819472  -  ResidentSetSize of job (KB)
 ...
-006 (007.002.000) 2025-11-23 17:52:08 Image size of job updated: 3696972
-	3378  -  MemoryUsage of job (MB)
-	3458488  -  ResidentSetSize of job (KB)
+006 (007.002.000) 2026-01-16 21:59:32 Image size of job updated: 841336
+	801  -  MemoryUsage of job (MB)
+	819472  -  ResidentSetSize of job (KB)
 ...
-006 (007.002.000) 2025-11-23 17:57:08 Image size of job updated: 3896896
-	3403  -  MemoryUsage of job (MB)
-	3483820  -  ResidentSetSize of job (KB)
+006 (007.002.000) 2026-01-16 22:04:32 Image size of job updated: 841336
+	802  -  MemoryUsage of job (MB)
+	820608  -  ResidentSetSize of job (KB)
 ...
-006 (007.002.000) 2025-11-23 18:12:10 Image size of job updated: 3896896
-	3423  -  MemoryUsage of job (MB)
-	3504396  -  ResidentSetSize of job (KB)
+006 (007.002.000) 2026-01-16 22:29:36 Image size of job updated: 841336
+	802  -  MemoryUsage of job (MB)
+	821040  -  ResidentSetSize of job (KB)
 ...
-006 (007.002.000) 2025-11-23 18:32:13 Image size of job updated: 3896896
-	3620  -  MemoryUsage of job (MB)
-	3706164  -  ResidentSetSize of job (KB)
-...
-006 (007.002.000) 2025-11-23 18:57:15 Image size of job updated: 3973276
-	3620  -  MemoryUsage of job (MB)
-	3706164  -  ResidentSetSize of job (KB)
-...
-006 (007.002.000) 2025-11-23 19:52:21 Image size of job updated: 4039612
-	3620  -  MemoryUsage of job (MB)
-	3706164  -  ResidentSetSize of job (KB)
-...
-006 (007.002.000) 2025-11-23 19:57:21 Image size of job updated: 4039612
-	3631  -  MemoryUsage of job (MB)
-	3717616  -  ResidentSetSize of job (KB)
-...
-006 (007.002.000) 2025-11-23 20:02:21 Image size of job updated: 4039612
-	3657  -  MemoryUsage of job (MB)
-	3744588  -  ResidentSetSize of job (KB)
-...
-006 (007.002.000) 2025-11-23 20:07:22 Image size of job updated: 4039612
-	3658  -  MemoryUsage of job (MB)
-	3745424  -  ResidentSetSize of job (KB)
-...
-006 (007.002.000) 2025-11-23 20:22:23 Image size of job updated: 4238868
-	3658  -  MemoryUsage of job (MB)
-	3745424  -  ResidentSetSize of job (KB)
-...
-006 (007.002.000) 2025-11-23 22:07:35 Image size of job updated: 4238868
-	3821  -  MemoryUsage of job (MB)
-	3912520  -  ResidentSetSize of job (KB)
-...
-005 (007.002.000) 2025-11-23 22:44:17 Job terminated.
+005 (007.002.000) 2026-01-16 22:58:04 Job terminated.
 	(1) Normal termination (return value 0)
-		Usr 1 05:34:25, Sys 0 00:58:51  -  Run Remote Usage
+		Usr 0 01:17:24, Sys 0 00:00:31  -  Run Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
-		Usr 1 05:34:25, Sys 0 00:58:51  -  Total Remote Usage
+		Usr 0 01:17:24, Sys 0 00:00:31  -  Total Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
 	0  -  Run Bytes Sent By Job
 	0  -  Run Bytes Received By Job
 	0  -  Total Bytes Sent By Job
 	0  -  Total Bytes Received By Job
 	Partitionable Resources :    Usage  Request Allocated Assigned
-	   Cpus                 :     5.84        8         8 
-	   Disk (KB)            :     2     1048576   1050150 
-	   GPUs                 :     0.24        1         1 "GPU-1236270c"
-	   GpusMemory (MB)      :  4131                       
-	   Memory (MB)          :  3821       71680     71680 
-	   TimeExecute (s)      : 18438                       
-	   TimeSlotBusy (s)     : 18438                       
-...
-000 (007.002.000) 2025-12-16 01:21:28 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
-...
-001 (007.002.000) 2025-12-16 01:21:38 Job executing on host: <10.87.24.139:9618?addrs=10.87.24.139-9618&alias=fig.esat.kuleuven.be&noUDP&sock=startd_2104_bf5a>
-	SlotName: slot1_1@fig.esat.kuleuven.be
-	AvailableGPUs = { GPUs_GPU_cedc718d }
-	CondorScratchDir = "/usr/data/condor/execute/dir_803393/scratch"
-	Cpus = 8
-	Disk = 1048576
-	GPUs = 1
-	GPUs_GPU_cedc718d = [ Id = "GPU-cedc718d"; ClockMhz = 1695.0; Capability = 8.6; CoresPerCU = 128; DeviceName = "NVIDIA GeForce RTX 3090"; DeviceUuid = "cedc718d-8ccd-1c5c-42ee-9f07bacbde5e"; ECCEnabled = false; ComputeUnits = 82; NvidiaDriver = "580.105.08"; DriverVersion = 13.0; DevicePciBusId = "0000:09:00.0"; GlobalMemoryMb = 24124; MaxSupportedVersion = 13000 ]
-	Memory = 71680
-...
-006 (007.002.000) 2025-12-16 01:21:39 Image size of job updated: 2
-	0  -  MemoryUsage of job (MB)
-	0  -  ResidentSetSize of job (KB)
-...
-004 (007.002.000) 2025-12-16 01:21:39 Job was evicted. Code 1009 Subcode 0
-	(0) CPU times
-		Usr 0 00:00:01, Sys 0 00:00:00  -  Run Remote Usage
-		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
-	0  -  Run Bytes Sent By Job
-	0  -  Run Bytes Received By Job
-	Reason: Claim deactivated
-	Partitionable Resources :    Usage  Request Allocated Assigned
-	   Cpus                 :        0        8         8 
-	   Disk (KB)            :        2  1048576   1048576 
-	   GPUs                 :                 1         1 "GPU-cedc718d"
-	   Memory (MB)          :        0    71680     71680 
-	   TimeExecute (s)      :        1                    
-	   TimeSlotBusy (s)     :        1                    
-...
-009 (007.002.000) 2025-12-16 01:21:39 Job was aborted.
-	via condor_rm (by user kkontras)
+	   Cpus                 :     0.99        8         8 
+	   Disk (KB)            :     2     1048576   1048576 
+	   GPUs                 :     0.21        1         1 "GPU-a61293c7"
+	   GpusMemory (MB)      :  1027                       
+	   Memory (MB)          :   802       20480     20480 
+	   TimeExecute (s)      :  4724                       
+	   TimeSlotBusy (s)     :  4724                       
 ...

@@ -1,38 +1,68 @@
-000 (013.022.000) 2025-11-08 14:24:47 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+000 (013.022.000) 2026-01-17 07:34:35 Job submitted from host: <10.87.28.151:9618?addrs=10.87.28.151-9618&alias=brigand.esat.kuleuven.be&noUDP&sock=schedd_1447_19a1>
 ...
-001 (013.022.000) 2025-11-08 14:28:52 Job executing on host: <10.87.28.117:9618?addrs=10.87.28.117-9618&alias=stadius-nc-4.esat.kuleuven.be&noUDP&sock=startd_3335_1c6f>
-	SlotName: slot1_2@stadius-nc-4.esat.kuleuven.be
-	AvailableGPUs = { GPUs_GPU_8c3c8db2 }
-	CondorScratchDir = "/volume1/condor/execute/dir_1300837"
+001 (013.022.000) 2026-01-17 07:35:27 Job executing on host: <10.87.24.7:9618?addrs=10.87.24.7-9618&alias=goryu.esat.kuleuven.be&noUDP&sock=startd_1650_575b>
+	SlotName: slot1_2@goryu.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_3df9d18c }
+	CondorScratchDir = "/usr/data/condor/execute/dir_85278/scratch"
 	Cpus = 8
-	Disk = 1050150
+	Disk = 1048576
 	GPUs = 1
-	GPUs_GPU_8c3c8db2 = [ Id = "GPU-8c3c8db2"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "8c3c8db2-06a6-9e0e-a6ee-a948fb2f7f27"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "570.153.02"; DriverVersion = 12.8; DevicePciBusId = "0000:5B:00.0"; GlobalMemoryMb = 10823; MaxSupportedVersion = 12080 ]
-	Memory = 71680
+	GPUs_GPU_3df9d18c = [ Id = "GPU-3df9d18c"; ClockMhz = 1582.0; Capability = 6.1; CoresPerCU = 128; DeviceName = "NVIDIA GeForce GTX 1080 Ti"; DeviceUuid = "3df9d18c-d25d-825d-b929-0026335359b3"; ECCEnabled = false; ComputeUnits = 28; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:65:00.0"; GlobalMemoryMb = 11165; MaxSupportedVersion = 13000 ]
+	Memory = 20480
 ...
-006 (013.022.000) 2025-11-08 14:29:00 Image size of job updated: 441440
-	432  -  MemoryUsage of job (MB)
-	441440  -  ResidentSetSize of job (KB)
+006 (013.022.000) 2026-01-17 07:35:33 Image size of job updated: 397116
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
 ...
-006 (013.022.000) 2025-11-08 14:29:24 Image size of job updated: 1315180
-	432  -  MemoryUsage of job (MB)
-	441536  -  ResidentSetSize of job (KB)
-...
-005 (013.022.000) 2025-11-08 14:29:24 Job terminated.
+005 (013.022.000) 2026-01-17 07:35:33 Job terminated.
 	(1) Normal termination (return value 0)
-		Usr 0 00:00:24, Sys 0 00:00:07  -  Run Remote Usage
+		Usr 0 00:00:05, Sys 0 00:00:00  -  Run Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
-		Usr 0 00:00:24, Sys 0 00:00:07  -  Total Remote Usage
+		Usr 0 00:00:05, Sys 0 00:00:00  -  Total Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
 	0  -  Run Bytes Sent By Job
 	0  -  Run Bytes Received By Job
 	0  -  Total Bytes Sent By Job
 	0  -  Total Bytes Received By Job
 	Partitionable Resources :    Usage  Request Allocated Assigned
-	   Cpus                 :                 8         8 
-	   Disk (KB)            :        2  1048576   1050150 
-	   GPUs                 :                 1         1 "GPU-8c3c8db2"
-	   Memory (MB)          :      432    71680     71680 
-	   TimeExecute (s)      :       32                    
-	   TimeSlotBusy (s)     :       33                    
+	   Cpus                 :        0        8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :        0        1         1 "GPU-3df9d18c"
+	   Memory (MB)          :        0    20480     20480 
+	   TimeExecute (s)      :        6                    
+	   TimeSlotBusy (s)     :        6                    
+...
+000 (013.022.000) 2026-01-17 20:58:56 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+001 (013.022.000) 2026-01-17 21:15:49 Job executing on host: <10.87.24.162:9618?addrs=10.87.24.162-9618&alias=citrine.esat.kuleuven.be&noUDP&sock=startd_1502_d356>
+	SlotName: slot1_1@citrine.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_a61293c7 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1330441/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_a61293c7 = [ Id = "GPU-a61293c7"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "a61293c7-2d11-0d82-97e0-da03d876fdfd"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:01:00.0"; GlobalMemoryMb = 10821; MaxSupportedVersion = 13000 ]
+	Memory = 20480
+...
+006 (013.022.000) 2026-01-17 21:15:53 Image size of job updated: 2
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+005 (013.022.000) 2026-01-17 21:15:53 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:03, Sys 0 00:00:00  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:03, Sys 0 00:00:00  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :        0        8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :        0        1         1 "GPU-a61293c7"
+	   Memory (MB)          :        0    20480     20480 
+	   TimeExecute (s)      :        4                    
+	   TimeSlotBusy (s)     :        4                    
 ...

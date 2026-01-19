@@ -14,7 +14,6 @@ python show.py --config "./configs/ScienceQA/synprom_lora_synibfaster.json" --de
 python show.py --config "./configs/ScienceQA/synprom_lora_synibfaster.json" --default_config "./configs/ScienceQA/default_config_scienceqa_syn_tier2.json" --fold 0 --lr 0.0001 --wd 0.01 --l 0.1 --batch_size 8
 python show.py --config "./configs/ScienceQA/synprom_lora_synibfaster.json" --default_config "./configs/ScienceQA/default_config_scienceqa_syn_tier2.json" --fold 0 --lr 0.0001 --wd 0.01 --l 0.01 --batch_size 8
 
-python show.py --config "./configs/ScienceQA/synprom_lora.json" --default_config "./configs/ScienceQA/default_config_scienceqa_syn_tier2.json" --fold 0 --lr 0.0001 --wd 0.01 --l None --batch_size 8
 python show.py --config "./configs/ScienceQA/synprom_lora.json" --default_config "./configs/ScienceQA/default_config_scienceqa_syn_tier2.json" --fold 0 --lr 0.0001 --wd 0.001 --l None --batch_size 8
 python show.py --config "./configs/ScienceQA/synprom_lora.json" --default_config "./configs/ScienceQA/default_config_scienceqa_syn_tier2.json" --fold 0 --lr 0.001 --wd 0.01 --l None --batch_size 8
 python show.py --config "./configs/ScienceQA/synprom_lora.json" --default_config "./configs/ScienceQA/default_config_scienceqa_syn_tier2.json" --fold 0 --lr 0.001 --wd 0.001 --l None --batch_size 8

@@ -1,64 +1,71 @@
-000 (007.011.000) 2025-11-23 17:36:53 Job submitted from host: <10.87.28.3:9618?addrs=10.87.28.3-9618&alias=deanston.esat.kuleuven.be&noUDP&sock=schedd_1644_39c9>
+000 (007.011.000) 2026-01-16 21:39:18 Job submitted from host: <10.87.28.151:9618?addrs=10.87.28.151-9618&alias=brigand.esat.kuleuven.be&noUDP&sock=schedd_1447_19a1>
 ...
-001 (007.011.000) 2025-11-23 23:36:15 Job executing on host: <10.87.28.117:9618?addrs=10.87.28.117-9618&alias=stadius-nc-4.esat.kuleuven.be&noUDP&sock=startd_3356_83ed>
-	SlotName: slot1_2@stadius-nc-4.esat.kuleuven.be
-	AvailableGPUs = { GPUs_GPU_8c3c8db2 }
-	CondorScratchDir = "/volume1/condor/execute/dir_42486"
+001 (007.011.000) 2026-01-16 21:39:30 Job executing on host: <10.87.24.115:9618?addrs=10.87.24.115-9618&alias=ulexite.esat.kuleuven.be&noUDP&sock=startd_1621_731c>
+	SlotName: slot1_1@ulexite.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_0726d6f8 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_21276/scratch"
 	Cpus = 8
-	Disk = 1050150
+	Disk = 1048576
 	GPUs = 1
-	GPUs_GPU_8c3c8db2 = [ Id = "GPU-8c3c8db2"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "8c3c8db2-06a6-9e0e-a6ee-a948fb2f7f27"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "570.153.02"; DriverVersion = 12.8; DevicePciBusId = "0000:5B:00.0"; GlobalMemoryMb = 10823; MaxSupportedVersion = 12080 ]
-	Memory = 71680
+	GPUs_GPU_0726d6f8 = [ Id = "GPU-0726d6f8"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "0726d6f8-8cd0-affe-f41f-036e4e1a6711"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:01:00.0"; GlobalMemoryMb = 10819; MaxSupportedVersion = 13000 ]
+	Memory = 20480
 ...
-006 (007.011.000) 2025-11-23 23:36:24 Image size of job updated: 552820
-	540  -  MemoryUsage of job (MB)
-	552820  -  ResidentSetSize of job (KB)
+006 (007.011.000) 2026-01-16 21:39:39 Image size of job updated: 12080
+	12  -  MemoryUsage of job (MB)
+	12080  -  ResidentSetSize of job (KB)
 ...
-006 (007.011.000) 2025-11-23 23:41:25 Image size of job updated: 3548564
-	3263  -  MemoryUsage of job (MB)
-	3340572  -  ResidentSetSize of job (KB)
+006 (007.011.000) 2026-01-16 21:44:40 Image size of job updated: 836752
+	814  -  MemoryUsage of job (MB)
+	833252  -  ResidentSetSize of job (KB)
 ...
-006 (007.011.000) 2025-11-23 23:46:25 Image size of job updated: 3625860
-	3285  -  MemoryUsage of job (MB)
-	3363492  -  ResidentSetSize of job (KB)
+006 (007.011.000) 2026-01-16 21:49:41 Image size of job updated: 837368
+	818  -  MemoryUsage of job (MB)
+	836916  -  ResidentSetSize of job (KB)
 ...
-006 (007.011.000) 2025-11-23 23:51:26 Image size of job updated: 3665992
-	3326  -  MemoryUsage of job (MB)
-	3405196  -  ResidentSetSize of job (KB)
+006 (007.011.000) 2026-01-16 21:59:42 Image size of job updated: 837544
+	818  -  MemoryUsage of job (MB)
+	837084  -  ResidentSetSize of job (KB)
 ...
-006 (007.011.000) 2025-11-23 23:56:26 Image size of job updated: 3679844
-	3562  -  MemoryUsage of job (MB)
-	3646512  -  ResidentSetSize of job (KB)
+006 (007.011.000) 2026-01-16 22:09:42 Image size of job updated: 837956
+	818  -  MemoryUsage of job (MB)
+	837456  -  ResidentSetSize of job (KB)
 ...
-006 (007.011.000) 2025-11-24 00:06:27 Image size of job updated: 3804080
-	3562  -  MemoryUsage of job (MB)
-	3646512  -  ResidentSetSize of job (KB)
+006 (007.011.000) 2026-01-16 22:19:43 Image size of job updated: 854560
+	818  -  MemoryUsage of job (MB)
+	837456  -  ResidentSetSize of job (KB)
 ...
-006 (007.011.000) 2025-11-24 01:36:36 Image size of job updated: 3895896
-	3562  -  MemoryUsage of job (MB)
-	3646512  -  ResidentSetSize of job (KB)
+006 (007.011.000) 2026-01-16 22:34:44 Image size of job updated: 854560
+	818  -  MemoryUsage of job (MB)
+	837580  -  ResidentSetSize of job (KB)
 ...
-005 (007.011.000) 2025-11-24 02:12:43 Job terminated.
+006 (007.011.000) 2026-01-16 22:44:45 Image size of job updated: 854560
+	818  -  MemoryUsage of job (MB)
+	837596  -  ResidentSetSize of job (KB)
+...
+006 (007.011.000) 2026-01-16 23:29:51 Image size of job updated: 862100
+	819  -  MemoryUsage of job (MB)
+	837652  -  ResidentSetSize of job (KB)
+...
+006 (007.011.000) 2026-01-16 23:39:51 Image size of job updated: 862100
+	819  -  MemoryUsage of job (MB)
+	837696  -  ResidentSetSize of job (KB)
+...
+005 (007.011.000) 2026-01-16 23:56:52 Job terminated.
 	(1) Normal termination (return value 0)
-		Usr 0 14:58:30, Sys 0 00:31:00  -  Run Remote Usage
+		Usr 0 02:15:51, Sys 0 00:00:43  -  Run Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
-		Usr 0 14:58:30, Sys 0 00:31:00  -  Total Remote Usage
+		Usr 0 02:15:51, Sys 0 00:00:43  -  Total Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
 	0  -  Run Bytes Sent By Job
 	0  -  Run Bytes Received By Job
 	0  -  Total Bytes Sent By Job
 	0  -  Total Bytes Received By Job
 	Partitionable Resources :    Usage  Request Allocated Assigned
-	   Cpus                 :     5.95        8         8 
-	   Disk (KB)            :     2     1048576   1050150 
-	   GPUs                 :     0.24        1         1 "GPU-8c3c8db2"
-	   GpusMemory (MB)      :  4131                       
-	   Memory (MB)          :  3562       71680     71680 
-	   TimeExecute (s)      :  9388                       
-	   TimeSlotBusy (s)     :  9388                       
-...
-000 (007.011.000) 2025-12-16 01:21:28 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
-...
-009 (007.011.000) 2025-12-16 01:21:39 Job was aborted.
-	via condor_rm (by user kkontras)
+	   Cpus                 :     1.00        8         8 
+	   Disk (KB)            :     2     1048576   1048576 
+	   GPUs                 :     0.12        1         1 "GPU-0726d6f8"
+	   GpusMemory (MB)      :   834                       
+	   Memory (MB)          :   819       20480     20480 
+	   TimeExecute (s)      :  8242                       
+	   TimeSlotBusy (s)     :  8242                       
 ...

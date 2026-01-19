@@ -1,358 +1,493 @@
 Starting Job
-/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py
 /esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python
 Python 3.10.19
 /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy
 We have 1 GPU
-/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
-config-./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json
-Executing command: accelerate launch /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py --config ./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0003 --wd 0.0 --perturb gen --start_over  --cls mlp --lib 0.1
-Namespace(config='./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json', default_config='./configs/CREMA_D/default_config_cremad_res_syn.json', fold='0', alpha=None, tanh_mode=None, tanh_mode_beta=None, regby=None, clip=None, batch_size=None, l=None, multil=None, l_diffsq=None, lib='0.1', ratio_us=None, ratio_snr=None, kmepoch=None, num_samples=None, pow=None, nstep=None, contrcoeff=None, kde_coeff=None, etube=None, temperature=None, contr_type=None, shuffle_type=None, validate_with=None, transform_type=None, trasform_before=None, num_classes=None, base_alpha=None, alpha_var=None, base_beta=None, beta_var=None, optim_method=None, ilr_c=None, ilr_g=None, mmcosine_scaling=None, ending_epoch=None, load_ongoing=None, commonlayers=None, recon_weight1=None, recon_weight2=None, recon_epochstages=None, recon_ensemblestages=None, lr='0.0003', wd='0.0', mm=None, cls='mlp', perturb='gen', pre=False, frozen=False, tdqm_disable=False, start_over=True)
-2025-11-23 22:51:33,471 - Config - INFO - ./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json
-2025-11-23 22:51:33,474 - Config - INFO -  THE Configuration of your experiment ..
-{'agent': 'Agent',
- 'dataset': {'data_roots': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D',
-             'data_split': {'fold': 0, 'method': 'non_inclusive'},
-             'dataloader_class': 'CramedD_Dataloader',
-             'fps': 1,
-             'norm': False,
-             'norm_face_path': './mydatasets/CREMAD/norm_face_path_fold{}.pkl',
-             'norm_wav_path': './mydatasets/CREMAD/wav_norm_16000_fold{}.pkl',
-             'num_frame': 3,
-             'return_data': {'audio': False,
-                             'face': False,
-                             'spectrogram': True,
-                             'video': True},
-             'sampling_rate': 22050},
- 'early_stopping': {'end_of_epoch_check': True,
-                    'log_interval': 10,
-                    'max_epoch': 1500,
-                    'n_steps_stop': 100,
-                    'n_steps_stop_after': 0,
-                    'save_every_step': 3000,
-                    'save_every_valstep': 10,
-                    'validate_after': 0,
-                    'validate_every': 25,
-                    'validate_with': 'loss'},
- 'exp_name': 'CREMAD Experiment',
- 'model': {'args': {'bias_infusion': {'ending_epoch': 1500,
-                                      'l': 0.1,
-                                      'method': 'false',
-                                      'plot': False,
-                                      'starting_epoch': 0,
-                                      'use': True},
-                    'clip_grad': False,
-                    'cls_type': 'linear',
-                    'd_model': 512,
-                    'dropout': 0.1,
-                    'fc_inner': 64,
-                    'multi_loss': {'multi_supervised_w': {'c': 0,
-                                                          'combined': 1,
-                                                          'g': 0}},
-                    'num_classes': 6,
-                    'swap_direction': True},
-           'encoders': [{'args': {'d_model': 512,
-                                  'dropout': 0.1,
-                                  'fc_inner': 64,
-                                  'freeze_encoder': True,
-                                  'num_classes': 6},
-                         'model': 'Audio_ResNet',
-                         'pretrainedEncoder': {'dir': 'unimodal_audio_fold{}_lr0.001_wd0.0001.pth.tar',
-                                               'use': True}},
-                        {'args': {'d_model': 512,
-                                  'dropout': 0.1,
-                                  'fc_inner': 64,
-                                  'freeze_encoder': True,
-                                  'num_classes': 6},
-                         'model': 'Video_ResNet',
-                         'pretrainedEncoder': {'dir': 'unimodal_video_fold{}_lr0.001_wd0.0001.pth.tar',
-                                               'use': True}},
-                        {'args': {'dim_in': 512,
-                                  'dim_out': 512,
-                                  'hidden': 512,
-                                  'latent_dim': 64},
-                         'model': 'SimpleVAEZ2toZ1OneSide',
-                         'pretrainedEncoder': {'dir': '', 'use': False},
-                         'save_encoder': True}],
-           'load_ongoing': False,
-           'model_class': 'Model_GeneratorVAEOneSide',
-           'save_base_dir': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy',
-           'save_dir': 'Synprom_IB_genVAEOS{}.pth.tar'},
- 'optimizer': {'beta1': 0.9,
-               'beta2': 0.999,
-               'learning_rate': 1e-05,
-               'momentum': 0.9,
-               'type': 'Adam',
-               'weight_decay': 1e-05},
- 'scheduler': {'max_lr': 0.03, 'type': 'cosanneal', 'warm_up_steps': 780},
- 'task': 'generative',
- 'training_params': {'adversarial_training': {'adv_epsilon': 0.01,
-                                              'use': False},
-                     'async_loading': True,
-                     'batch_size': 128,
-                     'cuda': True,
-                     'data_loader_workers': 8,
-                     'gpu_device': [0],
-                     'pin_memory': False,
-                     'rec_test': False,
-                     'res': True,
-                     'seed': 109,
-                     'tdqm_disable': False,
-                     'test_batch_size': 128,
-                     'test_on_bottoms': False,
-                     'use_test_set': True,
-                     'validation': True,
-                     'verbose': True,
-                     'wandb_disable': False}}
-2025-11-23 22:51:33,476 - Config - INFO -  *************************************** 
-2025-11-23 22:51:33,476 - Config - INFO - The experiment name is CREMAD Experiment
-2025-11-23 22:51:33,476 - Config - INFO -  *************************************** 
-2025-11-23 22:51:33,477 - root - INFO - save_dir: Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar
-2025-11-23 22:51:33,537 - Cuda Statistics - INFO - __Python VERSION:  3.10.19 (main, Oct 21 2025, 16:43:05) [GCC 11.2.0]
-2025-11-23 22:51:33,537 - Cuda Statistics - INFO - __pyTorch VERSION:  2.6.0+cu124
-2025-11-23 22:51:33,537 - Cuda Statistics - INFO - __CUDA VERSION
-2025-11-23 22:51:33,539 - Cuda Statistics - INFO - __CUDNN VERSION:  90100
-2025-11-23 22:51:33,578 - Cuda Statistics - INFO - __Number CUDA Devices:  1
-2025-11-23 22:51:33,578 - Cuda Statistics - INFO - __Devices
-2025-11-23 22:51:33,578 - Cuda Statistics - INFO - index, name, driver_version, memory.total [MiB], memory.used [MiB], memory.free [MiB]
-2025-11-23 22:51:33,578 - Cuda Statistics - INFO - 0, NVIDIA GeForce RTX 3090, 580.105.08, 24576 MiB, 4 MiB, 24121 MiB
-2025-11-23 22:51:33,582 - Cuda Statistics - INFO - Active CUDA Device: GPU 0
-2025-11-23 22:51:33,582 - Cuda Statistics - INFO - Available devices  1
-2025-11-23 22:51:33,582 - Cuda Statistics - INFO - Current cuda device  0
-This path does not exist /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/AudioWAV/1076_MTI_SAD_XX.wav or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Image-01-FPS/1076_MTI_SAD_XX or /esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D/Face_features/1076_MTI_SAD_XX.npy
-2025-11-23 22:51:35,257 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
-2025-11-23 22:51:35,260 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
-2025-11-23 22:51:35,612 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
-2025-11-23 22:51:35,613 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
-2025-11-23 22:51:36,037 - root - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_16000_fold0.pkl
-2025-11-23 22:51:36,038 - root - INFO - Norm values are {'mean': tensor(-2.7937e-05), 'std': tensor(0.0613), 'max_duration': 4.8715625}
-Available cores 8
-We are changing dataloader workers to num of cores 0
-2025-11-23 22:51:36,039 - Agent - INFO - Device: cuda:0
-2025-11-23 22:51:36,040 - Agent - INFO - Total training batches: 32, validate every 25 batches, steps per epoch: 2
-2025-11-23 22:51:37,738 - Agent - INFO - Loss Weights are {'total': 1, 'combined': 1, 'c': 0, 'g': 0}
-2025-11-23 22:51:38,012 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold0_lr0.001_wd0.0001.pth.tar
-2025-11-23 22:51:38,342 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold0_lr0.001_wd0.0001.pth.tar
-2025-11-23 22:51:38,377 - Agent - INFO - Freezing encoder enc_0
-2025-11-23 22:51:38,378 - Agent - INFO - Freezing encoder enc_1
-2025-11-23 22:51:38,565 - Agent - INFO - Total number of trainable parameters are: 23502476
-2025-11-23 22:51:38,572 - Agent - INFO - Total number of trainable parameters are: 1149568
-2025-11-23 22:53:00,844 - Agent - INFO - [37mVal Epoch 1 step 1 with [31mpx_total : 0.183359 [31mtotal : 0.183359 
-2025-11-23 22:53:01,031 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
-2025-11-23 22:54:21,382 - Agent - INFO - [37mVal Epoch 2 step 2 with [31mpx_total : 0.176602 [31mtotal : 0.176602 
-2025-11-23 22:54:21,630 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
-2025-11-23 22:55:40,666 - Agent - INFO - [37mVal Epoch 3 step 3 with [31mpx_total : 0.175646 [31mtotal : 0.175646 
-2025-11-23 22:55:40,917 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
-2025-11-23 22:57:00,633 - Agent - INFO - [37mVal Epoch 4 step 4 with [31mpx_total : 0.163640 [31mtotal : 0.163640 
-2025-11-23 22:57:00,880 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
-2025-11-23 22:58:19,830 - Agent - INFO - [37mVal Epoch 5 step 5 with [31mpx_total : 0.154093 [31mtotal : 0.154093 
-2025-11-23 22:58:20,080 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
-2025-11-23 22:59:39,772 - Agent - INFO - [37mVal Epoch 6 step 6 with [31mpx_total : 0.150072 [31mtotal : 0.150072 
-2025-11-23 22:59:40,019 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
-2025-11-23 23:01:00,527 - Agent - INFO - [37mVal Epoch 7 step 7 with [31mpx_total : 0.149006 [31mtotal : 0.149006 
-2025-11-23 23:01:00,939 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
-2025-11-23 23:02:20,863 - Agent - INFO - [37mVal Epoch 8 step 8 with [31mpx_total : 0.149655 [31mtotal : 0.149655 
-2025-11-23 23:03:40,431 - Agent - INFO - [37mVal Epoch 9 step 9 with [31mpx_total : 0.144447 [31mtotal : 0.144447 
-2025-11-23 23:03:40,681 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py
 
-Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
-------------------------------------------------------------------------------------------------------
-z1_vs_z2                        0.1358         0.1136         0.3664         0.9873         0.8658
-z1_vs_~z                        0.2726         0.2699         0.8026         0.9848         0.7896
-z2_vs_~z                        0.4889         0.3713         0.3991         0.9859         0.5365
-------------------------------------------------------------------------------------------------------
-2025-11-23 23:05:18,681 - Agent - INFO - [37mVal Epoch 10 step 10 with [31mpx_total : 0.142259 [31mtotal : 0.142259 
-2025-11-23 23:05:18,983 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
-2025-11-23 23:06:39,413 - Agent - INFO - [37mVal Epoch 11 step 11 with [31mpx_total : 0.145897 [31mtotal : 0.145897 
-2025-11-23 23:07:58,860 - Agent - INFO - [37mVal Epoch 12 step 12 with [31mpx_total : 0.143270 [31mtotal : 0.143270 
-2025-11-23 23:09:20,081 - Agent - INFO - [37mVal Epoch 13 step 13 with [31mpx_total : 0.142713 [31mtotal : 0.142713 
-2025-11-23 23:10:40,436 - Agent - INFO - [37mVal Epoch 14 step 14 with [31mpx_total : 0.143535 [31mtotal : 0.143535 
-2025-11-23 23:12:00,668 - Agent - INFO - [37mVal Epoch 15 step 15 with [31mpx_total : 0.146882 [31mtotal : 0.146882 
-2025-11-23 23:13:21,456 - Agent - INFO - [37mVal Epoch 16 step 16 with [31mpx_total : 0.144970 [31mtotal : 0.144970 
-2025-11-23 23:14:40,206 - Agent - INFO - [37mVal Epoch 17 step 17 with [31mpx_total : 0.141104 [31mtotal : 0.141104 
-2025-11-23 23:14:40,456 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
-2025-11-23 23:15:59,247 - Agent - INFO - [37mVal Epoch 18 step 18 with [31mpx_total : 0.143806 [31mtotal : 0.143806 
-2025-11-23 23:17:18,390 - Agent - INFO - [37mVal Epoch 19 step 19 with [31mpx_total : 0.141877 [31mtotal : 0.141877 
-
-Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
-------------------------------------------------------------------------------------------------------
-z1_vs_z2                        0.1358         0.1136         0.3664         0.9873         0.8658
-z1_vs_~z                        0.2663         0.2665         0.7977         0.9734         0.7831
-z2_vs_~z                        0.4542         0.3181         0.3973         0.9870         0.5372
-------------------------------------------------------------------------------------------------------
-2025-11-23 23:18:57,601 - Agent - INFO - [37mVal Epoch 20 step 20 with [31mpx_total : 0.143169 [31mtotal : 0.143169 
-2025-11-23 23:20:18,807 - Agent - INFO - [37mVal Epoch 21 step 21 with [31mpx_total : 0.145595 [31mtotal : 0.145595 
-2025-11-23 23:21:38,948 - Agent - INFO - [37mVal Epoch 22 step 22 with [31mpx_total : 0.146963 [31mtotal : 0.146963 
-2025-11-23 23:22:58,168 - Agent - INFO - [37mVal Epoch 23 step 23 with [31mpx_total : 0.143325 [31mtotal : 0.143325 
-2025-11-23 23:24:19,432 - Agent - INFO - [37mVal Epoch 24 step 24 with [31mpx_total : 0.146906 [31mtotal : 0.146906 
-2025-11-23 23:25:39,372 - Agent - INFO - [37mVal Epoch 25 step 25 with [31mpx_total : 0.144856 [31mtotal : 0.144856 
-2025-11-23 23:26:59,709 - Agent - INFO - [37mVal Epoch 26 step 26 with [31mpx_total : 0.144985 [31mtotal : 0.144985 
-2025-11-23 23:28:20,336 - Agent - INFO - [37mVal Epoch 27 step 27 with [31mpx_total : 0.143787 [31mtotal : 0.143787 
-2025-11-23 23:29:41,875 - Agent - INFO - [37mVal Epoch 28 step 28 with [31mpx_total : 0.147762 [31mtotal : 0.147762 
-2025-11-23 23:31:03,540 - Agent - INFO - [37mVal Epoch 29 step 29 with [31mpx_total : 0.147909 [31mtotal : 0.147909 
-
-Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
-------------------------------------------------------------------------------------------------------
-z1_vs_z2                        0.1358         0.1136         0.3664         0.9873         0.8658
-z1_vs_~z                        0.2446         0.2492         0.7981         0.9701         0.7999
-z2_vs_~z                        0.4410         0.3134         0.3964         0.9883         0.5482
-------------------------------------------------------------------------------------------------------
-2025-11-23 23:32:44,731 - Agent - INFO - [37mVal Epoch 30 step 30 with [31mpx_total : 0.146463 [31mtotal : 0.146463 
-2025-11-23 23:34:08,406 - Agent - INFO - [37mVal Epoch 31 step 31 with [31mpx_total : 0.147145 [31mtotal : 0.147145 
-2025-11-23 23:35:30,244 - Agent - INFO - [37mVal Epoch 32 step 32 with [31mpx_total : 0.147913 [31mtotal : 0.147913 
-2025-11-23 23:36:50,036 - Agent - INFO - [37mVal Epoch 33 step 33 with [31mpx_total : 0.146983 [31mtotal : 0.146983 
-2025-11-23 23:38:10,413 - Agent - INFO - [37mVal Epoch 34 step 34 with [31mpx_total : 0.143962 [31mtotal : 0.143962 
-2025-11-23 23:39:30,348 - Agent - INFO - [37mVal Epoch 35 step 35 with [31mpx_total : 0.143391 [31mtotal : 0.143391 
-2025-11-23 23:40:50,244 - Agent - INFO - [37mVal Epoch 36 step 36 with [31mpx_total : 0.141526 [31mtotal : 0.141526 
-2025-11-23 23:42:11,237 - Agent - INFO - [37mVal Epoch 37 step 37 with [31mpx_total : 0.145479 [31mtotal : 0.145479 
-2025-11-23 23:43:31,676 - Agent - INFO - [37mVal Epoch 38 step 38 with [31mpx_total : 0.147108 [31mtotal : 0.147108 
-2025-11-23 23:44:52,165 - Agent - INFO - [37mVal Epoch 39 step 39 with [31mpx_total : 0.144727 [31mtotal : 0.144727 
-
-Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
-------------------------------------------------------------------------------------------------------
-z1_vs_z2                        0.1358         0.1136         0.3664         0.9873         0.8658
-z1_vs_~z                        0.2603         0.2541         0.7987         0.9633         0.7971
-z2_vs_~z                        0.4513         0.3208         0.3965         0.9874         0.5383
-------------------------------------------------------------------------------------------------------
-2025-11-23 23:46:32,249 - Agent - INFO - [37mVal Epoch 40 step 40 with [31mpx_total : 0.145193 [31mtotal : 0.145193 
-2025-11-23 23:47:52,994 - Agent - INFO - [37mVal Epoch 41 step 41 with [31mpx_total : 0.145775 [31mtotal : 0.145775 
-2025-11-23 23:49:13,941 - Agent - INFO - [37mVal Epoch 42 step 42 with [31mpx_total : 0.144482 [31mtotal : 0.144482 
-2025-11-23 23:50:34,278 - Agent - INFO - [37mVal Epoch 43 step 43 with [31mpx_total : 0.148339 [31mtotal : 0.148339 
-2025-11-23 23:51:55,074 - Agent - INFO - [37mVal Epoch 44 step 44 with [31mpx_total : 0.150759 [31mtotal : 0.150759 
-2025-11-23 23:53:14,997 - Agent - INFO - [37mVal Epoch 45 step 45 with [31mpx_total : 0.149282 [31mtotal : 0.149282 
-2025-11-23 23:54:35,352 - Agent - INFO - [37mVal Epoch 46 step 46 with [31mpx_total : 0.145469 [31mtotal : 0.145469 
-2025-11-23 23:55:54,863 - Agent - INFO - [37mVal Epoch 47 step 47 with [31mpx_total : 0.152831 [31mtotal : 0.152831 
-2025-11-23 23:57:14,894 - Agent - INFO - [37mVal Epoch 48 step 48 with [31mpx_total : 0.147607 [31mtotal : 0.147607 
-2025-11-23 23:58:34,558 - Agent - INFO - [37mVal Epoch 49 step 49 with [31mpx_total : 0.149654 [31mtotal : 0.149654 
-
-Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
-------------------------------------------------------------------------------------------------------
-z1_vs_z2                        0.1358         0.1136         0.3664         0.9873         0.8658
-z1_vs_~z                        0.2530         0.2553         0.7952         0.9667         0.7941
-z2_vs_~z                        0.4357         0.2980         0.3964         0.9899         0.5542
-------------------------------------------------------------------------------------------------------
-2025-11-24 00:00:13,970 - Agent - INFO - [37mVal Epoch 50 step 50 with [31mpx_total : 0.147842 [31mtotal : 0.147842 
-2025-11-24 00:01:35,277 - Agent - INFO - [37mVal Epoch 51 step 51 with [31mpx_total : 0.146136 [31mtotal : 0.146136 
-2025-11-24 00:02:55,178 - Agent - INFO - [37mVal Epoch 52 step 52 with [31mpx_total : 0.147902 [31mtotal : 0.147902 
-2025-11-24 00:04:15,643 - Agent - INFO - [37mVal Epoch 53 step 53 with [31mpx_total : 0.149515 [31mtotal : 0.149515 
-2025-11-24 00:05:34,557 - Agent - INFO - [37mVal Epoch 54 step 54 with [31mpx_total : 0.146621 [31mtotal : 0.146621 
-2025-11-24 00:06:53,764 - Agent - INFO - [37mVal Epoch 55 step 55 with [31mpx_total : 0.149053 [31mtotal : 0.149053 
-2025-11-24 00:08:13,015 - Agent - INFO - [37mVal Epoch 56 step 56 with [31mpx_total : 0.149013 [31mtotal : 0.149013 
-2025-11-24 00:09:33,205 - Agent - INFO - [37mVal Epoch 57 step 57 with [31mpx_total : 0.148942 [31mtotal : 0.148942 
-2025-11-24 00:10:53,687 - Agent - INFO - [37mVal Epoch 58 step 58 with [31mpx_total : 0.146456 [31mtotal : 0.146456 
-2025-11-24 00:12:13,598 - Agent - INFO - [37mVal Epoch 59 step 59 with [31mpx_total : 0.149493 [31mtotal : 0.149493 
-
-Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
-------------------------------------------------------------------------------------------------------
-z1_vs_z2                        0.1358         0.1136         0.3664         0.9873         0.8658
-z1_vs_~z                        0.2426         0.2455         0.7957         0.9665         0.7998
-z2_vs_~z                        0.4215         0.2864         0.3959         0.9887         0.5614
-------------------------------------------------------------------------------------------------------
-2025-11-24 00:13:52,590 - Agent - INFO - [37mVal Epoch 60 step 60 with [31mpx_total : 0.148663 [31mtotal : 0.148663 
-2025-11-24 00:15:13,122 - Agent - INFO - [37mVal Epoch 61 step 61 with [31mpx_total : 0.147832 [31mtotal : 0.147832 
-2025-11-24 00:16:32,665 - Agent - INFO - [37mVal Epoch 62 step 62 with [31mpx_total : 0.148153 [31mtotal : 0.148153 
-2025-11-24 00:17:53,264 - Agent - INFO - [37mVal Epoch 63 step 63 with [31mpx_total : 0.148270 [31mtotal : 0.148270 
-2025-11-24 00:19:12,986 - Agent - INFO - [37mVal Epoch 64 step 64 with [31mpx_total : 0.150048 [31mtotal : 0.150048 
-2025-11-24 00:20:33,556 - Agent - INFO - [37mVal Epoch 65 step 65 with [31mpx_total : 0.144847 [31mtotal : 0.144847 
-2025-11-24 00:21:54,088 - Agent - INFO - [37mVal Epoch 66 step 66 with [31mpx_total : 0.145300 [31mtotal : 0.145300 
-2025-11-24 00:23:13,861 - Agent - INFO - [37mVal Epoch 67 step 67 with [31mpx_total : 0.143372 [31mtotal : 0.143372 
-2025-11-24 00:24:32,782 - Agent - INFO - [37mVal Epoch 68 step 68 with [31mpx_total : 0.151781 [31mtotal : 0.151781 
-2025-11-24 00:25:52,121 - Agent - INFO - [37mVal Epoch 69 step 69 with [31mpx_total : 0.150162 [31mtotal : 0.150162 
-
-Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
-------------------------------------------------------------------------------------------------------
-z1_vs_z2                        0.1358         0.1136         0.3664         0.9873         0.8658
-z1_vs_~z                        0.2435         0.2452         0.8005         0.9643         0.8018
-z2_vs_~z                        0.4240         0.2706         0.3962         0.9892         0.5606
-------------------------------------------------------------------------------------------------------
-2025-11-24 00:27:32,138 - Agent - INFO - [37mVal Epoch 70 step 70 with [31mpx_total : 0.144791 [31mtotal : 0.144791 
-2025-11-24 00:28:52,838 - Agent - INFO - [37mVal Epoch 71 step 71 with [31mpx_total : 0.149022 [31mtotal : 0.149022 
-2025-11-24 00:30:12,645 - Agent - INFO - [37mVal Epoch 72 step 72 with [31mpx_total : 0.148218 [31mtotal : 0.148218 
-2025-11-24 00:31:33,638 - Agent - INFO - [37mVal Epoch 73 step 73 with [31mpx_total : 0.154653 [31mtotal : 0.154653 
-2025-11-24 00:32:54,342 - Agent - INFO - [37mVal Epoch 74 step 74 with [31mpx_total : 0.145987 [31mtotal : 0.145987 
-2025-11-24 00:34:16,190 - Agent - INFO - [37mVal Epoch 75 step 75 with [31mpx_total : 0.154428 [31mtotal : 0.154428 
-2025-11-24 00:35:37,407 - Agent - INFO - [37mVal Epoch 76 step 76 with [31mpx_total : 0.148458 [31mtotal : 0.148458 
-2025-11-24 00:36:57,799 - Agent - INFO - [37mVal Epoch 77 step 77 with [31mpx_total : 0.151497 [31mtotal : 0.151497 
-2025-11-24 00:38:18,019 - Agent - INFO - [37mVal Epoch 78 step 78 with [31mpx_total : 0.154797 [31mtotal : 0.154797 
-2025-11-24 00:39:38,753 - Agent - INFO - [37mVal Epoch 79 step 79 with [31mpx_total : 0.151337 [31mtotal : 0.151337 
-
-Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
-------------------------------------------------------------------------------------------------------
-z1_vs_z2                        0.1358         0.1136         0.3664         0.9873         0.8658
-z1_vs_~z                        0.2382         0.2345         0.7991         0.9633         0.8100
-z2_vs_~z                        0.3848         0.2643         0.3965         0.9880         0.5790
-------------------------------------------------------------------------------------------------------
-2025-11-24 00:41:19,822 - Agent - INFO - [37mVal Epoch 80 step 80 with [31mpx_total : 0.150077 [31mtotal : 0.150077 
-2025-11-24 00:42:41,323 - Agent - INFO - [37mVal Epoch 81 step 81 with [31mpx_total : 0.144375 [31mtotal : 0.144375 
-2025-11-24 00:44:00,869 - Agent - INFO - [37mVal Epoch 82 step 82 with [31mpx_total : 0.149099 [31mtotal : 0.149099 
-2025-11-24 00:45:21,347 - Agent - INFO - [37mVal Epoch 83 step 83 with [31mpx_total : 0.150988 [31mtotal : 0.150988 
-2025-11-24 00:46:41,262 - Agent - INFO - [37mVal Epoch 84 step 84 with [31mpx_total : 0.148752 [31mtotal : 0.148752 
-2025-11-24 00:48:01,090 - Agent - INFO - [37mVal Epoch 85 step 85 with [31mpx_total : 0.149404 [31mtotal : 0.149404 
-2025-11-24 00:49:20,238 - Agent - INFO - [37mVal Epoch 86 step 86 with [31mpx_total : 0.154504 [31mtotal : 0.154504 
-2025-11-24 00:50:39,534 - Agent - INFO - [37mVal Epoch 87 step 87 with [31mpx_total : 0.152721 [31mtotal : 0.152721 
-2025-11-24 00:51:59,336 - Agent - INFO - [37mVal Epoch 88 step 88 with [31mpx_total : 0.155638 [31mtotal : 0.155638 
-2025-11-24 00:53:20,090 - Agent - INFO - [37mVal Epoch 89 step 89 with [31mpx_total : 0.145600 [31mtotal : 0.145600 
-
-Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
-------------------------------------------------------------------------------------------------------
-z1_vs_z2                        0.1358         0.1136         0.3664         0.9873         0.8658
-z1_vs_~z                        0.2460         0.2429         0.7962         0.9605         0.8008
-z2_vs_~z                        0.4034         0.3054         0.3958         0.9895         0.5780
-------------------------------------------------------------------------------------------------------
-2025-11-24 00:55:00,198 - Agent - INFO - [37mVal Epoch 90 step 90 with [31mpx_total : 0.147570 [31mtotal : 0.147570 
-2025-11-24 00:56:21,364 - Agent - INFO - [37mVal Epoch 91 step 91 with [31mpx_total : 0.144941 [31mtotal : 0.144941 
-2025-11-24 00:57:42,375 - Agent - INFO - [37mVal Epoch 92 step 92 with [31mpx_total : 0.151458 [31mtotal : 0.151458 
-2025-11-24 00:59:03,067 - Agent - INFO - [37mVal Epoch 93 step 93 with [31mpx_total : 0.143511 [31mtotal : 0.143511 
-2025-11-24 01:00:24,246 - Agent - INFO - [37mVal Epoch 94 step 94 with [31mpx_total : 0.150226 [31mtotal : 0.150226 
-2025-11-24 01:01:44,402 - Agent - INFO - [37mVal Epoch 95 step 95 with [31mpx_total : 0.151344 [31mtotal : 0.151344 
-2025-11-24 01:03:03,926 - Agent - INFO - [37mVal Epoch 96 step 96 with [31mpx_total : 0.150811 [31mtotal : 0.150811 
-2025-11-24 01:04:24,083 - Agent - INFO - [37mVal Epoch 97 step 97 with [31mpx_total : 0.154413 [31mtotal : 0.154413 
-2025-11-24 01:05:43,587 - Agent - INFO - [37mVal Epoch 98 step 98 with [31mpx_total : 0.152931 [31mtotal : 0.152931 
-2025-11-24 01:07:03,376 - Agent - INFO - [37mVal Epoch 99 step 99 with [31mpx_total : 0.144738 [31mtotal : 0.144738 
-
-Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
-------------------------------------------------------------------------------------------------------
-z1_vs_z2                        0.1358         0.1136         0.3664         0.9873         0.8658
-z1_vs_~z                        0.2388         0.2384         0.7967         0.9645         0.8039
-z2_vs_~z                        0.3960         0.2506         0.3959         0.9880         0.5817
-------------------------------------------------------------------------------------------------------
-2025-11-24 01:08:43,713 - Agent - INFO - [37mVal Epoch 100 step 100 with [31mpx_total : 0.148721 [31mtotal : 0.148721 
-2025-11-24 01:10:04,432 - Agent - INFO - [37mVal Epoch 101 step 101 with [31mpx_total : 0.151066 [31mtotal : 0.151066 
-2025-11-24 01:11:24,270 - Agent - INFO - [37mVal Epoch 102 step 102 with [31mpx_total : 0.149710 [31mtotal : 0.149710 
-2025-11-24 01:12:44,841 - Agent - INFO - [37mVal Epoch 103 step 103 with [31mpx_total : 0.147055 [31mtotal : 0.147055 
-2025-11-24 01:14:05,040 - Agent - INFO - [37mVal Epoch 104 step 104 with [31mpx_total : 0.150892 [31mtotal : 0.150892 
-2025-11-24 01:15:25,708 - Agent - INFO - [37mVal Epoch 105 step 105 with [31mpx_total : 0.149841 [31mtotal : 0.149841 
-2025-11-24 01:16:45,991 - Agent - INFO - [37mVal Epoch 106 step 106 with [31mpx_total : 0.151623 [31mtotal : 0.151623 
-2025-11-24 01:18:06,155 - Agent - INFO - [37mVal Epoch 107 step 107 with [31mpx_total : 0.150475 [31mtotal : 0.150475 
-2025-11-24 01:19:26,033 - Agent - INFO - [37mVal Epoch 108 step 108 with [31mpx_total : 0.148001 [31mtotal : 0.148001 
-2025-11-24 01:20:45,702 - Agent - INFO - [37mVal Epoch 109 step 109 with [31mpx_total : 0.148915 [31mtotal : 0.148915 
-
-Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
-------------------------------------------------------------------------------------------------------
-z1_vs_z2                        0.1358         0.1136         0.3664         0.9873         0.8658
-z1_vs_~z                        0.2484         0.2450         0.7935         0.9651         0.7986
-z2_vs_~z                        0.4022         0.2708         0.3958         0.9887         0.5788
-------------------------------------------------------------------------------------------------------
-2025-11-24 01:22:25,274 - Agent - INFO - [37mVal Epoch 110 step 110 with [31mpx_total : 0.151418 [31mtotal : 0.151418 
-2025-11-24 01:23:45,930 - Agent - INFO - [37mVal Epoch 111 step 111 with [31mpx_total : 0.150125 [31mtotal : 0.150125 
-2025-11-24 01:25:04,174 - Agent - INFO - [37mVal Epoch 112 step 112 with [31mpx_total : 0.148805 [31mtotal : 0.148805 
-2025-11-24 01:26:23,108 - Agent - INFO - [37mVal Epoch 113 step 113 with [31mpx_total : 0.151781 [31mtotal : 0.151781 
-2025-11-24 01:27:43,134 - Agent - INFO - [37mVal Epoch 114 step 114 with [31mpx_total : 0.150849 [31mtotal : 0.150849 
-2025-11-24 01:29:02,922 - Agent - INFO - [37mVal Epoch 115 step 115 with [31mpx_total : 0.150141 [31mtotal : 0.150141 
-2025-11-24 01:30:23,150 - Agent - INFO - [37mVal Epoch 116 step 116 with [31mpx_total : 0.148994 [31mtotal : 0.148994 
-2025-11-24 01:30:25,240 - Agent - INFO - We are in the final state.
-2025-11-24 01:30:25,331 - root - INFO - Loaded best model from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar
-2025-11-24 01:30:39,223 - Agent - INFO - [37mVal Epoch 116 step 0 with [31mpx_total : 0.141440 [31mtotal : 0.141440 
-
-Pair                         dist_corr             cka      cosine_sim   cca_mean_corr procrustes_disp
-------------------------------------------------------------------------------------------------------
-z1_vs_z2                        0.0052         0.0510         0.3621         0.9842         0.9155
-z1_vs_~z                        0.1438         0.1343         0.7886         0.9709         0.9138
-z2_vs_~z                        0.4932         0.4136         0.3899         0.9868         0.5044
-------------------------------------------------------------------------------------------------------
-2025-11-24 01:31:13,331 - Agent - INFO - [37mTest Epoch 116 step 0 with [31mpx_total : 0.197531 [31mtotal : 0.197531 
-2025-11-24 01:31:13,893 - Agent - INFO - [37mModel saved successfully at: /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Synprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp.pth.tar[39m
+Executing command: python /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py
+[LOAD] path=pid_synthetic_tuning/maintuned_valacc_nlrwddr.jsonl
+[LOAD] abs_path=/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/pid_synthetic_tuning/maintuned_valacc_nlrwddr.jsonl
+[LOAD] file does not exist -> returning empty
+==============================================================================================================
+[DEFAULT CONFIG]
+  dims: dim0=32 dim1=32
+  blocks0: unique=6 red=6 syn=6 noise=14 | random_pos=False
+  blocks1: unique=6 red=6 syn=6 noise=14 | random_pos=False
+  SNR: unique_strength=3 red_strength=3 syn_strength=3 noise_std=1
+  train: n_train=2000 n_test=4000 batch=64 epochs=30 lr=3.0e-04
+  loss: lambda_uni=1 lambda_kl=10 lambda_shortcut_inv=0
+  probs: u1=0.3, u2=0.3, red=0.3, syn=0.1
+==============================================================================================================
+[RUN] sweep non-overlap source probs (u1/u2/red/syn)
+[LOG] append/dedupe json: pid_synthetic_tuning/maintuned_valacc_nlrwddr.jsonl
+pu1 pu2 pred psyn | MainTot SynIBTot | Main(u1,u2,red,syn) | SynIB(u1,u2,red,syn) | det | status
+---------------------------------------------------------------------------------------------------
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9833 val_syn_cc=0.5794 val_loss=0.0632 | test_acc=0.9625 test_syn_cc=0.5169| score=0.9833
+0.45 0.00 0.50 0.05 | 0.983±0.008 | 0.579±0.084 | 0.963±0.011 | 0.517±0.071 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9700 val_syn_cc=0.7311 val_loss=0.1381 | test_acc=0.9442 test_syn_cc=0.5126| score=0.9700
+0.25 0.00 0.65 0.10 | 0.970±0.010 | 0.731±0.030 | 0.944±0.007 | 0.513±0.033 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9800 val_syn_cc=0.9310 val_loss=0.0940 | test_acc=0.9812 test_syn_cc=0.9327| score=0.9800
+0.75 0.00 0.00 0.25 | 0.980±0.010 | 0.931±0.054 | 0.981±0.004 | 0.933±0.018 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9717 val_syn_cc=0.8758 val_loss=0.1345 | test_acc=0.9642 test_syn_cc=0.7864| score=0.9717
+0.80 0.00 0.05 0.15 | 0.972±0.016 | 0.876±0.062 | 0.964±0.006 | 0.786±0.047 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=nan val_loss=0.0168 | test_acc=0.9961 test_syn_cc=nan| score=0.9983
+0.30 0.00 0.70 0.00 | 0.998±0.003 | nan±nan | 0.996±0.001 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9667 val_syn_cc=0.7074 val_loss=0.1616 | test_acc=0.9419 test_syn_cc=0.4849| score=0.9667
+0.05 0.00 0.85 0.10 | 0.967±0.010 | 0.707±0.101 | 0.942±0.007 | 0.485±0.033 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9533 val_syn_cc=0.7944 val_loss=0.1788 | test_acc=0.9450 test_syn_cc=0.7487| score=0.9533
+0.15 0.00 0.65 0.20 | 0.953±0.008 | 0.794±0.084 | 0.945±0.024 | 0.749±0.102 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9600 val_syn_cc=0.6774 val_loss=0.1295 | test_acc=0.9458 test_syn_cc=0.5269| score=0.9600
+0.30 0.00 0.60 0.10 | 0.960±0.020 | 0.677±0.033 | 0.946±0.005 | 0.527±0.037 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9817 val_syn_cc=0.9410 val_loss=0.0676 | test_acc=0.9670 test_syn_cc=0.8610| score=0.9817
+0.35 0.00 0.45 0.20 | 0.982±0.010 | 0.941±0.038 | 0.967±0.008 | 0.861±0.031 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9733 val_syn_cc=0.8903 val_loss=0.1051 | test_acc=0.9663 test_syn_cc=0.8900| score=0.9733
+0.25 0.00 0.50 0.25 | 0.973±0.008 | 0.890±0.050 | 0.966±0.010 | 0.890±0.039 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9867 val_syn_cc=0.9888 val_loss=0.0378 | test_acc=0.9849 test_syn_cc=0.9764| score=0.9867
+0.20 0.00 0.35 0.45 | 0.987±0.003 | 0.989±0.011 | 0.985±0.005 | 0.976±0.009 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=1.0000 val_loss=0.0170 | test_acc=0.9850 test_syn_cc=0.9703| score=1.0000
+0.00 0.00 0.55 0.45 | 1.000±0.000 | 1.000±0.000 | 0.985±0.005 | 0.970±0.011 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9750 val_syn_cc=0.6121 val_loss=0.0838 | test_acc=0.9722 test_syn_cc=0.4965| score=0.9750
+0.95 0.00 -0.00 0.05 | 0.975±0.005 | 0.612±0.201 | 0.972±0.005 | 0.496±0.032 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9850 val_syn_cc=0.9794 val_loss=0.0616 | test_acc=0.9813 test_syn_cc=0.9593| score=0.9850
+0.25 0.00 0.40 0.35 | 0.985±0.009 | 0.979±0.012 | 0.981±0.003 | 0.959±0.012 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9917 val_syn_cc=0.9972 val_loss=0.0302 | test_acc=0.9848 test_syn_cc=0.9850| score=0.9917
+0.35 0.00 0.05 0.60 | 0.992±0.008 | 0.997±0.005 | 0.985±0.006 | 0.985±0.010 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9733 val_syn_cc=0.8566 val_loss=0.0923 | test_acc=0.9575 test_syn_cc=0.7556| score=0.9733
+0.65 0.00 0.20 0.15 | 0.973±0.013 | 0.857±0.073 | 0.958±0.011 | 0.756±0.083 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9600 val_syn_cc=0.7758 val_loss=0.1801 | test_acc=0.9402 test_syn_cc=0.6317| score=0.9600
+0.05 0.00 0.80 0.15 | 0.960±0.020 | 0.776±0.111 | 0.940±0.021 | 0.632±0.121 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9917 val_syn_cc=0.9969 val_loss=0.0278 | test_acc=0.9853 test_syn_cc=0.9792| score=0.9917
+0.40 0.00 0.10 0.50 | 0.992±0.006 | 0.997±0.005 | 0.985±0.000 | 0.979±0.000 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=nan val_loss=0.0091 | test_acc=0.9961 test_syn_cc=nan| score=0.9983
+0.50 0.00 0.50 0.00 | 0.998±0.003 | nan±nan | 0.996±0.001 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9867 val_syn_cc=0.9939 val_loss=0.0422 | test_acc=0.9834 test_syn_cc=0.9794| score=0.9867
+0.15 0.00 0.30 0.55 | 0.987±0.008 | 0.994±0.005 | 0.983±0.003 | 0.979±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=1.0000 val_loss=0.0068 | test_acc=0.9939 test_syn_cc=0.9952| score=1.0000
+0.15 0.00 -0.00 0.85 | 1.000±0.000 | 1.000±0.000 | 0.994±0.002 | 0.995±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=1.0000 val_loss=0.0320 | test_acc=0.9894 test_syn_cc=0.9896| score=0.9983
+0.25 0.00 0.05 0.70 | 0.998±0.003 | 1.000±0.000 | 0.989±0.002 | 0.990±0.004 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=nan val_loss=0.0081 | test_acc=0.9971 test_syn_cc=nan| score=1.0000
+0.85 0.00 0.15 0.00 | 1.000±0.000 | nan±nan | 0.997±0.000 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9650 val_syn_cc=0.6618 val_loss=0.1319 | test_acc=0.9671 test_syn_cc=0.4679| score=0.9650
+0.85 0.00 0.10 0.05 | 0.965±0.022 | 0.662±0.166 | 0.967±0.003 | 0.468±0.005 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9817 val_syn_cc=0.9321 val_loss=0.0680 | test_acc=0.9686 test_syn_cc=0.8880| score=0.9817
+0.00 0.00 0.75 0.25 | 0.982±0.019 | 0.932±0.082 | 0.969±0.021 | 0.888±0.078 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9767 val_syn_cc=0.9324 val_loss=0.0817 | test_acc=0.9682 test_syn_cc=0.8938| score=0.9767
+0.60 0.00 0.15 0.25 | 0.977±0.018 | 0.932±0.044 | 0.968±0.014 | 0.894±0.056 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=1.0000 val_loss=0.0263 | test_acc=0.9881 test_syn_cc=0.9889| score=0.9983
+0.25 0.00 0.10 0.65 | 0.998±0.003 | 1.000±0.000 | 0.988±0.001 | 0.989±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=1.0000 val_loss=0.0147 | test_acc=0.9955 test_syn_cc=0.9958| score=0.9967
+0.00 0.00 0.10 0.90 | 0.997±0.006 | 1.000±0.000 | 0.996±0.002 | 0.996±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=0.9867 val_loss=0.0290 | test_acc=0.9800 test_syn_cc=0.9591| score=0.9933
+0.10 0.00 0.55 0.35 | 0.993±0.006 | 0.987±0.014 | 0.980±0.002 | 0.959±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9900 val_syn_cc=0.9706 val_loss=0.0575 | test_acc=0.9783 test_syn_cc=0.9261| score=0.9900
+0.70 0.00 0.05 0.25 | 0.990±0.009 | 0.971±0.032 | 0.978±0.001 | 0.926±0.007 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=nan val_loss=0.0060 | test_acc=0.9973 test_syn_cc=nan| score=1.0000
+0.75 0.00 0.25 0.00 | 1.000±0.000 | nan±nan | 0.997±0.000 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9867 val_syn_cc=0.9891 val_loss=0.0464 | test_acc=0.9820 test_syn_cc=0.9700| score=0.9867
+0.30 0.00 0.25 0.45 | 0.987±0.010 | 0.989±0.001 | 0.982±0.004 | 0.970±0.008 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9617 val_syn_cc=0.8206 val_loss=0.1862 | test_acc=0.9543 test_syn_cc=0.7865| score=0.9617
+0.75 0.00 0.05 0.20 | 0.962±0.012 | 0.821±0.078 | 0.954±0.008 | 0.787±0.035 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=nan val_loss=0.0104 | test_acc=0.9968 test_syn_cc=nan| score=0.9983
+0.15 0.00 0.85 0.00 | 0.998±0.003 | nan±nan | 0.997±0.001 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9900 val_syn_cc=0.9787 val_loss=0.0678 | test_acc=0.9797 test_syn_cc=0.9466| score=0.9900
+0.15 0.00 0.60 0.25 | 0.990±0.009 | 0.979±0.022 | 0.980±0.004 | 0.947±0.015 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9917 val_syn_cc=0.9805 val_loss=0.0237 | test_acc=0.9748 test_syn_cc=0.9217| score=0.9917
+0.20 0.00 0.55 0.25 | 0.992±0.003 | 0.981±0.019 | 0.975±0.006 | 0.922±0.019 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9817 val_syn_cc=0.7056 val_loss=0.1115 | test_acc=0.9695 test_syn_cc=0.4923| score=0.9817
+0.05 0.00 0.90 0.05 | 0.982±0.003 | 0.706±0.042 | 0.970±0.003 | 0.492±0.026 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9817 val_syn_cc=0.9466 val_loss=0.0920 | test_acc=0.9742 test_syn_cc=0.9173| score=0.9817
+0.10 0.00 0.65 0.25 | 0.982±0.012 | 0.947±0.037 | 0.974±0.002 | 0.917±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9750 val_syn_cc=0.8736 val_loss=0.1047 | test_acc=0.9635 test_syn_cc=0.8218| score=0.9750
+0.80 0.00 -0.00 0.20 | 0.975±0.010 | 0.874±0.054 | 0.963±0.006 | 0.822±0.031 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9833 val_syn_cc=0.9753 val_loss=0.0530 | test_acc=0.9836 test_syn_cc=0.9729| score=0.9833
+0.20 0.00 0.40 0.40 | 0.983±0.008 | 0.975±0.012 | 0.984±0.006 | 0.973±0.012 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9750 val_syn_cc=0.8803 val_loss=0.1241 | test_acc=0.9565 test_syn_cc=0.8198| score=0.9750
+0.40 0.00 0.40 0.20 | 0.975±0.017 | 0.880±0.079 | 0.957±0.013 | 0.820±0.061 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=0.9882 val_loss=0.0392 | test_acc=0.9860 test_syn_cc=0.9697| score=0.9933
+0.60 0.00 -0.00 0.40 | 0.993±0.003 | 0.988±0.012 | 0.986±0.005 | 0.970±0.013 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=0.9952 val_loss=0.0253 | test_acc=0.9811 test_syn_cc=0.9650| score=0.9983
+0.40 0.00 0.20 0.40 | 0.998±0.003 | 0.995±0.008 | 0.981±0.002 | 0.965±0.007 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9683 val_syn_cc=0.7054 val_loss=0.1367 | test_acc=0.9668 test_syn_cc=0.5520| score=0.9683
+0.80 0.00 0.15 0.05 | 0.968±0.008 | 0.705±0.015 | 0.967±0.001 | 0.552±0.023 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=1.0000 val_loss=0.0242 | test_acc=0.9861 test_syn_cc=0.9840| score=0.9933
+0.30 0.00 0.15 0.55 | 0.993±0.008 | 1.000±0.000 | 0.986±0.001 | 0.984±0.004 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9867 val_syn_cc=0.9712 val_loss=0.0433 | test_acc=0.9818 test_syn_cc=0.9594| score=0.9867
+0.60 0.00 0.05 0.35 | 0.987±0.008 | 0.971±0.026 | 0.982±0.006 | 0.959±0.017 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9783 val_syn_cc=0.9362 val_loss=0.0677 | test_acc=0.9722 test_syn_cc=0.9083| score=0.9783
+0.05 0.00 0.70 0.25 | 0.978±0.012 | 0.936±0.028 | 0.972±0.009 | 0.908±0.036 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9817 val_syn_cc=0.9720 val_loss=0.0696 | test_acc=0.9858 test_syn_cc=0.9678| score=0.9817
+0.05 0.00 0.60 0.35 | 0.982±0.013 | 0.972±0.021 | 0.986±0.009 | 0.968±0.026 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9533 val_syn_cc=0.7468 val_loss=0.1892 | test_acc=0.9583 test_syn_cc=0.7632| score=0.9533
+0.50 0.00 0.35 0.15 | 0.953±0.033 | 0.747±0.191 | 0.958±0.017 | 0.763±0.102 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=1.0000 val_loss=0.0194 | test_acc=0.9897 test_syn_cc=0.9909| score=0.9950
+0.05 0.00 0.25 0.70 | 0.995±0.005 | 1.000±0.000 | 0.990±0.002 | 0.991±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=0.9959 val_loss=0.0233 | test_acc=0.9922 test_syn_cc=0.9941| score=0.9967
+0.20 0.00 0.05 0.75 | 0.997±0.006 | 0.996±0.007 | 0.992±0.001 | 0.994±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=0.9973 val_loss=0.0177 | test_acc=0.9836 test_syn_cc=0.9783| score=0.9983
+0.35 0.00 0.10 0.55 | 0.998±0.003 | 0.997±0.005 | 0.984±0.002 | 0.978±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9533 val_syn_cc=0.5813 val_loss=0.2255 | test_acc=0.9422 test_syn_cc=0.4969| score=0.9533
+0.45 0.00 0.45 0.10 | 0.953±0.006 | 0.581±0.161 | 0.942±0.002 | 0.497±0.010 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=1.0000 val_loss=0.0186 | test_acc=0.9905 test_syn_cc=0.9937| score=0.9950
+0.05 0.00 0.10 0.85 | 0.995±0.005 | 1.000±0.000 | 0.990±0.003 | 0.994±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9883 val_syn_cc=0.9903 val_loss=0.0461 | test_acc=0.9829 test_syn_cc=0.9771| score=0.9883
+0.25 0.00 0.25 0.50 | 0.988±0.006 | 0.990±0.010 | 0.983±0.003 | 0.977±0.005 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9633 val_syn_cc=0.7361 val_loss=0.1721 | test_acc=0.9432 test_syn_cc=0.5217| score=0.9633
+0.40 0.00 0.50 0.10 | 0.963±0.024 | 0.736±0.180 | 0.943±0.005 | 0.522±0.030 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=nan val_loss=0.0148 | test_acc=0.9950 test_syn_cc=nan| score=0.9967
+0.40 0.00 0.60 0.00 | 0.997±0.006 | nan±nan | 0.995±0.001 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=1.0000 val_loss=0.0107 | test_acc=0.9861 test_syn_cc=0.9851| score=0.9983
+0.25 0.00 0.15 0.60 | 0.998±0.003 | 1.000±0.000 | 0.986±0.004 | 0.985±0.006 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=1.0000 val_loss=0.0116 | test_acc=0.9904 test_syn_cc=0.9788| score=1.0000
+0.00 0.00 0.60 0.40 | 1.000±0.000 | 1.000±0.000 | 0.990±0.000 | 0.979±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9783 val_syn_cc=0.9386 val_loss=0.0834 | test_acc=0.9747 test_syn_cc=0.9214| score=0.9783
+0.40 0.00 0.35 0.25 | 0.978±0.018 | 0.939±0.056 | 0.975±0.005 | 0.921±0.016 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9900 val_syn_cc=0.9890 val_loss=0.0389 | test_acc=0.9802 test_syn_cc=0.9636| score=0.9900
+0.35 0.00 0.25 0.40 | 0.990±0.005 | 0.989±0.019 | 0.980±0.010 | 0.964±0.025 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9883 val_syn_cc=0.9726 val_loss=0.0465 | test_acc=0.9739 test_syn_cc=0.9277| score=0.9883
+0.15 0.00 0.55 0.30 | 0.988±0.008 | 0.973±0.019 | 0.974±0.002 | 0.928±0.010 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9700 val_syn_cc=0.7055 val_loss=0.1909 | test_acc=0.9461 test_syn_cc=0.5181| score=0.9700
+0.10 0.00 0.80 0.10 | 0.970±0.009 | 0.705±0.050 | 0.946±0.001 | 0.518±0.004 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=0.9978 val_loss=0.0328 | test_acc=0.9887 test_syn_cc=0.9894| score=0.9967
+0.10 0.00 0.15 0.75 | 0.997±0.006 | 0.998±0.004 | 0.989±0.003 | 0.989±0.005 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=nan val_loss=0.0060 | test_acc=0.9998 test_syn_cc=nan| score=1.0000
+1.00 0.00 0.00 0.00 | 1.000±0.000 | nan±nan | 1.000±0.000 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=nan val_loss=0.0070 | test_acc=0.9962 test_syn_cc=nan| score=1.0000
+0.55 0.00 0.45 0.00 | 1.000±0.000 | nan±nan | 0.996±0.001 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=1.0000 val_loss=0.0429 | test_acc=0.9938 test_syn_cc=0.9954| score=0.9967
+0.05 0.00 -0.00 0.95 | 0.997±0.003 | 1.000±0.000 | 0.994±0.002 | 0.995±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9733 val_syn_cc=0.9428 val_loss=0.1141 | test_acc=0.9698 test_syn_cc=0.9231| score=0.9733
+0.30 0.00 0.40 0.30 | 0.973±0.003 | 0.943±0.023 | 0.970±0.002 | 0.923±0.007 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9850 val_syn_cc=0.9591 val_loss=0.0533 | test_acc=0.9831 test_syn_cc=0.9495| score=0.9850
+0.00 0.00 0.70 0.30 | 0.985±0.009 | 0.959±0.028 | 0.983±0.001 | 0.949±0.005 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9900 val_syn_cc=0.9808 val_loss=0.0408 | test_acc=0.9811 test_syn_cc=0.9620| score=0.9900
+0.50 0.00 0.10 0.40 | 0.990±0.005 | 0.981±0.014 | 0.981±0.007 | 0.962±0.016 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=1.0000 val_loss=0.0174 | test_acc=0.9933 test_syn_cc=0.9942| score=0.9967
+0.20 0.00 0.00 0.80 | 0.997±0.003 | 1.000±0.000 | 0.993±0.002 | 0.994±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9883 val_syn_cc=0.9861 val_loss=0.0515 | test_acc=0.9833 test_syn_cc=0.9641| score=0.9883
+0.45 0.00 0.20 0.35 | 0.988±0.003 | 0.986±0.001 | 0.983±0.003 | 0.964±0.008 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=nan val_loss=0.0115 | test_acc=0.9958 test_syn_cc=nan| score=0.9983
+0.20 0.00 0.80 0.00 | 0.998±0.003 | nan±nan | 0.996±0.002 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=nan val_loss=0.0130 | test_acc=0.9978 test_syn_cc=nan| score=0.9983
+0.05 0.00 0.95 0.00 | 0.998±0.003 | nan±nan | 0.998±0.001 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9533 val_syn_cc=0.7270 val_loss=0.1948 | test_acc=0.9536 test_syn_cc=0.7250| score=0.9533
+0.40 0.00 0.45 0.15 | 0.953±0.018 | 0.727±0.113 | 0.954±0.006 | 0.725±0.034 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=0.9848 val_loss=0.0400 | test_acc=0.9813 test_syn_cc=0.9628| score=0.9933
+0.50 0.00 0.15 0.35 | 0.993±0.003 | 0.985±0.000 | 0.981±0.009 | 0.963±0.026 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=nan val_loss=0.0078 | test_acc=0.9968 test_syn_cc=nan| score=1.0000
+0.60 0.00 0.40 0.00 | 1.000±0.000 | nan±nan | 0.997±0.001 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9600 val_syn_cc=0.8240 val_loss=0.1837 | test_acc=0.9581 test_syn_cc=0.8184| score=0.9600
+0.10 0.00 0.70 0.20 | 0.960±0.013 | 0.824±0.041 | 0.958±0.014 | 0.818±0.062 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9650 val_syn_cc=0.6745 val_loss=0.1433 | test_acc=0.9486 test_syn_cc=0.5368| score=0.9650
+0.85 0.00 0.05 0.10 | 0.965±0.009 | 0.674±0.045 | 0.949±0.003 | 0.537±0.041 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9633 val_syn_cc=0.8787 val_loss=0.1420 | test_acc=0.9519 test_syn_cc=0.7967| score=0.9633
+0.30 0.00 0.50 0.20 | 0.963±0.013 | 0.879±0.057 | 0.952±0.020 | 0.797±0.086 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9633 val_syn_cc=0.8169 val_loss=0.1699 | test_acc=0.9475 test_syn_cc=0.7069| score=0.9633
+0.25 0.00 0.60 0.15 | 0.963±0.010 | 0.817±0.036 | 0.948±0.027 | 0.707±0.152 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9767 val_syn_cc=0.6355 val_loss=0.0836 | test_acc=0.9650 test_syn_cc=0.4648| score=0.9767
+0.20 0.00 0.75 0.05 | 0.977±0.013 | 0.636±0.118 | 0.965±0.001 | 0.465±0.019 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9850 val_syn_cc=0.9835 val_loss=0.0458 | test_acc=0.9863 test_syn_cc=0.9728| score=0.9850
+0.20 0.00 0.45 0.35 | 0.985±0.009 | 0.984±0.014 | 0.986±0.002 | 0.973±0.004 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=0.9948 val_loss=0.0229 | test_acc=0.9909 test_syn_cc=0.9867| score=0.9967
+0.00 0.00 0.40 0.60 | 0.997±0.006 | 0.995±0.009 | 0.991±0.002 | 0.987±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=0.9978 val_loss=0.0139 | test_acc=0.9940 test_syn_cc=0.9940| score=0.9983
+0.00 0.00 0.25 0.75 | 0.998±0.003 | 0.998±0.004 | 0.994±0.002 | 0.994±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9600 val_syn_cc=0.7819 val_loss=0.2408 | test_acc=0.9371 test_syn_cc=0.6274| score=0.9600
+0.35 0.00 0.50 0.15 | 0.960±0.023 | 0.782±0.086 | 0.937±0.011 | 0.627±0.065 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9917 val_syn_cc=0.9942 val_loss=0.0228 | test_acc=0.9883 test_syn_cc=0.9899| score=0.9917
+0.15 0.00 0.25 0.60 | 0.992±0.003 | 0.994±0.010 | 0.988±0.001 | 0.990±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=1.0000 val_loss=0.0218 | test_acc=0.9907 test_syn_cc=0.9936| score=0.9967
+0.15 0.00 0.05 0.80 | 0.997±0.006 | 1.000±0.000 | 0.991±0.001 | 0.994±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9700 val_syn_cc=0.7923 val_loss=0.1424 | test_acc=0.9568 test_syn_cc=0.6180| score=0.9700
+0.60 0.00 0.30 0.10 | 0.970±0.005 | 0.792±0.020 | 0.957±0.008 | 0.618±0.068 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9883 val_syn_cc=0.7731 val_loss=0.0537 | test_acc=0.9681 test_syn_cc=0.5042| score=0.9883
+0.35 0.00 0.60 0.05 | 0.988±0.008 | 0.773±0.104 | 0.968±0.005 | 0.504±0.025 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9833 val_syn_cc=0.9859 val_loss=0.0599 | test_acc=0.9818 test_syn_cc=0.9733| score=0.9833
+0.10 0.00 0.45 0.45 | 0.983±0.003 | 0.986±0.012 | 0.982±0.002 | 0.973±0.008 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=0.9973 val_loss=0.0214 | test_acc=0.9883 test_syn_cc=0.9895| score=0.9950
+0.20 0.00 0.20 0.60 | 0.995±0.000 | 0.997±0.005 | 0.988±0.001 | 0.989±0.000 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9850 val_syn_cc=0.9947 val_loss=0.0507 | test_acc=0.9765 test_syn_cc=0.9408| score=0.9850
+0.50 0.00 0.20 0.30 | 0.985±0.005 | 0.995±0.009 | 0.977±0.002 | 0.941±0.010 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=1.0000 val_loss=0.0147 | test_acc=0.9926 test_syn_cc=0.9936| score=0.9983
+0.00 0.00 0.05 0.95 | 0.998±0.003 | 1.000±0.000 | 0.993±0.001 | 0.994±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9783 val_syn_cc=0.9481 val_loss=0.0928 | test_acc=0.9804 test_syn_cc=0.9529| score=0.9783
+0.55 0.00 0.15 0.30 | 0.978±0.010 | 0.948±0.014 | 0.980±0.005 | 0.953±0.016 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=0.9895 val_loss=0.0302 | test_acc=0.9907 test_syn_cc=0.9894| score=0.9933
+0.35 0.00 -0.00 0.65 | 0.993±0.006 | 0.989±0.009 | 0.991±0.003 | 0.989±0.006 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=nan val_loss=0.0085 | test_acc=0.9978 test_syn_cc=nan| score=1.0000
+0.90 0.00 0.10 0.00 | 1.000±0.000 | nan±nan | 0.998±0.000 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9833 val_syn_cc=0.9739 val_loss=0.0566 | test_acc=0.9825 test_syn_cc=0.9614| score=0.9833
+0.15 0.00 0.50 0.35 | 0.983±0.006 | 0.974±0.026 | 0.982±0.007 | 0.961±0.021 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=0.9970 val_loss=0.0177 | test_acc=0.9868 test_syn_cc=0.9761| score=0.9983
+0.55 0.00 -0.00 0.45 | 0.998±0.003 | 0.997±0.005 | 0.987±0.004 | 0.976±0.013 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=1.0000 val_loss=0.0287 | test_acc=0.9857 test_syn_cc=0.9830| score=0.9950
+0.05 0.00 0.30 0.65 | 0.995±0.005 | 1.000±0.000 | 0.986±0.005 | 0.983±0.008 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9517 val_syn_cc=0.7620 val_loss=0.2084 | test_acc=0.9476 test_syn_cc=0.6811| score=0.9517
+0.20 0.00 0.65 0.15 | 0.952±0.025 | 0.762±0.092 | 0.948±0.027 | 0.681±0.199 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9767 val_syn_cc=0.6207 val_loss=0.0997 | test_acc=0.9678 test_syn_cc=0.4817| score=0.9767
+0.65 0.00 0.30 0.05 | 0.977±0.010 | 0.621±0.177 | 0.968±0.004 | 0.482±0.048 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9817 val_syn_cc=0.9399 val_loss=0.0723 | test_acc=0.9733 test_syn_cc=0.8915| score=0.9817
+0.55 0.00 0.25 0.20 | 0.982±0.013 | 0.940±0.040 | 0.973±0.003 | 0.891±0.009 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9717 val_syn_cc=0.8936 val_loss=0.1073 | test_acc=0.9672 test_syn_cc=0.8639| score=0.9717
+0.25 0.00 0.55 0.20 | 0.972±0.003 | 0.894±0.035 | 0.967±0.009 | 0.864±0.040 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9883 val_syn_cc=0.9720 val_loss=0.0521 | test_acc=0.9825 test_syn_cc=0.9643| score=0.9883
+0.30 0.00 0.35 0.35 | 0.988±0.008 | 0.972±0.023 | 0.983±0.001 | 0.964±0.006 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9717 val_syn_cc=0.6527 val_loss=0.1746 | test_acc=0.9671 test_syn_cc=0.5146| score=0.9717
+0.25 0.00 0.70 0.05 | 0.972±0.013 | 0.653±0.043 | 0.967±0.003 | 0.515±0.043 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=1.0000 val_loss=0.0312 | test_acc=0.9928 test_syn_cc=0.9949| score=0.9933
+0.05 0.00 0.15 0.80 | 0.993±0.003 | 1.000±0.000 | 0.993±0.002 | 0.995±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=0.9977 val_loss=0.0225 | test_acc=0.9879 test_syn_cc=0.9906| score=0.9967
+0.20 0.00 0.15 0.65 | 0.997±0.003 | 0.998±0.004 | 0.988±0.002 | 0.991±0.004 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9850 val_syn_cc=0.9594 val_loss=0.0587 | test_acc=0.9815 test_syn_cc=0.9536| score=0.9850
+0.00 0.00 0.65 0.35 | 0.985±0.015 | 0.959±0.038 | 0.982±0.005 | 0.954±0.014 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=0.9886 val_loss=0.0352 | test_acc=0.9891 test_syn_cc=0.9850| score=0.9933
+0.25 0.00 0.30 0.45 | 0.993±0.006 | 0.989±0.011 | 0.989±0.001 | 0.985±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9850 val_syn_cc=0.9588 val_loss=0.0461 | test_acc=0.9809 test_syn_cc=0.9506| score=0.9850
+0.65 0.00 0.05 0.30 | 0.985±0.005 | 0.959±0.008 | 0.981±0.002 | 0.951±0.009 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=0.9957 val_loss=0.0183 | test_acc=0.9906 test_syn_cc=0.9935| score=0.9967
+0.15 0.00 0.10 0.75 | 0.997±0.003 | 0.996±0.004 | 0.991±0.001 | 0.994±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9733 val_syn_cc=0.8230 val_loss=0.1056 | test_acc=0.9505 test_syn_cc=0.5890| score=0.9733
+0.65 0.00 0.25 0.10 | 0.973±0.016 | 0.823±0.083 | 0.950±0.013 | 0.589±0.101 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=0.9928 val_loss=0.0302 | test_acc=0.9910 test_syn_cc=0.9893| score=0.9933
+0.00 0.00 0.30 0.70 | 0.993±0.006 | 0.993±0.007 | 0.991±0.005 | 0.989±0.006 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=0.9967 val_loss=0.0195 | test_acc=0.9828 test_syn_cc=0.9782| score=0.9933
+0.30 0.00 0.20 0.50 | 0.993±0.003 | 0.997±0.006 | 0.983±0.006 | 0.978±0.009 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9600 val_syn_cc=0.5239 val_loss=0.1503 | test_acc=0.9700 test_syn_cc=0.5162| score=0.9600
+0.70 0.00 0.25 0.05 | 0.960±0.000 | 0.524±0.021 | 0.970±0.000 | 0.516±0.032 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=1.0000 val_loss=0.0535 | test_acc=0.9962 test_syn_cc=0.9962| score=1.0000
+0.00 0.00 0.00 1.00 | 1.000±0.000 | 1.000±0.000 | 0.996±0.003 | 0.996±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9900 val_syn_cc=0.9972 val_loss=0.0379 | test_acc=0.9867 test_syn_cc=0.9851| score=0.9900
+0.10 0.00 0.30 0.60 | 0.990±0.000 | 0.997±0.005 | 0.987±0.005 | 0.985±0.007 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=0.9980 val_loss=0.0227 | test_acc=0.9934 test_syn_cc=0.9940| score=0.9950
+0.00 0.00 0.15 0.85 | 0.995±0.005 | 0.998±0.003 | 0.993±0.002 | 0.994±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9850 val_syn_cc=0.9218 val_loss=0.0736 | test_acc=0.9717 test_syn_cc=0.8913| score=0.9850
+0.45 0.00 0.35 0.20 | 0.985±0.005 | 0.922±0.025 | 0.972±0.007 | 0.891±0.039 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=0.9970 val_loss=0.0299 | test_acc=0.9878 test_syn_cc=0.9841| score=0.9933
+0.15 0.00 0.35 0.50 | 0.993±0.003 | 0.997±0.005 | 0.988±0.002 | 0.984±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9900 val_syn_cc=0.9778 val_loss=0.0491 | test_acc=0.9757 test_syn_cc=0.9330| score=0.9900
+0.40 0.00 0.30 0.30 | 0.990±0.000 | 0.978±0.006 | 0.976±0.005 | 0.933±0.016 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9700 val_syn_cc=0.5566 val_loss=0.1196 | test_acc=0.9683 test_syn_cc=0.4953| score=0.9700
+0.30 0.00 0.65 0.05 | 0.970±0.010 | 0.557±0.071 | 0.968±0.002 | 0.495±0.013 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9917 val_syn_cc=0.9860 val_loss=0.0561 | test_acc=0.9789 test_syn_cc=0.9574| score=0.9917
+0.25 0.00 0.35 0.40 | 0.992±0.008 | 0.986±0.014 | 0.979±0.003 | 0.957±0.010 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9583 val_syn_cc=0.6358 val_loss=0.1598 | test_acc=0.9495 test_syn_cc=0.5640| score=0.9583
+0.55 0.00 0.35 0.10 | 0.958±0.010 | 0.636±0.098 | 0.950±0.008 | 0.564±0.068 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=1.0000 val_loss=0.0143 | test_acc=0.9886 test_syn_cc=0.9841| score=1.0000
+0.40 0.00 -0.00 0.60 | 1.000±0.000 | 1.000±0.000 | 0.989±0.004 | 0.984±0.008 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9667 val_syn_cc=0.7026 val_loss=0.1954 | test_acc=0.9442 test_syn_cc=0.4867| score=0.9667
+0.00 0.00 0.90 0.10 | 0.967±0.016 | 0.703±0.162 | 0.944±0.002 | 0.487±0.009 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9767 val_syn_cc=0.9385 val_loss=0.1222 | test_acc=0.9737 test_syn_cc=0.9145| score=0.9767
+0.55 0.00 0.20 0.25 | 0.977±0.013 | 0.938±0.031 | 0.974±0.001 | 0.914±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=0.9975 val_loss=0.0194 | test_acc=0.9912 test_syn_cc=0.9889| score=0.9983
+0.00 0.00 0.35 0.65 | 0.998±0.003 | 0.998±0.004 | 0.991±0.005 | 0.989±0.007 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=1.0000 val_loss=0.0361 | test_acc=0.9884 test_syn_cc=0.9909| score=0.9983
+0.10 0.00 0.05 0.85 | 0.998±0.003 | 1.000±0.000 | 0.988±0.006 | 0.991±0.006 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=0.9943 val_loss=0.0519 | test_acc=0.9767 test_syn_cc=0.9663| score=0.9950
+0.25 0.00 0.20 0.55 | 0.995±0.005 | 0.994±0.010 | 0.977±0.003 | 0.966±0.005 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9733 val_syn_cc=0.7431 val_loss=0.1005 | test_acc=0.9483 test_syn_cc=0.5423| score=0.9733
+0.50 0.00 0.40 0.10 | 0.973±0.012 | 0.743±0.073 | 0.948±0.005 | 0.542±0.028 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9883 val_syn_cc=0.9886 val_loss=0.0446 | test_acc=0.9841 test_syn_cc=0.9749| score=0.9883
+0.55 0.00 0.05 0.40 | 0.988±0.012 | 0.989±0.012 | 0.984±0.003 | 0.975±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9817 val_syn_cc=0.9369 val_loss=0.0628 | test_acc=0.9798 test_syn_cc=0.9346| score=0.9817
+0.65 0.00 0.10 0.25 | 0.982±0.006 | 0.937±0.042 | 0.980±0.007 | 0.935±0.033 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9817 val_syn_cc=0.6316 val_loss=0.0998 | test_acc=0.9601 test_syn_cc=0.4985| score=0.9817
+0.50 0.00 0.45 0.05 | 0.982±0.010 | 0.632±0.080 | 0.960±0.008 | 0.498±0.034 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=0.9968 val_loss=0.0213 | test_acc=0.9878 test_syn_cc=0.9822| score=0.9967
+0.45 0.00 0.00 0.55 | 0.997±0.003 | 0.997±0.006 | 0.988±0.001 | 0.982±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=nan val_loss=0.0041 | test_acc=0.9998 test_syn_cc=nan| score=1.0000
+0.00 0.00 1.00 0.00 | 1.000±0.000 | nan±nan | 1.000±0.000 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=1.0000 val_loss=0.0322 | test_acc=0.9899 test_syn_cc=0.9887| score=0.9933
+0.05 0.00 0.40 0.55 | 0.993±0.003 | 1.000±0.000 | 0.990±0.002 | 0.989±0.004 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=0.9961 val_loss=0.0217 | test_acc=0.9867 test_syn_cc=0.9775| score=0.9967
+0.30 0.00 0.30 0.40 | 0.997±0.003 | 0.996±0.007 | 0.987±0.004 | 0.978±0.007 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9883 val_syn_cc=0.9947 val_loss=0.0471 | test_acc=0.9872 test_syn_cc=0.9893| score=0.9883
+0.15 0.00 0.20 0.65 | 0.988±0.010 | 0.995±0.005 | 0.987±0.003 | 0.989±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=1.0000 val_loss=0.0173 | test_acc=0.9900 test_syn_cc=0.9913| score=0.9967
+0.15 0.00 0.15 0.70 | 0.997±0.006 | 1.000±0.000 | 0.990±0.002 | 0.991±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=0.9933 val_loss=0.0289 | test_acc=0.9887 test_syn_cc=0.9857| score=0.9933
+0.35 0.00 0.15 0.50 | 0.993±0.006 | 0.993±0.012 | 0.989±0.003 | 0.986±0.007 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=1.0000 val_loss=0.0062 | test_acc=0.9940 test_syn_cc=0.9958| score=1.0000
+0.10 0.00 0.00 0.90 | 1.000±0.000 | 1.000±0.000 | 0.994±0.000 | 0.996±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=nan val_loss=0.0170 | test_acc=0.9951 test_syn_cc=nan| score=0.9967
+0.45 0.00 0.55 0.00 | 0.997±0.006 | nan±nan | 0.995±0.002 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9900 val_syn_cc=0.9950 val_loss=0.0353 | test_acc=0.9882 test_syn_cc=0.9895| score=0.9900
+0.10 0.00 0.25 0.65 | 0.990±0.010 | 0.995±0.009 | 0.988±0.003 | 0.990±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=1.0000 val_loss=0.0236 | test_acc=0.9917 test_syn_cc=0.9933| score=0.9950
+0.10 0.00 0.10 0.80 | 0.995±0.005 | 1.000±0.000 | 0.992±0.002 | 0.993±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9917 val_syn_cc=0.9942 val_loss=0.0486 | test_acc=0.9873 test_syn_cc=0.9872| score=0.9917
+0.10 0.00 0.35 0.55 | 0.992±0.006 | 0.994±0.005 | 0.987±0.001 | 0.987±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=nan val_loss=0.0130 | test_acc=0.9979 test_syn_cc=nan| score=0.9983
+0.10 0.00 0.90 0.00 | 0.998±0.003 | nan±nan | 0.998±0.000 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9733 val_syn_cc=0.5905 val_loss=0.1443 | test_acc=0.9713 test_syn_cc=0.4981| score=0.9733
+0.90 0.00 0.05 0.05 | 0.973±0.025 | 0.590±0.201 | 0.971±0.001 | 0.498±0.021 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=nan val_loss=0.0094 | test_acc=0.9975 test_syn_cc=nan| score=1.0000
+0.95 0.00 0.05 0.00 | 1.000±0.000 | nan±nan | 0.998±0.001 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=1.0000 val_loss=0.0282 | test_acc=0.9831 test_syn_cc=0.9704| score=0.9933
+0.05 0.00 0.50 0.45 | 0.993±0.008 | 1.000±0.000 | 0.983±0.004 | 0.970±0.005 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9683 val_syn_cc=0.5848 val_loss=0.1335 | test_acc=0.9583 test_syn_cc=0.4958| score=0.9683
+0.15 0.00 0.80 0.05 | 0.968±0.018 | 0.585±0.123 | 0.958±0.018 | 0.496±0.020 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9917 val_syn_cc=0.9867 val_loss=0.0564 | test_acc=0.9817 test_syn_cc=0.9662| score=0.9917
+0.45 0.00 0.15 0.40 | 0.992±0.006 | 0.987±0.002 | 0.982±0.003 | 0.966±0.007 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=1.0000 val_loss=0.0219 | test_acc=0.9867 test_syn_cc=0.9832| score=1.0000
+0.40 0.00 0.05 0.55 | 1.000±0.000 | 1.000±0.000 | 0.987±0.000 | 0.983±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9617 val_syn_cc=0.7735 val_loss=0.1358 | test_acc=0.9543 test_syn_cc=0.7305| score=0.9617
+0.60 0.00 0.25 0.15 | 0.962±0.020 | 0.774±0.120 | 0.954±0.011 | 0.730±0.057 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9833 val_syn_cc=0.9753 val_loss=0.0662 | test_acc=0.9769 test_syn_cc=0.9486| score=0.9833
+0.40 0.00 0.25 0.35 | 0.983±0.010 | 0.975±0.022 | 0.977±0.007 | 0.949±0.015 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=0.9903 val_loss=0.0304 | test_acc=0.9872 test_syn_cc=0.9819| score=0.9950
+0.45 0.00 0.05 0.50 | 0.995±0.005 | 0.990±0.010 | 0.987±0.003 | 0.982±0.004 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=0.9941 val_loss=0.0203 | test_acc=0.9865 test_syn_cc=0.9851| score=0.9933
+0.20 0.00 0.25 0.55 | 0.993±0.003 | 0.994±0.005 | 0.987±0.002 | 0.985±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9783 val_syn_cc=0.5694 val_loss=0.0853 | test_acc=0.9657 test_syn_cc=0.5167| score=0.9783
+0.40 0.00 0.55 0.05 | 0.978±0.012 | 0.569±0.168 | 0.966±0.005 | 0.517±0.029 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9683 val_syn_cc=0.8399 val_loss=0.1557 | test_acc=0.9549 test_syn_cc=0.7357| score=0.9683
+0.10 0.00 0.75 0.15 | 0.968±0.012 | 0.840±0.041 | 0.955±0.009 | 0.736±0.077 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9533 val_syn_cc=0.6463 val_loss=0.2159 | test_acc=0.9471 test_syn_cc=0.5582| score=0.9533
+0.70 0.00 0.20 0.10 | 0.953±0.015 | 0.646±0.094 | 0.947±0.007 | 0.558±0.057 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=0.9974 val_loss=0.0290 | test_acc=0.9878 test_syn_cc=0.9886| score=0.9933
+0.30 0.00 -0.00 0.70 | 0.993±0.012 | 0.997±0.005 | 0.988±0.001 | 0.989±0.000 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9667 val_syn_cc=0.8010 val_loss=0.0842 | test_acc=0.9496 test_syn_cc=0.6916| score=0.9667
+0.85 0.00 -0.00 0.15 | 0.967±0.028 | 0.801±0.201 | 0.950±0.028 | 0.692±0.179 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=0.9936 val_loss=0.0258 | test_acc=0.9888 test_syn_cc=0.9851| score=0.9950
+0.05 0.00 0.45 0.50 | 0.995±0.009 | 0.994±0.011 | 0.989±0.001 | 0.985±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9750 val_syn_cc=0.7444 val_loss=0.0861 | test_acc=0.9697 test_syn_cc=0.5134| score=0.9750
+0.75 0.00 0.20 0.05 | 0.975±0.005 | 0.744±0.010 | 0.970±0.002 | 0.513±0.020 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9750 val_syn_cc=0.9054 val_loss=0.1197 | test_acc=0.9706 test_syn_cc=0.9009| score=0.9750
+0.30 0.00 0.45 0.25 | 0.975±0.009 | 0.905±0.041 | 0.971±0.008 | 0.901±0.025 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=nan val_loss=0.0061 | test_acc=0.9962 test_syn_cc=nan| score=1.0000
+0.65 0.00 0.35 0.00 | 1.000±0.000 | nan±nan | 0.996±0.001 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=1.0000 val_loss=0.0165 | test_acc=0.9894 test_syn_cc=0.9839| score=1.0000
+0.00 0.00 0.50 0.50 | 1.000±0.000 | 1.000±0.000 | 0.989±0.003 | 0.984±0.007 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=nan val_loss=0.0088 | test_acc=0.9961 test_syn_cc=nan| score=0.9983
+0.80 0.00 0.20 0.00 | 0.998±0.003 | nan±nan | 0.996±0.001 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9917 val_syn_cc=0.9973 val_loss=0.0283 | test_acc=0.9878 test_syn_cc=0.9904| score=0.9917
+0.30 0.00 0.10 0.60 | 0.992±0.006 | 0.997±0.005 | 0.988±0.003 | 0.990±0.005 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=1.0000 val_loss=0.0198 | test_acc=0.9913 test_syn_cc=0.9855| score=0.9967
+0.00 0.00 0.45 0.55 | 0.997±0.003 | 1.000±0.000 | 0.991±0.002 | 0.986±0.004 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9767 val_syn_cc=0.6474 val_loss=0.1352 | test_acc=0.9645 test_syn_cc=0.4864| score=0.9767
+0.60 0.00 0.35 0.05 | 0.977±0.006 | 0.647±0.057 | 0.965±0.004 | 0.486±0.053 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9600 val_syn_cc=0.7809 val_loss=0.1972 | test_acc=0.9531 test_syn_cc=0.7375| score=0.9600
+0.30 0.00 0.55 0.15 | 0.960±0.010 | 0.781±0.035 | 0.953±0.014 | 0.738±0.084 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9467 val_syn_cc=0.7000 val_loss=0.2999 | test_acc=0.9362 test_syn_cc=0.6271| score=0.9467
+0.55 0.00 0.30 0.15 | 0.947±0.016 | 0.700±0.088 | 0.936±0.014 | 0.627±0.095 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9750 val_syn_cc=0.8647 val_loss=0.1307 | test_acc=0.9564 test_syn_cc=0.7410| score=0.9750
+0.75 0.00 0.10 0.15 | 0.975±0.010 | 0.865±0.009 | 0.956±0.007 | 0.741±0.040 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9867 val_syn_cc=0.9840 val_loss=0.0402 | test_acc=0.9815 test_syn_cc=0.9621| score=0.9867
+0.05 0.00 0.55 0.40 | 0.987±0.015 | 0.984±0.014 | 0.982±0.001 | 0.962±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=0.9977 val_loss=0.0342 | test_acc=0.9907 test_syn_cc=0.9924| score=0.9950
+0.10 0.00 0.20 0.70 | 0.995±0.000 | 0.998±0.004 | 0.991±0.001 | 0.992±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9617 val_syn_cc=0.7900 val_loss=0.1947 | test_acc=0.9542 test_syn_cc=0.7372| score=0.9617
+0.70 0.00 0.15 0.15 | 0.962±0.006 | 0.790±0.045 | 0.954±0.008 | 0.737±0.066 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9917 val_syn_cc=0.9958 val_loss=0.0239 | test_acc=0.9933 test_syn_cc=0.9933| score=0.9917
+0.00 0.00 0.20 0.80 | 0.992±0.006 | 0.996±0.004 | 0.993±0.002 | 0.993±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9633 val_syn_cc=0.5429 val_loss=0.1072 | test_acc=0.9658 test_syn_cc=0.4749| score=0.9633
+0.10 0.00 0.85 0.05 | 0.963±0.003 | 0.543±0.119 | 0.966±0.003 | 0.475±0.035 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9667 val_syn_cc=0.7038 val_loss=0.2185 | test_acc=0.9443 test_syn_cc=0.5261| score=0.9667
+0.20 0.00 0.70 0.10 | 0.967±0.010 | 0.704±0.022 | 0.944±0.005 | 0.526±0.048 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9500 val_syn_cc=0.7395 val_loss=0.2130 | test_acc=0.9562 test_syn_cc=0.7417| score=0.9500
+0.15 0.00 0.70 0.15 | 0.950±0.018 | 0.740±0.063 | 0.956±0.012 | 0.742±0.056 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9783 val_syn_cc=0.9344 val_loss=0.0943 | test_acc=0.9694 test_syn_cc=0.9122| score=0.9783
+0.35 0.00 0.35 0.30 | 0.978±0.010 | 0.934±0.041 | 0.969±0.001 | 0.912±0.004 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9917 val_syn_cc=0.9902 val_loss=0.0270 | test_acc=0.9831 test_syn_cc=0.9740| score=0.9917
+0.45 0.00 0.10 0.45 | 0.992±0.010 | 0.990±0.017 | 0.983±0.006 | 0.974±0.015 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9733 val_syn_cc=0.8614 val_loss=0.1114 | test_acc=0.9686 test_syn_cc=0.8611| score=0.9733
+0.05 0.00 0.75 0.20 | 0.973±0.015 | 0.861±0.101 | 0.969±0.009 | 0.861±0.043 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=0.9931 val_loss=0.0281 | test_acc=0.9910 test_syn_cc=0.9847| score=0.9950
+0.50 0.00 0.00 0.50 | 0.995±0.005 | 0.993±0.012 | 0.991±0.004 | 0.985±0.008 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9483 val_syn_cc=0.6880 val_loss=0.1743 | test_acc=0.9473 test_syn_cc=0.6809| score=0.9483
+0.45 0.00 0.40 0.15 | 0.948±0.010 | 0.688±0.087 | 0.947±0.025 | 0.681±0.176 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9617 val_syn_cc=0.8107 val_loss=0.1589 | test_acc=0.9563 test_syn_cc=0.7755| score=0.9617
+0.00 0.00 0.80 0.20 | 0.962±0.028 | 0.811±0.121 | 0.956±0.018 | 0.775±0.090 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9817 val_syn_cc=0.9810 val_loss=0.0805 | test_acc=0.9839 test_syn_cc=0.9663| score=0.9817
+0.55 0.00 0.10 0.35 | 0.982±0.010 | 0.981±0.022 | 0.984±0.001 | 0.966±0.007 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9900 val_syn_cc=0.9839 val_loss=0.0496 | test_acc=0.9867 test_syn_cc=0.9791| score=0.9900
+0.15 0.00 0.40 0.45 | 0.990±0.005 | 0.984±0.014 | 0.987±0.003 | 0.979±0.007 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9833 val_syn_cc=0.9532 val_loss=0.0534 | test_acc=0.9791 test_syn_cc=0.9342| score=0.9833
+0.70 0.00 -0.00 0.30 | 0.983±0.010 | 0.953±0.023 | 0.979±0.007 | 0.934±0.023 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9633 val_syn_cc=0.6474 val_loss=0.2448 | test_acc=0.9541 test_syn_cc=0.5710| score=0.9633
+0.90 0.00 -0.00 0.10 | 0.963±0.020 | 0.647±0.176 | 0.954±0.006 | 0.571±0.049 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9883 val_syn_cc=0.9895 val_loss=0.0324 | test_acc=0.9834 test_syn_cc=0.9730| score=0.9883
+0.35 0.00 0.20 0.45 | 0.988±0.006 | 0.990±0.010 | 0.983±0.002 | 0.973±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9650 val_syn_cc=0.7206 val_loss=0.1189 | test_acc=0.9406 test_syn_cc=0.5234| score=0.9650
+0.35 0.00 0.55 0.10 | 0.965±0.015 | 0.721±0.064 | 0.941±0.010 | 0.523±0.041 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=1.0000 val_loss=0.0169 | test_acc=0.9877 test_syn_cc=0.9858| score=0.9983
+0.20 0.00 0.30 0.50 | 0.998±0.003 | 1.000±0.000 | 0.988±0.001 | 0.986±0.002 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9867 val_syn_cc=0.9838 val_loss=0.0532 | test_acc=0.9822 test_syn_cc=0.9690| score=0.9867
+0.15 0.00 0.45 0.40 | 0.987±0.006 | 0.984±0.007 | 0.982±0.002 | 0.969±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9567 val_syn_cc=0.6733 val_loss=0.1892 | test_acc=0.9474 test_syn_cc=0.5544| score=0.9567
+0.15 0.00 0.75 0.10 | 0.957±0.008 | 0.673±0.040 | 0.947±0.004 | 0.554±0.017 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=0.9933 val_loss=0.0208 | test_acc=0.9904 test_syn_cc=0.9926| score=0.9950
+0.05 0.00 0.20 0.75 | 0.995±0.000 | 0.993±0.000 | 0.990±0.001 | 0.993±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9783 val_syn_cc=0.9485 val_loss=0.0679 | test_acc=0.9732 test_syn_cc=0.9132| score=0.9783
+0.35 0.00 0.40 0.25 | 0.978±0.014 | 0.948±0.050 | 0.973±0.010 | 0.913±0.032 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9933 val_syn_cc=0.9982 val_loss=0.0224 | test_acc=0.9928 test_syn_cc=0.9952| score=0.9933
+0.05 0.00 0.05 0.90 | 0.993±0.003 | 0.998±0.003 | 0.993±0.002 | 0.995±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=1.0000 val_loss=0.0099 | test_acc=0.9830 test_syn_cc=0.9743| score=1.0000
+0.40 0.00 0.15 0.45 | 1.000±0.000 | 1.000±0.000 | 0.983±0.006 | 0.974±0.013 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9717 val_syn_cc=0.8588 val_loss=0.1639 | test_acc=0.9685 test_syn_cc=0.8672| score=0.9717
+0.60 0.00 0.20 0.20 | 0.972±0.010 | 0.859±0.065 | 0.969±0.003 | 0.867±0.023 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=nan val_loss=0.0164 | test_acc=0.9961 test_syn_cc=nan| score=0.9983
+0.35 0.00 0.65 0.00 | 0.998±0.003 | nan±nan | 0.996±0.001 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=1.0000 val_loss=0.0245 | test_acc=0.9897 test_syn_cc=0.9900| score=0.9967
+0.30 0.00 0.05 0.65 | 0.997±0.003 | 1.000±0.000 | 0.990±0.003 | 0.990±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9967 val_syn_cc=1.0000 val_loss=0.0209 | test_acc=0.9907 test_syn_cc=0.9922| score=0.9967
+0.20 0.00 0.10 0.70 | 0.997±0.006 | 1.000±0.000 | 0.991±0.002 | 0.992±0.003 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9783 val_syn_cc=0.9052 val_loss=0.1159 | test_acc=0.9663 test_syn_cc=0.8609| score=0.9783
+0.50 0.00 0.30 0.20 | 0.978±0.013 | 0.905±0.053 | 0.966±0.010 | 0.861±0.055 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9917 val_syn_cc=0.9940 val_loss=0.0412 | test_acc=0.9794 test_syn_cc=0.9499| score=0.9917
+0.45 0.00 0.25 0.30 | 0.992±0.008 | 0.994±0.010 | 0.979±0.001 | 0.950±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9783 val_syn_cc=0.9321 val_loss=0.0926 | test_acc=0.9697 test_syn_cc=0.9143| score=0.9783
+0.60 0.00 0.10 0.30 | 0.978±0.008 | 0.932±0.034 | 0.970±0.011 | 0.914±0.032 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9650 val_syn_cc=0.8530 val_loss=0.1761 | test_acc=0.9637 test_syn_cc=0.8433| score=0.9650
+0.70 0.00 0.10 0.20 | 0.965±0.010 | 0.853±0.042 | 0.964±0.001 | 0.843±0.013 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9883 val_syn_cc=0.7556 val_loss=0.0811 | test_acc=0.9745 test_syn_cc=0.4991| score=0.9883
+0.00 0.00 0.95 0.05 | 0.988±0.008 | 0.756±0.077 | 0.974±0.001 | 0.499±0.008 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9767 val_syn_cc=0.9211 val_loss=0.0720 | test_acc=0.9736 test_syn_cc=0.9130| score=0.9767
+0.45 0.00 0.30 0.25 | 0.977±0.021 | 0.921±0.069 | 0.974±0.010 | 0.913±0.038 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9683 val_syn_cc=0.7361 val_loss=0.1500 | test_acc=0.9514 test_syn_cc=0.5681| score=0.9683
+0.80 0.00 0.10 0.10 | 0.968±0.008 | 0.736±0.064 | 0.951±0.005 | 0.568±0.074 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9617 val_syn_cc=0.8426 val_loss=0.1668 | test_acc=0.9625 test_syn_cc=0.8393| score=0.9617
+0.65 0.00 0.15 0.20 | 0.962±0.025 | 0.843±0.099 | 0.963±0.015 | 0.839±0.070 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9867 val_syn_cc=0.9699 val_loss=0.0592 | test_acc=0.9834 test_syn_cc=0.9548| score=0.9867
+0.20 0.00 0.50 0.30 | 0.987±0.010 | 0.970±0.014 | 0.983±0.002 | 0.955±0.008 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9883 val_syn_cc=0.9874 val_loss=0.0299 | test_acc=0.9796 test_syn_cc=0.9448| score=0.9883
+0.05 0.00 0.65 0.30 | 0.988±0.003 | 0.987±0.011 | 0.980±0.004 | 0.945±0.017 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=0.9935 val_loss=0.0315 | test_acc=0.9779 test_syn_cc=0.9607| score=0.9950
+0.50 0.00 0.05 0.45 | 0.995±0.005 | 0.993±0.011 | 0.978±0.007 | 0.961±0.019 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9717 val_syn_cc=0.8921 val_loss=0.1068 | test_acc=0.9686 test_syn_cc=0.8707| score=0.9717
+0.20 0.00 0.60 0.20 | 0.972±0.019 | 0.892±0.073 | 0.969±0.008 | 0.871±0.045 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9683 val_syn_cc=0.9210 val_loss=0.0916 | test_acc=0.9713 test_syn_cc=0.9196| score=0.9683
+0.10 0.00 0.60 0.30 | 0.968±0.015 | 0.921±0.041 | 0.971±0.006 | 0.920±0.019 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=0.9936 val_loss=0.0414 | test_acc=0.9814 test_syn_cc=0.9706| score=0.9950
+0.10 0.00 0.40 0.50 | 0.995±0.005 | 0.994±0.006 | 0.981±0.005 | 0.971±0.011 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9883 val_syn_cc=0.9800 val_loss=0.0543 | test_acc=0.9866 test_syn_cc=0.9764| score=0.9883
+0.10 0.00 0.50 0.40 | 0.988±0.003 | 0.980±0.007 | 0.987±0.001 | 0.976±0.005 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=nan val_loss=0.0178 | test_acc=0.9952 test_syn_cc=nan| score=0.9983
+0.25 0.00 0.75 0.00 | 0.998±0.003 | nan±nan | 0.995±0.003 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=1.0000 val_syn_cc=nan val_loss=0.0084 | test_acc=0.9954 test_syn_cc=nan| score=1.0000
+0.70 0.00 0.30 0.00 | 1.000±0.000 | nan±nan | 0.995±0.003 | nan±nan | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9867 val_syn_cc=0.9625 val_loss=0.0580 | test_acc=0.9728 test_syn_cc=0.9272| score=0.9867
+0.25 0.00 0.45 0.30 | 0.987±0.003 | 0.963±0.005 | 0.973±0.005 | 0.927±0.016 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9733 val_syn_cc=0.6667 val_loss=0.1043 | test_acc=0.9586 test_syn_cc=0.5232| score=0.9733
+0.55 0.00 0.40 0.05 | 0.973±0.015 | 0.667±0.072 | 0.959±0.013 | 0.523±0.029 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9617 val_syn_cc=0.7458 val_loss=0.1859 | test_acc=0.9461 test_syn_cc=0.6547| score=0.9617
+0.00 0.00 0.85 0.15 | 0.962±0.010 | 0.746±0.069 | 0.946±0.015 | 0.655±0.085 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9917 val_syn_cc=0.9810 val_loss=0.0372 | test_acc=0.9868 test_syn_cc=0.9679| score=0.9917
+0.65 0.00 -0.00 0.35 | 0.992±0.006 | 0.981±0.007 | 0.987±0.000 | 0.968±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9783 val_syn_cc=0.9330 val_loss=0.0875 | test_acc=0.9674 test_syn_cc=0.8869| score=0.9783
+0.50 0.00 0.25 0.25 | 0.978±0.003 | 0.933±0.004 | 0.967±0.007 | 0.887±0.040 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9867 val_syn_cc=0.9707 val_loss=0.0757 | test_acc=0.9813 test_syn_cc=0.9618| score=0.9867
+0.35 0.00 0.30 0.35 | 0.987±0.008 | 0.971±0.016 | 0.981±0.007 | 0.962±0.017 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9950 val_syn_cc=1.0000 val_loss=0.0176 | test_acc=0.9882 test_syn_cc=0.9872| score=0.9950
+0.05 0.00 0.35 0.60 | 0.995±0.005 | 1.000±0.000 | 0.988±0.004 | 0.987±0.004 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9583 val_syn_cc=0.6825 val_loss=0.2157 | test_acc=0.9501 test_syn_cc=0.5656| score=0.9583
+0.75 0.00 0.15 0.10 | 0.958±0.013 | 0.683±0.027 | 0.950±0.006 | 0.566±0.051 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[TUNE main] lr=3.00e-04 wd=1.00e-05 dr=0.30 | val_acc=0.9983 val_syn_cc=1.0000 val_loss=0.0143 | test_acc=0.9926 test_syn_cc=0.9932| score=0.9983
+0.25 0.00 0.00 0.75 | 0.998±0.003 | 1.000±0.000 | 0.993±0.002 | 0.993±0.001 | best lr=3.00e-04 wd=1.00e-05 dr=0.30 | ADD
+[LOG] saved: pid_synthetic_tuning/maintuned_valacc_nlrwddr.jsonl (total entries: 0)
 [1;34mwandb[0m: 
-[1;34mwandb[0m: 🚀 View run [33mSynprom_IB_genVAEOSfold0_lib0.1_perturbgen_lr0.0003_wd0.0_clsmlp[0m at: [34m[0m
-[1;34mwandb[0m: Find logs at: [1;35mwandb/run-20251123_225136-hkcb3fwa/logs[0m
+[1;34mwandb[0m: 🚀 View run [33mwobbly-disco-80[0m at: [34m[0m
+[1;34mwandb[0m: Find logs at: [1;35mwandb/run-20260116_213948-xobp25jg/logs[0m
 Job finished

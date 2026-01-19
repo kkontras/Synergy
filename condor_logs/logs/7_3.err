@@ -1,0 +1,9 @@
+wandb: Currently logged in as: kkontras to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: WARNING Using a boolean value for 'reinit' is deprecated. Use 'return_previous' or 'finish_previous' instead.
+wandb: setting up run lpay0r65
+wandb: Tracking run with wandb version 0.23.0
+wandb: Run data is saved locally in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/wandb/run-20260116_213933-lpay0r65
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run crisp-frog-74
+wandb: ⭐️ View project at https://wandb.ai/kkontras/synergy-ntk
+wandb: 🚀 View run at https://wandb.ai/kkontras/synergy-ntk/runs/lpay0r65

@@ -7,6 +7,7 @@ import torch
 from typing import Any, Dict, Optional
 from colorama import Fore
 
+VAL_WAYS = ["loss", "accuracy", "syn_accuracy"]
 
 class Monitor_n_Save():
 
@@ -16,7 +17,7 @@ class Monitor_n_Save():
     def save(
             self,
             verbose: bool = False,
-            is_best_model: bool = False,
+            is_best_dict: Dict[str, bool] = None,
             model_save: bool = True,
             post_test_results: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -32,7 +33,7 @@ class Monitor_n_Save():
             checkpoint,
             existing_ckpt=existing_ckpt,
             model_save=model_save,
-            is_best_model=is_best_model,
+            is_best_dict=is_best_dict,
         )
 
         # Add optional components
@@ -74,7 +75,7 @@ class Monitor_n_Save():
         }
 
         loader = getattr(self.agent.data_loader, "train_loader", None)
-        if hasattr(loader, "generator"):
+        if hasattr(loader, "generator") and loader.generator is not None:
             checkpoint["training_dataloader_generator_state"] = loader.generator.get_state()
 
         return checkpoint
@@ -84,25 +85,38 @@ class Monitor_n_Save():
             checkpoint: Dict[str, Any],
             existing_ckpt: Optional[Dict[str, Any]],
             model_save: bool,
-            is_best_model: bool,
+            is_best_dict: Dict,
     ) -> None:
         """Adds model and best model states to the checkpoint."""
         unwrapped_model = self.agent.accelerator.unwrap_model(self.agent.model)
 
+        list_to_check = ["best_model_state_dict"] + ["best_model_{}_state_dict".format(key) for key in VAL_WAYS]
         if model_save:
             checkpoint["model_state_dict"] = unwrapped_model.state_dict()
-        elif existing_ckpt:
-            for key in ["model_state_dict", "best_model_state_dict"]:
+        else:
+            list_to_check.append("model_state_dict")
+
+        if existing_ckpt and not (self.agent.logs["current_epoch"]==1 and self.agent.config.model.get("start_over", False)):
+            for key in list_to_check:
                 if key in existing_ckpt:
                     checkpoint[key] = existing_ckpt[key]
 
-        if is_best_model:
-            checkpoint["best_model_state_dict"] = unwrapped_model.state_dict()
-        else:
-            if existing_ckpt and "best_model_state_dict" in existing_ckpt:
-                checkpoint["best_model_state_dict"] = existing_ckpt["best_model_state_dict"]
+            # for key, is_best in is_best_dict.items():
+            #     new_key = "best_model_{}_state_dict".format(key)
+            #     if new_key in existing_ckpt:
+            #         checkpoint[new_key] = existing_ckpt[new_key]
+
+        if is_best_dict is None:
+            return
+
+        for key, is_best in is_best_dict.items():
+            if is_best:
+                checkpoint["best_model_{}_state_dict".format(key)] = unwrapped_model.state_dict()
             else:
-                checkpoint["best_model_state_dict"] = unwrapped_model.state_dict()
+                if existing_ckpt and "best_model_{}_state_dict".format(key) in existing_ckpt:
+                    checkpoint["best_model_{}_state_dict".format(key)] = existing_ckpt["best_model_{}_state_dict".format(key)]
+                else:
+                    checkpoint["best_model_{}_state_dict".format(key)] = unwrapped_model.state_dict()
 
     def _save_encoders(self, checkpoint: Dict[str, Any]) -> None:
         """Save encoders according to config."""
@@ -132,7 +146,7 @@ class Monitor_n_Save():
 
             try:
                 torch.save({"encoder_state_dict": encoder.state_dict()}, save_path)
-                self.agent.logger.info(Fore.WHITE + f"Encoder {encoder_attr} saved successfully at: {save_path}")
+                self.agent.logger.info(Fore.WHITE + f"Encoder {encoder_attr} saved successfully at: {save_path}"+ Fore.RESET)
                 # checkpoint[f"{encoder_attr}_state_dict"] = encoder.state_dict()
             except Exception as e:
                 self.agent.logger.error(f"Failed to save encoder {encoder_attr}: {e}")
@@ -156,21 +170,22 @@ class Monitor_n_Save():
             self._update_train_val_logs(train_metrics = train_metrics, val_metrics = val_metrics)
             wandb.log({"train": train_metrics, "val": val_metrics}, step=self.agent.logs["current_step"]+1)
 
-            is_best = self.agent.evaluators.val_evaluator.is_best(metrics=val_metrics, best_logs=self.agent.logs["best_logs"])
+            is_best, is_best_dict = self.agent.evaluators.val_evaluator.is_best(metrics=val_metrics, best_logs=self.agent.logs["best_logs"])
             self.print_valid_results(val_metrics, self.agent.logs["current_step"])
 
             not_saved = True
             if is_best:
-                wandb_out = {"best_val": val_metrics}
-                self._update_best_logs(current_step = self.agent.logs["current_step"], val_metrics = val_metrics)
 
+                self._update_best_logs(current_step = self.agent.logs["current_step"], val_metrics = val_metrics, is_best_dict=is_best_dict)
+
+                wandb_out = {"best_val_{}".format(_key): val_metrics for _key in is_best_dict.keys() if is_best_dict[_key]}
                 if self.agent.config.training_params.rec_test:
                     test_metrics = self._test_n_update()
                     wandb_out["test"] = test_metrics
                 wandb.log(wandb_out, step=self.agent.logs["current_step"]+1)
 
                 self.agent.logs["steps_no_improve"] = 0
-                self.save(verbose = True, is_best_model=True)
+                self.save(verbose = True, is_best_dict=is_best_dict)
                 not_saved = False
             else:
                 self.agent.logs["steps_no_improve"] += 1
@@ -195,10 +210,12 @@ class Monitor_n_Save():
         self.agent.logs["val_logs"][self.agent.logs["current_step"]] = val_metrics
         self.agent.logs["train_logs"][self.agent.logs["current_step"]] = train_metrics
 
-    def _update_best_logs(self, current_step, val_metrics):
+    def _update_best_logs(self, current_step, val_metrics, is_best_dict):
 
         val_metrics.update({"step": current_step})
-        self.agent.logs["best_logs"] = val_metrics
+        for key in is_best_dict.keys():
+            if is_best_dict[key]:
+                self.agent.logs["best_logs"]["best_v{}".format(key)] = val_metrics
 
     def print_valid_results(self, val_metrics, current_step=None, test=False):
 
@@ -247,7 +264,7 @@ class Monitor_n_Save():
             #     for i, v in val_metrics["corr"].items(): message += Fore.LIGHTWHITE_EX + "Corr_{}: {:.4f} ".format(i,v)
             # if "ceu" in val_metrics:
             #     for i, v in val_metrics["ceu"]["combined"].items(): message += Fore.LIGHTMAGENTA_EX + "CEU_{}: {:.4f} ".format(i,v)
-            if "pg_acc" in val_metrics:
+            if "pg_acc" in val_metrics and "combined" in val_metrics["pg_acc"]:
                 pg = val_metrics["pg_acc"]["combined"]
                 # Assuming pg = pg_acc from your example
                 m = pg.get('group_metrics', {})
@@ -277,11 +294,12 @@ class Monitor_n_Save():
 
                 message += f"{s_str} {u1_str} {u2_str} {r_str} {sl_str}{N} "
 
-            # if "val_perclassf1" in val_metrics:
-            #     for i, v in val_metrics["val_perclassf1"].items(): message += Fore.BLUE + "F1_perclass_{}: {} ".format(i,"{}".format(str(list((v*100).round(2)))))
+            if "f1_perclass" in val_metrics:
+                rounded_v = ["{:.1f}".format(v*100) for v in val_metrics["f1_perclass"]["combined"]]
+                message += Fore.BLUE + "F1_perclass: {} ".format("-".join(rounded_v)) + Fore.RESET
 
             if self.agent.accelerator.is_main_process:
-                self.agent.logger.info(message)
+                self.agent.logger.info(message+ Fore.RESET)
 
 
     def _print_epoch_metrics(self):
@@ -335,8 +353,13 @@ class Monitor_n_Save():
             #                 (
             #                         v * 100).round(
             #                     2)))))
+
+            if "f1_perclass" in val_metrics:
+                rounded_v = ["{:.1f}".format(v*100) for v in val_metrics["f1_perclass"]["combined"]]
+                message += Fore.BLUE + "F1_perclass: {} ".format("-".join(rounded_v)) + Fore.RESET
+
             if self.agent.accelerator.is_main_process:
-                self.agent.logger.info(message)
+                self.agent.logger.info(message + Fore.RESET)
 
     def _early_stop_check_n_save(self, not_saved):
 

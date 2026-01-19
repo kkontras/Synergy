@@ -392,6 +392,7 @@ class AVE_Dataloader():
         g.manual_seed(0)
 
         num_cores = len(os.sched_getaffinity(0))-1
+        # num_cores = 0
 
         print("Available cores {}".format(len(os.sched_getaffinity(0))))
         print("We are changing dataloader workers to num of cores {}".format(num_cores))
@@ -406,6 +407,7 @@ class AVE_Dataloader():
                                                         pin_memory=self.config.training_params.pin_memory,
                                                         generator=g,
                                                         worker_init_fn=lambda worker_id: np.random.seed(15 + worker_id))
+
         self.valid_loader = torch.utils.data.DataLoader(dataset_val,
                                                         batch_size=self.config.training_params.test_batch_size,
                                                         shuffle=False,

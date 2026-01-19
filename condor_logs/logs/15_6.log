@@ -1,38 +1,51 @@
-000 (015.006.000) 2025-11-08 14:36:29 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+000 (015.006.000) 2026-01-17 07:38:13 Job submitted from host: <10.87.28.151:9618?addrs=10.87.28.151-9618&alias=brigand.esat.kuleuven.be&noUDP&sock=schedd_1447_19a1>
 ...
-001 (015.006.000) 2025-11-08 22:42:57 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_12050_e04e>
-	SlotName: slot1_7@aristoteles.esat.kuleuven.be
-	AvailableGPUs = { GPUs_GPU_1ba53048 }
-	CondorScratchDir = "/usr/data/condor/execute/dir_1477258"
+001 (015.006.000) 2026-01-17 07:38:28 Job executing on host: <10.87.24.112:9618?addrs=10.87.24.112-9618&alias=nickeline.esat.kuleuven.be&noUDP&sock=startd_1658_d41d>
+	SlotName: slot1_1@nickeline.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_e9055b3f }
+	CondorScratchDir = "/usr/data/condor/execute/dir_47441/scratch"
 	Cpus = 8
-	Disk = 1050529
+	Disk = 1048576
 	GPUs = 1
-	GPUs_GPU_1ba53048 = [ Id = "GPU-1ba53048"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "1ba53048-c5a1-3226-7f78-7a6cb9cbaa42"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:C7:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
-	Memory = 71680
+	GPUs_GPU_e9055b3f = [ Id = "GPU-e9055b3f"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "e9055b3f-ca61-f9ca-ad0f-c0fbfaa43ac3"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:01:00.0"; GlobalMemoryMb = 10818; MaxSupportedVersion = 13000 ]
+	Memory = 20480
 ...
-006 (015.006.000) 2025-11-08 22:43:05 Image size of job updated: 288392
-	282  -  MemoryUsage of job (MB)
-	288392  -  ResidentSetSize of job (KB)
+006 (015.006.000) 2026-01-17 07:38:37 Image size of job updated: 855972
+	836  -  MemoryUsage of job (MB)
+	855972  -  ResidentSetSize of job (KB)
 ...
-006 (015.006.000) 2025-11-08 22:43:20 Image size of job updated: 719320
-	282  -  MemoryUsage of job (MB)
-	288392  -  ResidentSetSize of job (KB)
+006 (015.006.000) 2026-01-17 07:43:38 Image size of job updated: 868888
+	849  -  MemoryUsage of job (MB)
+	868400  -  ResidentSetSize of job (KB)
 ...
-005 (015.006.000) 2025-11-08 22:43:20 Job terminated.
+006 (015.006.000) 2026-01-17 07:48:38 Image size of job updated: 870564
+	849  -  MemoryUsage of job (MB)
+	868400  -  ResidentSetSize of job (KB)
+...
+006 (015.006.000) 2026-01-17 07:53:39 Image size of job updated: 871112
+	849  -  MemoryUsage of job (MB)
+	868400  -  ResidentSetSize of job (KB)
+...
+006 (015.006.000) 2026-01-17 07:58:39 Image size of job updated: 891296
+	849  -  MemoryUsage of job (MB)
+	868400  -  ResidentSetSize of job (KB)
+...
+005 (015.006.000) 2026-01-17 08:44:05 Job terminated.
 	(1) Normal termination (return value 0)
-		Usr 0 00:00:10, Sys 0 00:00:05  -  Run Remote Usage
+		Usr 0 01:04:37, Sys 0 00:00:17  -  Run Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
-		Usr 0 00:00:10, Sys 0 00:00:05  -  Total Remote Usage
+		Usr 0 01:04:37, Sys 0 00:00:17  -  Total Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
 	0  -  Run Bytes Sent By Job
 	0  -  Run Bytes Received By Job
 	0  -  Total Bytes Sent By Job
 	0  -  Total Bytes Received By Job
 	Partitionable Resources :    Usage  Request Allocated Assigned
-	   Cpus                 :        0        8         8 
-	   Disk (KB)            :        2  1048576   1050529 
-	   GPUs                 :                 1         1 "GPU-1ba53048"
-	   Memory (MB)          :      282    71680     71680 
-	   TimeExecute (s)      :       23                    
-	   TimeSlotBusy (s)     :       23                    
+	   Cpus                 :     0.99        8         8 
+	   Disk (KB)            :     2     1048576   1048576 
+	   GPUs                 :     0.12        1         1 "GPU-e9055b3f"
+	   GpusMemory (MB)      :  1280                       
+	   Memory (MB)          :   849       20480     20480 
+	   TimeExecute (s)      :  3937                       
+	   TimeSlotBusy (s)     :  3937                       
 ...

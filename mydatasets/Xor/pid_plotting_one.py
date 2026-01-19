@@ -173,6 +173,11 @@ file_path_synibleaned = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/gi
 
 df = load_records_from_three(file_path_main, file_path_synib, file_path_synibleaned)
 
+cols_to_check = ['synib_learned_acc_fusion']
+df_filtered = df.dropna(subset=cols_to_check)
+pd.set_option('display.max_colwidth', 20)
+pd.set_option('display.width', 1000) # Increases the character width of the output
+print(df_filtered.to_string())
 
 
 # make a 2x3 grid (top: total acc, bottom: synergy acc)

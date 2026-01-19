@@ -266,8 +266,11 @@ class Validator():
             # message += Fore.LIGHTGREEN_EX + "K_{}: {:.4f} ".format(i, metrics["k"][i])
             # message += Fore.LIGHTGREEN_EX + "F1_{}: {:.2f} ".format(i, metrics["f1"][i] * 100)
             # message += Fore.LIGHTRED_EX + "ECE_{}: {:.3f} ".format(i, metrics["ece"][i])
-            # message += Fore.BLUE + "F1_perclass_{}: {} ".format(i,"{}".format(str(list((metrics["f1_perclass"][i] * 100).round(2)))))
+            message += Fore.BLUE + "F1_perclass_{}: {} ".format(i,"{}".format(str((metrics["f1_perclass"][i] * 100).round(2).tolist())))
             print(message+ Style.RESET_ALL)
+
+
+
 
     def save_test_results(self, checkpoint, save_dir, test_results):
 

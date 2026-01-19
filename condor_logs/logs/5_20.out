@@ -1,10 +1,178 @@
 Starting Job
 /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
-/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python
-Python 3.9.18
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python
+Python 3.10.19
 /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy
 We have 1 GPU
 /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py
-config-./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json
-Executing command: accelerate launch /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py --config ./configs/CREMA_D/synergy/nov/synprom_generatorVAEOneSide.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --lr 0.0001 --wd 0.0 --perturb gen --start_over  --cls mlp --lib 0.01
+config-./configs/CREMA_D/synergy/jan/synprom_RMask.json
+Executing command: python /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 0.1 --lr 0.00001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 1
+Namespace(config='./configs/CREMA_D/synergy/jan/synprom_RMask.json', default_config='./configs/CREMA_D/default_config_cremadplus_res_syn.json', fold='0', alpha=None, tanh_mode=None, tanh_mode_beta=None, regby=None, clip=None, batch_size='64', l='0.1', multil=None, l_diffsq=None, lib=None, ratio_us=None, ratio_snr=None, kmepoch=None, num_samples=None, pow=None, nstep=None, contrcoeff=None, kde_coeff=None, etube=None, temperature=None, contr_type=None, shuffle_type=None, validate_with=None, transform_type=None, trasform_before=None, num_classes=None, base_alpha=None, alpha_var=None, base_beta=None, beta_var=None, optim_method=None, ilr_c=None, ilr_g=None, mmcosine_scaling=None, ending_epoch=None, load_ongoing=None, commonlayers=None, recon_weight1=None, recon_weight2=None, recon_epochstages=None, recon_ensemblestages=None, lr='0.00001', wd='0.0001', mm=None, cls='mlp', perturb=None, perturb_fill='ema', perturb_pmax=None, perturb_pmin=None, perturb_lsparse='1', pre=False, frozen=False, tdqm_disable=False, start_over=False)
+2026-01-15 09:24:26,978 - Config - INFO - ./configs/CREMA_D/synergy/jan/synprom_RMask.json
+2026-01-15 09:24:26,982 - Config - INFO -  THE Configuration of your experiment ..
+{'agent': 'Agent',
+ 'dataset': {'data_roots': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/CremaD/CREMA-D',
+             'data_split': {'fold': 0, 'method': 'non_inclusive'},
+             'dataloader_class': 'CramedDPlus_Dataloader',
+             'fps': 1,
+             'ironic_label_name': 'SARCASM',
+             'ironic_modes': ['train', 'val', 'test'],
+             'ironic_rate': 1.0,
+             'norm': False,
+             'norm_face_path': './mydatasets/CREMAD/norm_face_path_fold{}.pkl',
+             'norm_wav_path': './mydatasets/CREMAD/wav_norm_22050_fold{}.pkl',
+             'num_frame': 3,
+             'return_data': {'audio': False,
+                             'face': False,
+                             'spectrogram': True,
+                             'video': True},
+             'sampling_rate': 22050},
+ 'early_stopping': {'end_of_epoch_check': True,
+                    'log_interval': 10,
+                    'max_epoch': 1500,
+                    'n_steps_stop': 30,
+                    'n_steps_stop_after': 0,
+                    'save_every_step': 3000,
+                    'save_every_valstep': 10,
+                    'validate_after': 0,
+                    'validate_every': 25,
+                    'validate_with': 'accuracy'},
+ 'exp_name': 'CREMAD Experiment',
+ 'model': {'args': {'bias_infusion': {'contrcoeff': 0.0, 'l': 1.0},
+                    'cls_type': 'mlp',
+                    'd_model': 512,
+                    'dropout': 0.1,
+                    'fc_inner': 64,
+                    'in_dim': 64,
+                    'multi_loss': {'multi_supervised_w': {'c': 1,
+                                                          'combined': 1,
+                                                          'g': 1}},
+                    'norm_decision': False,
+                    'num_classes': 7,
+                    'synergy_type': 'gaussian'},
+           'ceu': {'test': './cremadplus_ceu_test_res.pkl',
+                   'val': './cremadplus_ceu_val_res.pkl'},
+           'encoders': [{'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': False,
+                                  'num_classes': 7},
+                         'model': 'Audio_ResNet',
+                         'name': 'enc_0_modality1_encoder',
+                         'pretrainedEncoder': {'dir': 'unimodal_audio_fold{}_lr0.001_wd0.0001_bs64.pth.tar',
+                                               'use': True},
+                         'save_encoder': False},
+                        {'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': False,
+                                  'num_classes': 7},
+                         'model': 'Video_ResNet',
+                         'name': 'enc_1_modality2_encoder',
+                         'pretrainedEncoder': {'dir': 'unimodal_video_fold{}_lr0.0001_wd0.0001_bs64.pth.tar',
+                                               'use': True},
+                         'save_encoder': False},
+                        {'args': {'d_model': 512,
+                                  'dropout': 0.1,
+                                  'fc_inner': 64,
+                                  'freeze_encoder': False},
+                         'model': 'FusionTrunkLinear',
+                         'name': 'enc_2_fusion_trunk',
+                         'pretrainedEncoder': {'dir': 'enc_2_fusion_trunk_fold{}.pth.tar',
+                                               'use': False},
+                         'save_encoder': False},
+                        {'args': {'freeze_encoder': False,
+                                  'in_dim': 64,
+                                  'num_classes': 7},
+                         'model': 'LinearHead',
+                         'name': 'enc_3_fusion_head',
+                         'pretrainedEncoder': {'dir': 'enc_3_fusion_head_fold{}.pth.tar',
+                                               'use': False},
+                         'save_encoder': False},
+                        {'args': {'dropout': 0.1,
+                                  'freeze_encoder': False,
+                                  'hidden_dim': 64,
+                                  'in_dim': 512,
+                                  'num_classes': 7},
+                         'model': 'MLPHead',
+                         'name': 'enc_4_unimodal_head_1',
+                         'pretrainedEncoder': {'dir': 'enc_4_unimodal1_fold{}.pth.tar',
+                                               'use': False},
+                         'save_encoder': False},
+                        {'args': {'dropout': 0.1,
+                                  'freeze_encoder': False,
+                                  'hidden_dim': 64,
+                                  'in_dim': 512,
+                                  'num_classes': 7},
+                         'model': 'MLPHead',
+                         'name': 'enc_5_unimodal_head_2',
+                         'pretrainedEncoder': {'dir': 'enc_5_unimodal2_fold{}.pth.tar',
+                                               'use': False},
+                         'save_encoder': False}],
+           'load_ongoing': False,
+           'model_class': 'FusionIBModel_Mask',
+           'save_base_dir': '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/CremadPlus/v2',
+           'save_dir': 'SynIB_RMask_{}.pth.tar'},
+ 'optimizer': {'beta1': 0.9,
+               'beta2': 0.999,
+               'learning_rate': 1e-05,
+               'momentum': 0.9,
+               'type': 'Adam',
+               'weight_decay': 1e-05},
+ 'scheduler': {'max_lr': 0.03, 'type': 'cosanneal', 'warm_up_steps': 780},
+ 'training_params': {'async_loading': True,
+                     'batch_size': 128,
+                     'cuda': True,
+                     'data_loader_workers': 8,
+                     'gpu_device': [0],
+                     'pin_memory': False,
+                     'rec_test': True,
+                     'res': True,
+                     'seed': 109,
+                     'tdqm_disable': False,
+                     'test_batch_size': 128,
+                     'test_on_bottoms': True,
+                     'use_test_set': True,
+                     'validation': True,
+                     'verbose': True,
+                     'wandb_disable': False}}
+2026-01-15 09:24:26,993 - Config - INFO -  *************************************** 
+2026-01-15 09:24:26,993 - Config - INFO - The experiment name is CREMAD Experiment
+2026-01-15 09:24:26,993 - Config - INFO -  *************************************** 
+2026-01-15 09:24:26,993 - root - INFO - save_dir: SynIB_RMask_fold0_l0.1_fillema_lsparse1_lr0.00001_wd0.0001_clsmlp_bs64.pth.tar
+2026-01-15 09:24:27,086 - Cuda Statistics - INFO - __Python VERSION:  3.10.19 (main, Oct 21 2025, 16:43:05) [GCC 11.2.0]
+2026-01-15 09:24:27,086 - Cuda Statistics - INFO - __pyTorch VERSION:  2.9.1+cu128
+2026-01-15 09:24:27,086 - Cuda Statistics - INFO - __CUDA VERSION
+2026-01-15 09:24:27,088 - Cuda Statistics - INFO - __CUDNN VERSION:  91002
+2026-01-15 09:24:27,129 - Cuda Statistics - INFO - __Number CUDA Devices:  1
+2026-01-15 09:24:27,129 - Cuda Statistics - INFO - __Devices
+2026-01-15 09:24:27,129 - Cuda Statistics - INFO - index, name, driver_version, memory.total [MiB], memory.used [MiB], memory.free [MiB]
+2026-01-15 09:24:27,129 - Cuda Statistics - INFO - 0, Tesla P100-PCIE-16GB, 580.119.02, 16384 MiB, 3 MiB, 16268 MiB
+2026-01-15 09:24:27,133 - Cuda Statistics - INFO - Active CUDA Device: GPU 0
+2026-01-15 09:24:27,133 - Cuda Statistics - INFO - Available devices  1
+2026-01-15 09:24:27,134 - Cuda Statistics - INFO - Current cuda device  0
+2026-01-15 09:24:27,971 - CREMADPlusDataset - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_22050_fold0.pkl
+2026-01-15 09:24:28,026 - CREMADPlusDataset - INFO - [train] Ironic pairing enabled: ironic_rate=1.000, target≈673.7, requested_k=674, applied_k=674
+2026-01-15 09:24:28,026 - CREMADPlusDataset - INFO - [train] Flipped-to-sarcasm counts by original class: {0: 135, 1: 143, 2: 94, 3: 111, 4: 98, 5: 93}
+2026-01-15 09:24:28,027 - CREMADPlusDataset - INFO - [train] Top (orig_label -> donor_label) sarcasm pairs: [('FEA->HAP', 111), ('DIS->HAP', 98), ('SAD->HAP', 94), ('HAP->ANG', 55), ('HAP->DIS', 47), ('HAP->SAD', 41), ('ANG->HAP', 35), ('ANG->NEU', 35), ('NEU->HAP', 32), ('NEU->FEA', 28)]
+2026-01-15 09:24:28,027 - CREMADPlusDataset - INFO - [train] Top donor indices reused (idx, times): [(1334, 4), (3408, 3), (2650, 3), (3255, 3), (3446, 3), (3674, 3), (1379, 3), (2982, 3), (4022, 3), (3631, 3)]
+2026-01-15 09:24:28,027 - CREMADPlusDataset - INFO - [train] Label distribution after applying ironic pairs: {0: 570, 1: 695, 2: 476, 3: 512, 4: 525, 5: 590, 6: 674}
+2026-01-15 09:24:28,108 - CREMADPlusDataset - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_22050_fold0.pkl
+2026-01-15 09:24:28,119 - CREMADPlusDataset - INFO - [val] Ironic pairing enabled: ironic_rate=1.000, target≈146.3, requested_k=146, applied_k=146
+2026-01-15 09:24:28,119 - CREMADPlusDataset - INFO - [val] Flipped-to-sarcasm counts by original class: {0: 27, 1: 31, 2: 19, 3: 21, 4: 23, 5: 25}
+2026-01-15 09:24:28,119 - CREMADPlusDataset - INFO - [val] Top (orig_label -> donor_label) sarcasm pairs: [('DIS->HAP', 23), ('FEA->HAP', 21), ('SAD->HAP', 19), ('HAP->DIS', 14), ('HAP->ANG', 12), ('NEU->HAP', 10), ('ANG->NEU', 9), ('ANG->SAD', 8), ('ANG->HAP', 8), ('HAP->SAD', 5)]
+2026-01-15 09:24:28,119 - CREMADPlusDataset - INFO - [val] Top donor indices reused (idx, times): [(255, 3), (225, 3), (61, 2), (121, 2), (812, 2), (694, 2), (304, 2), (510, 2), (209, 2), (189, 2)]
+2026-01-15 09:24:28,119 - CREMADPlusDataset - INFO - [val] Label distribution after applying ironic pairs: {0: 123, 1: 157, 2: 93, 3: 117, 4: 129, 5: 113, 6: 146}
+2026-01-15 09:24:28,311 - CREMADPlusDataset - INFO - Loaded wav norm from ./mydatasets/CREMAD/wav_norm_22050_fold0.pkl
+2026-01-15 09:24:28,321 - CREMADPlusDataset - INFO - [test] Ironic pairing enabled: ironic_rate=1.000, target≈149.8, requested_k=150, applied_k=150
+2026-01-15 09:24:28,322 - CREMADPlusDataset - INFO - [test] Flipped-to-sarcasm counts by original class: {0: 22, 1: 28, 2: 23, 3: 18, 4: 29, 5: 30}
+2026-01-15 09:24:28,322 - CREMADPlusDataset - INFO - [test] Top (orig_label -> donor_label) sarcasm pairs: [('DIS->HAP', 29), ('SAD->HAP', 23), ('FEA->HAP', 18), ('ANG->NEU', 13), ('HAP->ANG', 11), ('ANG->HAP', 11), ('HAP->SAD', 9), ('HAP->DIS', 8), ('NEU->HAP', 8), ('ANG->SAD', 6)]
+2026-01-15 09:24:28,322 - CREMADPlusDataset - INFO - [test] Top donor indices reused (idx, times): [(606, 3), (246, 2), (796, 2), (75, 2), (612, 2), (686, 2), (425, 2), (281, 2), (501, 2), (115, 2)]
+2026-01-15 09:24:28,322 - CREMADPlusDataset - INFO - [test] Label distribution after applying ironic pairs: {0: 125, 1: 162, 2: 95, 3: 123, 4: 109, 5: 135, 6: 150}
+2026-01-15 09:24:28,323 - Agent - INFO - Device: cuda:0
+2026-01-15 09:24:28,324 - Agent - INFO - Total training batches: 64, validate every 25 batches, steps per epoch: 3
+2026-01-15 09:24:30,160 - Agent - INFO - Loss Weights are {'total': 1, 'combined': 1, 'c': 1, 'g': 1}
+2026-01-15 09:24:30,878 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/CremadPlus/v2/unimodal_audio_fold0_lr0.001_wd0.0001_bs64.pth.tar
+2026-01-15 09:24:31,192 - root - INFO - Loading enc best model state dict from /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/CremadPlus/v2/unimodal_video_fold0_lr0.0001_wd0.0001_bs64.pth.tar
+2026-01-15 09:24:31,254 - Agent - INFO - Total number of trainable parameters are: 22487018
 Job finished

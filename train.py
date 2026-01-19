@@ -22,17 +22,17 @@ def main(config_path, default_config_path, args):
             config.dataset.data_split.fold = int(args.fold)
         config.dataset.fold = int(args.fold)
         m += "fold{}".format(args.fold)
-        enc_m += "fold{}".format(args.fold)
+        enc_m += "{}".format(args.fold)
         seeds = [0, 109, 19, 337] if "UCF" in config_path else [109, 19, 337]
         config.training_params.seed = int(seeds[int(args.fold)])
         if "norm_wav_path" in config.dataset:
             config.dataset.norm_wav_path = config.dataset.norm_wav_path.format(args.fold)
         if "norm_face_path" in config.dataset:
             config.dataset.norm_face_path = config.dataset.norm_face_path.format(args.fold)
-        if hasattr(config.model, "encoders"):
-            for i in range(len(config.model.encoders)):
-            # for i in range(2):
-                config.model.encoders[i].pretrainedEncoder.dir = config.model.encoders[i].pretrainedEncoder.dir.format(args.fold)
+        # if hasattr(config.model, "encoders"):
+        #     for i in range(len(config.model.encoders)):
+        #     # for i in range(2):
+        #         config.model.encoders[i].pretrainedEncoder.dir = config.model.encoders[i].pretrainedEncoder.dir.format(args.fold)
         # if "pretraining_paths" in config.model.args:
         #     for i in config.model.args.pretraining_paths:
         #         config.model.args.pretraining_paths[i] = config.model.args.pretraining_paths[i].format(args.fold)
@@ -56,7 +56,7 @@ def main(config_path, default_config_path, args):
         if hasattr(config.model, "encoders"):
             for i in range(len(config.model.encoders)):
                 config.model.encoders[i].args.num_classes = int(args.num_classes)
-        enc_m += "_numclasses{}".format(args.num_classes)
+        # enc_m += "_numclasses{}".format(args.num_classes)
         m += "_numclasses{}".format(args.num_classes)
     if "tanh_mode_beta" in args and args.tanh_mode_beta is not None:
         config.model.args.bias_infusion.tanh_mode = "2"
@@ -79,7 +79,7 @@ def main(config_path, default_config_path, args):
             for i in range(len(config.model.encoders)):
                 config.model.encoders[i].args.lib = float(args.lib)
         m += "_lib{}".format(args.lib)
-        enc_m += "_lib{}".format(args.lib)
+        # enc_m += "_lib{}".format(args.lib)
     if "kmepoch" in args and args.kmepoch is not None:
         config.model.args.bias_infusion.keep_memory_epoch = int(args.kmepoch)
         m += "_kmepoch{}".format(args.kmepoch)
@@ -100,11 +100,17 @@ def main(config_path, default_config_path, args):
         m += "_numsamples{}".format(args.num_samples)
 
     if "contrcoeff" in args and args.contrcoeff is not None:
+        config.model.args.bias_infusion.contr_coeff = float(args.contrcoeff)
         config.model.args.bias_infusion.contrcoeff = float(args.contrcoeff)
         m += "_contrcoeff{}".format(args.contrcoeff)
+
+    if "shuffle_type" in args and args.shuffle_type is not None and args.shuffle_type != "None":
+        config.model.args.bias_infusion.shuffle_type = str(args.shuffle_type)
+        m += "_st{}".format(args.shuffle_type)
+
     if "validate_with" in args and args.validate_with is not None:
         config.early_stopping.validate_with = args.validate_with
-        enc_m += "_vld{}".format(args.validate_with)
+        # enc_m += "_vld{}".format(args.validate_with)
         m += "_vld{}".format(args.validate_with)
     if "base_alpha" in args and args.base_alpha is not None:
         config.dataset.base_alpha = float(args.base_alpha)
@@ -118,7 +124,7 @@ def main(config_path, default_config_path, args):
         if hasattr(config.model, "encoders"):
             for i in range(len(config.model.encoders)):
                 config.model.encoders[i].args.layers = int(args.base_beta)
-        enc_m += "_basebeta{}".format(args.base_beta)
+        # enc_m += "_basebeta{}".format(args.base_beta)
         m += "_basebeta{}".format(args.base_beta)
     if "beta_var" in args and args.beta_var is not None:
         config.dataset.beta_var = float(args.beta_var)
@@ -131,11 +137,23 @@ def main(config_path, default_config_path, args):
                 m_enc += "_basebeta{}".format(args.base_beta)
                 m_enc += "_betavar{}".format(args.beta_var)
                 config.model.encoders[i].pretrainedEncoder.dir = config.model.encoders[i].pretrainedEncoder.dir.format(m_enc)
+    if "ironic_rate" in args and args.ironic_rate is not None:
+        config.dataset.ironic_rate = float(args.ironic_rate)
+        if hasattr(config.model, "ceu"):
+            config.model.ceu.val = config.model.ceu.val.format("ir{}".format(float(args.ironic_rate)))
+            config.model.ceu.test = config.model.ceu.test.format("ir{}".format(float(args.ironic_rate)))
+        enc_m += "_ir{}".format(float(args.ironic_rate))
+        m += "_ir{}".format(float(args.ironic_rate))
     if "perturb" in args and args.perturb is not None:
         if not hasattr(config.model.args, "perturb"):
             config.model.args.perturb = {}
         config.model.args.perturb.type = args.perturb
         m += "_perturb{}".format(args.perturb)
+    if "ending_epoch" in args and args.ending_epoch is not None:
+        if not hasattr(config.model.args, "perturb"):
+            config.model.args.perturb = {}
+        config.model.args.perturb.ending_epoch = args.ending_epoch
+        m += "_endingepoch{}".format(args.ending_epoch)
     if "perturb_fill" in args and args.perturb_fill is not None:
         if not hasattr(config.model.args, "perturb"):
             config.model.args.perturb = {}
@@ -146,6 +164,11 @@ def main(config_path, default_config_path, args):
             config.model.args.perturb = {}
         config.model.args.perturb.p_min = args.perturb_pmin
         m += "_pmin{}".format(args.perturb_pmin)
+    if "perturb_lsparse" in args and args.perturb_lsparse is not None:
+        if not hasattr(config.model.args, "perturb"):
+            config.model.args.perturb = {}
+        config.model.args.perturb.lsparse = args.perturb_lsparse
+        m += "_lsparse{}".format(args.perturb_lsparse)
     if "perturb_pmax" in args and args.perturb_pmax is not None:
         if not hasattr(config.model.args, "perturb"):
             config.model.args.perturb = {}
@@ -157,18 +180,21 @@ def main(config_path, default_config_path, args):
     if "lr" in args and args.lr is not None:
         config.optimizer.learning_rate = float(args.lr)
         m += "_lr{}".format(args.lr)
-        enc_m += "_lr{}".format(args.lr)
+        # enc_m += "_lr{}".format(args.lr)
     if "wd" in args and args.wd is not None:
         config.optimizer.weight_decay = float(args.wd)
         m += "_wd{}".format(args.wd)
-        enc_m += "_wd{}".format(args.wd)
+        # enc_m += "_wd{}".format(args.wd)
     if "cls" in args and args.cls is not None:
         config.model.args.cls_type = args.cls
+        if hasattr(config.model, "encoders"):
+            for i in range(len(config.model.encoders)):
+                config.model.encoders[i].args.cls_type = args.cls
         m += "_cls{}".format(args.cls)
     if "batch_size" in args and args.batch_size is not None:
         config.training_params.batch_size = int(args.batch_size)
         m += "_bs{}".format(args.batch_size)
-        enc_m += "_bs{}".format(args.batch_size)
+        # enc_m += "_bs{}".format(args.batch_size)
     if "pre" in args and args.pre:
         m += "_pre"
         if hasattr(config.model, "encoders"):
@@ -188,10 +214,10 @@ def main(config_path, default_config_path, args):
 
     config.model.save_dir = config.model.save_dir.format(m)
 
-    # if enc_m != "":
-    # if hasattr(config.model, "encoders"):
-    #     for i in range(len(config.model.encoders)):
-    #         config.model.encoders[i].pretrainedEncoder.dir = config.model.encoders[i].pretrainedEncoder.dir.format(enc_m)
+    if enc_m != "":
+        if hasattr(config.model, "encoders"):
+            for i in range(len(config.model.encoders)):
+                config.model.encoders[i].pretrainedEncoder.dir = config.model.encoders[i].pretrainedEncoder.dir.format(enc_m)
 
     logging.info("save_dir: {}".format(config.model.save_dir))
     agent_class = globals()[config.agent]
@@ -249,10 +275,12 @@ parser.add_argument('--lr', required=False, help="Learning Rate", default=None)
 parser.add_argument('--wd', required=False, help="Weight Decay", default=None)
 parser.add_argument('--mm', required=False, help="Optimizer Momentum", default=None)
 parser.add_argument('--cls', required=False, help="CLS linear, nonlinear, highlynonlinear", default=None)
+parser.add_argument('--ironic_rate', required=False, help="Perturbation type of MCR", default=None)
 parser.add_argument('--perturb', required=False, help="Perturbation type of MCR", default=None)
 parser.add_argument('--perturb_fill', required=False, help="Fill for mask type perturbation of MCR", default=None)
 parser.add_argument('--perturb_pmax', required=False, help="Fill for mask type perturbation of MCR", default=None)
 parser.add_argument('--perturb_pmin', required=False, help="Fill for mask type perturbation of MCR", default=None)
+parser.add_argument('--perturb_lsparse', required=False, help="Fill for mask type perturbation of MCR", default=None)
 parser.add_argument('--pre', action='store_true')
 parser.add_argument('--frozen', action='store_true')
 parser.add_argument('--tdqm_disable', action='store_true')

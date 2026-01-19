@@ -1,38 +1,55 @@
-000 (015.005.000) 2025-11-08 14:36:29 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+000 (015.005.000) 2026-01-17 07:38:13 Job submitted from host: <10.87.28.151:9618?addrs=10.87.28.151-9618&alias=brigand.esat.kuleuven.be&noUDP&sock=schedd_1447_19a1>
 ...
-001 (015.005.000) 2025-11-08 22:42:32 Job executing on host: <10.87.24.4:9618?addrs=10.87.24.4-9618&alias=aristoteles.esat.kuleuven.be&noUDP&sock=startd_12050_e04e>
-	SlotName: slot1_7@aristoteles.esat.kuleuven.be
-	AvailableGPUs = { GPUs_GPU_1ba53048 }
-	CondorScratchDir = "/usr/data/condor/execute/dir_1475749"
+001 (015.005.000) 2026-01-17 07:38:26 Job executing on host: <10.87.24.117:9618?addrs=10.87.24.117-9618&alias=pyrite.esat.kuleuven.be&noUDP&sock=startd_1676_2cd1>
+	SlotName: slot1_1@pyrite.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_ebe8a4fd }
+	CondorScratchDir = "/usr/data/condor/execute/dir_47356/scratch"
 	Cpus = 8
-	Disk = 1050529
+	Disk = 1048576
 	GPUs = 1
-	GPUs_GPU_1ba53048 = [ Id = "GPU-1ba53048"; ClockMhz = 1410.0; Capability = 8.0; CoresPerCU = 64; DeviceName = "NVIDIA A100-SXM4-80GB"; DeviceUuid = "1ba53048-c5a1-3226-7f78-7a6cb9cbaa42"; ECCEnabled = true; ComputeUnits = 108; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:C7:00.0"; GlobalMemoryMb = 81153; MaxSupportedVersion = 13000 ]
-	Memory = 71680
+	GPUs_GPU_ebe8a4fd = [ Id = "GPU-ebe8a4fd"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "ebe8a4fd-f875-2528-4ec3-792027cc02ae"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:01:00.0"; GlobalMemoryMb = 10818; MaxSupportedVersion = 13000 ]
+	Memory = 20480
 ...
-006 (015.005.000) 2025-11-08 22:42:40 Image size of job updated: 313668
-	307  -  MemoryUsage of job (MB)
-	313668  -  ResidentSetSize of job (KB)
+006 (015.005.000) 2026-01-17 07:38:35 Image size of job updated: 859072
+	839  -  MemoryUsage of job (MB)
+	859072  -  ResidentSetSize of job (KB)
 ...
-006 (015.005.000) 2025-11-08 22:42:57 Image size of job updated: 718240
-	307  -  MemoryUsage of job (MB)
-	313668  -  ResidentSetSize of job (KB)
+006 (015.005.000) 2026-01-17 07:43:36 Image size of job updated: 880936
+	861  -  MemoryUsage of job (MB)
+	880684  -  ResidentSetSize of job (KB)
 ...
-005 (015.005.000) 2025-11-08 22:42:57 Job terminated.
+006 (015.005.000) 2026-01-17 07:48:36 Image size of job updated: 880936
+	861  -  MemoryUsage of job (MB)
+	880864  -  ResidentSetSize of job (KB)
+...
+006 (015.005.000) 2026-01-17 07:58:37 Image size of job updated: 881176
+	861  -  MemoryUsage of job (MB)
+	880864  -  ResidentSetSize of job (KB)
+...
+006 (015.005.000) 2026-01-17 08:03:37 Image size of job updated: 881288
+	861  -  MemoryUsage of job (MB)
+	881288  -  ResidentSetSize of job (KB)
+...
+006 (015.005.000) 2026-01-17 08:08:39 Image size of job updated: 881320
+	861  -  MemoryUsage of job (MB)
+	881288  -  ResidentSetSize of job (KB)
+...
+005 (015.005.000) 2026-01-17 08:13:53 Job terminated.
 	(1) Normal termination (return value 0)
-		Usr 0 00:00:11, Sys 0 00:00:06  -  Run Remote Usage
+		Usr 0 00:34:58, Sys 0 00:00:09  -  Run Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
-		Usr 0 00:00:11, Sys 0 00:00:06  -  Total Remote Usage
+		Usr 0 00:34:58, Sys 0 00:00:09  -  Total Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
 	0  -  Run Bytes Sent By Job
 	0  -  Run Bytes Received By Job
 	0  -  Total Bytes Sent By Job
 	0  -  Total Bytes Received By Job
 	Partitionable Resources :    Usage  Request Allocated Assigned
-	   Cpus                 :        0        8         8 
-	   Disk (KB)            :        2  1048576   1050529 
-	   GPUs                 :                 1         1 "GPU-1ba53048"
-	   Memory (MB)          :      307    71680     71680 
-	   TimeExecute (s)      :       25                    
-	   TimeSlotBusy (s)     :       25                    
+	   Cpus                 :     0.99        8         8 
+	   Disk (KB)            :     2     1048576   1048576 
+	   GPUs                 :     0.16        1         1 "GPU-ebe8a4fd"
+	   GpusMemory (MB)      :  1162                       
+	   Memory (MB)          :   861       20480     20480 
+	   TimeExecute (s)      :  2127                       
+	   TimeSlotBusy (s)     :  2127                       
 ...

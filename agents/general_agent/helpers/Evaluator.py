@@ -19,6 +19,7 @@ import json
 def multiclass_acc(preds, truths):
     return np.sum(np.round(preds) == np.round(truths)) / float(len(truths))
 
+VALIDATE_METHODS = ["accuracy", "loss", "syn_accuracy", "syn_loss"]
 
 class All_Evaluator:
     def __init__(self, config, dataloaders: dict):
@@ -47,6 +48,8 @@ class General_Evaluator:
         self.num_classes = config.model.args.num_classes
         self.reset()
 
+        self.logger = logging.getLogger("Evaluator")
+
         self.early_stop = False
 
         self.best_acc = 0.0
@@ -61,7 +64,8 @@ class General_Evaluator:
     def set_best(self, best_acc, best_loss):
         self.best_acc = best_acc
         self.best_loss = best_loss
-        logging.info("Set current best acc {}, loss {}".format(self.best_acc, self.best_loss))
+        self.logger\
+            .info("Set current best acc {}, loss {}".format(self.best_acc, self.best_loss))
 
     def set_early_stop(self):
         self.early_stop = True
@@ -355,14 +359,32 @@ class General_Evaluator:
         if metrics is None:
             metrics = self.evaluate()
 
-        validate_with = self.config.early_stopping.get("validate_with", "loss")
-        if validate_with == "loss":
-            is_best = (metrics["loss"]["ce_loss_combined"] < best_logs["loss"]["ce_loss_combined"])
-        elif validate_with == "accuracy":
-            is_best = (metrics["acc"]["combined"] > best_logs["acc"]["combined"])
+        is_best_dict = {}
+        if "loss" in metrics and "ce_loss_combined" in metrics["loss"]:
+            is_best_dict["loss"] = metrics["loss"]["ce_loss_combined"] < best_logs["best_vloss"]["loss"]["ce_loss_combined"]
         else:
-            raise ValueError("self.agent.config.early_stopping.validate_with should be either loss or accuracy")
-        return is_best
+            is_best_dict["loss"] = False
+
+        if "acc" in metrics and "combined" in metrics["acc"]:
+            is_best_dict["accuracy"] = metrics["acc"]["combined"] > best_logs["best_vaccuracy"]["acc"]["combined"]
+        else:
+            is_best_dict["accuracy"] = False
+
+        if "combined" in metrics["pg_acc"]:
+            prev = best_logs["best_vsyn_accuracy"]["pg_acc"]["combined"]["group_metrics"]["synergy"]["internal_acc"]
+            is_best_dict["syn_accuracy"] = metrics["pg_acc"]["combined"]["group_metrics"]["synergy"]["internal_acc"] > prev
+        else:
+            is_best_dict["syn_accuracy"] = False
+
+        message = ""
+        for key, value in is_best_dict.items():
+            if value:
+                message+= key + "-"
+        if message != "":
+            self.logger.info(f"New best with {message}")
+
+        flag = any(is_best_dict.values())
+        return flag, is_best_dict
 
 class General_Evaluator_Regression:
     def __init__(self, config, total_instances: int, set="val"):
@@ -380,7 +402,7 @@ class General_Evaluator_Regression:
     def set_best(self, best_acc, best_loss):
         self.best_acc = best_acc
         self.best_loss = best_loss
-        logging.info("Set current best acc {}, loss {}".format(self.best_acc, self.best_loss))
+        self.logger.info("Set current best acc {}, loss {}".format(self.best_acc, self.best_loss))
 
     def reset(self):
         self.losses = []

@@ -1,38 +1,162 @@
-000 (013.006.000) 2025-11-08 14:24:47 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+000 (013.006.000) 2026-01-17 07:34:35 Job submitted from host: <10.87.28.151:9618?addrs=10.87.28.151-9618&alias=brigand.esat.kuleuven.be&noUDP&sock=schedd_1447_19a1>
 ...
-001 (013.006.000) 2025-11-08 14:26:35 Job executing on host: <10.87.28.117:9618?addrs=10.87.28.117-9618&alias=stadius-nc-4.esat.kuleuven.be&noUDP&sock=startd_3335_1c6f>
-	SlotName: slot1_1@stadius-nc-4.esat.kuleuven.be
-	AvailableGPUs = { GPUs_GPU_1236270c }
-	CondorScratchDir = "/volume1/condor/execute/dir_1299648"
+001 (013.006.000) 2026-01-17 07:34:45 Job executing on host: <10.87.24.6:9618?addrs=10.87.24.6-9618&alias=fuji.esat.kuleuven.be&noUDP&sock=startd_1737_0418>
+	SlotName: slot1_1@fuji.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_6db7f948 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_91206/scratch"
 	Cpus = 8
-	Disk = 1050150
+	Disk = 1048576
 	GPUs = 1
-	GPUs_GPU_1236270c = [ Id = "GPU-1236270c"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "1236270c-ad23-648a-e65a-80b2ab2cf0c3"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "570.153.02"; DriverVersion = 12.8; DevicePciBusId = "0000:25:00.0"; GlobalMemoryMb = 10823; MaxSupportedVersion = 12080 ]
-	Memory = 71680
+	GPUs_GPU_6db7f948 = [ Id = "GPU-6db7f948"; ClockMhz = 1582.0; Capability = 6.1; CoresPerCU = 128; DeviceName = "NVIDIA GeForce GTX 1080 Ti"; DeviceUuid = "6db7f948-1c71-b2c5-8177-7abcfd2db729"; ECCEnabled = false; ComputeUnits = 28; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:17:00.0"; GlobalMemoryMb = 11165; MaxSupportedVersion = 13000 ]
+	Memory = 20480
 ...
-006 (013.006.000) 2025-11-08 14:26:44 Image size of job updated: 463520
-	453  -  MemoryUsage of job (MB)
-	463520  -  ResidentSetSize of job (KB)
+006 (013.006.000) 2026-01-17 07:34:53 Image size of job updated: 132280
+	130  -  MemoryUsage of job (MB)
+	132280  -  ResidentSetSize of job (KB)
 ...
-006 (013.006.000) 2025-11-08 14:27:12 Image size of job updated: 1302120
-	453  -  MemoryUsage of job (MB)
-	463696  -  ResidentSetSize of job (KB)
+006 (013.006.000) 2026-01-17 07:35:16 Image size of job updated: 414536
+	130  -  MemoryUsage of job (MB)
+	132280  -  ResidentSetSize of job (KB)
 ...
-005 (013.006.000) 2025-11-08 14:27:12 Job terminated.
+005 (013.006.000) 2026-01-17 07:35:17 Job terminated.
 	(1) Normal termination (return value 0)
-		Usr 0 00:00:24, Sys 0 00:00:08  -  Run Remote Usage
+		Usr 0 00:00:06, Sys 0 00:00:01  -  Run Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
-		Usr 0 00:00:24, Sys 0 00:00:08  -  Total Remote Usage
+		Usr 0 00:00:06, Sys 0 00:00:01  -  Total Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
 	0  -  Run Bytes Sent By Job
 	0  -  Run Bytes Received By Job
 	0  -  Total Bytes Sent By Job
 	0  -  Total Bytes Received By Job
 	Partitionable Resources :    Usage  Request Allocated Assigned
-	   Cpus                 :        0        8         8 
-	   Disk (KB)            :        2  1048576   1050150 
-	   GPUs                 :        0        1         1 "GPU-1236270c"
-	   Memory (MB)          :      453    71680     71680 
-	   TimeExecute (s)      :       37                    
-	   TimeSlotBusy (s)     :       37                    
+	   Cpus                 :     0           8         8 
+	   Disk (KB)            :     2     1048576   1048576 
+	   GPUs                 :     0.00        1         1 "GPU-6db7f948"
+	   GpusMemory (MB)      :   393                       
+	   Memory (MB)          :   130       20480     20480 
+	   TimeExecute (s)      :    31                       
+	   TimeSlotBusy (s)     :    31                       
+...
+000 (013.006.000) 2026-01-17 20:58:56 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+001 (013.006.000) 2026-01-17 21:14:41 Job executing on host: <10.87.24.46:9618?addrs=10.87.24.46-9618&alias=molder.esat.kuleuven.be&noUDP&sock=startd_1335_4706>
+	SlotName: slot1_1@molder.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_fd9ec5df }
+	CondorScratchDir = "/volume1/condor/execute/dir_2862266/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_fd9ec5df = [ Id = "GPU-fd9ec5df"; ClockMhz = 1807.0; Capability = 8.6; CoresPerCU = 128; DeviceName = "NVIDIA GeForce RTX 3060"; DeviceUuid = "fd9ec5df-3910-8a45-7600-335143d149cf"; ECCEnabled = false; ComputeUnits = 28; NvidiaDriver = "570.153.02"; DriverVersion = 12.8; DevicePciBusId = "0000:01:00.0"; GlobalMemoryMb = 11921; MaxSupportedVersion = 12080 ]
+	Memory = 20480
+...
+006 (013.006.000) 2026-01-17 21:14:49 Image size of job updated: 873372
+	853  -  MemoryUsage of job (MB)
+	873372  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 21:19:49 Image size of job updated: 961600
+	939  -  MemoryUsage of job (MB)
+	961504  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 21:24:50 Image size of job updated: 1017304
+	994  -  MemoryUsage of job (MB)
+	1017304  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 21:29:50 Image size of job updated: 1156980
+	1130  -  MemoryUsage of job (MB)
+	1156980  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 21:34:50 Image size of job updated: 1200596
+	1173  -  MemoryUsage of job (MB)
+	1200596  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 21:39:51 Image size of job updated: 1221328
+	1193  -  MemoryUsage of job (MB)
+	1221328  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 21:44:51 Image size of job updated: 1221360
+	1193  -  MemoryUsage of job (MB)
+	1221328  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 22:04:52 Image size of job updated: 1239536
+	1211  -  MemoryUsage of job (MB)
+	1239536  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 22:09:53 Image size of job updated: 1243856
+	1215  -  MemoryUsage of job (MB)
+	1243856  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 22:14:53 Image size of job updated: 1252232
+	1223  -  MemoryUsage of job (MB)
+	1252232  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 22:19:53 Image size of job updated: 1252440
+	1224  -  MemoryUsage of job (MB)
+	1252440  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 22:24:54 Image size of job updated: 1252628
+	1224  -  MemoryUsage of job (MB)
+	1252628  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 22:29:54 Image size of job updated: 1252784
+	1224  -  MemoryUsage of job (MB)
+	1252784  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 22:44:55 Image size of job updated: 1254056
+	1225  -  MemoryUsage of job (MB)
+	1254056  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 22:49:55 Image size of job updated: 1254080
+	1225  -  MemoryUsage of job (MB)
+	1254056  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 23:04:56 Image size of job updated: 1257360
+	1228  -  MemoryUsage of job (MB)
+	1257360  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-17 23:14:57 Image size of job updated: 1257644
+	1229  -  MemoryUsage of job (MB)
+	1257644  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-18 06:30:34 Image size of job updated: 1258560
+	1230  -  MemoryUsage of job (MB)
+	1258560  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-18 06:35:34 Image size of job updated: 1258592
+	1230  -  MemoryUsage of job (MB)
+	1258592  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-18 06:50:36 Image size of job updated: 1258912
+	1230  -  MemoryUsage of job (MB)
+	1258912  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-18 07:15:40 Image size of job updated: 1263008
+	1234  -  MemoryUsage of job (MB)
+	1263008  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-18 08:40:51 Image size of job updated: 1271620
+	1242  -  MemoryUsage of job (MB)
+	1271620  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-18 09:25:57 Image size of job updated: 1273636
+	1242  -  MemoryUsage of job (MB)
+	1271620  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-18 19:17:16 Image size of job updated: 1273636
+	1244  -  MemoryUsage of job (MB)
+	1273464  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-18 19:22:16 Image size of job updated: 1274708
+	1245  -  MemoryUsage of job (MB)
+	1274708  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-18 19:37:18 Image size of job updated: 1274752
+	1245  -  MemoryUsage of job (MB)
+	1274752  -  ResidentSetSize of job (KB)
+...
+006 (013.006.000) 2026-01-18 19:42:18 Image size of job updated: 1274756
+	1245  -  MemoryUsage of job (MB)
+	1274752  -  ResidentSetSize of job (KB)
+...
+009 (013.006.000) 2026-01-19 01:01:39 Job was aborted.
+	The system macro SYSTEM_PERIODIC_REMOVE expression '(JobStatus == 5 && CurrentTime - EnteredCurrentStatus > 3600 * 24 * 30) || (JobStatus == 4 && CurrentTime - EnteredCurrentStatus > 3600 * 24 * 30) || (JobStatus == 1 && CurrentTime - EnteredCurrentStatus > 3600 * 24 * 90) || (JobStatus == 2 && (ProportionalSetSizeKb > (1024 * My.RequestMemory))) || (JobStatus == 2 && ((RemoteWallClockTime - CumulativeSuspensionTime) > My.RequestWalltime))' evaluated to TRUE
 ...

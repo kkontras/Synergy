@@ -22,6 +22,7 @@ fi
 echo "${args[0]}"
 echo "${args[1]}"
 command="accelerate launch "
+command="python "
 command+="${args[0]}"
 
 

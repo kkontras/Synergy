@@ -188,6 +188,9 @@ scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/syner
 scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_IBInput2_fold0_lr0.0001_wd0.0001_cls_embedding.pt vsc35057@login-genius.hpc.kuleuven.be:/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/
 
 
+CUDA_VISIBLE_DEVICES=6 python train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --lr 0.0001 --wd 0.01
+
+
 CUDA_VISIBLE_DEVICES=6 python train.py --config ./configs/ScienceQA/synprom_lora_synib.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --l 1
 CUDA_VISIBLE_DEVICES=6 --find_unused_parameters False python train.py --config ./configs/ScienceQA/synprom_lora_synib.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --l 1
 
@@ -203,6 +206,11 @@ CUDA_VISIBLE_DEVICES=3 python\
 
 CUDA_VISIBLE_DEVICES=3 python\
     train.py --config ./configs/ScienceQA/synprom_lora_synibfaster.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.001 --wd 0.001  --l 1 --batch_size 8
+
+
+python show.py  --config ./configs/ScienceQA/synprom_lora_synibfaster.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --lr 0.0001 --wd 0.01   --l 1
+python show.py  --config ./configs/ScienceQA/synprom_lora_synib.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --lr 0.0001 --wd 0.01   --l 1
+python show.py  --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn.json --fold 0 --lr 0.0001 --wd 0.01
 
 
 

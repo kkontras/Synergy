@@ -1,28 +1,28 @@
-000 (013.013.000) 2025-11-08 14:24:47 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+000 (013.013.000) 2026-01-17 07:34:35 Job submitted from host: <10.87.28.151:9618?addrs=10.87.28.151-9618&alias=brigand.esat.kuleuven.be&noUDP&sock=schedd_1447_19a1>
 ...
-001 (013.013.000) 2025-11-08 14:27:31 Job executing on host: <10.87.24.25:9618?addrs=10.87.24.25-9618+[--1]-9618&alias=estragon.esat.kuleuven.be&noUDP&sock=startd_2009_95db>
-	SlotName: slot1_3@estragon.esat.kuleuven.be
-	AvailableGPUs = { GPUs_GPU_193a1cfd }
-	CondorScratchDir = "/usr/data/condor/execute/dir_289401"
+001 (013.013.000) 2026-01-17 07:35:04 Job executing on host: <10.87.24.108:9618?addrs=10.87.24.108-9618&alias=daisen.esat.kuleuven.be&noUDP&sock=startd_1725_c8f5>
+	SlotName: slot1_1@daisen.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_6219dbd6 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_94129/scratch"
 	Cpus = 8
-	Disk = 1054592
+	Disk = 1048576
 	GPUs = 1
-	GPUs_GPU_193a1cfd = [ Id = "GPU-193a1cfd"; ClockMhz = 1328.5; Capability = 6.0; CoresPerCU = 64; DeviceName = "Tesla P100-PCIE-16GB"; DeviceUuid = "193a1cfd-3ef5-207c-3098-c99b2d71fabc"; ECCEnabled = true; ComputeUnits = 56; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:0E:00.0"; GlobalMemoryMb = 16269; MaxSupportedVersion = 13000 ]
-	Memory = 71680
+	GPUs_GPU_6219dbd6 = [ Id = "GPU-6219dbd6"; ClockMhz = 1582.0; Capability = 6.1; CoresPerCU = 128; DeviceName = "NVIDIA GeForce GTX 1080 Ti"; DeviceUuid = "6219dbd6-17be-d4d9-4642-2d8aa5cf3ec0"; ECCEnabled = false; ComputeUnits = 28; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:17:00.0"; GlobalMemoryMb = 11165; MaxSupportedVersion = 13000 ]
+	Memory = 20480
 ...
-006 (013.013.000) 2025-11-08 14:27:39 Image size of job updated: 218008
-	213  -  MemoryUsage of job (MB)
-	218008  -  ResidentSetSize of job (KB)
+006 (013.013.000) 2026-01-17 07:35:12 Image size of job updated: 91984
+	90  -  MemoryUsage of job (MB)
+	91984  -  ResidentSetSize of job (KB)
 ...
-006 (013.013.000) 2025-11-08 14:28:22 Image size of job updated: 1197472
-	281  -  MemoryUsage of job (MB)
-	286876  -  ResidentSetSize of job (KB)
+006 (013.013.000) 2026-01-17 07:35:36 Image size of job updated: 414564
+	90  -  MemoryUsage of job (MB)
+	91984  -  ResidentSetSize of job (KB)
 ...
-005 (013.013.000) 2025-11-08 14:28:22 Job terminated.
+005 (013.013.000) 2026-01-17 07:35:36 Job terminated.
 	(1) Normal termination (return value 0)
-		Usr 0 00:00:34, Sys 0 00:00:10  -  Run Remote Usage
+		Usr 0 00:00:07, Sys 0 00:00:01  -  Run Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
-		Usr 0 00:00:34, Sys 0 00:00:10  -  Total Remote Usage
+		Usr 0 00:00:07, Sys 0 00:00:01  -  Total Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
 	0  -  Run Bytes Sent By Job
 	0  -  Run Bytes Received By Job
@@ -30,9 +30,60 @@
 	0  -  Total Bytes Received By Job
 	Partitionable Resources :    Usage  Request Allocated Assigned
 	   Cpus                 :        0        8         8 
-	   Disk (KB)            :        2  1048576   1054592 
-	   GPUs                 :        0        1         1 "GPU-193a1cfd"
-	   Memory (MB)          :      281    71680     71680 
-	   TimeExecute (s)      :       51                    
-	   TimeSlotBusy (s)     :       51                    
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :                 1         1 "GPU-6219dbd6"
+	   Memory (MB)          :       90    20480     20480 
+	   TimeExecute (s)      :       32                    
+	   TimeSlotBusy (s)     :       33                    
+...
+000 (013.013.000) 2026-01-17 20:58:56 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
+...
+021 (013.013.000) 2026-01-17 21:15:40 Error from starter on slot1_1@kunzite.esat.kuleuven.be:
+	Failed to create scratch dir
+	Code 1024 Subcode 0
+...
+004 (013.013.000) 2026-01-17 21:15:40 Job was evicted. Code 1024 Subcode 0
+	(0) CPU times
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	Reason: Error from slot1_1@kunzite.esat.kuleuven.be: Failed to create scratch dir
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                 8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :                 1         1 
+	   Memory (MB)          :             20480     20480 
+...
+001 (013.013.000) 2026-01-17 21:15:45 Job executing on host: <10.87.24.162:9618?addrs=10.87.24.162-9618&alias=citrine.esat.kuleuven.be&noUDP&sock=startd_1502_d356>
+	SlotName: slot1_1@citrine.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_a61293c7 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1330412/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_a61293c7 = [ Id = "GPU-a61293c7"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "a61293c7-2d11-0d82-97e0-da03d876fdfd"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:01:00.0"; GlobalMemoryMb = 10821; MaxSupportedVersion = 13000 ]
+	Memory = 20480
+...
+006 (013.013.000) 2026-01-17 21:15:49 Image size of job updated: 285880
+	280  -  MemoryUsage of job (MB)
+	285880  -  ResidentSetSize of job (KB)
+...
+005 (013.013.000) 2026-01-17 21:15:49 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:02, Sys 0 00:00:00  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:02, Sys 0 00:00:00  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :        0        8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :        0        1         1 "GPU-a61293c7"
+	   Memory (MB)          :      280    20480     20480 
+	   TimeExecute (s)      :        4                    
+	   TimeSlotBusy (s)     :        4                    
 ...

@@ -3,6 +3,7 @@ import sys
 import json
 import numpy as np
 import pickle
+from utils.deterministic_pytorch import deterministic
 
 # If your project relies on relative imports, you may need to set the working directory.
 # The original script did:
@@ -18,27 +19,48 @@ device = "cuda:0"
 # -------------------------
 # USER-PROVIDED CONFIGS
 # -------------------------
+DEFAULT_CONFIG_PATH = "configs/CREMA_D/default_config_cremadplus_res_syn.json"
 # DEFAULT_CONFIG_PATH = "configs/CREMA_D/default_config_cremad_res_syn.json"
-DEFAULT_CONFIG_PATH = "configs/AVE/default_config_ave_res_syn.json"
+# DEFAULT_CONFIG_PATH = "configs/AVE/default_config_ave_res_syn.json"
 
 # Pick ONE of these per run (you said you'll run twice: once audio, once video).
 # CONFIG_PATH = "configs/CREMA_D/release/res/unimodal_audio.json"
-# CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold{}_lr0.001_wd0.0001.pth.tar"
+# CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_audio_fold{}_lr0.001_wd0.0001_clsmlp_bs128.pth.tar"
 
-CONFIG_PATH = "configs/AVE/release/res/unimodal_audio.json"
-CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Rmask/AVE/unimodal_audio_fold{}.pth.tar"
+CONFIG_PATH = "configs/CREMA_D/synergy/jan/unimodal_audio.json"
+# CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/CremadPlus/unimodal_audio_fold{}_lr0.001_wd0.0001_bs64.pth.tar"
+CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/CremadPlus/v2/unimodal_audio_fold{}_ir2_lr0.001_wd0.0001_clsmlp_bs64.pth.tar"
+
+# CONFIG_PATH = "configs/AVE/release/res/unimodal_audio.json"
+# CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Rmask/AVE/unimodal_audio_fold{}.pth.tar"
+fold_position_offset=0
+
+
 
 # CONFIG_PATH = "configs/CREMA_D/release/res/unimodal_video.json"
 # CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/unimodal_video_fold{}_lr0.001_wd0.0001.pth.tar"
 
+# CONFIG_PATH = "configs/CREMA_D/synergy/jan/unimodal_video.json"
+# CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/CremadPlus/unimodal_video_fold{}_lr0.0001_wd0.0001_bs64.pth.tar"
+# CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/CremadPlus/v2/unimodal_video_fold{}_ir2_lr0.0001_wd0.0001_clsmlp_bs64.pth.tar"
+
 # CONFIG_PATH = "configs/AVE/release/res/unimodal_video.json"
 # CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Rmask/AVE/unimodal_video_fold{}.pth.tar"
+# fold_position_offset=3
 
 # OUTPUT_JSON = "cremad_ceu_test_res.pkl"
-OUTPUT_JSON = "ave_ceu_val_res.pkl"
+# OUTPUT_JSON = "cremad_ceu_val_res.pkl"
+OUTPUT_JSON = "./mydatasets/CREMAD/ceus/cremadplus_ceu_val_res_ir0.1.pkl"
+# OUTPUT_JSON = "./mydatasets/CREMAD/ceus/cremadplus_ceu_test_res_ir0.1.pkl"
+# OUTPUT_JSON = "cremadplus_ceu_test_res.pkl"
+# OUTPUT_JSON = "cremad_ceu_val_res.pkl"
+# OUTPUT_JSON = "ave_ceu_val_res.pkl"
+DATASET_SPLIT = "Test"  # "Validation" or "test"
+# DATASET_SPLIT = "Validation"  # "Validation" or "test"
 
-FOLDS = [0, 1, 2]
+FOLDS = [0]
 
+# for ir in 1 ; do   python train.py --config ./configs/CREMA_D/synergy/jan/unimodal_audio.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --lr 0.001 --wd 0.0001 --batch_size 64 --cls mlp --ironic_rate $ir --start_over;   python train.py --config ./configs/CREMA_D/synergy/jan/unimodal_video.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 64  --cls mlp --ironic_rate $ir --start_over ; done
 
 def _to_jsonable(x):
     """Recursively convert common non-JSON types (np arrays, tensors, etc.) into JSONable python types."""
@@ -145,6 +167,9 @@ def run_fold(fold: int) -> dict:
         device=device,
     )
 
+    deterministic(importer.config.training_params.seed)
+
+
     # Minimal fold logic (mirrors the relevant part of the original script)
     _set_fold_on_config(importer, fold)
 
@@ -157,11 +182,12 @@ def run_fold(fold: int) -> dict:
 
     # Load + build model exactly through Importer (same flow as original)
     importer.load_checkpoint()
-    best_model = importer.get_model(return_model="best_model")
+    best_model = importer.get_model(return_model="running_model")
+    # best_model = importer.get_model(return_model="best_model")
     data_loader = importer.get_dataloaders()
 
     validator = Validator(model=best_model, data_loader=data_loader, config=importer.config, device=device)
-    test_results = validator.get_results(set="Validation", print_results=True)
+    test_results = validator.get_results(set=DATASET_SPLIT, print_results=True)
     # test_results = validator.get_results(set="Test", print_results=True)
 
     # Pull out preds/targets in the structure you described (if present)
@@ -202,7 +228,7 @@ def main():
     for fold in FOLDS:
         print(f"\n========== Running fold {fold} ==========")
         fold_res = run_fold(fold)
-        reform_fold = int(fold)
+        reform_fold = int(fold+fold_position_offset)
         all_results["folds"][reform_fold] = fold_res
 
     with open(OUTPUT_JSON, "wb") as f:

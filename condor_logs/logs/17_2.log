@@ -1,59 +1,34 @@
-000 (017.002.000) 2025-11-09 11:30:15 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+000 (017.002.000) 2026-01-17 07:38:20 Job submitted from host: <10.87.28.151:9618?addrs=10.87.28.151-9618&alias=brigand.esat.kuleuven.be&noUDP&sock=schedd_1447_19a1>
 ...
-001 (017.002.000) 2025-11-09 14:50:55 Job executing on host: <10.87.24.139:9618?addrs=10.87.24.139-9618&alias=fig.esat.kuleuven.be&noUDP&sock=startd_2022_8096>
-	SlotName: slot1_1@fig.esat.kuleuven.be
-	AvailableGPUs = { GPUs_GPU_cedc718d }
-	CondorScratchDir = "/usr/data/condor/execute/dir_202884"
+001 (017.002.000) 2026-01-17 07:41:18 Job executing on host: <10.87.24.6:9618?addrs=10.87.24.6-9618&alias=fuji.esat.kuleuven.be&noUDP&sock=startd_1737_0418>
+	SlotName: slot1_2@fuji.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_de138008 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_93075/scratch"
 	Cpus = 8
-	Disk = 1049995
+	Disk = 1048576
 	GPUs = 1
-	GPUs_GPU_cedc718d = [ Id = "GPU-cedc718d"; ClockMhz = 1695.0; Capability = 8.6; CoresPerCU = 128; DeviceName = "NVIDIA GeForce RTX 3090"; DeviceUuid = "cedc718d-8ccd-1c5c-42ee-9f07bacbde5e"; ECCEnabled = false; ComputeUnits = 82; NvidiaDriver = "580.95.05"; DriverVersion = 13.0; DevicePciBusId = "0000:09:00.0"; GlobalMemoryMb = 24124; MaxSupportedVersion = 13000 ]
-	Memory = 71680
+	GPUs_GPU_de138008 = [ Id = "GPU-de138008"; ClockMhz = 1582.0; Capability = 6.1; CoresPerCU = 128; DeviceName = "NVIDIA GeForce GTX 1080 Ti"; DeviceUuid = "de138008-80f1-c20e-3f35-8450e22013a1"; ECCEnabled = false; ComputeUnits = 28; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:65:00.0"; GlobalMemoryMb = 11165; MaxSupportedVersion = 13000 ]
+	Memory = 20480
 ...
-006 (017.002.000) 2025-11-09 14:51:03 Image size of job updated: 427108
-	418  -  MemoryUsage of job (MB)
-	427108  -  ResidentSetSize of job (KB)
+006 (017.002.000) 2026-01-17 07:41:24 Image size of job updated: 404596
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
 ...
-006 (017.002.000) 2025-11-09 14:56:03 Image size of job updated: 1592932
-	1462  -  MemoryUsage of job (MB)
-	1496072  -  ResidentSetSize of job (KB)
-...
-006 (017.002.000) 2025-11-09 15:01:04 Image size of job updated: 1628836
-	1479  -  MemoryUsage of job (MB)
-	1513720  -  ResidentSetSize of job (KB)
-...
-006 (017.002.000) 2025-11-09 15:06:05 Image size of job updated: 1628836
-	1570  -  MemoryUsage of job (MB)
-	1607300  -  ResidentSetSize of job (KB)
-...
-006 (017.002.000) 2025-11-09 15:11:05 Image size of job updated: 1638404
-	1591  -  MemoryUsage of job (MB)
-	1628436  -  ResidentSetSize of job (KB)
-...
-006 (017.002.000) 2025-11-09 15:21:06 Image size of job updated: 1686520
-	1591  -  MemoryUsage of job (MB)
-	1628436  -  ResidentSetSize of job (KB)
-...
-006 (017.002.000) 2025-11-09 15:46:09 Image size of job updated: 1686520
-	1595  -  MemoryUsage of job (MB)
-	1632976  -  ResidentSetSize of job (KB)
-...
-005 (017.002.000) 2025-11-09 16:09:55 Job terminated.
+005 (017.002.000) 2026-01-17 07:41:24 Job terminated.
 	(1) Normal termination (return value 0)
-		Usr 0 02:22:58, Sys 0 00:27:59  -  Run Remote Usage
+		Usr 0 00:00:05, Sys 0 00:00:00  -  Run Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
-		Usr 0 02:22:58, Sys 0 00:27:59  -  Total Remote Usage
+		Usr 0 00:00:05, Sys 0 00:00:00  -  Total Remote Usage
 		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
 	0  -  Run Bytes Sent By Job
 	0  -  Run Bytes Received By Job
 	0  -  Total Bytes Sent By Job
 	0  -  Total Bytes Received By Job
 	Partitionable Resources :    Usage  Request Allocated Assigned
-	   Cpus                 :     1.97        8         8 
-	   Disk (KB)            :     2     1048576   1049995 
-	   GPUs                 :     0.53        1         1 "GPU-cedc718d"
-	   GpusMemory (MB)      :  9405                       
-	   Memory (MB)          :  1595       71680     71680 
-	   TimeExecute (s)      :  4740                       
-	   TimeSlotBusy (s)     :  4740                       
+	   Cpus                 :        0        8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :        0        1         1 "GPU-de138008"
+	   Memory (MB)          :        0    20480     20480 
+	   TimeExecute (s)      :        6                    
+	   TimeSlotBusy (s)     :        6                    
 ...

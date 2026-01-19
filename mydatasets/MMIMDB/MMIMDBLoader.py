@@ -306,8 +306,10 @@ class MMIMDb_Dataloader:
 
         total_cpus = multiprocessing.cpu_count()
         num_gpus = get_physical_gpu_count()
-        workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
-        # workers_per_gpu = 16
+        # workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
+        workers_per_gpu = 8
+
+
 
 
 

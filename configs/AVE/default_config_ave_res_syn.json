@@ -37,7 +37,7 @@
     "validate_after": 0,
     "n_steps_stop": 150,
     "n_steps_stop_after": 0,
-    "validate_with": "accuracy"
+    "validate_with": "syn_accuracy"
   },
   "dataset": {
       "dataloader_class": "AVE_Dataloader",

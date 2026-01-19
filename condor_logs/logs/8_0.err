@@ -1,58 +1,12 @@
-The following values were not passed to `accelerate launch` and had defaults used instead:
-	`--num_processes` was set to a value of `1`
-	`--num_machines` was set to a value of `1`
-	`--mixed_precision` was set to a value of `'no'`
-	`--dynamo_backend` was set to a value of `'no'`
-To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
-/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/timm/models/layers/__init__.py:48: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
-  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
-wandb: Currently logged in as: kkontras to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
-wandb: WARNING Using a boolean value for 'reinit' is deprecated. Use 'return_previous' or 'finish_previous' instead.
-wandb: setting up run qgjhy9k1
-wandb: Tracking run with wandb version 0.23.0
-wandb: Run data is saved locally in /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/wandb/run-20251216_012244-qgjhy9k1
-wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run Synprom_IB_maskfold0_lr0.00001_wd0.0001_clsmlp
-wandb: ⭐️ View project at https://wandb.ai/kkontras/balance
-wandb: 🚀 View run at https://wandb.ai/kkontras/balance/runs/qgjhy9k1
-wandb: Detected [agents] in use.
-wandb: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
-wandb: For more information, check out the docs at: https://weave-docs.wandb.ai/
 Traceback (most recent call last):
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 263, in <module>
-    main(config_path=args.config, default_config_path=args.default_config, args=args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 188, in main
-    agent = agent_class(config)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 56, in __init__
-    self.mem_loader.load_models_n_optimizer()
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Loader.py", line 87, in load_models_n_optimizer
-    self.agent.model = model_class(encs = enc, args = self.agent.config.model.args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 424, in __init__
-    self.synergy = SynIB(args, encs, main=self)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 493, in __init__
-    self.perturb.reestimate_features = self.perturb.get("reestimate_features", False)
-AttributeError: 'dict' object has no attribute 'reestimate_features'
-Traceback (most recent call last):
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 263, in <module>
-    main(config_path=args.config, default_config_path=args.default_config, args=args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 188, in main
-    agent = agent_class(config)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 56, in __init__
-    self.mem_loader.load_models_n_optimizer()
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/helpers/Loader.py", line 87, in load_models_n_optimizer
-    self.agent.model = model_class(encs = enc, args = self.agent.config.model.args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 424, in __init__
-    self.synergy = SynIB(args, encs, main=self)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/models/Synergy_Models_Dec.py", line 493, in __init__
-    self.perturb.reestimate_features = self.perturb.get("reestimate_features", False)
-AttributeError: 'dict' object has no attribute 'reestimate_features'
-Traceback (most recent call last):
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/accelerate", line 7, in <module>
-    sys.exit(main())
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
-    args.func(args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/accelerate/commands/launch.py", line 1235, in launch_command
-    simple_launcher(args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/accelerate/commands/launch.py", line 823, in simple_launcher
-    raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
-subprocess.CalledProcessError: Command '['/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python3.1', '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py', '--config', './configs/CREMA_D/synergy/dec/synprom_IB_mask.json', '--default_config', './configs/CREMA_D/default_config_cremad_res_syn.json', '--fold', '0', '--lr', '0.00001', '--wd', '0.0001', '--cls', 'mlp', '--start_over']' returned non-zero exit status 1.
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 2219, in <module>
+    sweep_nonoverlap(cfg, seeds=[0,1,2], lr_vals=lr_vals, wd_vals=wd_vals, dropout_vals=dropout_vals, step=0.05, targets_psyn=[0.05, 0.1, 0.15, 0.2], select_by="val_acc", save_path=save_path)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 1845, in sweep_nonoverlap
+    this_best = select_best_lr_wd_dropout(
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 1975, in select_best_lr_wd_dropout
+    rep = run_main(cfg, train_loader, val_loader, test_loader, device, verbose=False)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 1099, in run_main
+    model, hist = train_synib_mstar(cfg, train_loader, device, val_loader=val_loader)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 906, in train_synib_mstar
+    lsp_vals = cfg.lsp_vals
+AttributeError: 'Config' object has no attribute 'lsp_vals'. Did you mean: 'kl_vals'?

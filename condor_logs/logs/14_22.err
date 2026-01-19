@@ -1,98 +1,53 @@
-Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
-The following values were not passed to `accelerate launch` and had defaults used instead:
-	`--num_processes` was set to a value of `1`
-	`--num_machines` was set to a value of `1`
-	`--mixed_precision` was set to a value of `'no'`
-	`--dynamo_backend` was set to a value of `'no'`
-To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
-Disabling PyTorch because PyTorch >= 2.1 is required but found 2.0.1+cu118
-OpenBLAS blas_thread_init: pthread_create failed for thread 3 of 8: Resource temporarily unavailable
-OpenBLAS blas_thread_init: RLIMIT_NPROC 256 current, 256 max
-OpenBLAS blas_thread_init: pthread_create failed for thread 4 of 8: Resource temporarily unavailable
-OpenBLAS blas_thread_init: RLIMIT_NPROC 256 current, 256 max
-OpenBLAS blas_thread_init: pthread_create failed for thread 5 of 8: Resource temporarily unavailable
-OpenBLAS blas_thread_init: RLIMIT_NPROC 256 current, 256 max
-OpenBLAS blas_thread_init: pthread_create failed for thread 6 of 8: Resource temporarily unavailable
-OpenBLAS blas_thread_init: RLIMIT_NPROC 256 current, 256 max
-OpenBLAS blas_thread_init: pthread_create failed for thread 7 of 8: Resource temporarily unavailable
-OpenBLAS blas_thread_init: RLIMIT_NPROC 256 current, 256 max
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:283: UserWarning: 
+    Found GPU0 NVIDIA GeForce GTX 1080 Ti which is of cuda capability 6.1.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (7.0) - (12.0)
+    
+  warnings.warn(
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:304: UserWarning: 
+    Please install PyTorch with a following CUDA
+    configurations:  12.6 following instructions at
+    https://pytorch.org/get-started/locally/
+    
+  warnings.warn(matched_cuda_warn.format(matched_arches))
+/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:326: UserWarning: 
+NVIDIA GeForce GTX 1080 Ti with CUDA capability sm_61 is not compatible with the current PyTorch installation.
+The current PyTorch install supports CUDA capabilities sm_70 sm_75 sm_80 sm_86 sm_90 sm_100 sm_120.
+If you want to use the NVIDIA GeForce GTX 1080 Ti GPU with PyTorch, please check the instructions at https://pytorch.org/get-started/locally/
+
+  warnings.warn(
 Traceback (most recent call last):
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/runpy.py", line 188, in _run_module_as_main
-    mod_name, mod_spec, code = _get_module_details(mod_name, _Error)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/runpy.py", line 147, in _get_module_details
-    return _get_module_details(pkg_main_name, error)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/runpy.py", line 111, in _get_module_details
-    __import__(pkg_name)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/__init__.py", line 27, in <module>
-    from wandb import sdk as wandb_sdk
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/__init__.py", line 25, in <module>
-    from .artifacts.artifact import Artifact
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/artifacts/artifact.py", line 35, in <module>
-    from wandb import data_types, env, util
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/data_types.py", line 33, in <module>
-    from .sdk.data_types import _dtypes
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/data_types/_dtypes.py", line 367, in <module>
-    NumberType.types.append(np.byte)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/util.py", line 209, in __getattribute__
-    state.load()
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/util.py", line 202, in load
-    self.module.__spec__.loader.exec_module(self.module)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/numpy/__init__.py", line 141, in <module>
-    from . import core
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/numpy/core/__init__.py", line 23, in <module>
-    from . import multiarray
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/numpy/core/multiarray.py", line 10, in <module>
-    from . import overrides
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/numpy/core/overrides.py", line 6, in <module>
-    from numpy.core._multiarray_umath import (
-KeyboardInterrupt
-Traceback (most recent call last):
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 247, in <module>
-    main(config_path=args.config, default_config_path=args.default_config, args=args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py", line 173, in main
-    agent = agent_class(config)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 41, in __init__
-    self.initialize_logs()
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/agents/general_agent/agent.py", line 78, in initialize_logs
-    self.wandb_run = wandb.init(reinit=True, project="balance", config=self.config, name= self.config.model.save_dir.split("/")[-1][:-8] )
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_init.py", line 1195, in init
-    raise e
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_init.py", line 1172, in init
-    wi.setup(kwargs)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_init.py", line 189, in setup
-    self._wl = wandb_setup.setup(settings=setup_settings)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_setup.py", line 327, in setup
-    ret = _setup(settings=settings)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_setup.py", line 320, in _setup
-    wl = _WandbSetup(settings=settings)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_setup.py", line 303, in __init__
-    _WandbSetup._instance = _WandbSetup__WandbSetup(settings=settings, pid=pid)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_setup.py", line 114, in __init__
-    self._setup()
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_setup.py", line 250, in _setup
-    self._setup_manager()
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_setup.py", line 277, in _setup_manager
-    self._manager = wandb_manager._Manager(settings=self._settings)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/wandb_manager.py", line 139, in __init__
-    self._service.start()
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/service/service.py", line 237, in start
-    self._launch_server()
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/service/service.py", line 231, in _launch_server
-    _sentry.reraise(e)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/analytics/sentry.py", line 154, in reraise
-    raise exc.with_traceback(sys.exc_info()[2])
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/service/service.py", line 229, in _launch_server
-    self._wait_for_ports(fname, proc=internal_proc)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/wandb/sdk/service/service.py", line 107, in _wait_for_ports
-    raise ServiceStartProcessError(
-wandb.sdk.service.service.ServiceStartProcessError: The wandb service process exited with -2. Ensure that `sys.executable` is a valid python interpreter. You can override it with the `_executable` setting or with the `WANDB__EXECUTABLE` environment variable.
-Traceback (most recent call last):
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/accelerate", line 8, in <module>
-    sys.exit(main())
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
-    args.func(args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 1198, in launch_command
-    simple_launcher(args)
-  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/lib/python3.9/site-packages/accelerate/commands/launch.py", line 785, in simple_launcher
-    raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
-subprocess.CalledProcessError: Command '['/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/balance_env/bin/python', '/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/train.py', '--config', './configs/CREMA_D/synergy/nov/synprom_ib.json', '--default_config', './configs/CREMA_D/default_config_cremad_res_syn.json', '--fold', '1', '--pre', '--l', '50', '--contrcoeff', '1', '--lr', '0.0001', '--wd', '0.0001', '--cls', 'mlp', '--perturb', 'gennoise']' returned non-zero exit status 1.
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 2220, in <module>
+    sweep_nonoverlap(cfg, seeds=[0,1,2], lr_vals=lr_vals, wd_vals=wd_vals, dropout_vals=dropout_vals, step=0.05, targets_psyn=[0.05, 0.1, 0.15, 0.2], select_by="val_acc", save_path=save_path)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 1845, in sweep_nonoverlap
+    this_best = select_best_lr_wd_dropout(
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 1975, in select_best_lr_wd_dropout
+    rep = run_main(cfg, train_loader, val_loader, test_loader, device, verbose=False)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 1099, in run_main
+    model, hist = train_synib_mstar(cfg, train_loader, device, val_loader=val_loader)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 918, in train_synib_mstar
+    model_kl, hist_kl, score_kl = _run_one_kl(float(kl))
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 743, in _run_one_kl
+    f, u0, u1 = model.forward_logits(x0, x1)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/mydatasets/Xor/Xor_PID3Main_MaskSynIB_Search.py", line 404, in forward_logits
+    h0, h1 = self.enc0(x0), self.enc1(x1)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/modules/activation.py", line 144, in forward
+    return F.relu(input, inplace=self.inplace)
+  File "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/nn/functional.py", line 1697, in relu
+    result = torch.relu(input)
+torch.AcceleratorError: CUDA error: no kernel image is available for execution on the device
+Search for `cudaErrorNoKernelImageForDevice' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+

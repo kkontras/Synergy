@@ -12,3 +12,8 @@ wandb/
 experiments/
 symile*
 mydatasets/Factor_CL_Datasets/MultiBench/
+mydatasets/CREMAD/ceus/
+mydatasets/Xor/
+mydatasets/ESNLI/
+condor_logs/logs
+condor_logs/logs_vsc

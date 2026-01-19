@@ -10,7 +10,12 @@ from utils.to_device import to_device, to_float
 # import wandb
 # from torch.profiler import profile, record_function, ProfilerActivity, schedule
 # wandb.init()
+import os
+os.environ["WANDB_SILENT"] = "true"
 
+import random
+import numpy as np
+import hashlib
 
 class Trainer():
 
@@ -52,9 +57,6 @@ class Trainer():
             "val_loss": {"combined":0}
         }
 
-
-
-
         for current_epoch in range(self.agent.logs["current_epoch"], self.agent.config.early_stopping.max_epoch):
             self.agent.logs["current_epoch"] = copy.deepcopy(current_epoch)
             self.agent.bias_infuser.on_epoch_begin(current_epoch = self.agent.logs["current_epoch"])
@@ -76,10 +78,10 @@ class Trainer():
                 #     if self.agent.config.get("task", "classification") == "classification" and len(served_dict["label"][served_dict["label"]==-1])>0:
                 #         served_dict["label"][served_dict["label"] == -1] = 0
 
-                if self.agent.config.model.get("load_ongoing", False):
-                    if self.agent.logs["current_step"] > self.agent.logs["current_epoch"] * len(self.agent.data_loader.train_loader) + batch_idx:
-                        self.agent.logger.info(f"Skipping batch {batch_idx} due to load_ongoing experiment")
-                        continue
+                # if self.agent.config.model.get("load_ongoing", False):
+                #     if self.agent.logs["current_step"] > self.agent.logs["current_epoch"] * len(self.agent.data_loader.train_loader) + batch_idx:
+                #         self.agent.logger.info(f"Skipping batch {batch_idx} due to load_ongoing experiment")
+                #         continue
 
                 self.agent.optimizer.zero_grad()
                 step_outcome, optstep_done = self.this_train_step_func(served_dict)
@@ -114,7 +116,8 @@ class Trainer():
 
             self.agent.logs["current_epoch"] += 1
             self.local_logging(batch_idx, True)
-            self.agent.mem_loader._my_numel(self.agent.model, only_trainable=True)
+
+            # self.agent.mem_loader._my_numel(self.agent.model, only_trainable=True)
 
 
     def train_one_step(self, served_dict, **kwargs):

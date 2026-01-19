@@ -1,5 +1,77 @@
-000 (012.005.000) 2025-11-08 14:24:28 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+000 (012.005.000) 2026-01-14 20:15:31 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
 ...
-009 (012.005.000) 2025-11-08 14:24:36 Job was aborted.
-	via condor_rm (by user kkontras)
+001 (012.005.000) 2026-01-14 21:01:47 Job executing on host: <10.87.24.221:9618?addrs=10.87.24.221-9618&alias=pythagoras.esat.kuleuven.be&noUDP&sock=startd_6252_ee32>
+	SlotName: slot1_3@pythagoras.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_1e452605 }
+	CondorScratchDir = "/usr/data/condor/execute/dir_169350/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_1e452605 = [ Id = "GPU-1e452605"; ClockMhz = 2520.0; Capability = 8.9; CoresPerCU = 128; DeviceName = "NVIDIA L40S"; DeviceUuid = "1e452605-e0ba-2ab6-3ef7-9ad178fdb564"; ECCEnabled = true; ComputeUnits = 142; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:41:00.0"; GlobalMemoryMb = 45458; MaxSupportedVersion = 13000 ]
+	Memory = 71680
+...
+006 (012.005.000) 2026-01-14 21:01:56 Image size of job updated: 527208
+	515  -  MemoryUsage of job (MB)
+	527208  -  ResidentSetSize of job (KB)
+...
+006 (012.005.000) 2026-01-14 21:02:27 Image size of job updated: 2748912
+	515  -  MemoryUsage of job (MB)
+	527208  -  ResidentSetSize of job (KB)
+...
+005 (012.005.000) 2026-01-14 21:02:27 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:02:05, Sys 0 00:00:09  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:02:05, Sys 0 00:00:09  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :        0        8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :        0        1         1 "GPU-1e452605"
+	   GpusMemory (MB)      :      614                    
+	   Memory (MB)          :      515    71680     71680 
+	   TimeExecute (s)      :       40                    
+	   TimeSlotBusy (s)     :       40                    
+...
+000 (012.005.000) 2026-01-17 07:29:32 Job submitted from host: <10.87.28.151:9618?addrs=10.87.28.151-9618&alias=brigand.esat.kuleuven.be&noUDP&sock=schedd_1447_19a1>
+...
+001 (012.005.000) 2026-01-17 07:31:16 Job executing on host: <10.87.24.127:9618?addrs=10.87.24.127-9618&alias=fluorite.esat.kuleuven.be&noUDP&sock=startd_1437_3daf>
+	SlotName: slot1_1@fluorite.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_8c10781f }
+	CondorScratchDir = "/usr/data/condor/execute/dir_1228777/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_8c10781f = [ Id = "GPU-8c10781f"; ClockMhz = 1531.0; Capability = 6.1; CoresPerCU = 128; DeviceName = "NVIDIA TITAN X (Pascal)"; DeviceUuid = "8c10781f-2e64-8918-ad0e-ea524e3c98c9"; ECCEnabled = false; ComputeUnits = 28; NvidiaDriver = "580.119.02"; DriverVersion = 13.0; DevicePciBusId = "0000:01:00.0"; GlobalMemoryMb = 12183; MaxSupportedVersion = 13000 ]
+	Memory = 20480
+...
+006 (012.005.000) 2026-01-17 07:31:24 Image size of job updated: 35664
+	35  -  MemoryUsage of job (MB)
+	35664  -  ResidentSetSize of job (KB)
+...
+006 (012.005.000) 2026-01-17 07:31:53 Image size of job updated: 419376
+	35  -  MemoryUsage of job (MB)
+	35664  -  ResidentSetSize of job (KB)
+...
+005 (012.005.000) 2026-01-17 07:31:53 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:08, Sys 0 00:00:02  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:08, Sys 0 00:00:02  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :        0        8         8 
+	   Disk (KB)            :        2  1048576   1048576 
+	   GPUs                 :                 1         1 "GPU-8c10781f"
+	   Memory (MB)          :       35    20480     20480 
+	   TimeExecute (s)      :       37                    
+	   TimeSlotBusy (s)     :       38                    
 ...

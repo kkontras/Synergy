@@ -170,14 +170,16 @@ class Loader():
 
         if os.path.exists(file_name):
             prev_checkpoint = torch.load(file_name, map_location="cpu", weights_only=False)
+            val_with = self.agent.config.early_stopping.get("validate_with", "accuracy")
             if "best_model_state_dict" in prev_checkpoint:
                 # prev_checkpoint["best_model_state_dict"] = {key.replace("module.", "" ): value for key, value in
                 #                                        prev_checkpoint["best_model_state_dict"].items()}
 
                 self.agent.model.load_state_dict(prev_checkpoint["best_model_state_dict"])
                 logging.info("Loaded best model from {}".format(file_name))
-            else:
-                logging.info("No best model found in {}".format(file_name))
+            elif "best_model_{}_state_dict".format(val_with) in prev_checkpoint:
+                logging.info("Loaded best model from {}".format("best_model_{}_state_dict".format(val_with)))
+                self.agent.model.load_state_dict(prev_checkpoint["best_model_{}_state_dict".format(val_with)])
         else:
             logging.info("No file found in {}".format(file_name))
 
@@ -283,23 +285,26 @@ class Loader():
 
         self.agent.loss = nn.CrossEntropyLoss()
 
-        message = ""
-        if "step" in self.agent.logs["best_logs"]:
-            message += Fore.WHITE + "The best in step: {} so far \n".format(
-                int(self.agent.logs["best_logs"]["step"] / self.agent.config.early_stopping.validate_every))
+        val_with = self.agent.config.early_stopping.validate_with
+        this_best_log = self.agent.logs["best_logs"]["best_v{}".format(val_with)]
 
-            if "loss" in self.agent.logs["best_logs"]:
-                for i, v in self.agent.logs["best_logs"]["loss"].items(): message += Fore.RED + "{} : {:.6f} ".format(i,v)
-            if "acc" in self.agent.logs["best_logs"]:
-                for i, v in self.agent.logs["best_logs"]["acc"].items(): message += Fore.LIGHTBLUE_EX + "Acc_{}: {:.2f} ".format(i, v * 100)
-            if "f1" in self.agent.logs["best_logs"]:
-                for i, v in self.agent.logs["best_logs"]["f1"].items(): message += Fore.LIGHTGREEN_EX + "F1_{}: {:.2f} ".format(i, v * 100)
-            if "k" in self.agent.logs["best_logs"]:
-                for i, v in self.agent.logs["best_logs"]["k"].items(): message += Fore.LIGHTGREEN_EX + "K_{}: {:.4f} ".format(i, v)
+        message = ""
+        if "step" in this_best_log:
+            message += Fore.WHITE + "The best in step: {} so far \n".format(
+                int(this_best_log["step"] / self.agent.config.early_stopping.validate_every))
+            if "loss" in this_best_log:
+                for i, v in this_best_log["loss"].items(): message += Fore.RED + "{} : {:.6f} ".format(i,v)
+            if "acc" in this_best_log:
+                for i, v in this_best_log["acc"].items(): message += Fore.LIGHTBLUE_EX + "Acc_{}: {:.2f} ".format(i, v * 100)
+            if "f1" in this_best_log:
+                for i, v in this_best_log["f1"].items(): message += Fore.LIGHTGREEN_EX + "F1_{}: {:.2f} ".format(i, v * 100)
+            if "k" in this_best_log:
+                for i, v in this_best_log["k"].items(): message += Fore.LIGHTGREEN_EX + "K_{}: {:.4f} ".format(i, v)
 
         if self.agent.accelerator.is_main_process:
             self.agent.logger.info("Checkpoint loaded successfully")
-            self.agent.logger.info(message)
+            print(self.agent.logs["best_logs"])
+            self.agent.logger.info(message+Fore.RESET)
 
 
     def load_encoder(self, enc_args):
@@ -318,6 +323,7 @@ class Loader():
             if pretrained_encoder_args["use"]:
 
                 file_path = pretrained_encoder_args.get("dir","")
+                val_with = self.agent.config.early_stopping.get("validate_with", "accuracy")
                 if "save_base_dir" in self.agent.config.model:
                     file_path = os.path.join(self.agent.config.model.save_base_dir, file_path)
                 checkpoint = torch.load(file_path, weights_only=False)
@@ -335,6 +341,13 @@ class Loader():
                     #     logging.info("Replacing module")
                     #     checkpoint["best_model_state_dict"] = {key.replace("module.", ""): value for key, value in checkpoint["best_model_state_dict"].items()}
                     missing_keys, unexpected_keys =  enc.load_state_dict(checkpoint["best_model_state_dict"], strict=False)
+                    if missing_keys or unexpected_keys:
+                        logging.warn(f"Missing keys in state_dict: {missing_keys}")
+                        logging.warn(f"Unexpected keys in state_dict: {unexpected_keys}")
+
+                elif "best_model_{}_state_dict".format(val_with) in checkpoint:
+                    logging.info("Loading enc best model state dict from {}".format(file_path))
+                    missing_keys, unexpected_keys = enc.load_state_dict(checkpoint["best_model_{}_state_dict".format(val_with)])
                     if missing_keys or unexpected_keys:
                         logging.warn(f"Missing keys in state_dict: {missing_keys}")
                         logging.warn(f"Unexpected keys in state_dict: {unexpected_keys}")

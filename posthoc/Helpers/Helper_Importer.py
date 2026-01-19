@@ -9,11 +9,14 @@ from models.Synergy_Models_SVAE import *
 from models.Synergy_Models import *
 
 from mydatasets.CREMAD.CREMAD_Dataset import *
+from mydatasets.CREMAD.CREMADPlus_Dataset import *
 from mydatasets.UCF101.UCF101_Dataset import *
 from mydatasets.AVE.AVE_Dataset import *
 from mydatasets.SthSth.dataset_factory import *
 # from mydatasets.Synthetic_FactorCL.Synthetic_FCL_Dataset import *
 # from mydatasets.Factor_CL_Datasets.FactorCL_Datasets import *
+from mydatasets.ESNLI.ESNLIDataset import *
+
 
 class Importer():
     def __init__(self, config_name:str,  device:str="cuda:0", default_files: list=None, fold:int=None):
@@ -77,17 +80,32 @@ class Importer():
         if return_model == "untrained_model":
             return model
         elif return_model == "best_model":
+            def reform_best_model(this_dict):
+                this_dict = {key.replace("module.", ""): value for key, value in this_dict.items()}
 
-            self.checkpoint["best_model_state_dict"] = {key.replace("module.", ""): value for key, value in
-                                              self.checkpoint["best_model_state_dict"].items()}
-
-            self.checkpoint["best_model_state_dict"] = {key.replace("parametrizations.weight.original0", "weight_g"): value for key, value in
-                                              self.checkpoint["best_model_state_dict"].items()}
-            self.checkpoint["best_model_state_dict"] = {key.replace("parametrizations.weight.original1", "weight_v"): value for key, value in
-                                              self.checkpoint["best_model_state_dict"].items()}
-
-            print("Loading best model from {}".format(self.config.model.save_dir))
-            model.load_state_dict(self.checkpoint["best_model_state_dict"])
+                this_dict = {
+                    key.replace("parametrizations.weight.original0", "weight_g"): value for key, value in
+                    this_dict.items()}
+                this_dict = {
+                    key.replace("parametrizations.weight.original1", "weight_v"): value for key, value in
+                    this_dict.items()}
+                return this_dict
+            print(self.checkpoint.keys())
+            if "best_model_state_dict" in self.checkpoint:
+                print("Loading best_model_state_dict")
+                model.load_state_dict(reform_best_model(self.checkpoint["best_model_state_dict"]))
+            elif "validate_with" not in self.config.training_params:
+                print("Loading best_model_state_dict")
+                model.load_state_dict(reform_best_model(self.checkpoint["best_model_accuracy_state_dict"]))
+            elif self.config.training_params.validate_with == "accuracy":
+                print("Loading best_model_accuracy_state_dict")
+                model.load_state_dict(reform_best_model(self.checkpoint["best_model_accuracy_state_dict"]))
+            elif self.config.training_params.validate_with == "loss":
+                print("Loading best_model_loss_state_dict")
+                model.load_state_dict(reform_best_model(self.checkpoint["best_model_loss_state_dict"]))
+            elif self.config.training_params.validate_with == "syn_accuracy":
+                print("Loading best_model_syn_accuracy_state_dict")
+                model.load_state_dict(reform_best_model(self.checkpoint["best_model_syn_accuracy_state_dict"]))
             return model
         elif return_model == "running_model":
             model.load_state_dict(self.checkpoint["model_state_dict"])
@@ -98,7 +116,8 @@ class Importer():
 
     def print_progress(self, multi_fold_results, verbose=True, print_entropy=False, latex_version=False, print_post_test=True):
 
-        val_metrics = self.checkpoint["logs"]["best_logs"]
+        val_with = self.config.training_params.get("validate_with", "accuracy")
+        val_metrics = self.checkpoint["logs"]["best_logs"]["best_v{}".format(val_with)]
 
         multi_fold_results[self.fold] = val_metrics
         if verbose:print("-- Best Validation --")

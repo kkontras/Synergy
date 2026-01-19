@@ -1,5 +1,68 @@
-000 (012.015.000) 2025-11-08 14:24:28 Job submitted from host: <10.87.28.209:9618?addrs=10.87.28.209-9618&alias=krakas.esat.kuleuven.be&noUDP&sock=schedd_1611_9729>
+000 (012.015.000) 2026-01-14 20:15:31 Job submitted from host: <10.87.28.129:9618?addrs=10.87.28.129-9618&alias=timmermans.esat.kuleuven.be&noUDP&sock=schedd_1428_1154>
 ...
-009 (012.015.000) 2025-11-08 14:24:36 Job was aborted.
+001 (012.015.000) 2026-01-14 23:29:53 Job executing on host: <10.87.28.118:9618?addrs=10.87.28.118-9618&alias=stadius-nc-5.esat.kuleuven.be&noUDP&sock=startd_3360_424e>
+	SlotName: slot1_2@stadius-nc-5.esat.kuleuven.be
+	AvailableGPUs = { GPUs_GPU_1ac4d924 }
+	CondorScratchDir = "/volume1/condor/execute/dir_3375655/scratch"
+	Cpus = 8
+	Disk = 1048576
+	GPUs = 1
+	GPUs_GPU_1ac4d924 = [ Id = "GPU-1ac4d924"; ClockMhz = 1545.0; Capability = 7.5; CoresPerCU = 64; DeviceName = "NVIDIA GeForce RTX 2080 Ti"; DeviceUuid = "1ac4d924-e4b1-b88f-268d-a11d924627fd"; ECCEnabled = false; ComputeUnits = 68; NvidiaDriver = "570.153.02"; DriverVersion = 12.8; DevicePciBusId = "0000:5B:00.0"; GlobalMemoryMb = 10823; MaxSupportedVersion = 12080 ]
+	Memory = 71680
+...
+006 (012.015.000) 2026-01-14 23:30:02 Image size of job updated: 472084
+	462  -  MemoryUsage of job (MB)
+	472084  -  ResidentSetSize of job (KB)
+...
+006 (012.015.000) 2026-01-14 23:35:02 Image size of job updated: 3102584
+	3030  -  MemoryUsage of job (MB)
+	3102584  -  ResidentSetSize of job (KB)
+...
+006 (012.015.000) 2026-01-14 23:40:02 Image size of job updated: 3105972
+	3030  -  MemoryUsage of job (MB)
+	3102584  -  ResidentSetSize of job (KB)
+...
+006 (012.015.000) 2026-01-14 23:45:03 Image size of job updated: 3225592
+	3030  -  MemoryUsage of job (MB)
+	3102584  -  ResidentSetSize of job (KB)
+...
+006 (012.015.000) 2026-01-14 23:55:03 Image size of job updated: 3381728
+	3030  -  MemoryUsage of job (MB)
+	3102584  -  ResidentSetSize of job (KB)
+...
+006 (012.015.000) 2026-01-15 00:30:07 Image size of job updated: 3381728
+	3231  -  MemoryUsage of job (MB)
+	3308348  -  ResidentSetSize of job (KB)
+...
+006 (012.015.000) 2026-01-15 00:35:07 Image size of job updated: 3483060
+	3231  -  MemoryUsage of job (MB)
+	3308348  -  ResidentSetSize of job (KB)
+...
+006 (012.015.000) 2026-01-15 00:50:09 Image size of job updated: 3594996
+	3231  -  MemoryUsage of job (MB)
+	3308348  -  ResidentSetSize of job (KB)
+...
+005 (012.015.000) 2026-01-15 01:01:43 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 06:32:00, Sys 0 00:24:06  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 06:32:00, Sys 0 00:24:06  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated Assigned
+	   Cpus                 :     5.89        8         8 
+	   Disk (KB)            :     2     1048576   1048576 
+	   GPUs                 :                 1         1 "GPU-1ac4d924"
+	   GpusMemory (MB)      :  7531                       
+	   Memory (MB)          :  3231       71680     71680 
+	   TimeExecute (s)      :  5510                       
+	   TimeSlotBusy (s)     :  5510                       
+...
+000 (012.015.000) 2026-01-17 07:29:32 Job submitted from host: <10.87.28.151:9618?addrs=10.87.28.151-9618&alias=brigand.esat.kuleuven.be&noUDP&sock=schedd_1447_19a1>
+...
+009 (012.015.000) 2026-01-17 07:34:32 Job was aborted.
 	via condor_rm (by user kkontras)
 ...

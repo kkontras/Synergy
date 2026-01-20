@@ -13,6 +13,7 @@ from mydatasets.CREMAD.CREMADPlus_Dataset import *
 from mydatasets.UCF101.UCF101_Dataset import *
 from mydatasets.AVE.AVE_Dataset import *
 from mydatasets.SthSth.dataset_factory import *
+from mydatasets.ScienceQA.ScienceQA_CB import *
 # from mydatasets.Synthetic_FactorCL.Synthetic_FCL_Dataset import *
 # from mydatasets.Factor_CL_Datasets.FactorCL_Datasets import *
 # from mydatasets.ESNLI.ESNLIDataset import *

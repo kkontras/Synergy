@@ -1210,9 +1210,9 @@ class Base_Ensemble_Model(nn.Module):
         else:
             pred = pred_a + pred_v
 
-        if a.shape != v.shape:
-            return {"preds":{"combined":pred, "c":pred_a, "g":pred_v}, "features": {"c": a, "g": v}}
-        return {"preds":{"combined":pred, "c":pred_a, "g":pred_v}, "features": {"c": a, "g": v, "combined": (a + v)/2}}
+        # if a.shape != v.shape:
+        return {"preds":{"combined":pred, "c":pred_a, "g":pred_v}, "features": {"c": a, "g": v}}
+        # return {"preds":{"combined":pred, "c":pred_a, "g":pred_v}, "features": {"c": a, "g": v, "combined": (a + v)/2}}
 class Base_Model(nn.Module):
     def __init__(self, args, encs):
         super(Base_Model, self).__init__()

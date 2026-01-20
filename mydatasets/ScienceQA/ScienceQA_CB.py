@@ -175,7 +175,7 @@ class ScienceQA_TokenCachedDataloader:
         total_cpus = multiprocessing.cpu_count()
         num_gpus = max(1, get_physical_gpu_count())
         workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
-        workers_per_gpu = 0
+        # workers_per_gpu = 0
 
         print(
             f"[TokenCachedScienceQA] GPUs: {torch.cuda.device_count()} (Phys: {num_gpus}) | "
@@ -200,8 +200,8 @@ class ScienceQA_TokenCachedDataloader:
                 collate_fn=self.collate_fn,
                 num_workers=workers_per_gpu,
                 pin_memory=True,
-                # prefetch_factor=2,
-                # persistent_workers=True,
+                prefetch_factor=2,
+                persistent_workers=True,
             )
 
         self.train_loader = make_loader("train", shuffle=True)

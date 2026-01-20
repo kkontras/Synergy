@@ -2788,7 +2788,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         features = {"h_cls": h_cls}
 
-        return {"preds": {"combined": logits}, "features": features, "losses": losses}
+        return {"preds": {"combined": logits}, "features":  {"combined": features}, "losses": losses}
 class QwenVL_ScienceQA_Cached_Text(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
@@ -2921,7 +2921,7 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
         if return_features:
             features["hidden"] = hidden
 
-        return {"preds": {"combined": logits}, "features": features, "losses": losses}
+        return {"preds": {"combined": logits}, "features": {"combined": features}, "losses": losses}
 class QwenVL_ScienceQA_Cached_Image(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
@@ -3063,7 +3063,7 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
         if return_features:
             features["hidden"] = hidden
 
-        return {"preds": {"combined": logits}, "features": features, "losses": losses}
+        return {"preds": {"combined": logits}, "features":  {"combined": features}, "losses": losses}
 class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
@@ -3353,7 +3353,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             losses["ce_head"] = self._mc_ce_loss(head_logits, kwargs["label"])
 
         preds = {"combined": head_logits, "mask0": head_logits_0, "mask1": head_logits_1}
-        features = {"h_cls": h_cls, "mask0": featcls_0, "mask1": featcls_1}
+        features = {"combined": h_cls, "mask0": featcls_0, "mask1": featcls_1}
         return {"preds": preds, "features": features, "losses": losses}
 
     def _compute_logits_from_proc(self, proc, *, label=None, **kwargs):
@@ -3381,7 +3381,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
         if label is not None:
             losses["ce_head"] = self._mc_ce_loss(head_logits, label)
 
-        return {"preds": {"combined": head_logits}, "features": {"h_cls": h_cls}, "losses": losses}
+        return {"preds": {"combined": head_logits}, "features": {"combined": h_cls}, "losses": losses}
 
     def forward(self, x, **kwargs):
         if self.training:
@@ -3649,7 +3649,7 @@ class QwenVL_ESNLI(nn.Module):
 
         # Optional eval-time generation parsing (kept off by default)
         preds = {"combined": head_logits}
-        features = {"h_cls": h_cls}
+        features = {"combined": h_cls}
         if return_features:
             features["hidden"] = hidden
 

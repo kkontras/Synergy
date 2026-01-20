@@ -1771,7 +1771,7 @@ class SynIB_QwenFaster(nn.Module):
           z_c:   [K*B, T, F]
         """
         # --- config ---
-        p = float(self.perturb.get("p", 0.5))  # mask probability
+        p = float(self.perturb.get("p_min", 0.5))  # mask probability
         m1_t, m2_t = None, None
         if px1:
             mask_1 = (torch.rand_like(m1[m1==True].float()) > p).to(dtype=m1.dtype)  # [K*B, T, F] in {0,1}

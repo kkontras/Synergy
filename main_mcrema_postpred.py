@@ -226,13 +226,13 @@ def main(config_path, default_config_path, args):
     # print(importer.checkpoint["configs"])
     # plotter = LogsPlotter(config=importer.config, logs=importer.checkpoint["logs"])
 
-    best_model = importer.get_model(return_model="best_model")
-    # best_model = importer.get_model(return_model="running_model")
+    # best_model = importer.get_model(return_model="best_model")
+    best_model = importer.get_model(return_model="running_model")
 
     data_loader = importer.get_dataloaders()
 
     validator = Validator(model=best_model, data_loader=data_loader, config=importer.config, device=device)
-    # test_results = validator.get_results(set="Validation", print_results=True)
+    test_results = validator.get_results(set="Validation", print_results=True)
 
     test_results = validator.get_results(set="Test", print_results=True)
     # validator.save_test_results(checkpoint=importer.checkpoint,

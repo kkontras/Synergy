@@ -175,7 +175,7 @@ class ScienceQA_TokenCachedDataloader:
         total_cpus = multiprocessing.cpu_count()
         num_gpus = max(1, get_physical_gpu_count())
         workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
-        # workers_per_gpu = 0
+        workers_per_gpu = 16
 
         print(
             f"[TokenCachedScienceQA] GPUs: {torch.cuda.device_count()} (Phys: {num_gpus}) | "

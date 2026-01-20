@@ -35,8 +35,11 @@ export lr=$4
 export wd=$5
 export l=$6
 export bs=$7
+export lsparse=$8
+export ptype=$9
+export pmin=$10
 
-variables=("config" "default_config" "fold" "lr" "wd" "l" )
+variables=("config" "default_config" "fold" "lr" "wd" "l" "lsparse" "ptype" "pmin")
 
 for var_name in "${variables[@]}"; do
     var_value="${!var_name}"
@@ -45,4 +48,4 @@ for var_name in "${variables[@]}"; do
     fi
 done
 
-accelerate launch /scratch/leuven/350/vsc35057/projects/Synergy/train.py --config $config --default_config $default_config --fold $fold --lr $lr --wd $wd --l $l --batch_size $bs
+accelerate launch /scratch/leuven/350/vsc35057/projects/Synergy/train.py --config $config --default_config $default_config --fold $fold --lr $lr --wd $wd --l $l --batch_size $bs --perturb $ptype --perturb_pmin $pmin --perturb_lsparse $lsparse

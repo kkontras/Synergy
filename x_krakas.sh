@@ -188,6 +188,12 @@ scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/syner
 scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_IBInput2_fold0_lr0.0001_wd0.0001_cls_embedding.pt vsc35057@login-genius.hpc.kuleuven.be:/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/
 
 
+scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Qwen3VL_LHead_fold0.pth.tar vsc35057@login-genius.hpc.kuleuven.be:/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/
+scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_IBInput2_fold0_lr0.0001_wd0.0001_cls_embedding.pt vsc35057@login-genius.hpc.kuleuven.be:/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/
+
+rsync -ahvz --progress /esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_tokens2B vsc35057@login-genius.hpc.kuleuven.be:/scratch/leuven/350/vsc35057/data/ScienceQA
+
+
 CUDA_VISIBLE_DEVICES=0 python train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 CUDA_VISIBLE_DEVICES=1 python train.py --config ./configs/ScienceQA/image_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 CUDA_VISIBLE_DEVICES=3 python train.py --config ./configs/ScienceQA/text_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8

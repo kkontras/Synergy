@@ -51,7 +51,7 @@
   "dataset": {
     "dataloader_class": "ScienceQA_TokenCachedDataloader",
     "data_roots": "/scratch/kkontras/ScienceQA",
-    "cache_roots": "/scratch/kkontras/ScienceQA/cache_tokens2B"
+    "cache_root": "/scratch/kkontras/ScienceQA/cache_tokens2B"
   },
   "model": {
     "save_base_dir": "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2"

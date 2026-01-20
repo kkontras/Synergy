@@ -68,7 +68,7 @@
             },
             "pretrainedEncoder": {
               "use": true,
-              "dir": "Qwen3VL_LHead_fold{}.pth.tar"
+              "dir": "Qwen3VL_LHead_fold0.pth.tar"
             }
           }
         ],
@@ -125,7 +125,7 @@
             },
             "pretrainedEncoder": {
               "use": true,
-              "dir": "Qwen3VL_LHead_fold{}.pth.tar"
+              "dir": "Qwen3VL_LHead_fold0.pth.tar"
             }
           }
         ],

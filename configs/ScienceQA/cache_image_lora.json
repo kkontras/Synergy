@@ -51,7 +51,7 @@
       }
     },
     "load_ongoing": false,
-    "save_dir": "SynIBCache_LoRa_{}.pth.tar",
+    "save_dir": "SynIBCache_Image_LoRa_{}.pth.tar",
     "encoders": [
       {
         "model": "LinearHead_Qwen",

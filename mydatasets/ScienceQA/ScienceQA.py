@@ -403,7 +403,7 @@ class ScienceQA_Dataloader:
         total_cpus = multiprocessing.cpu_count()
         num_gpus = get_physical_gpu_count()
         workers_per_gpu = max(1, (total_cpus - 1) // num_gpus)
-        workers_per_gpu = 0
+        # workers_per_gpu = 0
 
         print(
             f"[ScienceQA] GPUs: {torch.cuda.device_count()} (Phys: {num_gpus}) | SLURM: {os.environ.get('CUDA_VISIBLE_DEVICES', 'N/A')} | CPUs: {total_cpus} | Workers: {torch.cuda.device_count()}x{workers_per_gpu}={torch.cuda.device_count() * workers_per_gpu}")
@@ -421,8 +421,8 @@ class ScienceQA_Dataloader:
             # --- ADD THESE FOR H100 PERFORMANCE ---
             num_workers=workers_per_gpu,  # Start with 8-12 per GPU (e.g., 48 total if on one node)
             pin_memory=True,  # Speeds up CPU-to-GPU transfer
-            # prefetch_factor=4,  # Ensures workers stay ahead of the GPU
-            # persistent_workers=True  # Keeps workers alive between epochs
+            prefetch_factor=2,  # Ensures workers stay ahead of the GPU
+            persistent_workers=True  # Keeps workers alive between epochs
         )
 
         self.valid_loader = DataLoader(
@@ -435,8 +435,8 @@ class ScienceQA_Dataloader:
             collate_fn=self.collate_fn,
             num_workers=workers_per_gpu,  # Start with 8-12 per GPU (e.g., 48 total if on one node)
             pin_memory=True,  # Speeds up CPU-to-GPU transfer
-            # prefetch_factor=4,  # Ensures workers stay ahead of the GPU
-            # persistent_workers=True  # Keeps workers alive between epochs
+            prefetch_factor=2,  # Ensures workers stay ahead of the GPU
+            persistent_workers=True  # Keeps workers alive between epochs
         )
 
         self.test_loader = DataLoader(
@@ -449,8 +449,8 @@ class ScienceQA_Dataloader:
             collate_fn=self.collate_fn,
             num_workers=workers_per_gpu,  # Start with 8-12 per GPU (e.g., 48 total if on one node)
             pin_memory=True,  # Speeds up CPU-to-GPU transfer
-            # prefetch_factor=4,  # Ensures workers stay ahead of the GPU
-            # persistent_workers=True  # Keeps workers alive between epochs
+            prefetch_factor=2,  # Ensures workers stay ahead of the GPU
+            persistent_workers=True  # Keeps workers alive between epochs
         )
 
 def compute_label_stats_and_weights(

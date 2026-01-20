@@ -1799,7 +1799,7 @@ class SynIB_QwenFaster(nn.Module):
         debug_every = int(kwargs.get("debug_every", 5))
 
         pcfg = getattr(self, "perturb", {}) if hasattr(self, "perturb") else getattr(self.main.args, "perturb", {})
-        steps = int(pcfg.get("steps", 10))
+        steps = int(pcfg.get("steps", 1))
         lr = float(pcfg.get("lr", 1e-1))
         tau = float(pcfg.get("tau", 1.0))
         lsparse = float(pcfg.get("lsparse", 1.0))
@@ -1935,18 +1935,18 @@ class SynIB_QwenFaster(nn.Module):
             if m2_t is None:
                 m2_t = torch.ones_like(m2, dtype=torch.bool)
 
-            if debug:
-                # quick check: only eligible positions should differ from True
-                if m1 is not None:
-                    changed_outside = (~m1) & (~m1_t)  # would be bad: masking outside eligible
-                    if changed_outside.any():
-                        print(
-                            f"[learned_masks] WARNING: m1_t masked outside eligible: {int(changed_outside.sum().item())}")
-                if m2 is not None:
-                    changed_outside = (~m2) & (~m2_t)
-                    if changed_outside.any():
-                        print(
-                            f"[learned_masks] WARNING: m2_t masked outside eligible: {int(changed_outside.sum().item())}")
+            # if debug:
+            #     # quick check: only eligible positions should differ from True
+            #     if m1 is not None:
+            #         changed_outside = (~m1) & (~m1_t)  # would be bad: masking outside eligible
+            #         if changed_outside.any():
+            #             print(
+            #                 f"[learned_masks] WARNING: m1_t masked outside eligible: {int(changed_outside.sum().item())}")
+            #     if m2 is not None:
+            #         changed_outside = (~m2) & (~m2_t)
+            #         if changed_outside.any():
+            #             print(
+            #                 f"[learned_masks] WARNING: m2_t masked outside eligible: {int(changed_outside.sum().item())}")
 
             return m1_t, m2_t
 

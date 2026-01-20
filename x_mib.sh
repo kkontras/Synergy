@@ -10,7 +10,7 @@ conda activate /scratch/kkontras/miniconda3/envs/synergy_new
 set -euo pipefail
 mkdir -p logs
 
-gpus=(0 1 3 4 5)   # <- edit this list if you want different GPU ids
+gpus=(0 1 3)   # <- edit this list if you want different GPU ids
 i=0
 
 for l in 1.0 0.1; do

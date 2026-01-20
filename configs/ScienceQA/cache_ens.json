@@ -15,7 +15,7 @@
   },
   "model": {
     "model_class": "Base_Ensemble_Model",
-    "args": {},
+    "args": {"num_classes": 5},
     "load_ongoing": false,
     "save_dir": "SynIBCache_Ens_LoRa_{}.pth.tar",
     "encoders": [

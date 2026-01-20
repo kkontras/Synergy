@@ -23,8 +23,8 @@
       "cls_type": "linear",
       "clip_grad": false,
       "bias_infusion": {
-        "method": "Reinit",
-        "reinit_epoch": 20,
+        "method": "DnR",
+        "reinit_epoch": 10,
         "kmepoch": 3,
         "epoch_stages": 1,
         "n_classes": 6,
@@ -42,7 +42,7 @@
     },
     "ceu": {"val": "./mydatasets/CREMAD/ceus/cremadplus_ceu_val_res_{}.pkl", "test": "./mydatasets/CREMAD/ceus/cremadplus_ceu_test_res_{}.pkl"},
     "load_ongoing": false,
-    "save_dir": "Reinit_{}.pth.tar",
+    "save_dir": "DnR_{}.pth.tar",
     "encoders": [
       {
         "model": "Audio_ResNet",

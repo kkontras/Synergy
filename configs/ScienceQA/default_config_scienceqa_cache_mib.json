@@ -49,7 +49,7 @@
     "validate_with": "accuracy"
   },
   "dataset": {
-    "dataloader_class": "ScienceQA_Dataloader",
+    "dataloader_class": "ScienceQA_TokenCachedDataloader",
     "data_roots": "/scratch/kkontras/ScienceQA",
     "cache_roots": "/scratch/kkontras/ScienceQA/cache_tokens2B"
   },

@@ -618,6 +618,9 @@ class Bias_Infusion_DnR(General_Bias_Infusion):
         super(Bias_Infusion_DnR, self).__init__(agent)
         logging.info("Bias Infusion DnR is being employed")
         self._initialize_logs_n_utils()
+        self.alpha = self.agent.config.model.args.bias_infusion.alpha
+        self.reinit_epoch = self.agent.config.model.args.bias_infusion.reinit_epoch
+        self.kmepoch = self.agent.config.model.args.bias_infusion.kmepoch
 
     def _initialize_logs_n_utils(self):
         self.checkpoint_model = None
@@ -705,8 +708,8 @@ class Bias_Infusion_DnR(General_Bias_Infusion):
         purity_gap_audio = np.abs(all_purity[0] - all_purity[1])
         purity_gap_visual = np.abs(all_purity[2] - all_purity[3])
 
-        weight_audio = torch.tanh(torch.tensor(args.alpha * purity_gap_audio))
-        weight_visual = torch.tanh(torch.tensor(args.alpha * purity_gap_visual))
+        weight_audio = torch.tanh(torch.tensor(self.alpha * purity_gap_audio))
+        weight_visual = torch.tanh(torch.tensor(self.alpha * purity_gap_visual))
 
         print('weights audio: {:.4f}, visual: {:.4f}'.format(weight_audio, weight_visual))
 
@@ -749,9 +752,9 @@ class Bias_Infusion_DnR(General_Bias_Infusion):
         if self.agent.config.model.args.bias_infusion.starting_epoch <= epoch <= self.agent.config.model.args.bias_infusion.ending_epoch:
             args = self.agent.config.model.args.bias_infusion
 
-            if(( epoch % args.reinit_epoch == 0)&(epoch>0)):
+            if(( epoch % self.reinit_epoch == 0)&(epoch>0)):
                 self.flag_reinit+=1
-                if(self.flag_reinit<=args.kmepoch):
+                if(self.flag_reinit<=self.kmepoch):
                     train_features, train_label = self.get_feature(args, epoch, self.agent.data_loader.train_loader)
                     val_features, val_label = self.get_feature(args, epoch, self.agent.data_loader.valid_loader)
                     weight_audio, weight_visual, all_purity = self.reinit_score(args, train_features,train_label,val_features,val_label)

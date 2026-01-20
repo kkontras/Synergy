@@ -199,9 +199,9 @@ class ScienceQA_TokenCachedDataloader:
                 worker_init_fn=seed_worker,
                 collate_fn=self.collate_fn,
                 num_workers=workers_per_gpu,
-                pin_memory=True,
-                prefetch_factor=2,
-                persistent_workers=True,
+                pin_memory=False,
+                # prefetch_factor=2,
+                # persistent_workers=True,
             )
 
         self.train_loader = make_loader("train", shuffle=True)

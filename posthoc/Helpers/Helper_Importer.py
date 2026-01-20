@@ -91,12 +91,12 @@ class Importer():
                     key.replace("parametrizations.weight.original1", "weight_v"): value for key, value in
                     this_dict.items()}
                 return this_dict
-            # print(self.checkpoint.keys())
-            # if "best_model_state_dict" in self.checkpoint:
-            #     print("Loading best_model_state_dict")
-            #     model.load_state_dict(reform_best_model(self.checkpoint["best_model_state_dict"]))
-            if "validate_with" not in self.config.training_params:
+            print(self.checkpoint.keys())
+            if "best_model_state_dict" in self.checkpoint:
                 print("Loading best_model_state_dict")
+                model.load_state_dict(reform_best_model(self.checkpoint["best_model_state_dict"]))
+            elif "validate_with" not in self.config.training_params:
+                print("Loading best_model_accuracy_state_dict")
                 model.load_state_dict(reform_best_model(self.checkpoint["best_model_accuracy_state_dict"]))
             elif self.config.training_params.validate_with == "accuracy":
                 print("Loading best_model_accuracy_state_dict")

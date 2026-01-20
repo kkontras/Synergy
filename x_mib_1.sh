@@ -1,6 +1,6 @@
 
 CUDA_VISIBLE_DEVICES=0 python train.py  --config ./configs/ScienceQA/cache_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
-CUDA_VISIBLE_DEVICES=0 python show.py  --config ./configs/ScienceQA/cache_image_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
+CUDA_VISIBLE_DEVICES=0 python main_mcrema_postpred.py  --config ./configs/ScienceQA/cache_image_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 CUDA_VISIBLE_DEVICES=0 python main_mcrema_postpred.py  --config ./configs/ScienceQA/cache_text_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 
 for l in 0.1 1.0; do

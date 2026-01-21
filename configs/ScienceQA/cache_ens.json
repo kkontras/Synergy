@@ -17,6 +17,7 @@
     "model_class": "Base_Ensemble_Model",
     "args": {"num_classes": 5, "multi_loss": { "multi_supervised_w": { "combined": 0, "c": 0, "g": 0}}
     },
+    "ceu": {"val": "./mydatasets/ScienceQA/ceus/scienceqa_ceu_val.pkl", "test": "./mydatasets/ScienceQA/ceus/scienceqa_ceu_test.pkl"},
     "load_ongoing": false,
     "save_dir": "SynIBCache_Ens_LoRa_{}.pth.tar",
     "encoders": [

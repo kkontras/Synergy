@@ -196,8 +196,8 @@ def run_fold(fold: int) -> dict:
 
     # Load + build model exactly through Importer (same flow as original)
     importer.load_checkpoint()
-    best_model = importer.get_model(return_model="running_model")
-    # best_model = importer.get_model(return_model="best_model")
+    # best_model = importer.get_model(return_model="running_model")
+    best_model = importer.get_model(return_model="best_model")
     data_loader = importer.get_dataloaders()
 
     validator = Validator(model=best_model, data_loader=data_loader, config=importer.config, device=device)

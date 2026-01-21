@@ -105,10 +105,10 @@ class Trainer():
                         if self.agent.accelerator.is_main_process:
                             self.agent.monitor_n_saver.save(verbose=True)
 
-            #         prof.step()
-            #         print("We reached the step")
-                    if batch_idx >= 10:
-                        break
+                        #         prof.step()
+                        #         print("We reached the step")
+                if batch_idx >= 10:
+                    break
             #
             # print("Profiler Begin")
             # print(prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=30))

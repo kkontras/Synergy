@@ -1,5 +1,5 @@
 
-python train.py  --config ./configs/ESNLI/cache_lora_emb_clshead.json  --default_config ./configs/ESNLI/default_config_esnli_cache.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 2
+CUDA_VISIBLE_DEVICES=4 python train.py  --config ./configs/ESNLI/cache_lora_emb_clshead.json  --default_config ./configs/ESNLI/default_config_esnli_cache.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5
 python train.py  --config ./configs/ESNLI/cache_lora.json  --default_config ./configs/ESNLI/default_config_esnli_cache.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 2
 
 

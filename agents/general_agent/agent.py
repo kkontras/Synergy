@@ -14,21 +14,7 @@ from agents.general_agent.helpers.Validator_Tester import Validator_Tester
 from agents.general_agent.helpers.Bias_Infusion import pick_bias_infuser
 from agents.general_agent.helpers.Evaluator import All_Evaluator
 
-from mydatasets.CREMAD.CREMAD_Dataset import *
-from mydatasets.CREMAD.CREMADPlus_Dataset import *
-from mydatasets.AVE.AVE_Dataset import *
-from mydatasets.UCF101.UCF101_Dataset import *
-from mydatasets.SthSth.SthSth_Dataloader import *
-# from mydatasets.Factor_CL_Datasets.FactorCL_Datasets import *
-from mydatasets.M3.M3_Dataset import *
-from mydatasets.Xor.Xor_dataset import *
-from mydatasets.Flickr.Flickr30Loader import *
-from mydatasets.MSCOCO.MSCOCOLoader import *
-from mydatasets.CUB200.CUB200Loader import *
-from mydatasets.MMIMDB.MMIMDBLoader import *
-from mydatasets.ScienceQA.ScienceQA import *
-from mydatasets.ScienceQA.ScienceQA_CB import *
-# from mydatasets.ESNLI.ESNLIDataset import *
+from mydatasets import *
 
 import os
 import wandb

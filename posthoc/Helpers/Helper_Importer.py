@@ -1,23 +1,9 @@
 from utils.config import process_config, process_config_default
 from colorama import Fore, Style
 
-from models.MCR_Models import *
-from models.SthSth_models import *
-from models.Synergy_Models_2 import *
-from models.Synergy_Models_Dec import *
-from models.Synergy_Models_SVAE import *
-from models.Synergy_Models import *
 
-from mydatasets.CREMAD.CREMAD_Dataset import *
-from mydatasets.CREMAD.CREMADPlus_Dataset import *
-from mydatasets.UCF101.UCF101_Dataset import *
-from mydatasets.AVE.AVE_Dataset import *
-from mydatasets.SthSth.dataset_factory import *
-from mydatasets.ScienceQA.ScienceQA_CB import *
-# from mydatasets.Synthetic_FactorCL.Synthetic_FCL_Dataset import *
-# from mydatasets.Factor_CL_Datasets.FactorCL_Datasets import *
-# from mydatasets.ESNLI.ESNLIDataset import *
-
+from models import *
+from mydatasets import *
 
 class Importer():
     def __init__(self, config_name:str,  device:str="cuda:0", default_files: list=None, fold:int=None):

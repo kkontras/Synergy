@@ -1,10 +1,16 @@
-import os
-import sys
+# mydatasets/__init__.py
 
-path = os.path.dirname(os.path.abspath(__file__))
-
-for py in [f[:-3] for f in os.listdir(path) if f.endswith('.py') and f != '__init__.py']:
-    mod = __import__('.'.join([__name__, py]), fromlist=[py])
-    classes = [getattr(mod, x) for x in dir(mod) if isinstance(getattr(mod, x), type)]
-    for cls in classes:
-        setattr(sys.modules[__name__], cls.__name__, cls)
+from .CREMAD.CREMAD_Dataset import *
+from .CREMAD.CREMADPlus_Dataset import *
+from .AVE.AVE_Dataset import *
+from .UCF101.UCF101_Dataset import *
+from .SthSth.SthSth_Dataloader import *
+# from .M3.M3_Dataset import *
+# from .Xor.Xor_dataset import *
+# from .Flickr.Flickr30Loader import *
+# from .MSCOCO.MSCOCOLoader import *
+# from .CUB200.CUB200Loader import *
+from .MMIMDB.MMIMDBLoader import *
+# from .ScienceQA.ScienceQA import *
+from .ScienceQA.ScienceQA_CB import *
+from .ESNLI.ESNLI_CB import *

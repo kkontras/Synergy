@@ -9,13 +9,7 @@ import torch._dynamo
 import os
 from utils.optim import *
 
-from models.MCR_Models import *
-from models.SthSth_models import *
-from models.SyntheticData_Model import *
-from models.Synergy_Models import *
-# from models.Synergy_Models_2 import *
-from models.Synergy_Models_Dec import *
-from models.Synergy_Models_SVAE import *
+from models import *
 
 import logging
 

@@ -37,7 +37,7 @@
     "beta2": 0.999
   },
   "early_stopping": {
-    "max_epoch": 1500,
+    "max_epoch": 70,
     "end_of_epoch_check": true,
     "log_interval": 10,
     "save_every_step": 3000,

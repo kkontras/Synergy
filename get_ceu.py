@@ -61,16 +61,16 @@ fold_position_offset=0
 
 # OUTPUT_JSON = "cremad_ceu_test_res.pkl"
 # OUTPUT_JSON = "cremad_ceu_val_res.pkl"
-OUTPUT_JSON = "./mydatasets/ScienceQA/ceus/scienceqa_ceu_test.pkl"
-# OUTPUT_JSON = "./mydatasets/ScienceQA/ceus/scienceqa_ceu_val.pkl"
+# OUTPUT_JSON = "./mydatasets/ScienceQA/ceus/scienceqa_ceu_test.pkl"
+OUTPUT_JSON = "./mydatasets/ScienceQA/ceus/scienceqa_ceu_val.pkl"
 
 # OUTPUT_JSON = "./mydatasets/CREMAD/ceus/cremadplus_ceu_val_res_ir0.1.pkl"
 # OUTPUT_JSON = "./mydatasets/CREMAD/ceus/cremadplus_ceu_test_res_ir0.1.pkl"
 # OUTPUT_JSON = "cremadplus_ceu_test_res.pkl"
 # OUTPUT_JSON = "cremad_ceu_val_res.pkl"
 # OUTPUT_JSON = "ave_ceu_val_res.pkl"
-DATASET_SPLIT = "Test"  # "Validation" or "test"
-# DATASET_SPLIT = "Validation"  # "Validation" or "test"
+# DATASET_SPLIT = "Test"  # "Validation" or "test"
+DATASET_SPLIT = "Validation"  # "Validation" or "test"
 
 FOLDS = [0]
 

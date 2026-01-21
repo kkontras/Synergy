@@ -518,7 +518,8 @@ class CramedDPlus_Dataloader:
         g = torch.Generator()
         g.manual_seed(int(self.config.training_params.seed))
 
-        num_workers = int(getattr(self.config.training_params, "data_loader_workers", 0) or 0)
+        # num_workers = int(getattr(self.config.training_params, "data_loader_workers", 0) or 0)
+        num_workers = int(0)
 
         self.train_loader = torch.utils.data.DataLoader(
             train_ds,

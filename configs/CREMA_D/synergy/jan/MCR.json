@@ -31,6 +31,7 @@
     "args": {
       "d_model": 512, "num_classes": 7, "fc_inner": 64, "dropout": 0.1,
       "cls_type": "linear",
+      "shufflegradmulti": true,
       "bias_infusion": {
         "method": "MCR",
         "regby": "greedy",

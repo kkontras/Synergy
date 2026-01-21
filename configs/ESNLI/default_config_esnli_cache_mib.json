@@ -40,7 +40,7 @@
     "max_epoch": 1500,
     "end_of_epoch_check": true,
     "log_interval": 10,
-    "save_every_step": 3000,
+    "save_every_step": 30000,
     "validate_every": 185,
     "save_every_valstep": 50,
     "validate_after": 0,

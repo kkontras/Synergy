@@ -741,49 +741,49 @@ class ESNLI_MemmapDataloader:
 # Main: conversion + smoke test
 # =========================
 
-if __name__ == "__main__":
-    import types
-
-    # ---- Config stub (match your structure) ----
-    config = types.SimpleNamespace()
-    config.training_params = types.SimpleNamespace()
-    config.dataset = types.SimpleNamespace()
-    config.model = types.SimpleNamespace()
-
-    config.training_params.batch_size = 8
-
-    # Point to your ESNLI cache root that contains:
-    #   <cache_root>/train/manifest.jsonl + shards
-    #   <cache_root>/dev/manifest.jsonl + shards
-    #   <cache_root>/test/manifest.jsonl + shards
-    config.dataset.cache_root = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI/cache_qwen3_vl_2b_nocls_vis"
-
-    # Match your tokenizer pad id if you want (else 0)
-    config.model.pad_token_id = 0
-
-    loader = ESNLI_MemmapDataloader(
-        config,
-        input_ids_dtype="int32",
-        vision_dtype="float16",
-        store_pixel_values=False,  # RECOMMENDED if you already cached vision_embeds
-        num_workers=4,
-        prefetch_factor=2,
-        persistent_workers=True,
-        pin_memory=True,
-    )
-
-    batch = next(iter(loader.train_loader))
-    print("ids[0:3]:", batch["ids"][:3])
-    print("label:", batch["label"].shape, batch["label"].dtype)
-    print("input_ids:", batch["data"]["input_ids"].shape, batch["data"]["input_ids"].dtype)
-    print("attention_mask:", batch["data"]["attention_mask"].shape, batch["data"]["attention_mask"].dtype)
-
-    if "vision_embeds" in batch["data"]:
-        print("vision_embeds:", batch["data"]["vision_embeds"].shape, batch["data"]["vision_embeds"].dtype)
-        print("vision_mask:", batch["data"]["vision_mask"].shape, batch["data"]["vision_mask"].dtype)
-
-    if "pixel_values" in batch["data"]:
-        print("pixel_values:", batch["data"]["pixel_values"].shape, batch["data"]["pixel_values"].dtype)
-
-    if "image_grid_thw" in batch["data"]:
-        print("image_grid_thw:", batch["data"]["image_grid_thw"].shape, batch["data"]["image_grid_thw"].dtype)
+# if __name__ == "__main__":
+#     import types
+#
+#     # ---- Config stub (match your structure) ----
+#     config = types.SimpleNamespace()
+#     config.training_params = types.SimpleNamespace()
+#     config.dataset = types.SimpleNamespace()
+#     config.model = types.SimpleNamespace()
+#
+#     config.training_params.batch_size = 8
+#
+#     # Point to your ESNLI cache root that contains:
+#     #   <cache_root>/train/manifest.jsonl + shards
+#     #   <cache_root>/dev/manifest.jsonl + shards
+#     #   <cache_root>/test/manifest.jsonl + shards
+#     # config.dataset.cache_root = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI/cache_qwen3_vl_2b_nocls_vis"
+#
+#     # Match your tokenizer pad id if you want (else 0)
+#     config.model.pad_token_id = 0
+#
+#     loader = ESNLI_MemmapDataloader(
+#         config,
+#         input_ids_dtype="int32",
+#         vision_dtype="float16",
+#         store_pixel_values=False,  # RECOMMENDED if you already cached vision_embeds
+#         num_workers=4,
+#         prefetch_factor=2,
+#         persistent_workers=True,
+#         pin_memory=True,
+#     )
+#
+#     batch = next(iter(loader.train_loader))
+#     print("ids[0:3]:", batch["ids"][:3])
+#     print("label:", batch["label"].shape, batch["label"].dtype)
+#     print("input_ids:", batch["data"]["input_ids"].shape, batch["data"]["input_ids"].dtype)
+#     print("attention_mask:", batch["data"]["attention_mask"].shape, batch["data"]["attention_mask"].dtype)
+#
+#     if "vision_embeds" in batch["data"]:
+#         print("vision_embeds:", batch["data"]["vision_embeds"].shape, batch["data"]["vision_embeds"].dtype)
+#         print("vision_mask:", batch["data"]["vision_mask"].shape, batch["data"]["vision_mask"].dtype)
+#
+#     if "pixel_values" in batch["data"]:
+#         print("pixel_values:", batch["data"]["pixel_values"].shape, batch["data"]["pixel_values"].dtype)
+#
+#     if "image_grid_thw" in batch["data"]:
+#         print("image_grid_thw:", batch["data"]["image_grid_thw"].shape, batch["data"]["image_grid_thw"].dtype)

@@ -37,9 +37,9 @@ export l=$6
 export bs=$7
 export lsparse=$8
 export ptype=$9
-export pmin=$10
+export pmin=${10}
 
-variables=("config" "default_config" "fold" "lr" "wd" "l" "lsparse" "ptype" "pmin")
+variables=("config" "default_config" "fold" "lr" "wd" "l" "bs" "lsparse" "ptype" "pmin")
 
 for var_name in "${variables[@]}"; do
     var_value="${!var_name}"

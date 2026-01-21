@@ -2786,9 +2786,9 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         if label is not None:
             losses["ce_head"] = self._mc_ce_loss(logits, label)
 
-        features = {"h_cls": h_cls}
+        features = {"combined": h_cls}
 
-        return {"preds": {"combined": logits}, "features":  {"combined": features}, "losses": losses}
+        return {"preds": {"combined": logits}, "features":  features, "losses": losses}
 class QwenVL_ScienceQA_Cached_Text(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
@@ -2917,11 +2917,11 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
         if label is not None:
             losses["ce_head"] = self._mc_ce_loss(logits, label)
 
-        features = {"h_cls": h_cls}
+        features = {"combined": h_cls}
         if return_features:
             features["hidden"] = hidden
 
-        return {"preds": {"combined": logits}, "features": {"combined": features}, "losses": losses}
+        return {"preds": {"combined": logits}, "features": features, "losses": losses}
 class QwenVL_ScienceQA_Cached_Image(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
@@ -3059,11 +3059,11 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
         if label is not None:
             losses["ce_head"] = self._mc_ce_loss(logits, label)
 
-        features = {"h_cls": h_cls}
+        features = {"combined": h_cls}
         if return_features:
             features["hidden"] = hidden
 
-        return {"preds": {"combined": logits}, "features":  {"combined": features}, "losses": losses}
+        return {"preds": {"combined": logits}, "features":  features, "losses": losses}
 class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()

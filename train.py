@@ -81,7 +81,7 @@ def main(config_path, default_config_path, args):
         m += "_lib{}".format(args.lib)
         # enc_m += "_lib{}".format(args.lib)
     if "kmepoch" in args and args.kmepoch is not None:
-        config.model.args.bias_infusion.keep_memory_epoch = int(args.kmepoch)
+        config.model.args.bias_infusion.kmepoch = int(args.kmepoch)
         m += "_kmepoch{}".format(args.kmepoch)
     if "mmcosine_scaling" in args and args.mmcosine_scaling is not None:
         config.model.args.bias_infusion.mmcosine_scaling = float(args.mmcosine_scaling)

@@ -196,7 +196,15 @@ rsync -ahvz --progress /esat/smcdata/users/kkontras/Image_Dataset/no_backup/Scie
 rsync -ahvz --progress /scratch/kkontras/checkpoints/synergy/ScienceQA/v2/SynIBCache_Image_LoRa_fold0_lr0.0001_wd0.01_bs8.pth.tar kkontras@ssh.esat.kuleuven.be:/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/
 rsync -ahvz --progress /scratch/kkontras/checkpoints/synergy/ScienceQA/v2/Uni_Text_LoRa_fold0_lr0.0001_wd0.01_bs8.pth.tar kkontras@ssh.esat.kuleuven.be:/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/
 
-rsync -ahvz --progress /esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI kkontras@ssh.esat.kuleuven.be:/scratch/kkontras/ESNLI
+rsync -ahvz --progress /esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI kkontras@mib.media.mit.edu:/scratch/kkontras/ESNLI
+
+CUDA_VISIBLE_DEVICES=4 python ESNLI_CodeBook.py --split train --data_root "/scratch/kkontras/ESNLI" --flickr_images_dir "/scratch/kkontras/ESNLI" --model_name "Qwen/Qwen3-VL-2B-Instruct"
+
+DEFAULT_DATA_ROOT = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI"
+DEFAULT_FLICKR_DIR = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI"
+DEFAULT_MODEL_NAME = "Qwen/Qwen3-VL-2B-Instruct"
+DEFAULT_OUTPUT_DIR = os.path.join(DEFAULT_DATA_ROOT, "cache_qwen3_vl_2b_nocls_vis")
+
 
 CUDA_VISIBLE_DEVICES=0 python train.py --config ./configs/ScienceQA/synprom_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 CUDA_VISIBLE_DEVICES=1 python train.py --config ./configs/ScienceQA/image_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_syn_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8

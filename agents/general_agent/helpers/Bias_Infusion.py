@@ -2088,7 +2088,7 @@ class Bias_Infusion_MCR(General_Bias_Infusion):
         self.agent.logs["ratio_logs"] = defaultdict(list)
         self.agent.logs["ratio_logs"] = defaultdict(list)
         self.bias_infuser = self.agent.config.model.args.get("bias_infusion", {})
-        self.regby = self.bias_infuser.get("regby", "dist_pred")
+        self.regby = self.bias_infuser.get("regby", "greedy")
         self.l = self.bias_infuser.get("l", 0)
         self.contr_coeff = self.bias_infuser.get("contr_coeff", False)
         self.temperature = self.bias_infuser.get("temperature", 0.5)

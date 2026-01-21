@@ -33,14 +33,14 @@ DEFAULT_CONFIG_PATH = "configs/ScienceQA/default_config_scienceqa_cache_tier2.js
 # CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/CremadPlus/v2/unimodal_audio_fold{}_ir2_lr0.001_wd0.0001_clsmlp_bs64.pth.tar"
 
 
-# CONFIG_PATH = "configs/ScienceQA/cache_text_lora.json"
-# CHECKPOINT_TEMPLATE = "/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/Uni_Text_LoRa_fold0_lr0.0001_wd0.01_bs5.pth.tar"
+CONFIG_PATH = "configs/ScienceQA/cache_text_lora.json"
+CHECKPOINT_TEMPLATE = "/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/Uni_Text_LoRa_fold0_lr0.0001_wd0.01_bs5.pth.tar"
 
 
 
 # CONFIG_PATH = "configs/AVE/release/res/unimodal_audio.json"
 # CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Rmask/AVE/unimodal_audio_fold{}.pth.tar"
-# fold_position_offset=0
+fold_position_offset=0
 
 
 
@@ -54,10 +54,10 @@ DEFAULT_CONFIG_PATH = "configs/ScienceQA/default_config_scienceqa_cache_tier2.js
 # CONFIG_PATH = "configs/AVE/release/res/unimodal_video.json"
 # CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Rmask/AVE/unimodal_video_fold{}.pth.tar"
 
-CONFIG_PATH = "configs/ScienceQA/cache_image_lora.json"
-CHECKPOINT_TEMPLATE = "/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/SynIBCache_Image_LoRa_fold0_lr0.0001_wd0.01_bs5.pth.tar"
-
-fold_position_offset=3
+# CONFIG_PATH = "configs/ScienceQA/cache_image_lora.json"
+# CHECKPOINT_TEMPLATE = "/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/SynIBCache_Image_LoRa_fold0_lr0.0001_wd0.01_bs5.pth.tar"
+#
+# fold_position_offset=3
 
 # OUTPUT_JSON = "cremad_ceu_test_res.pkl"
 # OUTPUT_JSON = "cremad_ceu_val_res.pkl"

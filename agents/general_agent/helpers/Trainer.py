@@ -107,8 +107,8 @@ class Trainer():
 
             #         prof.step()
             #         print("We reached the step")
-            #         if batch_idx >= 1:
-            #             break
+                    if batch_idx >= 10:
+                        break
             #
             # print("Profiler Begin")
             # print(prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=30))

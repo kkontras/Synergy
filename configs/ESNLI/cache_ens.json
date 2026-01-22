@@ -28,7 +28,7 @@
           "num_classes": 3,
           "fc_inner": 64,
           "dropout": 0.1,
-          "cls_emb_path": "Synprom_IBInput2_fold0_lr0.0001_wd0.0001_cls_embedding.pt",
+          "cls_emb_path": "SynIBCache_LoRaEmb_fold0_lr0.0001_wd0.01_bs5_cls_embedding.pt",
           "cls_finetune": false,
           "cls_type": "linear",
           "clip_grad": false,
@@ -64,7 +64,7 @@
             "model": "LinearHead_Qwen",
             "args": {
               "d_model": 2048,
-              "num_classes": 5
+              "num_classes": 3
             },
             "pretrainedEncoder": {
               "use": true,
@@ -121,7 +121,7 @@
             "model": "LinearHead_Qwen",
             "args": {
               "d_model": 2048,
-              "num_classes": 5
+              "num_classes": 3
             },
             "pretrainedEncoder": {
               "use": true,

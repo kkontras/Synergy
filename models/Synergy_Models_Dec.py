@@ -3682,10 +3682,10 @@ if __name__ == "__main__":
 
     print(ckpt.keys())
 
-    if "best_model_state_dict" not in ckpt:
-        raise KeyError("Checkpoint does not contain 'best_model_weights'")
+    if "best_model_accuracy_state_dict" not in ckpt:
+        raise KeyError("Checkpoint does not contain 'best_model_accuracy_state_dict'")
 
-    state = ckpt["best_model_state_dict"]
+    state = ckpt["best_model_accuracy_state_dict"]
 
     # ---- find CLS embedding table ----
     cls_weight_key = None

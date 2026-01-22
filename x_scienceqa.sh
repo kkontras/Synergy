@@ -74,7 +74,7 @@ python show.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_co
 python show.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --l 0.1 --perturb learned --perturb_lsparse 5
 python show.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --l 1.0 --perturb learned --perturb_lsparse 5
 
-
+cp /scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/Cache_LoRaSynIBFaster_fold0_l1.0_perturblearned_pmin./configs/ScienceQA/cache_synib_lora.json0_lsparse0.1_lr0.0001_wd0.01_bs5.pth.tar /scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/Cache_LoRaSynIBFaster_fold0_l1.0_perturblearned_lsparse0.1_lr0.0001_wd0.01_bs5.pth.tar
 
 
 

@@ -1,5 +1,5 @@
 """
-ESNLI-VE Qwen3-VL codebook memmap loader (low-RAM, worker-friendly)
+ESNLI-VE Qwen3-VL codebook memmap loader (low-RAM, worker-friendly) + token masks
 
 This converts your existing cached shards:
   <cache_root>/<split>/manifest.jsonl
@@ -8,18 +8,21 @@ This converts your existing cached shards:
 into a memmap cache:
   <cache_root>/<split>/_memmap/
     meta.json
-    offsets.npy         int64 [N]
-    lengths.npy         int32 [N]
-    labels.npy          int64 [N]
-    ids.jsonl           N lines of JSON id
-    input_ids.bin       int32 (default) concatenated tokens
-    attention.bin       uint8 concatenated 0/1
-    image_grid_thw.npy  int32 [N, 3]   (if present)
-    vision_offsets.npy  int64 [N]      (if vision_embeds present)
-    vision_lengths.npy  int32 [N]      (#image tokens per sample, if 2D)
-    vision_dim.npy      int32 scalar   (D)
-    vision.bin          float16/float32 concatenated (sum_i N_i * D)
-    pixel_values.bin    float16 memmap [N, C, H, W] (optional, if enabled & present)
+    offsets.npy           int64 [N]
+    lengths.npy           int32 [N]
+    labels.npy            int64 [N]
+    ids.jsonl             N lines of JSON id
+    input_ids.bin         int32 (default) concatenated tokens
+    attention.bin         uint8 concatenated 0/1
+    image_mask.bin        uint8 concatenated 0/1   (token-level; from ex["masks"]["image"])
+    hint_mask.bin         uint8 concatenated 0/1   (token-level; from ex["masks"]["hint"])
+    image_grid_thw.npy    int32 [N, 3]   (if present)
+    vision_offsets.npy    int64 [N]      (if vision_embeds present; ELEMENT offsets)
+    vision_lengths.npy    int32 [N]      (#vision tokens per sample)
+    vision_dim.npy        int32 scalar   (D)
+    total_vision_elems.npy int64 scalar  (total elements in vision.bin)
+    vision.bin            float16/float32 concatenated (sum_i vision_lengths[i] * D)
+    pixel_values.bin      float16 memmap [N, C, H, W] (optional, if enabled & present)
 
 Then loads examples on-demand via np.memmap.
 
@@ -28,6 +31,8 @@ Returned per item:
   - label
   - input_ids
   - attention_mask
+  - image_mask (optional; token-level bool)
+  - hint_mask  (optional; token-level bool)
   - image_grid_thw (optional)
   - vision_embeds + vision_mask (optional)
   - pixel_values (optional)
@@ -36,7 +41,6 @@ Run conversion (one-time) by instantiating the dataloader wrapper or calling bui
 
 Usage:
   from esnli_memmap_loader import ESNLI_MemmapDataloader
-
 """
 
 import os
@@ -108,6 +112,7 @@ def build_memmap_from_token_shards(
 
     Requirements:
     - shards contain list[dict] with keys: input_ids, attention_mask, label, id
+    - token masks (optional): ex["masks"] dict with keys {"image","hint"} each 1D length == input_ids
     - if vision_embeds exists: must be torch.Tensor either [Nimg, D] or [D]
     - if image_grid_thw exists: must be tensor/list length 3
     - if store_pixel_values: pixel_values must be torch.Tensor [C,H,W] with same shape for all items
@@ -152,6 +157,7 @@ def build_memmap_from_token_shards(
         has_grid = False
         has_vision = False
         has_pixel = False
+        has_token_masks = False
 
         # vision total elements
         vision_dim: Optional[int] = None
@@ -171,6 +177,12 @@ def build_memmap_from_token_shards(
                 if (not has_grid) and ("image_grid_thw" in ex) and (ex["image_grid_thw"] is not None):
                     has_grid = True
 
+                # token-level masks (optional)
+                if (not has_token_masks) and ("masks" in ex) and (ex["masks"] is not None):
+                    m = ex["masks"]
+                    if isinstance(m, dict) and ("image" in m) and ("hint" in m) and (m["image"] is not None) and (m["hint"] is not None):
+                        has_token_masks = True
+
                 if ("vision_embeds" in ex) and (ex["vision_embeds"] is not None):
                     ve = ex["vision_embeds"]
                     if not torch.is_tensor(ve):
@@ -179,10 +191,8 @@ def build_memmap_from_token_shards(
                     if ve.dim() == 1:
                         D = int(ve.numel())
                         nimg = 1
-                        ve_2d = ve.view(1, D)
                     elif ve.dim() == 2:
                         nimg, D = int(ve.shape[0]), int(ve.shape[1])
-                        ve_2d = ve
                     else:
                         raise ValueError(f"vision_embeds must be 1D or 2D, got shape={tuple(ve.shape)}")
 
@@ -227,8 +237,9 @@ def build_memmap_from_token_shards(
         if has_vision:
             if vision_dim is None:
                 raise RuntimeError("has_vision True but vision_dim None")
+            # IMPORTANT: offsets are ELEMENT offsets into vision.bin (not row offsets)
             vision_offsets = np.zeros((N,), dtype=np.int64)
-            vision_lengths = np.zeros((N,), dtype=np.int32)  # number of image tokens (rows)
+            vision_lengths = np.zeros((N,), dtype=np.int32)  # number of rows/tokens
         else:
             vision_offsets = None
             vision_lengths = None
@@ -244,6 +255,15 @@ def build_memmap_from_token_shards(
 
         input_ids_mm = np.memmap(input_ids_bin, mode="w+", dtype=input_np_dtype, shape=(total_tokens,))
         attn_mm = np.memmap(attn_bin, mode="w+", dtype=np.uint8, shape=(total_tokens,))
+
+        if has_token_masks:
+            image_bin = os.path.join(out_dir, "image_mask.bin")
+            hint_bin = os.path.join(out_dir, "hint_mask.bin")
+            image_mm = np.memmap(image_bin, mode="w+", dtype=np.uint8, shape=(total_tokens,))
+            hint_mm = np.memmap(hint_bin, mode="w+", dtype=np.uint8, shape=(total_tokens,))
+        else:
+            image_mm = None
+            hint_mm = None
 
         if has_vision:
             vision_bin = os.path.join(out_dir, "vision.bin")
@@ -261,7 +281,7 @@ def build_memmap_from_token_shards(
 
         # -------- Pass 2: fill --------
         token_cursor = 0
-        vision_cursor = 0
+        vision_cursor = 0  # ELEMENT cursor (not rows)
         i = 0
 
         for r in shard_recs:
@@ -281,9 +301,28 @@ def build_memmap_from_token_shards(
 
                 ids_f.write(json.dumps(ex["id"]) + "\n")
 
+                # tokens + attention
                 input_ids_mm[token_cursor:token_cursor + L] = inp.detach().cpu().numpy().astype(input_np_dtype, copy=False)
                 attn_mm[token_cursor:token_cursor + L] = att.detach().cpu().numpy().astype(np.uint8, copy=False)
 
+                # token-level masks (optional)
+                if has_token_masks:
+                    masks = ex.get("masks", None)
+                    if masks is None or ("image" not in masks) or ("hint" not in masks):
+                        raise KeyError(
+                            f"Expected ex['masks']['image'] and ex['masks']['hint'], but missing at item {i} in shard {r['path']}"
+                        )
+                    img: torch.Tensor = masks["image"]
+                    hnt: torch.Tensor = masks["hint"]
+                    if int(img.numel()) != L or int(hnt.numel()) != L:
+                        raise RuntimeError(
+                            f"Token-mask length mismatch at item {i}: L={L} image={int(img.numel())} hint={int(hnt.numel())}"
+                        )
+
+                    image_mm[token_cursor:token_cursor + L] = img.detach().cpu().numpy().astype(np.uint8, copy=False)
+                    hint_mm[token_cursor:token_cursor + L] = hnt.detach().cpu().numpy().astype(np.uint8, copy=False)
+
+                # optional grid
                 if has_grid:
                     g = ex.get("image_grid_thw", None)
                     if g is None:
@@ -296,10 +335,10 @@ def build_memmap_from_token_shards(
                             raise ValueError(f"image_grid_thw must have len=3, got {g}")
                         grid_thw[i, :] = np.array(g, dtype=np.int32)
 
+                # optional vision
                 if has_vision:
                     ve = ex.get("vision_embeds", None)
                     if ve is None:
-                        # allow missing: store length 0
                         vision_offsets[i] = vision_cursor
                         vision_lengths[i] = 0
                     else:
@@ -313,6 +352,7 @@ def build_memmap_from_token_shards(
                         if vision_dim != D:
                             raise ValueError(f"vision_dim mismatch at item {i}: expected {vision_dim}, got {D}")
 
+                        # ELEMENT offset
                         vision_offsets[i] = vision_cursor
                         vision_lengths[i] = nimg
 
@@ -321,6 +361,7 @@ def build_memmap_from_token_shards(
                         vision_mm[vision_cursor:vision_cursor + n_elems] = flat
                         vision_cursor += n_elems
 
+                # optional pixel_values
                 if pixel_mm is not None:
                     pv = ex.get("pixel_values", None)
                     if pv is None:
@@ -340,6 +381,10 @@ def build_memmap_from_token_shards(
         # Flush
         input_ids_mm.flush()
         attn_mm.flush()
+        if image_mm is not None:
+            image_mm.flush()
+        if hint_mm is not None:
+            hint_mm.flush()
         if vision_mm is not None:
             vision_mm.flush()
         if pixel_mm is not None:
@@ -360,16 +405,19 @@ def build_memmap_from_token_shards(
             np.save(os.path.join(out_dir, "vision_offsets.npy"), vision_offsets)
             np.save(os.path.join(out_dir, "vision_lengths.npy"), vision_lengths)
             np.save(os.path.join(out_dir, "vision_dim.npy"), np.array([int(vision_dim)], dtype=np.int32))
+            np.save(os.path.join(out_dir, "total_vision_elems.npy"), np.array([int(total_vision_elems)], dtype=np.int64))
 
         meta = {
-            "version": 1,
+            "version": 2,
             "N": int(N),
             "total_tokens": int(total_tokens),
             "input_ids_dtype": input_ids_dtype,
+            "has_token_masks": bool(has_token_masks),
             "has_image_grid_thw": bool(has_grid),
             "has_vision_embeds": bool(has_vision),
             "vision_dtype": vision_dtype if has_vision else None,
             "vision_dim": int(vision_dim) if vision_dim is not None else None,
+            "total_vision_elems": int(total_vision_elems) if has_vision else None,
             "store_pixel_values": bool(store_pixel_values and has_pixel),
             "pixel_shape": list(pixel_shape) if (store_pixel_values and has_pixel and pixel_shape is not None) else None,
             "paths": {
@@ -379,10 +427,13 @@ def build_memmap_from_token_shards(
                 "ids": "ids.jsonl",
                 "input_ids": "input_ids.bin",
                 "attention": "attention.bin",
+                "image_mask": "image_mask.bin" if has_token_masks else None,
+                "hint_mask": "hint_mask.bin" if has_token_masks else None,
                 "image_grid_thw": "image_grid_thw.npy" if has_grid else None,
                 "vision_offsets": "vision_offsets.npy" if has_vision else None,
                 "vision_lengths": "vision_lengths.npy" if has_vision else None,
                 "vision_dim": "vision_dim.npy" if has_vision else None,
+                "total_vision_elems": "total_vision_elems.npy" if has_vision else None,
                 "vision": "vision.bin" if has_vision else None,
                 "pixel_values": "pixel_values.bin" if (store_pixel_values and has_pixel) else None,
             },
@@ -394,7 +445,7 @@ def build_memmap_from_token_shards(
 
         print(
             f"[ESNLI Memmap] Built: {out_dir} | N={N} | total_tokens={total_tokens} | "
-            f"vision={has_vision} | pixel_values={bool(store_pixel_values and has_pixel)}"
+            f"token_masks={has_token_masks} | vision={has_vision} | pixel_values={bool(store_pixel_values and has_pixel)}"
         )
 
     finally:
@@ -414,8 +465,10 @@ class ESNLI_MemmapDataset(Dataset):
       - label
       - input_ids (1D long)
       - attention_mask (1D long)
+      - image_mask (bool, token-level) if present
+      - hint_mask  (bool, token-level) if present
       - image_grid_thw (long[3]) if present
-      - vision_embeds (float tensor [Nimg, D]) + vision_mask (bool [Nimg]) if present
+      - vision_embeds (float tensor [Nimg, D]) + vision_len (long scalar) if present
       - pixel_values (float16 [C,H,W]) if stored
     """
 
@@ -440,10 +493,12 @@ class ESNLI_MemmapDataset(Dataset):
         self.N = int(meta["N"])
         self.total_tokens = int(meta["total_tokens"])
         self.input_ids_dtype = meta["input_ids_dtype"]
+        self.has_token_masks = bool(meta.get("has_token_masks", False))
         self.has_grid = bool(meta.get("has_image_grid_thw", False))
         self.has_vision = bool(meta.get("has_vision_embeds", False))
         self.vision_dtype = meta.get("vision_dtype", None)
         self.vision_dim = meta.get("vision_dim", None)
+        self.total_vision_elems = meta.get("total_vision_elems", None)
         self.store_pixel_values = bool(meta.get("store_pixel_values", False))
         self.pixel_shape = meta.get("pixel_shape", None)
 
@@ -476,6 +531,23 @@ class ESNLI_MemmapDataset(Dataset):
             shape=(self.total_tokens,),
         )
 
+        if self.has_token_masks:
+            self.image_mm = np.memmap(
+                os.path.join(self.mem_dir, "image_mask.bin"),
+                mode="r",
+                dtype=np.uint8,
+                shape=(self.total_tokens,),
+            )
+            self.hint_mm = np.memmap(
+                os.path.join(self.mem_dir, "hint_mask.bin"),
+                mode="r",
+                dtype=np.uint8,
+                shape=(self.total_tokens,),
+            )
+        else:
+            self.image_mm = None
+            self.hint_mm = None
+
         if self.has_grid:
             self.grid_thw = np.load(os.path.join(self.mem_dir, "image_grid_thw.npy"))
         else:
@@ -488,11 +560,11 @@ class ESNLI_MemmapDataset(Dataset):
             self.D = int(vd[0])
 
             v_dtype = np.float16 if self.vision_dtype == "float16" else np.float32
-            # total vision elements = sum_i (vision_lengths[i]*D)
-            total_vision_elems = int(self.vision_offsets[-1]) + int(self.vision_lengths[-1]) * self.D
-            # BUT offsets are elem-offsets; last sample offset is correct, yet we didn't store final cursor.
-            # Robust approach: compute from meta? We didn't store; so compute by scanning once:
-            total_vision_elems = int((self.vision_lengths.astype(np.int64) * self.D).sum())
+            if self.total_vision_elems is None:
+                # back-compat fallback: sum lengths * D
+                total_vision_elems = int((self.vision_lengths.astype(np.int64) * self.D).sum())
+            else:
+                total_vision_elems = int(self.total_vision_elems)
 
             self.vision_mm = np.memmap(
                 os.path.join(self.mem_dir, "vision.bin"),
@@ -536,19 +608,25 @@ class ESNLI_MemmapDataset(Dataset):
             "attention_mask": attention_mask,
         }
 
+        if self.has_token_masks and self.image_mm is not None and self.hint_mm is not None:
+            image_mask = torch.from_numpy(np.array(self.image_mm[off:off + L], copy=True)).to(torch.bool)
+            hint_mask = torch.from_numpy(np.array(self.hint_mm[off:off + L], copy=True)).to(torch.bool)
+            out["image_mask"] = image_mask
+            out["hint_mask"] = hint_mask
+
         if self.has_grid and self.grid_thw is not None:
             out["image_grid_thw"] = torch.from_numpy(np.array(self.grid_thw[idx], copy=True)).to(torch.long)
 
         if self.has_vision and self.vision_mm is not None:
-            voff = int(self.vision_offsets[idx])
+            voff = int(self.vision_offsets[idx])  # ELEMENT offset
             nimg = int(self.vision_lengths[idx])
 
             if nimg == 0:
-                vision = torch.empty((0, self.D), dtype=torch.float16 if self.vision_dtype == "float16" else torch.float32)
+                vision = torch.empty(
+                    (0, self.D),
+                    dtype=torch.float16 if self.vision_dtype == "float16" else torch.float32
+                )
             else:
-                # offsets were in ELEMENTS, not rows
-                # In builder we stored offsets as "vision_cursor" in elements.
-                # So voff is element offset.
                 start = voff
                 end = voff + nimg * self.D
                 flat = np.array(self.vision_mm[start:end], copy=True)
@@ -564,7 +642,7 @@ class ESNLI_MemmapDataset(Dataset):
 
 
 # =========================
-# Collate (LEFT pad text; PAD vision)
+# Collate (LEFT pad text; PAD vision; PAD token masks)
 # =========================
 
 def _left_pad_1d(seqs: List[torch.Tensor], pad_val: int, dtype: torch.dtype) -> torch.Tensor:
@@ -573,6 +651,15 @@ def _left_pad_1d(seqs: List[torch.Tensor], pad_val: int, dtype: torch.dtype) -> 
     for i, s in enumerate(seqs):
         L = int(s.numel())
         out[i, -L:] = s.to(dtype)
+    return out
+
+
+def _left_pad_bool(seqs: List[torch.Tensor]) -> torch.Tensor:
+    max_len = max(int(s.numel()) for s in seqs)
+    out = torch.zeros((len(seqs), max_len), dtype=torch.bool)
+    for i, s in enumerate(seqs):
+        L = int(s.numel())
+        out[i, -L:] = s.bool()
     return out
 
 
@@ -609,6 +696,12 @@ def esnli_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0) -> 
         "attention_mask": attention_mask,
     }
 
+    # optional token-level masks
+    if "image_mask" in batch[0]:
+        data["image_mask"] = _left_pad_bool([b["image_mask"] for b in batch])
+    if "hint_mask" in batch[0]:
+        data["hint_mask"] = _left_pad_bool([b["hint_mask"] for b in batch])
+
     # optional grid_thw
     if "image_grid_thw" in batch[0]:
         data["image_grid_thw"] = torch.stack([b["image_grid_thw"] for b in batch], dim=0)
@@ -620,14 +713,11 @@ def esnli_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0) -> 
     # optional vision_embeds
     if "vision_embeds" in batch[0]:
         vis_list = [b["vision_embeds"] for b in batch]
-        # allow empty sequences: if some are empty, ensure D is known; fall back to max-D from non-empty
         non_empty = [v for v in vis_list if v.numel() > 0]
         if len(non_empty) == 0:
-            # all empty; make dummy
             data["vision_embeds"] = torch.empty((len(batch), 0, 0), dtype=torch.float16)
             data["vision_mask"] = torch.empty((len(batch), 0), dtype=torch.bool)
         else:
-            # ensure all are 2D [N, D]
             fixed = []
             D = int(non_empty[0].shape[1])
             for v in vis_list:
@@ -649,17 +739,12 @@ def esnli_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0) -> 
 
 class ESNLI_MemmapDataloader:
     """
-    Builds memmap caches if needed (one-time), then exposes train/dev/test loaders.
+    Builds memmap caches if needed (one-time), then exposes train/validation/test loaders.
 
     Expects your config to have:
       config.dataset.cache_root
       config.training_params.batch_size
       optionally config.model.pad_token_id (else default 0)
-
-    Splits used:
-      - train
-      - dev
-      - test
     """
 
     def __init__(
@@ -744,28 +829,20 @@ class ESNLI_MemmapDataloader:
 # if __name__ == "__main__":
 #     import types
 #
-#     # ---- Config stub (match your structure) ----
 #     config = types.SimpleNamespace()
 #     config.training_params = types.SimpleNamespace()
 #     config.dataset = types.SimpleNamespace()
 #     config.model = types.SimpleNamespace()
 #
 #     config.training_params.batch_size = 8
-#
-#     # Point to your ESNLI cache root that contains:
-#     #   <cache_root>/train/manifest.jsonl + shards
-#     #   <cache_root>/dev/manifest.jsonl + shards
-#     #   <cache_root>/test/manifest.jsonl + shards
-#     # config.dataset.cache_root = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI/cache_qwen3_vl_2b_nocls_vis"
-#
-#     # Match your tokenizer pad id if you want (else 0)
 #     config.model.pad_token_id = 0
+#     config.dataset.cache_root = "/path/to/ESNLI/cache_root"
 #
 #     loader = ESNLI_MemmapDataloader(
 #         config,
 #         input_ids_dtype="int32",
 #         vision_dtype="float16",
-#         store_pixel_values=False,  # RECOMMENDED if you already cached vision_embeds
+#         store_pixel_values=False,
 #         num_workers=4,
 #         prefetch_factor=2,
 #         persistent_workers=True,
@@ -777,13 +854,14 @@ class ESNLI_MemmapDataloader:
 #     print("label:", batch["label"].shape, batch["label"].dtype)
 #     print("input_ids:", batch["data"]["input_ids"].shape, batch["data"]["input_ids"].dtype)
 #     print("attention_mask:", batch["data"]["attention_mask"].shape, batch["data"]["attention_mask"].dtype)
-#
+#     if "image_mask" in batch["data"]:
+#         print("image_mask:", batch["data"]["image_mask"].shape, batch["data"]["image_mask"].dtype)
+#     if "hint_mask" in batch["data"]:
+#         print("hint_mask:", batch["data"]["hint_mask"].shape, batch["data"]["hint_mask"].dtype)
 #     if "vision_embeds" in batch["data"]:
 #         print("vision_embeds:", batch["data"]["vision_embeds"].shape, batch["data"]["vision_embeds"].dtype)
 #         print("vision_mask:", batch["data"]["vision_mask"].shape, batch["data"]["vision_mask"].dtype)
-#
 #     if "pixel_values" in batch["data"]:
 #         print("pixel_values:", batch["data"]["pixel_values"].shape, batch["data"]["pixel_values"].dtype)
-#
 #     if "image_grid_thw" in batch["data"]:
 #         print("image_grid_thw:", batch["data"]["image_grid_thw"].shape, batch["data"]["image_grid_thw"].dtype)

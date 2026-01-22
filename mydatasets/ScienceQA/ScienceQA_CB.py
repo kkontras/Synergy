@@ -508,6 +508,8 @@ class ScienceQA_MemmapDataloader:
 
         def make_loader(split: str, shuffle: bool):
             ds = ScienceQA_MemmapDataset(cache_root=cache_root, split=split)
+            num_workers=0
+
             return DataLoader(
                 ds,
                 batch_size=batch_size,
@@ -516,9 +518,9 @@ class ScienceQA_MemmapDataloader:
                 worker_init_fn=seed_worker,
                 collate_fn=self.collate_fn,
                 num_workers=int(num_workers),
-                pin_memory=bool(pin_memory),
-                prefetch_factor=int(prefetch_factor) if int(num_workers) > 0 else None,
-                persistent_workers=bool(persistent_workers) if int(num_workers) > 0 else False,
+                # pin_memory=bool(pin_memory),
+                # prefetch_factor=int(prefetch_factor) if int(num_workers) > 0 else None,
+                # persistent_workers=bool(persistent_workers) if int(num_workers) > 0 else False,
             )
 
         self.train_loader = make_loader("train", shuffle=True)

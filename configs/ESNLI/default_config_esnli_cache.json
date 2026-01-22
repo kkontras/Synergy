@@ -1,5 +1,5 @@
 {
-  "exp_name": "ScienceQA Experiment",
+  "exp_name": "ESNLI Experiment",
   "agent": "Agent",
   "training_params": {
     "cuda": true,

@@ -3215,9 +3215,10 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
         device = self.backbone.device
         input_ids = proc["input_ids"].to(device)
         attention_mask = proc["attention_mask"].to(device)
-
+        
         hint_mask = proc.get("hint_mask", None)
         if hint_mask is None:
+            print(proc.keys())
             raise KeyError("hint_mask is required for QwenVL_ScienceQA_Cached_Image")
 
         hint_mask = hint_mask.to(device).bool()

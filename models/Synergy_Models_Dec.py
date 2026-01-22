@@ -3663,7 +3663,8 @@ if __name__ == "__main__":
     import torch
     import os
 
-    CKPT_PATH = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_IBInput2_fold0_lr0.0001_wd0.0001.pth.tar"
+    # CKPT_PATH = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_IBInput2_fold0_lr0.0001_wd0.0001.pth.tar"
+    CKPT_PATH = "/scratch/kkontras/checkpoints/synergy/ESNLI/SynIBCache_LoRaEmb_fold0_lr0.0001_wd0.01_bs5.pth.tar"
 
     assert os.path.isfile(CKPT_PATH), f"Checkpoint not found: {CKPT_PATH}"
 

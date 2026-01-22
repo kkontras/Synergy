@@ -75,7 +75,7 @@
         ],
         "pretrainedEncoder": {
               "use": true,
-              "dir": "SynIBCache_Image_LoRa_fold{}_lr0.0001_wd0.01_bs8.pth.tar"
+              "dir": "SynIBCache_Image_LoRa_fold{}_lr0.0001_wd0.01_bs5.pth.tar"
             }
       },
       {
@@ -132,7 +132,7 @@
         ],
         "pretrainedEncoder": {
               "use": true,
-              "dir": "Uni_Text_LoRa_fold{}_lr0.0001_wd0.01_bs8.pth.tar"
+              "dir": "Uni_Text_LoRa_fold{}_lr0.0001_wd0.01_bs5.pth.tar"
             }
       }
     ]

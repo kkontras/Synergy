@@ -1,6 +1,14 @@
 
+
+python ESNLI_CodeBook.py --split train --data_root "/home/kkontras/orcd/scratch/data/ESNLI" --flickr_images_dir "/home/kkontras/orcd/scratch/data/ESNLI/flickr30k-images/" --model_name "Qwen/Qwen3-VL-2B-Instruct" --output_dir "/home/kkontras/orcd/scratch/data/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 32
+python ESNLI_CodeBook.py --split test --data_root "/home/kkontras/orcd/scratch/data/ESNLI" --flickr_images_dir "/home/kkontras/orcd/scratch/data/ESNLI/flickr30k-images/" --model_name "Qwen/Qwen3-VL-2B-Instruct" --output_dir "/home/kkontras/orcd/scratch/data/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 32
+python ESNLI_CodeBook.py --split val --data_root "/home/kkontras/orcd/scratch/data/ESNLI" --flickr_images_dir "/home/kkontras/orcd/scratch/data/ESNLI/flickr30k-images/" --model_name "Qwen/Qwen3-VL-2B-Instruct" --output_dir "/home/kkontras/orcd/scratch/data/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 32
+
+
+
+
 CUDA_VISIBLE_DEVICES=4 python train.py  --config ./configs/ESNLI/cache_lora_emb_clshead.json  --default_config ./configs/ESNLI/default_config_esnli_cache.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5
-python train.py  --config ./configs/ESNLI/cache_lora.json  --default_config ./configs/ESNLI/default_config_esnli_cache.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 2
+python train.py  --config ./configs/ESNLI/cache_lora.json  --default_config ./configs/ESNLI/default_config_esnli_cache_orcd.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5
 
 
 CUDA_VISIBLE_DEVICES=6 python train.py  --config ./configs/ESNLI/cache_lora.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5

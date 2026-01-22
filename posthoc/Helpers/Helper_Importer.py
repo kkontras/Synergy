@@ -22,10 +22,10 @@ class Importer():
 
         if "model" not in self.config:
             self.checkpoint = torch.load(self.config.save_dir, map_location="cpu", weights_only=False)
-            print("Loaded {}".format(self.config.save_dir))
+            # print("Loaded {}".format(self.config.save_dir))
         else:
             self.checkpoint = torch.load(self.config.model.save_dir, map_location="cpu", weights_only=False)
-            print("Loaded {}".format(self.config.model.save_dir))
+            # print("Loaded {}".format(self.config.model.save_dir))
 
         # self.config = self.checkpoint["configs"]
 

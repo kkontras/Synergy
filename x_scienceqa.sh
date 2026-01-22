@@ -77,6 +77,11 @@ python show.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_co
 cp /scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/Cache_LoRaSynIBFaster_fold0_l1.0_perturblearned_pmin./configs/ScienceQA/cache_synib_lora.json0_lsparse0.1_lr0.0001_wd0.01_bs5.pth.tar /scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/Cache_LoRaSynIBFaster_fold0_l1.0_perturblearned_lsparse0.1_lr0.0001_wd0.01_bs5.pth.tar
 
 
+rsync -ahvz --progress  /scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/Cache_LoRaSynIBFaster_fold0_l0.1_perturblearned_lsparse0.1_lr0.0001_wd0.01_bs5.pth.tar kkontras@ssh.esat.kuleuven.be:/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/
+rsync -ahvz --progress  /scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/Cache_LoRaSynIBFaster_fold0_l1.0_perturblearned_lsparse0.1_lr0.0001_wd0.01_bs5.pth.tar kkontras@ssh.esat.kuleuven.be:/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/
+rsync -ahvz --progress  /scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/SynIBCache_Image_LoRa_fold0_lr0.0001_wd0.01_bs5.pth.tar kkontras@ssh.esat.kuleuven.be:/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/
+rsync -ahvz --progress  /scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/SynIBCache_LoRa_fold0_lr0.0001_wd0.01_bs5.pth.tar kkontras@ssh.esat.kuleuven.be:/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/
+
 
 
 

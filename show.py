@@ -136,12 +136,12 @@ def print_search(config_path, default_config_path, args):
     # print("Removed previous model: {}".format(importer.config.model.save_dir))
     # return 0, 0
 
-    # try:
-    importer.load_checkpoint()
-    # except:
-    #     print("We could not load {}".format(config_path))
-        # print("We could not load {}".format(importer.config.model.save_dir))
-        # return 0, 0
+    try:
+        importer.load_checkpoint()
+    except:
+        # print("We could not load {}".format(config_path))
+        print("We could not load {}".format(importer.config.model.save_dir))
+        return 0, 0
 
     # print(importer.checkpoint["configs"])
     val_metrics, test_metric = importer.print_progress(multi_fold_results={},

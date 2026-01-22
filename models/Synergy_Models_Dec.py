@@ -2789,7 +2789,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         features = {"combined": h_cls}
 
         return {"preds": {"combined": logits}, "features":  features, "losses": losses}
-class QwenVL_ScienceQA_Cached_Text(nn.Module):
+class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
         encs = encs or []
@@ -2922,6 +2922,180 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
             features["hidden"] = hidden
 
         return {"preds": {"combined": logits}, "features": features, "losses": losses}
+class QwenVL_ScienceQA_Cached_Text(nn.Module):
+    """
+    Text-only ScienceQA model.
+    Uses image_mask from the dataset to mask out vision tokens,
+    so the model answers using *text only*.
+    """
+
+    def __init__(self, args, encs=None, **kwargs):
+        super().__init__()
+        encs = encs or []
+        if len(encs) < 1:
+            raise ValueError("encs[0] must be provided as the 5-way classifier head.")
+
+        self.args = args
+        model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
+        hf_cache = getattr(self.args, "save_base_dir", None)
+
+        self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
+        tok = self.processor.tokenizer
+        tok.padding_side = "left"
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
+        self.pad_token_id = tok.pad_token_id
+
+        added = tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
+        self.cls_token_id = tok.convert_tokens_to_ids("<CLS>")
+
+        self.backbone = Qwen3VLForConditionalGeneration.from_pretrained(
+            model_name,
+            torch_dtype=torch.bfloat16 if getattr(args, "bf16", False) else torch.float16,
+            device_map="cuda:0",
+            cache_dir=hf_cache,
+        )
+        if added > 0:
+            self.backbone.resize_token_embeddings(len(tok))
+
+        self.enc_0 = encs[0]
+
+        self._apply_lora()
+        self._load_cls_embedding()
+        self._setup_trainables()
+
+    # ---------------------------------------------------------
+    # LoRA / loading helpers
+    # ---------------------------------------------------------
+
+    def _apply_lora(self):
+        cfg = getattr(self.args, "lora_config", None)
+        if not cfg or not cfg.get("use_lora", False):
+            return
+
+        lora_cfg = LoraConfig(
+            r=int(cfg.get("lora_r", 8)),
+            lora_alpha=int(cfg.get("lora_alpha", 8)),
+            lora_dropout=float(cfg.get("lora_dropout", 0.0)),
+            target_modules=list(cfg.get("lora_target_modules", ["q_proj", "v_proj"])),
+            bias=str(cfg.get("lora_bias", "none")),
+            task_type="CAUSAL_LM",
+        )
+        self.backbone = get_peft_model(self.backbone, lora_cfg)
+
+    def _load_cls_embedding(self):
+        cls_path = getattr(self.args, "cls_emb_path", None)
+        save_base_dir = getattr(self.args, "save_base_dir", None)
+        if save_base_dir is None or cls_path is None:
+            return
+
+        cls_path = os.path.join(save_base_dir, cls_path)
+        if not os.path.isfile(cls_path):
+            return
+
+        ckpt = torch.load(cls_path, map_location="cpu")
+        cls_row = ckpt["cls_row"]
+
+        lm = self.backbone.model.language_model
+        emb = lm.embed_tokens
+        with torch.no_grad():
+            emb.weight[int(self.cls_token_id)].copy_(
+                cls_row.to(emb.weight.device, emb.weight.dtype)
+            )
+
+    def _setup_trainables(self):
+        for p in self.backbone.parameters():
+            p.requires_grad = False
+
+        if getattr(self.args, "lora_config", None) and self.args.lora_config.get("use_lora", False):
+            for n, p in self.backbone.named_parameters():
+                if "lora_" in n:
+                    p.requires_grad = True
+
+        for p in self.enc_0.parameters():
+            p.requires_grad = True
+
+        # Optional CLS finetuning (single-row gradient mask)
+        lm = self.backbone.model.language_model
+        if getattr(self.args, "cls_finetune", False) and getattr(self.args, "train_cls_row", True):
+            emb = lm.embed_tokens
+            emb.weight.requires_grad = True
+
+            cls_id = int(self.cls_token_id)
+            mask = torch.zeros_like(emb.weight, dtype=torch.float32)
+            mask[cls_id].fill_(1.0)
+
+            def grad_mask_hook(grad):
+                return grad * mask.to(grad.device, grad.dtype)
+
+            if not hasattr(self, "_cls_grad_hooked"):
+                emb.weight.register_hook(grad_mask_hook)
+                self._cls_grad_hooked = True
+
+    # ---------------------------------------------------------
+    # Core model logic
+    # ---------------------------------------------------------
+
+    def _encode(self, input_ids, attention_mask):
+        out = self.backbone(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            output_hidden_states=True,
+        )
+        return out.hidden_states[-1]
+
+    def _get_cls(self, hidden, input_ids):
+        B = input_ids.size(0)
+        cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)
+        h = hidden[torch.arange(B, device=input_ids.device), cls_pos]
+        return F.layer_norm(h, (h.shape[-1],))
+
+    def _mc_ce_loss(self, logits, labels):
+        if hasattr(self.args, "class_weights") and self.args.class_weights is not None:
+            return F.cross_entropy(
+                logits,
+                labels,
+                weight=self.args.class_weights.to(logits.device),
+            )
+        return F.cross_entropy(logits, labels)
+
+    # ---------------------------------------------------------
+    # Forward
+    # ---------------------------------------------------------
+
+    def forward(self, x, *, label=None, return_features=False, **kwargs):
+        device = self.backbone.device
+
+        input_ids = x["input_ids"].to(device)
+        attention_mask = x["attention_mask"].to(device)
+
+        image_mask = x.get("image_mask", None)
+        if image_mask is None:
+            raise KeyError("image_mask is required for QwenVL_ScienceQA_Cached_Text")
+
+        image_mask = image_mask.to(device).bool()
+
+        # Mask OUT image tokens (mirror of hint masking in image model)
+        keep = ~image_mask
+        attention_mask = attention_mask * keep.to(attention_mask.dtype)
+
+        hidden = self._encode(input_ids, attention_mask)
+        h_cls = self._get_cls(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
+        logits = self.enc_0(h_cls)
+
+        losses = {}
+        if label is not None:
+            losses["ce_head"] = self._mc_ce_loss(logits, label)
+
+        features = {"combined": h_cls}
+        if return_features:
+            features["hidden"] = hidden
+
+        return {
+            "preds": {"combined": logits},
+            "features": features,
+            "losses": losses,
+        }
 class QwenVL_ScienceQA_Cached_Image(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()

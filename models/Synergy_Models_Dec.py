@@ -3218,11 +3218,11 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
         
         hint_mask = proc.get("hint_mask", None)
         if hint_mask is None:
-            hint_mask = proc.get("hint_mask", None)
+            hint_mask = proc.get("text_mask", None)
 
         if hint_mask is None:
             print(proc.keys())
-            raise KeyError("hint_mask is required for QwenVL_ScienceQA_Cached_Image")
+            raise KeyError("hint_mask or text_mask is required for QwenVL_ScienceQA_Cached_Image")
 
         hint_mask = hint_mask.to(device).bool()
         keep = (~hint_mask)

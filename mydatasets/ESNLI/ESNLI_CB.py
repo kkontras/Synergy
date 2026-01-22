@@ -786,4 +786,4 @@ class ESNLI_MemmapDataloader:
 
         self.train_loader = make_loader("validation", shuffle=True)
         self.valid_loader = make_loader("validation", shuffle=False)
-        self.test_loader = make_loader("test", shuffle=False)
+        self.test_loader = make_loader("validation", shuffle=False)

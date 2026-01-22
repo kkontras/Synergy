@@ -1,4 +1,4 @@
-
+conda activate synergy_new
 getgpu 1 80GB 60:00:00
 conda activate synergy_new
 cd /home/kkontras/orcd/scratch/Synergy

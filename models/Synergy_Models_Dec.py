@@ -1,8 +1,8 @@
 import copy
 
-from models.model_utils.fusion_gates import *
-from models.VAVL_git.VAVL.conformer.model import Conformer
-# from models.MCR_Models import TF_Fusion
+# from models.model_utils.fusion_gates import *
+# from models.VAVL_git.VAVL.conformer.model import Conformer
+# # from models.MCR_Models import TF_Fusion
 from pytorch_metric_learning.losses import NTXentLoss
 from torch.nn.utils import spectral_norm as SN
 import wandb

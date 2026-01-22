@@ -9,8 +9,6 @@ sbatch  -A  lp_biomed_mdv /scratch/leuven/350/vsc35057/projects/Synergy/condor_l
 sbatch  -A  lp_biomed_mdv /scratch/leuven/350/vsc35057/projects/Synergy/condor_logs/tier2_2026/vsc_single_H100.slurm "./configs/ScienceQA/synprom_lora.json" "./configs/ScienceQA/default_config_scienceqa_syn_tier2.json" 0 0.001 0.01 None 5
 sbatch  -A  lp_biomed_mdv /scratch/leuven/350/vsc35057/projects/Synergy/condor_logs/tier2_2026/vsc_single_H100.slurm "./configs/ScienceQA/synprom_lora.json" "./configs/ScienceQA/default_config_scienceqa_syn_tier2.json" 0 0.001 0.001 None 5
 
-python get_ceu_post.py --config ./configs/ScienceQA/cache_image_lora.json --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5
-python get_ceu_post.py --config ./configs/ScienceQA/cache_text_lora.json --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5
 
 sbatch  -A   lp_biomed_mdv /scratch/leuven/350/vsc35057/projects/Synergy/condor_logs/tier2_2026/vsc_single_H100.slurm ./configs/ScienceQA/cache_lora.json ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json 0 0.0001 0.01 None 5
 sbatch  -A   lp_biomed_mdv /scratch/leuven/350/vsc35057/projects/Synergy/condor_logs/tier2_2026/vsc_single_H100.slurm ./configs/ScienceQA/cache_image_lora.json ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json 0 0.0001 0.01 None 5

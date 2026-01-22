@@ -198,6 +198,8 @@ rsync -ahvz --progress /scratch/kkontras/checkpoints/synergy/ScienceQA/v2/Uni_Te
 
 rsync -ahvz --progress /esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI kkontras@mib.media.mit.edu:/scratch/kkontras/ESNLI
 
+rsync -ahvz --progress /scratch/kkontras/ESNLI kkontras@orcd-login001.mit.edu:/home/kkontras/orcd/scratch/data
+
 CUDA_VISIBLE_DEVICES=4 python ESNLI_CodeBook.py --split train --data_root "/scratch/kkontras/ESNLI" --flickr_images_dir "/scratch/kkontras/ESNLI" --model_name "Qwen/Qwen3-VL-2B-Instruct"
 
 DEFAULT_DATA_ROOT = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI"
@@ -250,3 +252,7 @@ accelerate launch train.py --config ./configs/ScienceQA/synprom_lora_synibfaster
 
 
 python train.py --config ./configs/CREMA_D/synergy/nov/synprom_IB_Dir_VAE.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --pre --frozen --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --perturb gen --start_over
+
+python ESNLI_CodeBook.py --split train --data_root "/home/kkontras/orcd/scratch/data/ESNLI" --flickr_images_dir "/home/kkontras/orcd/scratch/data/ESNLI/flickr30k-images/" --model_name "Qwen/Qwen3-VL-2B-Instruct" --output_dir "/home/kkontras/orcd/scratch/data/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 32
+python ESNLI_CodeBook.py --split test --data_root "/home/kkontras/orcd/scratch/data/ESNLI" --flickr_images_dir "/home/kkontras/orcd/scratch/data/ESNLI/flickr30k-images/" --model_name "Qwen/Qwen3-VL-2B-Instruct" --output_dir "/home/kkontras/orcd/scratch/data/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 32
+python ESNLI_CodeBook.py --split val --data_root "/home/kkontras/orcd/scratch/data/ESNLI" --flickr_images_dir "/home/kkontras/orcd/scratch/data/ESNLI/flickr30k-images/" --model_name "Qwen/Qwen3-VL-2B-Instruct" --output_dir "/home/kkontras/orcd/scratch/data/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 32

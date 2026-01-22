@@ -4,23 +4,21 @@
 """
 ESNLI-VE cache builder for Qwen/Qwen3-VL-2B-Instruct
 
-- NO <CLS> in cached tokens (append later)
+- NO <CLS> in cached tokens
 - YES vision embeddings cached
 - YES token-level masks cached:
     item["masks"]["image"] : uint8 [L]
     item["masks"]["text"]  : uint8 [L]
 
-This file is COMPATIBLE with your memmap loader.
+Fully compatible with ESNLI memmap loader.
 """
 
 import os
 import json
 import glob
-import zipfile
 import random
 import argparse
 import logging
-import urllib.request
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -34,20 +32,15 @@ from transformers import AutoProcessor
 from transformers import Qwen3VLForConditionalGeneration
 
 
-# =============================
-# Defaults
-# =============================
-DEFAULT_DATA_ROOT = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI"
-DEFAULT_FLICKR_DIR = DEFAULT_DATA_ROOT
-DEFAULT_MODEL_NAME = "Qwen/Qwen3-VL-2B-Instruct"
-DEFAULT_OUTPUT_DIR = os.path.join(DEFAULT_DATA_ROOT, "cache_qwen3_vl_2b_nocls_vis")
-
+# =====================================================
+# Labels
+# =====================================================
 LABEL2IDX = {"entailment": 0, "neutral": 1, "contradiction": 2}
 
 
-# =============================
-# Utils
-# =============================
+# =====================================================
+# Small utils
+# =====================================================
 def label_to_index(x: Any) -> int:
     x = str(x).strip().lower()
     if x not in LABEL2IDX:
@@ -67,9 +60,17 @@ def tensor_image_to_pil(img: torch.Tensor) -> Image.Image:
     return Image.fromarray(arr)
 
 
-# =============================
-# Token-mask helpers
-# =============================
+def find_image(fid: str, root: str) -> str:
+    fid = fid.replace(".jpg", "")
+    hits = glob.glob(os.path.join(root, "**", fid + ".jpg"), recursive=True)
+    if not hits:
+        raise FileNotFoundError(fid)
+    return hits[0]
+
+
+# =====================================================
+# Token mask helpers
+# =====================================================
 def _get_tokenizer(processor):
     if hasattr(processor, "tokenizer"):
         return processor.tokenizer
@@ -84,9 +85,13 @@ def _infer_image_token_ids(tokenizer) -> List[int]:
         return ids
 
     for name in [
-        "image_token_id", "image_start_token_id", "image_end_token_id",
-        "vision_start_token_id", "vision_end_token_id",
-        "im_start_id", "im_end_id",
+        "image_token_id",
+        "image_start_token_id",
+        "image_end_token_id",
+        "vision_start_token_id",
+        "vision_end_token_id",
+        "im_start_id",
+        "im_end_id",
     ]:
         v = getattr(tokenizer, name, None)
         if isinstance(v, int) and v >= 0:
@@ -103,13 +108,11 @@ def _infer_image_token_ids(tokenizer) -> List[int]:
     return sorted(set(ids))
 
 
-def build_token_masks(input_ids: torch.Tensor,
-                      attention_mask: torch.Tensor,
-                      processor) -> Dict[str, torch.Tensor]:
-    """
-    input_ids, attention_mask: [B,T]
-    returns bool masks [B,T]
-    """
+def build_token_masks(
+    input_ids: torch.Tensor,
+    attention_mask: torch.Tensor,
+    processor,
+) -> Dict[str, torch.Tensor]:
     tok = _get_tokenizer(processor)
     img_ids = _infer_image_token_ids(tok)
 
@@ -125,23 +128,26 @@ def build_token_masks(input_ids: torch.Tensor,
     return {"image": img, "text": txt}
 
 
-# =============================
+# =====================================================
 # Dataset
-# =============================
+# =====================================================
 class ESNLIVE_Dataset(Dataset):
-    def __init__(self, root, flickr_dir, split):
-        self.root = root
-        self.flickr = flickr_dir
+    def __init__(self, data_root, flickr_dir, split, image_size=224):
         self.split = split
+        self.flickr = flickr_dir
 
-        csv = glob.glob(os.path.join(root, "**", f"*{split}*.csv"), recursive=True)[0]
-        df = pd.read_csv(csv)
+        csv = glob.glob(os.path.join(data_root, "**", f"*{split}*.csv"), recursive=True)
+        if not csv:
+            raise FileNotFoundError(f"No CSV found for split={split}")
+        df = pd.read_csv(csv[0])
         self.rows = df.to_dict("records")
 
-        self.tf = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-        ])
+        self.tf = transforms.Compose(
+            [
+                transforms.Resize((image_size, image_size)),
+                transforms.ToTensor(),
+            ]
+        )
 
     def __len__(self):
         return len(self.rows)
@@ -152,7 +158,7 @@ class ESNLIVE_Dataset(Dataset):
         label = torch.tensor(label_to_index(pick_first(r, ["gold_label"])))
         fid = str(pick_first(r, ["Flickr30kID", "image_id"]))
 
-        img_path = glob.glob(os.path.join(self.flickr, "**", fid + ".jpg"), recursive=True)[0]
+        img_path = find_image(fid, self.flickr)
         img = self.tf(Image.open(img_path).convert("RGB"))
 
         return {
@@ -163,61 +169,66 @@ class ESNLIVE_Dataset(Dataset):
         }
 
 
-def collate(b):
+def collate(batch):
     return {
-        "id": [x["id"] for x in b],
-        "text": [x["text"] for x in b],
-        "image": torch.stack([x["image"] for x in b]),
-        "label": torch.stack([x["label"] for x in b]),
+        "id": [b["id"] for b in batch],
+        "text": [b["text"] for b in batch],
+        "image": torch.stack([b["image"] for b in batch]),
+        "label": torch.stack([b["label"] for b in batch]),
     }
 
 
-# =============================
-# Vision embeddings
-# =============================
+# =====================================================
+# Vision
+# =====================================================
 def extract_vision_embeds(model, pixel_values, grid_thw):
-    if hasattr(model.model, "visual"):
-        return model.model.visual(pixel_values, grid_thw=grid_thw)
-    raise RuntimeError("No visual backbone")
+    return model.model.visual(pixel_values, grid_thw=grid_thw)
 
 
-# =============================
+# =====================================================
 # Sharding
-# =============================
+# =====================================================
 def flush_shard(items, out_dir, shard_idx, manifest):
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, f"shard_{shard_idx:05d}.pt")
     torch.save(items, path)
     with open(manifest, "a") as f:
-        f.write(json.dumps({"shard": os.path.basename(path), "num_items": len(items)}) + "\n")
+        f.write(json.dumps({"shard": os.path.basename(path), "n": len(items)}) + "\n")
 
 
-# =============================
+# =====================================================
 # Main
-# =============================
+# =====================================================
 def main():
     ap = argparse.ArgumentParser()
+
+    ap.add_argument("--data_root", required=True)
+    ap.add_argument("--flickr_images_dir", required=True)
+    ap.add_argument("--model_name", required=True)
+    ap.add_argument("--output_dir", required=True)
+
     ap.add_argument("--split", default="train")
     ap.add_argument("--batch_size", type=int, default=4)
     ap.add_argument("--shard_size", type=int, default=1000)
+    ap.add_argument("--max_length", type=int, default=512)
     ap.add_argument("--device", default="cuda:0")
-    args = ap.parse_args()
 
+    args = ap.parse_args()
     logging.basicConfig(level=logging.INFO)
 
-    ds = ESNLIVE_Dataset(DEFAULT_DATA_ROOT, DEFAULT_FLICKR_DIR, args.split)
+    ds = ESNLIVE_Dataset(args.data_root, args.flickr_images_dir, args.split)
     dl = DataLoader(ds, batch_size=args.batch_size, collate_fn=collate)
 
-    processor = AutoProcessor.from_pretrained(DEFAULT_MODEL_NAME, trust_remote_code=True)
+    processor = AutoProcessor.from_pretrained(args.model_name, trust_remote_code=True)
     model = Qwen3VLForConditionalGeneration.from_pretrained(
-        DEFAULT_MODEL_NAME,
+        args.model_name,
         device_map={"": args.device},
         trust_remote_code=True,
     ).eval()
 
-    out_split = os.path.join(DEFAULT_OUTPUT_DIR, args.split)
-    os.makedirs(out_split, exist_ok=True)
-    manifest = os.path.join(out_split, "manifest.jsonl")
+    split_out = os.path.join(args.output_dir, args.split)
+    os.makedirs(split_out, exist_ok=True)
+    manifest = os.path.join(split_out, "manifest.jsonl")
     if os.path.exists(manifest):
         os.remove(manifest)
 
@@ -230,7 +241,7 @@ def main():
             return_tensors="pt",
             padding=True,
             truncation=True,
-            max_length=512,
+            max_length=args.max_length,
         )
 
         input_ids = enc["input_ids"].cpu()
@@ -239,9 +250,9 @@ def main():
 
         pv = enc["pixel_values"].to(args.device)
         gthw = enc["image_grid_thw"].to(args.device)
+
         with torch.no_grad():
-            vis = extract_vision_embeds(model, pv, gthw)
-        vis = vis.cpu()
+            vis = extract_vision_embeds(model, pv, gthw).cpu()
 
         for i in range(len(batch["id"])):
             L = int(attn[i].sum())
@@ -256,14 +267,14 @@ def main():
                 },
                 "vision_embeds": vis[i],
             }
-            items.append(item)
 
+            items.append(item)
             if len(items) >= args.shard_size:
-                flush_shard(items, out_split, shard_idx, manifest)
+                flush_shard(items, split_out, shard_idx, manifest)
                 items, shard_idx = [], shard_idx + 1
 
     if items:
-        flush_shard(items, out_split, shard_idx, manifest)
+        flush_shard(items, split_out, shard_idx, manifest)
 
 
 if __name__ == "__main__":

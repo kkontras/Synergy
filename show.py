@@ -378,7 +378,7 @@ if __name__ == "__main__":
                 val[0] = val_metric
                 test[0] = test_metric
             else:
-                for i in range(3):
+                for i in range(1):
                     args.fold = i
                     val_metric, test_metric = print_search(config_path=args.config, default_config_path=args.default_config, args=args)
                     val[i] = val_metric

@@ -608,7 +608,10 @@ class ESNLI_MemmapDataset(Dataset):
             "attention_mask": attention_mask,
         }
 
+        print("It has token_masks {}".format(self.has_token_masks), self.image_mm, self.hint_mm)
+
         if self.has_token_masks and self.image_mm is not None and self.hint_mm is not None:
+
             image_mask = torch.from_numpy(np.array(self.image_mm[off:off + L], copy=True)).to(torch.bool)
             hint_mask = torch.from_numpy(np.array(self.hint_mm[off:off + L], copy=True)).to(torch.bool)
             out["image_mask"] = image_mask

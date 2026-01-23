@@ -515,6 +515,7 @@ def main():
         prompts = [build_prompt_no_cls(t, label_options) for t in texts]
         pil_images = [tensor_image_to_pil(images_t[i]) for i in range(images_t.size(0))]
 
+        print(prompts[0])
         enc = processor(
             text=prompts,
             images=pil_images,

@@ -14,3 +14,4 @@ from .MMIMDB.MMIMDBLoader import *
 # from .ScienceQA.ScienceQA import *
 from .ScienceQA.ScienceQA_CB import *
 from .ESNLI.ESNLI_CB import *
+from .ESNLI.ESNLIDataset import *

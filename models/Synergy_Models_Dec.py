@@ -17,6 +17,7 @@ from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
 import os
 from peft import LoraConfig, get_peft_model
 import torch
+from typing import Any, Dict, List, Optional, Sequence
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -2625,6 +2626,341 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
             synergy_losses = self.synib.compute_training_losses( out, **kwargs)
             out["losses"].update(synergy_losses)
         return out
+
+
+class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
+    """
+    Multimodal (image+text) ScienceQA as 5-way classification.
+    Backbone is frozen EXCEPT:
+      - classifier head enc_0 (always trainable)
+      - (optional) learnable <CLS> embedding row ONLY (via gradient masking hook)
+      - (optional) final LM norm (cheap, sometimes helps)
+
+    Readout is the hidden state at the appended <CLS> token (placed at end of prompt).
+    """
+
+    def __init__(self, args, encs=None, **kwargs):
+        super().__init__()
+        encs = encs or []
+
+        self.args = args
+        self.synergy_coeff = getattr(args, "synergy_coeff", 0.0)
+        self.max_new_tokens = getattr(args, "max_new_tokens", 32)
+        self.num_classes = getattr(args, "num_classes")
+
+        model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
+        HF_CACHE = getattr(self.args, "save_base_dir", None)
+
+        # -----------------------------
+        # Processor / Tokenizer
+        # -----------------------------
+        self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=HF_CACHE)
+        tok = self.processor.tokenizer
+        tok.padding_side = "left"
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
+
+        # Add <CLS> token to tokenizer
+        added = tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
+        self.cls_token_id = tok.convert_tokens_to_ids("<CLS>")
+
+        self.backbone = Qwen3VLForConditionalGeneration.from_pretrained(
+            model_name,
+            dtype=torch.bfloat16 if getattr(args, "bf16", False) else torch.float16,
+            device_map="cuda:0",
+            cache_dir=HF_CACHE,
+        )
+
+        if added > 0:
+            self.backbone.resize_token_embeddings(len(tok))
+
+        cfg = self.backbone.config
+        self.image_token_id = cfg.image_token_id
+        self.image_token_str = tok.convert_ids_to_tokens(self.image_token_id)
+
+        if hasattr(cfg, "text_config") and hasattr(cfg.text_config, "hidden_size"):
+            self.d_model = cfg.text_config.hidden_size
+        else:
+            self.d_model = cfg.hidden_size
+
+        if len(encs) < 1:
+            raise ValueError("encs[0] must be provided as the 5-way classifier head.")
+        self.enc_0 = encs[0]
+
+        self._apply_lora()
+        self._load_cls_embedding()
+        self._setup_trainables()
+
+    def _setup_trainables(self):
+        # Freeze everything
+        for p in self.backbone.parameters():
+            p.requires_grad = False
+
+        if getattr(self.args, "lora_config", None) and self.args.lora_config.get("use_lora", False):
+            for n, p in self.backbone.named_parameters():
+                if "lora_" in n:
+                    p.requires_grad = True
+
+        for p in self.enc_0.parameters():
+            p.requires_grad = True
+
+        lm = self.backbone.model.language_model
+
+        if self.args.cls_finetune:
+            if getattr(self.args, "train_cls_row", True) and lm is not None and hasattr(lm, "embed_tokens"):
+                emb = lm.embed_tokens
+                # ensure grads flow to emb.weight (we'll mask them)
+                emb.weight.requires_grad = True
+
+                cls_id = int(self.cls_token_id)
+                # build a (vocab, hidden) mask with 1s only for cls row
+                mask = torch.zeros_like(emb.weight, dtype=torch.float32)
+                mask[cls_id].fill_(1.0)
+
+                def grad_mask_hook(grad):
+                    return grad * mask.to(grad.device, grad.dtype)
+
+                # register once
+                if not hasattr(self, "_cls_grad_hooked"):
+                    emb.weight.register_hook(grad_mask_hook)
+                    self._cls_grad_hooked = True
+
+        # NOTE: if you enabled synergy modules, mark them trainable here.
+
+
+    def load_cls_embedding(self, path, strict_dim=True):
+
+        assert os.path.isfile(path), f"CLS embedding file not found: {path}"
+
+        ckpt = torch.load(path, map_location="cpu")
+
+        if "cls_row" not in ckpt:
+            raise KeyError("CLS checkpoint must contain 'cls_row'")
+
+        cls_row = ckpt["cls_row"]
+        saved_cls_id = ckpt.get("cls_token_id", self.cls_token_id)
+
+        lm = self.backbone.model.language_model
+        if lm is None or not hasattr(lm, "embed_tokens"):
+            raise RuntimeError("Language model embedding table not found")
+
+        emb = lm.embed_tokens
+        current_cls_id = int(self.cls_token_id)
+
+        if strict_dim and cls_row.numel() != emb.weight.shape[1]:
+            raise ValueError(
+                f"CLS dim mismatch: saved {cls_row.numel()} vs model {emb.weight.shape[1]}"
+            )
+
+        if saved_cls_id != current_cls_id:
+            print(
+                f"[WARN] saved cls_token_id={saved_cls_id} "
+                f"!= current cls_token_id={current_cls_id} — copying to current index"
+            )
+
+        with torch.no_grad():
+            emb.weight[current_cls_id].copy_(
+                cls_row.to(emb.weight.device, emb.weight.dtype)
+            )
+
+        print(f"[OK] Loaded CLS embedding from {path}")
+
+
+    def _load_cls_embedding(self):
+
+        cls_path = getattr(self.args, "cls_emb_path", None)
+        save_base_dir = getattr(self.args, "save_base_dir", None)
+        if save_base_dir is None or cls_path is None:
+            return
+        cls_path = os.path.join(save_base_dir, cls_path)
+
+        self.load_cls_embedding(cls_path)
+
+    def _apply_lora(self):
+        cfg = getattr(self.args, "lora_config", None)
+        if not cfg or not cfg.get("use_lora", False):
+            return
+
+        lora_cfg = LoraConfig(
+            r=int(cfg.get("lora_r", 8)),
+            lora_alpha=int(cfg.get("lora_alpha", 8)),
+            lora_dropout=float(cfg.get("lora_dropout", 0.0)),
+            target_modules=list(cfg.get("lora_target_modules", ["q_proj", "v_proj"])),
+            bias=str(cfg.get("lora_bias", "none")),
+            task_type="CAUSAL_LM",
+        )
+
+        self.backbone = get_peft_model(self.backbone, lora_cfg)
+
+    def build_prompt_no_cls(
+            self,
+            hypothesis: Sequence[str],
+            label_options: List[str],
+    ) -> List[str]:
+        labels = ", ".join(label_options)
+
+        instr_text = (
+            "Task: Decide whether the image and the hypothesis match.\n"
+            "Entailment: the image matches the hypothesis (supported).\n"
+            "Contradiction: the image does not match the hypothesis (refuted).\n"
+            "Neutral: not enough information in the image to determine a match.\n"
+            f"Answer format: Output exactly one label from: {labels}.\n"
+        )
+
+        return [
+            f"Hypothesis:\n{str(h).strip()}\n\n{instr_text}"
+            for h in hypothesis
+        ]
+    # ============================================================
+    #  Encoding / readout
+    # ============================================================
+    def _encode(self, input_ids, attention_mask, pixel_values, image_grid_thw=None):
+        # IMPORTANT: no torch.no_grad() here; we need grads at least to CLS row + head
+        outputs = self.backbone(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            pixel_values=pixel_values,
+            image_grid_thw=image_grid_thw,
+            output_hidden_states=True,
+        )
+        return outputs.hidden_states[-1]  # (B, T, d)
+
+    def _get_cls_token_repr(self, hidden, input_ids):
+        B = input_ids.size(0)
+        device = input_ids.device
+
+        # position of <CLS> (assumes exactly once per sample)
+        cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)  # (B,)
+        h = hidden[torch.arange(B, device=device), cls_pos]             # (B,d)
+        h = F.layer_norm(h, (h.shape[-1],))
+        return h
+
+    # ============================================================
+    #  (Optional) generation for eval-time parsing (unchanged)
+    # ============================================================
+    def _generate_raw_answers(self, proc, input_ids, *, letters_list):
+        gen_inputs = {
+            k: v for k, v in proc.items()
+            if k in ("input_ids", "attention_mask", "pixel_values", "image_grid_thw")
+        }
+        gen_inputs = {k: v.to(self.backbone.device) for k, v in gen_inputs.items()}
+
+        with torch.no_grad():
+            gen_ids = self.backbone.generate(
+                **gen_inputs,
+                max_new_tokens=self.max_new_tokens,
+                do_sample=False,
+            )
+
+        gen_ids_trimmed = [out_ids[len(in_ids):] for in_ids, out_ids in zip(input_ids, gen_ids)]
+        raw_answers = self.processor.batch_decode(
+            gen_ids_trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=True,
+        )
+
+        import re
+
+        def clean_answer(ans: str):
+            lines = [l.strip() for l in ans.splitlines() if l.strip()]
+            if not lines:
+                return ans.strip()
+            first = lines[0]
+            m = re.search(r"\(([A-Za-z])\)", first)
+            if m:
+                return f"({m.group(1).upper()})"
+            m2 = re.search(r"\b([A-Za-z])\b", first)
+            if m2:
+                return f"({m2.group(1).upper()})"
+            return first
+
+        cleaned = [clean_answer(ans) for ans in raw_answers]
+
+        pred_indices = []
+        for ans, letters in zip(cleaned, letters_list):
+            if not letters:
+                pred_indices.append(-1)
+                continue
+            letters_upper = [L.upper() for L in letters]
+            m = re.search(r"\(([A-Za-z])\)", ans)
+            if not m:
+                pred_indices.append(-1)
+                continue
+            letter = m.group(1).upper()
+            pred_indices.append(letters_upper.index(letter) if letter in letters_upper else -1)
+
+        pred_indices = torch.tensor(pred_indices, device=input_ids.device, dtype=torch.long)
+        return cleaned, pred_indices
+
+    def _mc_ce_loss(self, logits, labels):
+        if hasattr(self.args, "class_weights") and self.args.class_weights is not None:
+            class_weights = self.args.class_weights.to(logits.device)
+            return F.cross_entropy(logits, labels, weight=class_weights)
+        return F.cross_entropy(logits, labels)
+
+    # ============================================================
+    #  Forward
+    # ============================================================
+    def forward(
+        self,
+        x,
+        *,
+        label=None,
+        return_features=False,
+        current_step=None,
+        image_token_mask=None,  # unused here (CLS readout); keep for compatibility
+        text_token_mask=None,   # unused here (CLS readout); keep for compatibility
+        **kwargs,
+    ):
+        hint_texts = x[0]
+        images = x[1]
+        device = images.device
+
+        label_options = "entailment,neutral,contradiction"
+
+        prompts = self.build_prompt_no_cls(hypothesis=hint_texts, label_options=label_options)
+        prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
+
+        image_list = [img for img in images]
+
+        proc = self.processor(
+            text=prompts_with_image,
+            images=image_list,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+        )
+
+        proc = {k: v.to(device) for k, v in proc.items()}
+
+        input_ids = proc["input_ids"]
+        attention_mask = proc["attention_mask"]
+        pixel_values = proc["pixel_values"]
+        image_grid_thw = proc.get("image_grid_thw")
+
+
+        hidden = self._encode(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            pixel_values=pixel_values,
+            image_grid_thw=image_grid_thw,
+        )
+
+        # # CLS readout (stable position)
+        h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
+        head_logits = self.enc_0(h_cls)
+
+        losses = {}
+        if label is not None:
+            losses["ce_pred_combined"] = self._mc_ce_loss(head_logits, label)
+
+        # Optional eval-time generation parsing (kept off by default)
+        preds = {"combined": head_logits}
+        features = {"combined": h_cls}
+        if return_features:
+            features["hidden"] = hidden
+
+        return {"preds": preds, "features": features, "losses": losses}
 
 
 # import os

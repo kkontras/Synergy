@@ -416,10 +416,13 @@ def main():
     image_size = 224
     n_print = 3
 
-    dl = ESNLI_VE_Dataloader(config=cfg).val_loader
+    dl = ESNLI_VE_Dataloader(config=cfg).valid_loader
 
     batch = next(iter(dl))
-    print(f"Batch image: {tuple(batch['image'].shape)}  labels: {batch['label'].tolist()}")
+    print(batch.keys())
+    print(batch["data"].keys())
+    print(batch["data"][0])
+    print(f"Batch image: {tuple(batch['data'][0].shape)}  labels: {batch['data'][1].shape}")
 
     for i in range(min(n_print, len(batch["id"]))):
         y = int(batch["label"][i].item())

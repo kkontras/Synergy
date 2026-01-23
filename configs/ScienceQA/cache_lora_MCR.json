@@ -33,13 +33,12 @@
       "cls_finetune": false,
       "cls_type": "linear",
       "clip_grad": false,
+      "shufflegradmulti": true,
       "bias_infusion": {
-        "method": "false",
-        "l": 0.1,
-        "starting_epoch": 0,
-        "ending_epoch": 1500,
-        "use": true,
-        "plot": false
+        "method": "MCR",
+        "regby": "greedy",
+        "num_samples": 32,
+        "shuffle": true
       },
       "lora_config": {
       "use_lora": true,  "lora_r": 16, "lora_alpha": 32,  "lora_dropout": 0.05,  "lora_target_modules": ["q_proj", "v_proj"],  "lora_bias": "none", "lora_lr": 0.0002
@@ -51,7 +50,7 @@
       }
     },
     "load_ongoing": false,
-    "save_dir": "SynIBCache_LoRa_{}.pth.tar",
+    "save_dir": "SynIBCache_LoRa_MCR_{}.pth.tar",
     "encoders": [
       {
         "model": "LinearHead_Qwen",

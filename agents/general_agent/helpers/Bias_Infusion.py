@@ -36,6 +36,8 @@ def pick_bias_infuser(agent):
         bi = Bias_Infusion_AGM(agent)
     elif method == "MMPareto":
         bi = Bias_Infusion_MMPareto(agent)
+    elif method == "MMPareto_Qwen":
+        bi = Bias_Infusion_MMPareto_Qwen(agent)
     elif method == "MMPareto_3D":
         bi = Bias_Infusion_MMPareto_3d(agent)
     elif method == "MLA":
@@ -176,7 +178,7 @@ class Bias_Infusion_MMPareto(General_Bias_Infusion):
 
         if self.agent.config.model.args.bias_infusion.starting_epoch <= self.agent.logs[
             "current_epoch"] <= self.agent.config.model.args.bias_infusion.ending_epoch:
-
+            print(output_losses)
             loss_mm = output_losses["ce_loss_combined"]
             loss_a = output_losses["ce_loss_c"]
             loss_v = output_losses["ce_loss_g"]
@@ -291,6 +293,134 @@ class Bias_Infusion_MMPareto(General_Bias_Infusion):
                         param.grad = diff * new_grad * gamma
                     else:
                         param.grad = new_grad * gamma
+
+
+class Bias_Infusion_MMPareto_Qwen(General_Bias_Infusion):
+    def __init__(self, agent):
+        super(Bias_Infusion_MMPareto_Qwen, self).__init__(agent)
+        logging.info("Bias Infusion MMPareto is being employed")
+        self._initialize_logs_n_utils()
+        self.cosine_sim = nn.CosineSimilarity(dim=0, eps=1e-6)
+
+    def _initialize_logs_n_utils(self):
+        pass
+
+    def before_backward(self, total, output_losses, **kwargs):
+        if not self.agent.config.model.args.bias_infusion.use: return
+
+        if self.agent.config.model.args.bias_infusion.starting_epoch <= self.agent.logs[
+            "current_epoch"] <= self.agent.config.model.args.bias_infusion.ending_epoch:
+            print(output_losses)
+            loss_mm = output_losses["ce_loss_combined"]
+            loss_a = output_losses["ce_loss_c"]
+            loss_v = output_losses["ce_loss_g"]
+
+            losses = [loss_mm, loss_a, loss_v]
+            all_loss = ['both', 'audio', 'visual']
+
+            grads_visual = defaultdict(dict)
+            grads_audio = defaultdict(dict)
+
+            for idx, loss_type in enumerate(all_loss):
+                loss = losses[idx]
+                loss.backward(retain_graph=True)
+                if (loss_type == 'visual'):
+                    for name, parms in self.agent.model.named_parameters():
+                        if parms.grad is None: continue
+                        if name in grads_visual["both"]:
+                            grads_visual[loss_type][name] = parms.grad.data.clone()
+                    grads_visual[loss_type]["concat"] = torch.cat(
+                        [grads_visual[loss_type][name].flatten()
+                         for name, parms in self.agent.model.named_parameters()
+                         if parms.grad is not None
+                         and name in grads_visual["both"]])
+                elif (loss_type == 'audio'):
+                    for name, parms in self.agent.model.named_parameters():
+                        if parms.grad is None: continue
+                        if name in grads_audio["both"]:
+                            grads_audio[loss_type][name] = parms.grad.data.clone()
+                    grads_audio[loss_type]["concat"] = torch.cat(
+                        [grads_audio[loss_type][name].flatten()
+                         for name, parms in self.agent.model.named_parameters()
+                         if  parms.grad is not None
+                         and name in grads_audio["both"]])
+                else:
+                    for name, parms in self.agent.model.named_parameters():
+                        if parms.grad is None: continue
+                        grads_audio[loss_type][name] = parms.grad.data.clone()
+                        grads_visual[loss_type][name] = parms.grad.data.clone()
+                    grads_visual[loss_type]["concat"] = torch.cat(
+                        [grads_visual[loss_type][name].flatten() for name, parms in
+                         self.agent.model.named_parameters() if parms.grad is not None])
+                    grads_audio[loss_type]["concat"] = torch.cat(
+                        [grads_audio[loss_type][name].flatten() for name, parms in
+                         self.agent.model.named_parameters() if parms.grad is not None])
+                self.agent.optimizer.zero_grad()
+
+            audio_k, visual_k = self._compute_ratio(grads_audio, grads_visual)
+            total = loss_mm + loss_a + loss_v
+            total.backward()
+            gamma = self.agent.config.model.args.bias_infusion.alpha
+            self._equalize_gradients(grads_audio, grads_visual, audio_k, visual_k, gamma)
+
+            self.agent.optimizer.step()
+
+            wandb_output = {"ratio": {"audio_k": audio_k, "visual_k": visual_k}}
+            wandb.log(wandb_output)
+
+            return total, output_losses, True
+
+    def _compute_ratio(self, grads_audio, grads_visual):
+        this_cos_audio = self.cosine_sim(grads_audio['both']["concat"], grads_audio['audio']["concat"])
+        this_cos_visual = self.cosine_sim(grads_visual['both']["concat"], grads_visual['visual']["concat"])
+
+        audio_task = ['both', 'audio']
+        visual_task = ['both', 'visual']
+
+        audio_k = [0, 0]
+        visual_k = [0, 0]
+
+        if (this_cos_audio > 0):
+            audio_k[0] = 0.5
+            audio_k[1] = 0.5
+        else:
+            audio_k, min_norm = MinNormSolver.find_min_norm_element(
+                [list(grads_audio[t].values()) for t in audio_task])
+        if (this_cos_visual > 0):
+            visual_k[0] = 0.5
+            visual_k[1] = 0.5
+        else:
+            visual_k, min_norm = MinNormSolver.find_min_norm_element(
+                [list(grads_visual[t].values()) for t in visual_task])
+        return audio_k, visual_k
+
+    def _equalize_gradients(self, grads_audio, grads_visual, audio_k, visual_k, gamma):
+        for name, param in self.agent.model.named_parameters():
+            if param.grad is not None:
+                if ("mod0" in name or "fc_0" in name or "enc_0" in name) and name in grads_audio['both']:
+                    three_norm = torch.norm(param.grad.data.clone())
+                    new_grad = 2 * audio_k[0] * grads_audio['both'][name] + 2 * audio_k[1] * \
+                               grads_audio['audio'][
+                                   name]
+                    new_norm = torch.norm(new_grad)
+                    diff = three_norm / new_norm
+                    if (diff > 1):
+                        param.grad = diff * new_grad * gamma
+                    else:
+                        param.grad = new_grad * gamma
+
+                if ("mod1" in name or "fc_1" in name or "enc_1" in name) and name in grads_visual['both']:
+                    three_norm = torch.norm(param.grad.data.clone())
+                    new_grad = 2 * visual_k[0] * grads_visual['both'][name] + 2 * visual_k[1] * \
+                               grads_visual['visual'][name]
+                    new_norm = torch.norm(new_grad)
+                    diff = three_norm / new_norm
+                    if (diff > 1):
+                        param.grad = diff * new_grad * gamma
+                    else:
+                        param.grad = new_grad * gamma
+
+
 class Bias_Infusion_MMPareto_3d(General_Bias_Infusion):
     def __init__(self, agent):
         super(Bias_Infusion_MMPareto_3d, self).__init__(agent)

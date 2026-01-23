@@ -34,8 +34,12 @@
       "cls_type": "linear",
       "clip_grad": false,
       "bias_infusion": {
-        "method": "false",
-        "l": 0.1,
+        "method": "DnR",
+        "reinit_epoch": 10,
+        "kmepoch": 3,
+        "epoch_stages": 1,
+        "n_classes": 6,
+        "alpha": 3,
         "starting_epoch": 0,
         "ending_epoch": 1500,
         "use": true,
@@ -51,7 +55,7 @@
       }
     },
     "load_ongoing": false,
-    "save_dir": "SynIBCache_LoRa_{}.pth.tar",
+    "save_dir": "SynIBCache_LoRa_DnR_{}.pth.tar",
     "encoders": [
       {
         "model": "LinearHead_Qwen",

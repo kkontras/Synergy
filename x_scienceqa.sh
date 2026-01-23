@@ -82,6 +82,33 @@ python show.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_co
 python show.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --l 0.1 --perturb learned --perturb_lsparse 5
 python show.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --l 1.0 --perturb learned --perturb_lsparse 5
 
+
+python show.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 0.5
+python show.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 1.0
+python show.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 1.5
+python show.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 3.0
+python show.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 5.0
+
+python show.py  --config ./configs/ScienceQA/cache_lora_DnR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 1 --kmepoch 1
+python show.py  --config ./configs/ScienceQA/cache_lora_DnR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 1 --kmepoch 3
+python show.py  --config ./configs/ScienceQA/cache_lora_DnR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 1 --kmepoch 5
+python show.py  --config ./configs/ScienceQA/cache_lora_DnR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 3 --kmepoch 1
+python show.py  --config ./configs/ScienceQA/cache_lora_DnR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 3 --kmepoch 3
+python show.py  --config ./configs/ScienceQA/cache_lora_DnR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 3 --kmepoch 5
+python show.py  --config ./configs/ScienceQA/cache_lora_DnR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 5 --kmepoch 1
+python show.py  --config ./configs/ScienceQA/cache_lora_DnR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 5 --kmepoch 3
+python show.py  --config ./configs/ScienceQA/cache_lora_DnR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 5 --kmepoch 5
+
+python show.py  --config ./configs/ScienceQA/cache_lora_MCR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --l 1 --multil 1 --num_samples 5 --regby greedy --shuffle_type rand --contrcoeff 1
+python show.py  --config ./configs/ScienceQA/cache_lora_MCR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --l 0.1 --multil 1 --num_samples 5 --regby greedy --shuffle_type rand --contrcoeff 1
+python show.py  --config ./configs/ScienceQA/cache_lora_MCR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --l 0.01 --multil 1 --num_samples 5 --regby greedy --shuffle_type rand --contrcoeff 1
+python show.py  --config ./configs/ScienceQA/cache_lora_MCR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --l 1 --multil 0.1 --num_samples 5 --regby greedy --shuffle_type rand --contrcoeff 1
+python show.py  --config ./configs/ScienceQA/cache_lora_MCR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --l 0.1 --multil 0.1 --num_samples 5 --regby greedy --shuffle_type rand --contrcoeff 1
+python show.py  --config ./configs/ScienceQA/cache_lora_MCR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --l 0.01 --multil 0.1 --num_samples 5 --regby greedy --shuffle_type rand --contrcoeff 1
+
+
+
+
 cp /scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/Cache_LoRaSynIBFaster_fold0_l1.0_perturblearned_pmin./configs/ScienceQA/cache_synib_lora.json0_lsparse0.1_lr0.0001_wd0.01_bs5.pth.tar /scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/Cache_LoRaSynIBFaster_fold0_l1.0_perturblearned_lsparse0.1_lr0.0001_wd0.01_bs5.pth.tar
 
 
@@ -91,6 +118,11 @@ rsync -ahvz --progress  /scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/Sy
 rsync -ahvz --progress  /scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/SynIBCache_LoRa_fold0_lr0.0001_wd0.01_bs5.pth.tar kkontras@ssh.esat.kuleuven.be:/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/
 
 
+
+
+python train.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 2 --alpha 5.0
+python train.py  --config ./configs/ScienceQA/cache_lora_DnR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 2 --alpha 1 --kmepoch 1
+python train.py  --config ./configs/ScienceQA/cache_lora_MCR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 2 --l 1 --multil 1 --num_samples 2 --regby greedy --shuffle_type rand --contrcoeff 1
 
 
 

@@ -22,9 +22,9 @@
     "save_dir": "SynIBCache_Ens_LoRa_{}.pth.tar",
     "encoders": [
       {
-        "model_name": "Qwen/Qwen3-VL-2B-Instruct",
         "model": "QwenVL_ScienceQA_Cached",
         "args": {
+          "model_class": "QwenVL_ScienceQA_Cached",
           "d_model": 512,
           "num_classes": 5,
           "fc_inner": 64,
@@ -79,9 +79,9 @@
             }
       },
       {
-        "model_name": "Qwen/Qwen3-VL-2B-Instruct",
         "model": "QwenVL_ScienceQA_Cached",
         "args": {
+          "model_class": "QwenVL_ScienceQA_Cached",
           "d_model": 512,
           "num_classes": 5,
           "fc_inner": 64,

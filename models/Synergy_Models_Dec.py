@@ -1005,7 +1005,7 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
 
         losses = {}
         if label is not None:
-            losses["ce_head"] = self._mc_ce_loss(head_logits, label)
+            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, label)
 
         # Optional eval-time generation parsing (kept off by default)
         preds = {"combined": head_logits}
@@ -1347,7 +1347,7 @@ class QwenVL_ScienceQA_Unimodal_Image(nn.Module):
 
         losses = {}
         if label is not None:
-            losses["ce_head"] = self._mc_ce_loss(head_logits, label)
+            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, label)
 
         # Optional eval-time generation parsing (kept off by default)
         preds = {"combined": head_logits}
@@ -1685,7 +1685,7 @@ class QwenVL_ScienceQA_Unimodal_Text(nn.Module):
 
         losses = {}
         if label is not None:
-            losses["ce_head"] = self._mc_ce_loss(head_logits, label)
+            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, label)
 
         # Optional eval-time generation parsing (kept off by default)
         preds = {"combined": head_logits}
@@ -2559,7 +2559,7 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
 
         losses = {}
         if "label" in kwargs and kwargs["label"] is not None:
-            losses["ce_head"] = self._mc_ce_loss(head_logits, kwargs["label"])
+            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, kwargs["label"])
 
         preds = {"combined": head_logits, "mask0":head_logits_0, "mask1":head_logits_1}
         features = {"h_cls": h_cls, "mask0":featcls_0, "mask1":featcls_1}
@@ -2608,7 +2608,7 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
 
         losses = {}
         if label is not None:
-            losses["ce_head"] = self._mc_ce_loss(head_logits, label)
+            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, label)
 
         preds = {"combined": head_logits}
         features = {"h_cls": h_cls}
@@ -2975,7 +2975,7 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
 
         losses = {}
         if label is not None:
-            losses["ce_pred_combined"] = self._mc_ce_loss(head_logits, label)
+            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, label)
 
         # Optional eval-time generation parsing (kept off by default)
         preds = {"combined": head_logits}
@@ -3144,7 +3144,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         losses = {}
         if label is not None:
-            losses["ce_pred_combined"] = self._mc_ce_loss(logits, label)
+            losses["ce_loss_combined"] = self._mc_ce_loss(logits, label)
 
         features = {"combined": h_cls}
 
@@ -3275,7 +3275,7 @@ class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):
 
         losses = {}
         if label is not None:
-            losses["ce_head"] = self._mc_ce_loss(logits, label)
+            losses["ce_loss_combined"] = self._mc_ce_loss(logits, label)
 
         features = {"combined": h_cls}
         if return_features:
@@ -3445,7 +3445,7 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
 
         losses = {}
         if label is not None:
-            losses["ce_head"] = self._mc_ce_loss(logits, label)
+            losses["ce_loss_combined"] = self._mc_ce_loss(logits, label)
 
         features = {"combined": h_cls}
         if return_features:
@@ -3595,7 +3595,7 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
 
         losses = {}
         if label is not None:
-            losses["ce_head"] = self._mc_ce_loss(logits, label)
+            losses["ce_loss_combined"] = self._mc_ce_loss(logits, label)
 
         features = {"combined": h_cls}
         if return_features:
@@ -3888,7 +3888,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
 
         losses = {}
         if "label" in kwargs and kwargs["label"] is not None:
-            losses["ce_head"] = self._mc_ce_loss(head_logits, kwargs["label"])
+            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, kwargs["label"])
 
         preds = {"combined": head_logits, "mask0": head_logits_0, "mask1": head_logits_1}
         features = {"combined": h_cls, "mask0": featcls_0, "mask1": featcls_1}
@@ -3917,7 +3917,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
 
         losses = {}
         if label is not None:
-            losses["ce_head"] = self._mc_ce_loss(head_logits, label)
+            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, label)
 
         return {"preds": {"combined": head_logits}, "features": {"combined": h_cls}, "losses": losses}
 
@@ -3931,6 +3931,193 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             synergy_losses = self.synib.compute_training_losses(out, **kwargs)
             out["losses"].update(synergy_losses)
         return out
+
+class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
+    def __init__(self, args, encs=None, **kwargs):
+        super().__init__()
+        encs = encs or []
+        if len(encs) < 1:
+            raise ValueError("encs[0] must be provided as the classifier head.")
+
+        self.args = args
+        self.num_classes = getattr(args, "num_classes")
+
+        model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
+        hf_cache = getattr(self.args, "save_base_dir", None)
+
+        self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
+        tok = self.processor.tokenizer
+        tok.padding_side = "left"
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
+        self.pad_token_id = tok.pad_token_id
+
+        added = tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
+        self.cls_token_id = tok.convert_tokens_to_ids("<CLS>")
+
+        self.backbone = Qwen3VLForConditionalGeneration.from_pretrained(
+            model_name,
+            torch_dtype=torch.bfloat16 if getattr(args, "bf16", False) else torch.float16,
+            device_map="cuda:0",
+            cache_dir=hf_cache,
+        )
+        if added > 0:
+            self.backbone.resize_token_embeddings(len(tok))
+
+        cfg = self.backbone.config
+        self.image_token_id = int(cfg.image_token_id)
+
+        if hasattr(cfg, "text_config") and hasattr(cfg.text_config, "hidden_size"):
+            self.d_model = int(cfg.text_config.hidden_size)
+        else:
+            self.d_model = int(cfg.hidden_size)
+
+        self.enc_0 = encs[0]
+
+        print(self.enc_0)
+
+        self._apply_lora()
+        self._load_cls_embedding()
+        self._setup_trainables()
+
+    def _setup_trainables(self):
+        for p in self.backbone.parameters():
+            p.requires_grad = False
+
+        if getattr(self.args, "lora_config", None) and self.args.lora_config.get("use_lora", False):
+            for n, p in self.backbone.named_parameters():
+                if "lora_" in n:
+                    p.requires_grad = True
+
+        for p in self.enc_0.parameters():
+            p.requires_grad = True
+
+        lm = self.backbone.model.language_model
+        if getattr(self.args, "cls_finetune", False):
+            if getattr(self.args, "train_cls_row", True) and lm is not None and hasattr(lm, "embed_tokens"):
+                emb = lm.embed_tokens
+                emb.weight.requires_grad = True
+
+                cls_id = int(self.cls_token_id)
+                mask = torch.zeros_like(emb.weight, dtype=torch.float32)
+                mask[cls_id].fill_(1.0)
+
+                def grad_mask_hook(grad):
+                    return grad * mask.to(grad.device, grad.dtype)
+
+                if not hasattr(self, "_cls_grad_hooked"):
+                    emb.weight.register_hook(grad_mask_hook)
+                    self._cls_grad_hooked = True
+
+    def load_cls_embedding(self, path, strict_dim=True):
+        ckpt = torch.load(path, map_location="cpu")
+        cls_row = ckpt["cls_row"]
+
+        lm = self.backbone.model.language_model
+        if lm is None or not hasattr(lm, "embed_tokens"):
+            raise RuntimeError("Language model embedding table not found")
+
+        emb = lm.embed_tokens
+        current_cls_id = int(self.cls_token_id)
+
+        if strict_dim and cls_row.numel() != emb.weight.shape[1]:
+            raise ValueError(f"CLS dim mismatch: saved {cls_row.numel()} vs model {emb.weight.shape[1]}")
+
+        with torch.no_grad():
+            emb.weight[current_cls_id].copy_(cls_row.to(emb.weight.device, emb.weight.dtype))
+
+    def _load_cls_embedding(self):
+        cls_path = getattr(self.args, "cls_emb_path", None)
+        save_base_dir = getattr(self.args, "save_base_dir", None)
+        if save_base_dir is None or cls_path is None:
+            return
+        cls_path = os.path.join(save_base_dir, cls_path)
+        if os.path.isfile(cls_path):
+            self.load_cls_embedding(cls_path)
+
+    def _apply_lora(self):
+        cfg = getattr(self.args, "lora_config", None)
+        if not cfg or not cfg.get("use_lora", False):
+            return
+
+        lora_cfg = LoraConfig(
+            r=int(cfg.get("lora_r", 8)),
+            lora_alpha=int(cfg.get("lora_alpha", 8)),
+            lora_dropout=float(cfg.get("lora_dropout", 0.0)),
+            target_modules=list(cfg.get("lora_target_modules", ["q_proj", "v_proj"])),
+            bias=str(cfg.get("lora_bias", "none")),
+            task_type="CAUSAL_LM",
+        )
+        self.backbone = get_peft_model(self.backbone, lora_cfg)
+
+    def _encode(self, input_ids, attention_mask):
+        out = self.backbone(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            output_hidden_states=True,
+        )
+        return out.hidden_states[-1]
+
+    def _get_cls_token_repr(self, hidden, input_ids):
+        B = input_ids.size(0)
+        cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)
+        h = hidden[torch.arange(B, device=input_ids.device), cls_pos]
+        return F.layer_norm(h, (h.shape[-1],))
+
+    def _mc_ce_loss(self, logits, labels):
+        if hasattr(self.args, "class_weights") and self.args.class_weights is not None:
+            return F.cross_entropy(logits, labels, weight=self.args.class_weights.to(logits.device))
+        return F.cross_entropy(logits, labels)
+
+    def forward(self, x, *, label=None, return_features=False, **kwargs):
+        proc = x
+        device = self.backbone.device
+        input_ids = proc["input_ids"].to(device)
+        attention_mask = proc["attention_mask"].to(device)
+        losses = {}
+
+
+        hidden = self._encode(input_ids, attention_mask)
+        h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
+        logits = self.enc_0(h_cls)
+        if label is not None:
+            losses["ce_loss_combined"] = self._mc_ce_loss(logits, label)
+
+        ###Unimodal text
+        image_mask = x.get("image_mask", None)
+        if image_mask is None:
+            raise KeyError("image_mask is required for QwenVL_ScienceQA_Cached_Text")
+
+        image_mask = image_mask.to(device).bool()
+        keep = ~image_mask
+        attention_mask_text = attention_mask * keep.to(attention_mask.dtype)
+        hidden_text = self._encode(input_ids, attention_mask_text)
+        h_cls_text = self._get_cls_token_repr(hidden_text, input_ids).to(self.enc_0.linear.weight.dtype)
+        logits_text = self.enc_0(h_cls_text)
+        if label is not None:
+            losses["ce_loss_c"] = self._mc_ce_loss(logits_text, label)
+
+        ###Unimodal Image
+        hint_mask = proc.get("hint_mask", None)
+        if hint_mask is None:
+            hint_mask = proc.get("text_mask", None)
+
+        if hint_mask is None:
+            print(proc.keys())
+            raise KeyError("hint_mask or text_mask is required for QwenVL_ScienceQA_Cached_Image")
+
+        hint_mask = hint_mask.to(device).bool()
+        keep = (~hint_mask)
+        attention_mask_image = attention_mask * keep.to(attention_mask.dtype)
+        hidden_image = self._encode(input_ids, attention_mask_image)
+        h_cls_image = self._get_cls_token_repr(hidden_image, input_ids).to(self.enc_0.linear.weight.dtype)
+        logits_image= self.enc_0(h_cls_image)
+        if label is not None:
+            losses["ce_loss_g"] = self._mc_ce_loss(logits_image, label)
+
+        features = {"combined": h_cls, "c": h_cls_text, "g": h_cls_image}
+
+        return {"preds": {"combined": logits,"c": logits_text,"g": logits_image}, "features":  features, "losses": losses}
 
 
 class QwenVL_ESNLI(nn.Module):
@@ -4183,7 +4370,7 @@ class QwenVL_ESNLI(nn.Module):
 
         losses = {}
         if label is not None:
-            losses["ce_head"] = self._mc_ce_loss(head_logits, label)
+            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, label)
 
         # Optional eval-time generation parsing (kept off by default)
         preds = {"combined": head_logits}

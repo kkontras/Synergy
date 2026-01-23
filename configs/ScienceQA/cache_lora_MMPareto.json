@@ -25,17 +25,17 @@
       }
   },
   "model": {
-    "model_class": "QwenVL_ScienceQA_Cached",
+    "model_class": "QwenVL_ScienceQA_Cached_MMPareto",
     "args": {
-      "model_class": "QwenVL_ScienceQA_Cached",
+      "model_name": "Qwen/Qwen3-VL-2B-Instruct",
       "d_model": 512, "num_classes": 5, "fc_inner": 64, "dropout": 0.1,
       "cls_emb_path": "Synprom_IBInput2_fold0_lr0.0001_wd0.0001_cls_embedding.pt",
       "cls_finetune": false,
       "cls_type": "linear",
       "clip_grad": false,
       "bias_infusion": {
-        "method": "false",
-        "l": 0.1,
+        "method": "MMPareto_Qwen",
+        "alpha": 0.8,
         "starting_epoch": 0,
         "ending_epoch": 1500,
         "use": true,
@@ -51,7 +51,7 @@
       }
     },
     "load_ongoing": false,
-    "save_dir": "SynIBCache_LoRa_{}.pth.tar",
+    "save_dir": "SynIBCache_LoRa_MMPareto_{}.pth.tar",
     "encoders": [
       {
         "model": "LinearHead_Qwen",

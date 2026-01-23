@@ -3143,7 +3143,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         losses = {}
         if label is not None:
-            losses["ce_head"] = self._mc_ce_loss(logits, label)
+            losses["ce_pred_combined"] = self._mc_ce_loss(logits, label)
 
         features = {"combined": h_cls}
 

@@ -27,7 +27,7 @@
   "model": {
     "model_class": "QwenVL_ScienceQA_Cached",
     "args": {
-      "model_name": "Qwen/Qwen3-VL-8B-Instruct",
+      "model_name": "Qwen/Qwen3-VL-32B-Instruct",
       "d_model": 512, "num_classes": 3, "fc_inner": 64, "dropout": 0.1,
       "cls_finetune": false,
       "cls_type": "linear",

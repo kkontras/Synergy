@@ -56,11 +56,11 @@
       {
         "model": "LinearHead_Qwen",
         "args": {
-          "d_model": 2048,
+          "d_model": 4096,
           "num_classes": 3
         },
         "pretrainedEncoder": {
-          "use": true,
+          "use": false,
           "dir": "Qwen3VL2B_LHead_fold{}.pth.tar"
         }
       }

@@ -357,6 +357,12 @@ class Bias_Infusion_MMPareto_Qwen(General_Bias_Infusion):
                          self.agent.model.named_parameters() if parms.grad is not None])
                 self.agent.optimizer.zero_grad()
 
+            print(grads_audio.keys())
+            print(grads_visual.keys())
+            print(grads_audio["both"]["concat"].shape())
+            print(grads_visual["both"]["concat"].shape())
+            print(grads_audio["both"]["concat"].shape())
+
             audio_k, visual_k = self._compute_ratio(grads_audio, grads_visual)
             total = loss_mm + loss_a + loss_v
             total.backward()

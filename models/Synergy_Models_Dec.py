@@ -3199,7 +3199,8 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         print(label)
         print(F.cross_entropy(logits, label, reduction='none'))
         gen_texts = self.generate_answer(proc)
-        print(gen_texts)
+        for i in gen_texts:
+            print(i)
 
         features = {"combined": h_cls}
 

@@ -3132,6 +3132,46 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             return F.cross_entropy(logits, labels, weight=self.args.class_weights.to(logits.device))
         return F.cross_entropy(logits, labels)
 
+    @torch.no_grad()
+    def generate_answer(
+            self,
+            proc,  # the same dict you pass as x (processor output)
+            max_new_tokens=128,
+            temperature=0.7,
+            top_p=0.9,
+            do_sample=True,
+    ):
+        self.backbone.eval()
+
+        device = self.backbone.device
+        input_ids = proc["input_ids"].to(device)
+        attention_mask = proc["attention_mask"].to(device)
+
+        # If you used left padding (you did), this is important for many decoders:
+        pad_token_id = self.pad_token_id
+        eos_token_id = self.processor.tokenizer.eos_token_id
+
+        gen_ids = self.backbone.generate(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            max_new_tokens=max_new_tokens,
+            do_sample=do_sample,
+            temperature=temperature,
+            top_p=top_p,
+            pad_token_id=pad_token_id,
+            eos_token_id=eos_token_id,
+            return_dict_in_generate=False,
+        )
+
+        # Decode
+        texts = self.processor.tokenizer.batch_decode(
+            gen_ids,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )
+
+        return texts
+
     def forward(self, x, *, label=None, return_features=False, **kwargs):
         proc = x
         device = self.backbone.device
@@ -3152,8 +3192,11 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         print(logits)
         print(label)
         print(F.cross_entropy(logits, label, reduction='none'))
+        gen_texts = self.generate_answer(proc)
+        print(gen_texts)
 
         features = {"combined": h_cls}
+
 
         return {"preds": {"combined": logits}, "features":  features, "losses": losses}
 class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):

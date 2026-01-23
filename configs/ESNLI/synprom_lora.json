@@ -29,7 +29,6 @@
     "model_class": "QwenVL_ESNLI_Synergy_FrozenCLS",
     "args": {
       "d_model": 512, "num_classes": 3, "fc_inner": 64, "dropout": 0.1,
-      "cls_emb_path": "Synprom_IBInput2_fold0_lr0.0001_wd0.0001_cls_embedding.pt",
       "cls_finetune": false,
       "cls_type": "linear",
       "clip_grad": false,
@@ -61,7 +60,7 @@
         },
         "pretrainedEncoder": {
           "use": false,
-          "dir": "Qwen3VL2B_LHead_fold{}.pth.tar"
+          "dir": "Qwen3VL_LHead_fold{}.pth.tar"
         }
       }
     ]

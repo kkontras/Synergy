@@ -3000,10 +3000,9 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         super().__init__()
         encs = encs or []
         if len(encs) < 1:
-            raise ValueError("encs[0] must be provided as the 5-way classifier head.")
+            raise ValueError("encs[0] must be provided as the classifier head.")
 
         self.args = args
-        self.max_new_tokens = getattr(args, "max_new_tokens", 32)
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")

@@ -359,9 +359,10 @@ class Bias_Infusion_MMPareto_Qwen(General_Bias_Infusion):
 
             print(grads_audio.keys())
             print(grads_visual.keys())
-            print(grads_audio["both"]["concat"].shape())
-            print(grads_visual["both"]["concat"].shape())
-            print(grads_audio["both"]["concat"].shape())
+            print(grads_audio["both"].keys())
+            print(grads_visual["both"].keys())
+            print(grads_audio["both"]["concat"])
+            print(grads_visual["both"]["concat"])
 
             audio_k, visual_k = self._compute_ratio(grads_audio, grads_visual)
             total = loss_mm + loss_a + loss_v

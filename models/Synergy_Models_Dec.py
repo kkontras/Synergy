@@ -3155,6 +3155,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             input_ids=input_ids,
             attention_mask=attention_mask,
             max_new_tokens=max_new_tokens,
+            min_new_tokens=2,
             do_sample=do_sample,
             temperature=temperature,
             top_p=top_p,

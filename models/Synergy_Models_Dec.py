@@ -3028,7 +3028,7 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
             features["hidden"] = hidden
 
         print("###NEW ONE####")
-        print(head_logits)
+        print(F.softmax(head_logits, dim=-1))
         print(label)
         print(F.cross_entropy(head_logits, label, reduction='none'))
         gen_texts = self.generate_answer(proc)

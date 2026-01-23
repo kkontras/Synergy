@@ -3142,9 +3142,15 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
         logits = self.enc_0(h_cls)
 
+
+
         losses = {}
         if label is not None:
             losses["ce_loss_combined"] = self._mc_ce_loss(logits, label)
+
+        print(logits)
+        print(label)
+        print(losses["ce_loss_combined"])
 
         features = {"combined": h_cls}
 

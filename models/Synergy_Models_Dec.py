@@ -2897,6 +2897,52 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
             return F.cross_entropy(logits, labels, weight=class_weights)
         return F.cross_entropy(logits, labels)
 
+    @torch.no_grad()
+    def generate_answer(
+            self,
+            proc,  # the same dict you pass as x (processor output)
+            max_new_tokens=128,
+            temperature=0.7,
+            top_p=0.9,
+            do_sample=True,
+    ):
+        self.backbone.eval()
+
+        device = self.backbone.device
+        input_ids = proc["input_ids"].to(device)
+        attention_mask = proc["attention_mask"].to(device)
+
+        # If you used left padding (you did), this is important for many decoders:
+        pad_token_id = self.pad_token_id
+        eos_token_id = self.processor.tokenizer.eos_token_id
+
+        gen_ids = self.backbone.generate(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            max_new_tokens=max_new_tokens,
+            min_new_tokens=2,
+            do_sample=do_sample,
+            temperature=temperature,
+            top_p=top_p,
+            pad_token_id=pad_token_id,
+            eos_token_id=eos_token_id,
+            return_dict_in_generate=False,
+        )
+
+        print("input_ids:", input_ids.shape)
+        print("gen_ids:", gen_ids.shape)
+        print("new tokens:", gen_ids.shape[1] - input_ids.shape[1])
+        prompt_len = input_ids.shape[1]
+        new_token_ids = gen_ids[:, prompt_len:]
+
+        texts = self.processor.tokenizer.batch_decode(
+            new_token_ids,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )
+
+        return texts
+
     # ============================================================
     #  Forward
     # ============================================================
@@ -2982,6 +3028,12 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
         features = {"combined": h_cls}
         if return_features:
             features["hidden"] = hidden
+
+        print("###NEW ONE####")
+        print(head_logits)
+        print(label)
+        print(F.cross_entropy(head_logits, label, reduction='none'))
+        gen_texts = self.generate_answer(proc)
 
         return {"preds": preds, "features": features, "losses": losses}
 

@@ -3163,9 +3163,14 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             return_dict_in_generate=False,
         )
 
-        # Decode
+        print("input_ids:", input_ids.shape)
+        print("gen_ids:", gen_ids.shape)
+        print("new tokens:", gen_ids.shape[1] - input_ids.shape[1])
+        prompt_len = input_ids.shape[1]
+        new_token_ids = gen_ids[:, prompt_len:]
+
         texts = self.processor.tokenizer.batch_decode(
-            gen_ids,
+            new_token_ids,
             skip_special_tokens=True,
             clean_up_tokenization_spaces=False,
         )

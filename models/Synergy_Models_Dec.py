@@ -3145,13 +3145,13 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
 
         losses = {}
-        if label is not None:
+        if label is not None: 
             losses["ce_loss_combined"] = self._mc_ce_loss(logits, label)
 
         print("###NEW ONE####")
         print(logits)
         print(label)
-        print(F.cross_entropy(logits, labels, reduction=None))
+        print(F.cross_entropy(logits, label, reduction=None))
 
         features = {"combined": h_cls}
 

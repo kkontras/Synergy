@@ -127,6 +127,9 @@ done;done;done
 for ir in 2.0; do for l in 0.001 0.01 0.1 1; do for multil in 0.01 0.1 1; do
   python show.py --config ./configs/CREMA_D/synergy/jan/MCR.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --l $l --multil $multil --num_samples 32 --regby greedy --shuffle_type rand --batch_size 32 --contrcoeff 1 --ironic_rate $ir; done; done ; done
 
+for ir in 0.5; do for a in 1 3 5; do for kmpe in 1 3 5; do
+  python train.py --config ./configs/CREMA_D/synergy/jan/DnR.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 64 --cls linear  --alpha $a --kmepoch $kmpe  --ironic_rate $ir --start_over; done; done ; done
+
 
 #python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.00001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 1 --validate_with syn_accuracy
 #python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 1 --validate_with syn_accuracy
@@ -174,3 +177,4 @@ for ir in 2.0; do for l in 0.001 0.01 0.1 1; do for multil in 0.01 0.1 1; do
 #  for wd in 0.0001 0.00001; do for l in 0.01 0.1 1; do for lsparse in 0.01 0.1 1; do echo "--config ./configs/CREMA_D/synergy/dec/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l $l --lr $lr --wd $wd --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse $lsparse" done; done done; done
 
 #python train.py --config ./configs/ESNLI/synprom_ib_gen.json --default_config ./configs/ESNLI/default_config_esnli_syn.json
+

@@ -2797,14 +2797,13 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
             hypothesis: Sequence[str],
             label_options: List[str],
     ) -> List[str]:
-        labels = ", ".join(label_options)
 
         instr_text = (
             "Task: Decide whether the image and the hypothesis match.\n"
             "Entailment: the image matches the hypothesis (supported).\n"
             "Contradiction: the image does not match the hypothesis (refuted).\n"
             "Neutral: not enough information in the image to determine a match.\n"
-            f"Answer format: Output exactly one label from: {labels}.\n"
+            f"Answer format: Output exactly one label from: {label_options}.\n"
         )
 
         return [
@@ -2918,20 +2917,44 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
 
         label_options = "entailment,neutral,contradiction"
 
-        prompts = self.build_prompt_no_cls(hypothesis=hint_texts, label_options=label_options)
-        prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
+        texts = self.build_prompt_no_cls(hypothesis=hint_texts, label_options=label_options)
+        # prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
+
+        # texts: List[str]
+        messages_batch = [
+            [{"role": "user", "content": [
+                {"type": "image"},
+                {"type": "text", "text": t},
+            ]}]
+            for t in texts
+        ]
+        prompts = [
+            self.processor.apply_chat_template(
+                m, tokenize=False, add_generation_prompt=True
+            )
+            for m in messages_batch
+        ]
 
         image_list = [img for img in images]
 
         proc = self.processor(
-            text=prompts_with_image,
+            text=prompts,
             images=image_list,
             return_tensors="pt",
             padding=True,
             truncation=True,
         )
-
+        proc.pop("token_type_ids", None)
         proc = {k: v.to(device) for k, v in proc.items()}
+        # gen = self.backbone.generate(
+        #     **proc,
+        #     max_new_tokens=8,  # labels are short
+        #     do_sample=False,  # deterministic for classification
+        #     temperature=0.0,
+        # )
+        # pred_texts = self.processor.batch_decode(gen, skip_special_tokens=True)
+        # print(pred_texts)
+
 
         input_ids = proc["input_ids"]
         attention_mask = proc["attention_mask"]

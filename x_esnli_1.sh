@@ -14,8 +14,7 @@ python train.py  --config ./configs/ESNLI/synprom_lora.json  --default_config ./
 
 
 
-python train.py  --config ./configs/ESNLI/synprom_lora.json  --default_config ./configs/ESNLI/default_config_esnli_orcd.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 128
-
+e
 
 
 

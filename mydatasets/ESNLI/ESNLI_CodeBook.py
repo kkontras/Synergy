@@ -30,7 +30,7 @@ import random
 import argparse
 import logging
 import urllib.request
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -399,13 +399,22 @@ def make_loader(ds: Dataset, batch_size: int, num_workers: int, shuffle: bool = 
 # -----------------------------
 # Prompt (NO CLS)
 # -----------------------------
-def build_prompt_no_cls(hypothesis: str, label_options: List[str]) -> str:
-    hyp = (hypothesis or "").strip()
-    main_text = f"Hypothesis:\n{hyp}".strip()
-    instr_text = "Choose one label: " + ", ".join(label_options) + "."
-    return "<image>\n" + main_text + "\n\n" + instr_text
+def build_prompt_no_cls(
+        hypothesis: Sequence[str],
+        label_options: List[str],
+) -> List[str]:
+    instr_text = (
+        "Task: Decide whether the image and the hypothesis match.\n"
+        "Entailment: the image matches the hypothesis (supported).\n"
+        "Contradiction: the image does not match the hypothesis (refuted).\n"
+        "Neutral: not enough information in the image to determine a match.\n"
+        f"Answer format: Output exactly one label from: {label_options}.\n"
+    )
 
-
+    return [
+        f"Hypothesis:\n{str(h).strip()}\n\n{instr_text}"
+        for h in hypothesis
+    ]
 # -----------------------------
 # Vision embedding extraction
 # -----------------------------
@@ -512,10 +521,27 @@ def main():
         labels: torch.Tensor = batch["label"]    # [B]
         ids: List[str] = batch["id"]
 
-        prompts = [build_prompt_no_cls(t, label_options) for t in texts]
+        label_options = "entailment,neutral,contradiction"
+
+        texts = build_prompt_no_cls(hypothesis=texts, label_options=label_options)
+
+        messages_batch = [
+            [{"role": "user", "content": [
+                {"type": "image"},
+                {"type": "text", "text": t},
+            ]}]
+            for t in texts
+        ]
+        prompts = [
+            processor.apply_chat_template( m, tokenize=False, add_generation_prompt=True
+            )
+            for m in messages_batch
+        ]
+        print(prompts[0])
+
+
         pil_images = [tensor_image_to_pil(images_t[i]) for i in range(images_t.size(0))]
 
-        print(prompts[0])
         enc = processor(
             text=prompts,
             images=pil_images,
@@ -631,6 +657,70 @@ def main():
         json.dump(meta, f, indent=2)
 
     logger.info(f"[done] Wrote cache to: {split_out}")
+
+import math, textwrap
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("Agg")
+
+def save_image_prompt_label_grid(
+    pil_images,
+    prompts,
+    labels,
+    ids=None,
+    label_options=None,
+    outpath="sanity_batch.png",
+    max_items=16,
+    ncols=4,
+    wrap=60,
+    dpi=200,
+    title="Sanity check: image + prompt + label",
+):
+    """
+    Save a grid showing PIL images with (id, label, optional label name) and prompt text.
+    """
+    B = min(len(pil_images), len(prompts), len(labels), max_items)
+    nrows = math.ceil(B / ncols)
+
+    fig = plt.figure(figsize=(ncols * 4.2, nrows * 4.8), dpi=dpi)
+    fig.suptitle(title, fontsize=14)
+
+    for i in range(B):
+        ax = fig.add_subplot(nrows, ncols, i + 1)
+        ax.imshow(pil_images[i])
+        ax.axis("off")
+
+        # label -> int
+        y = labels[i]
+        try:
+            y = int(y)  # works for torch scalar / numpy scalar / python int
+        except Exception:
+            pass
+
+        y_name = None
+        if label_options is not None:
+            try:
+                y_name = label_options[y]
+            except Exception:
+                y_name = None
+
+        header = []
+        if ids is not None and i < len(ids):
+            header.append(f"id: {ids[i]}")
+        header.append(f"y: {y}" + (f" ({y_name})" if y_name is not None else ""))
+
+        prompt_wrapped = "\n".join(textwrap.wrap(prompts[i], width=wrap))
+        ax.set_title("\n".join(header) + "\n" + prompt_wrapped, fontsize=8, loc="left")
+
+    # hide unused slots
+    for j in range(B + 1, nrows * ncols + 1):
+        ax = fig.add_subplot(nrows, ncols, j)
+        ax.axis("off")
+
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.savefig(outpath, bbox_inches="tight")
+    plt.close(fig)
+    return outpath
 
 
 if __name__ == "__main__":

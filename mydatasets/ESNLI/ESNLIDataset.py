@@ -125,7 +125,7 @@ def ensure_esnli_ve_repo(
 
     _download_url(zip_url, zip_path)
 
-    self.logger.info(f"[GitHub] Extracting: {zip_path} -> {cache_root}")
+    # self.logger.info(f"[GitHub] Extracting: {zip_path} -> {cache_root}")
     with zipfile.ZipFile(zip_path, "r") as zf:
         zf.extractall(cache_root)
 

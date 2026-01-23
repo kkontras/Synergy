@@ -56,7 +56,7 @@
         "model": "LinearHead_Qwen",
         "args": {
           "d_model": 2048,
-          "num_classes": 5
+          "num_classes": 3
         },
         "pretrainedEncoder": {
           "use": false,

@@ -3032,6 +3032,9 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
         print(label)
         print(F.cross_entropy(head_logits, label, reduction='none'))
         gen_texts = self.generate_answer(proc)
+        for i in gen_texts:
+            print("-----")
+            print(i)
 
         return {"preds": preds, "features": features, "losses": losses}
 

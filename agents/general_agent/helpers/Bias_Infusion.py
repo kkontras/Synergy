@@ -401,7 +401,8 @@ class Bias_Infusion_MMPareto_Qwen(General_Bias_Infusion):
                     three_norm = torch.norm(param.grad.data.clone())
                     new_grad_0 = 2 * audio_k[0] * grads_audio['both'][name] + 2 * audio_k[1] * grads_audio['audio'][name]
                     new_grad_1 = 2 * visual_k[0] * grads_visual['both'][name] + 2 * visual_k[1] * grads_visual['visual'][name]
-                    new_norm = torch.norm((new_grad_0+new_grad_1)/2)
+                    new_grad = (new_grad_0+new_grad_1)/2
+                    new_norm = torch.norm(new_grad)
                     diff = three_norm / new_norm
                     if (diff > 1):
                         param.grad = diff * new_grad * gamma

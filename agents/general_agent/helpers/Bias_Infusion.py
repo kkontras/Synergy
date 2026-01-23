@@ -357,13 +357,6 @@ class Bias_Infusion_MMPareto_Qwen(General_Bias_Infusion):
                          self.agent.model.named_parameters() if parms.grad is not None])
                 self.agent.optimizer.zero_grad()
 
-            print(grads_audio.keys())
-            print(grads_visual.keys())
-            print(grads_audio["both"].keys())
-            print(grads_visual["both"].keys())
-            print(grads_audio["both"]["concat"].shape)
-            print(grads_visual["both"]["concat"].shape)
-
             audio_k, visual_k = self._compute_ratio(grads_audio, grads_visual)
             total = loss_mm + loss_a + loss_v
             total.backward()
@@ -404,11 +397,21 @@ class Bias_Infusion_MMPareto_Qwen(General_Bias_Infusion):
     def _equalize_gradients(self, grads_audio, grads_visual, audio_k, visual_k, gamma):
         for name, param in self.agent.model.named_parameters():
             if param.grad is not None:
-                if ("mod0" in name or "fc_0" in name or "enc_0" in name) and name in grads_audio['both']:
+                if name in grads_audio['both'] and name in grads_visual['both']:
+                    three_norm = torch.norm(param.grad.data.clone())
+                    new_grad_0 = 2 * audio_k[0] * grads_audio['both'][name] + 2 * audio_k[1] * grads_audio['audio'][name]
+                    new_grad_1 = 2 * visual_k[0] * grads_visual['both'][name] + 2 * visual_k[1] * grads_visual['visual'][name]
+                    new_norm = torch.norm((new_grad_0+new_grad_1)/2)
+                    diff = three_norm / new_norm
+                    if (diff > 1):
+                        param.grad = diff * new_grad * gamma
+                    else:
+                        param.grad = new_grad * gamma
+
+                if name in grads_audio['both']:
                     three_norm = torch.norm(param.grad.data.clone())
                     new_grad = 2 * audio_k[0] * grads_audio['both'][name] + 2 * audio_k[1] * \
-                               grads_audio['audio'][
-                                   name]
+                               grads_audio['audio'][name]
                     new_norm = torch.norm(new_grad)
                     diff = three_norm / new_norm
                     if (diff > 1):
@@ -416,7 +419,7 @@ class Bias_Infusion_MMPareto_Qwen(General_Bias_Infusion):
                     else:
                         param.grad = new_grad * gamma
 
-                if ("mod1" in name or "fc_1" in name or "enc_1" in name) and name in grads_visual['both']:
+                if name in grads_visual['both']:
                     three_norm = torch.norm(param.grad.data.clone())
                     new_grad = 2 * visual_k[0] * grads_visual['both'][name] + 2 * visual_k[1] * \
                                grads_visual['visual'][name]

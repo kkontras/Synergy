@@ -294,9 +294,9 @@ class Monitor_n_Save():
 
                 message += f"{s_str} {u1_str} {u2_str} {r_str} {sl_str}{N} "
 
-            if "f1_perclass" in val_metrics:
-                rounded_v = ["{:.1f}".format(v*100) for v in val_metrics["f1_perclass"]["combined"]]
-                message += Fore.BLUE + "F1_perclass: {} ".format("-".join(rounded_v)) + Fore.RESET
+            # if "f1_perclass" in val_metrics:
+            #     rounded_v = ["{:.1f}".format(v*100) for v in val_metrics["f1_perclass"]["combined"]]
+            #     message += Fore.BLUE + "F1_perclass: {} ".format("-".join(rounded_v)) + Fore.RESET
 
             if self.agent.accelerator.is_main_process:
                 self.agent.logger.info(message+ Fore.RESET)

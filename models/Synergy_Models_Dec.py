@@ -3037,6 +3037,8 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         self.enc_0 = encs[0]
 
+        print(self.enc_0)
+
         self._apply_lora()
         self._load_cls_embedding()
         self._setup_trainables()

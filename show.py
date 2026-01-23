@@ -178,11 +178,11 @@ def print_search(config_path, default_config_path, args):
                 message += Fore.MAGENTA + "Test_F1_{}: {:.1f} ".format(i, v * 100)
 
     if test_metric and "ceu" in val_metrics:
-        message += Fore.LIGHTGREEN_EX + "V_CEU_{}: {:.2f} ".format("S", val_metrics["ceu"]["combined"]["synergy"])
+        message += Fore.LIGHTGREEN_EX + "V_CEU_{}: {:.3f} ".format("S", val_metrics["ceu"]["combined"]["synergy"])
         # for i, v in val_metrics["ceu"]["combined"].items(): message += Fore.LIGHTGREEN_EX + "V_CEU_{}: {:.2f} ".format(i, v)
 
     if test_metric and "ceu" in test_metric:
-        message += Fore.LIGHTGREEN_EX + "T_CEU_{}: {:.2f} ".format("S", test_metric["ceu"]["combined"]["synergy"])
+        message += Fore.LIGHTGREEN_EX + "T_CEU_{}: {:.3f} ".format("S", test_metric["ceu"]["combined"]["synergy"])
         # for i, v in test_metric["ceu"]["combined"].items(): message += Fore.LIGHTGREEN_EX + "T_CEU_{}: {:.2f} ".format(i, v)
 
     if test_metric and "f1_perclass" in test_metric:

@@ -361,7 +361,7 @@ class ESNLI_VE_Dataloader:
         self.collate_fn = collate_esnli_ve
 
         total_cpus = multiprocessing.cpu_count()
-        workers = max(1, total_cpus - 1)
+        workers = max(1, min(24, total_cpus - 1))
 
         self.logger.info(f" CPUs: {total_cpus} | Workers: {workers}")
 

@@ -86,10 +86,15 @@ for ir in 0.1 0.5 1.0 2.0; do
 #  python show.py --config ./configs/CREMA_D/synergy/jan/unimodal_audio.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --lr 0.001 --wd 0.0001 --batch_size 64 --cls mlp --ironic_rate $ir
 #  python show.py --config ./configs/CREMA_D/synergy/jan/unimodal_video.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 64  --cls mlp --ironic_rate $ir
 #  python show.py --config ./configs/CREMA_D/synergy/jan/ens.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --ironic_rate $ir
-  python show.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 0 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --ironic_rate $ir
-#  for l in 0.1 0.5 1 5 10; do for lsparse in 0.1 0.5 1 5 10; do
+#  python show.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 0 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --ironic_rate $ir
+  for l in 0.1 0.5 1 5 10; do
+        for pmin in 0.2 0.3 0.5 0.7 0.9; do
+          python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l $l --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --ironic_rate $ir --perturb_pmin $pmin
+        done
+#    for lsparse in 0.1 0.5 1 5 10; do
 #    python show.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l $l --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse $lsparse  --ironic_rate $ir
-#  done; done
+#  done
+ done
 
 done
 
@@ -127,9 +132,11 @@ done;done;done
 for ir in 2.0; do for l in 0.001 0.01 0.1 1; do for multil in 0.01 0.1 1; do
   python show.py --config ./configs/CREMA_D/synergy/jan/MCR.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --l $l --multil $multil --num_samples 32 --regby greedy --shuffle_type rand --batch_size 32 --contrcoeff 1 --ironic_rate $ir; done; done ; done
 
-for ir in 0.5; do for a in 1 3 5; do for kmpe in 1 3 5; do
+for ir in 0.1 0.5 1.0 2.0; do for a in 1 3 5; do for kmpe in 1 3 5; do
   python train.py --config ./configs/CREMA_D/synergy/jan/DnR.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 64 --cls linear  --alpha $a --kmepoch $kmpe  --ironic_rate $ir --start_over; done; done ; done
 
+
+srun --partition=interactive --cluster=genius --time=01:00:00 --nodes=1000 -A lp_biomed_mdv --gpus-per-node=1 --pty bash -l
 
 #python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.00001 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 1 --validate_with syn_accuracy
 #python train.py --config ./configs/CREMA_D/synergy/jan/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0 --cls mlp --batch_size 64 --perturb_fill ema --perturb_lsparse 1 --validate_with syn_accuracy

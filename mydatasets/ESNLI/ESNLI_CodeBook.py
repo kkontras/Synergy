@@ -521,7 +521,7 @@ def main():
         labels: torch.Tensor = batch["label"]    # [B]
         ids: List[str] = batch["id"]
 
-        label_options = "entailment,neutral,contradiction"
+        label_options = "entailment, neutral, contradiction"
 
         texts = build_prompt_no_cls(hypothesis=texts, label_options=label_options)
 
@@ -537,8 +537,6 @@ def main():
             )
             for m in messages_batch
         ]
-        print(prompts[0])
-
 
         pil_images = [tensor_image_to_pil(images_t[i]) for i in range(images_t.size(0))]
 

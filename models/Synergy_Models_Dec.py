@@ -672,7 +672,7 @@ class LinearHead_Qwen(nn.Module):
         super().__init__()
         self.args = args
         self.num_classes = getattr(args, "num_classes")
-        self.hidden_size = getattr(args, "hidden_size", 2048)
+        self.hidden_size = getattr(args, "d_model", 2048)
         self.linear = nn.Linear(self.hidden_size, self.num_classes)
 
     def forward(self, x, **kwargs):

@@ -162,10 +162,11 @@ def build_memmap_from_token_shards(
                 raise RuntimeError(f"Shard length mismatch: {r['path']} manifest={r['n']} actual={len(items)}")
 
             for ex in items:
+                print(ex.keys())
                 inp: torch.Tensor = ex["input_ids"]
                 total_tokens += int(inp.numel())
 
-                # masks required
+                # masks required 
                 masks = ex.get("masks", None)
                 if masks is None or ("image" not in masks) or ("text" not in masks):
                     raise KeyError(
@@ -223,15 +224,11 @@ def build_memmap_from_token_shards(
 
         grid_thw = np.zeros((N, 3), dtype=np.int32) if has_grid else None
 
-        if has_vision:
-            if vision_dim is None:
-                raise RuntimeError("has_vision True but vision_dim None")
-            vision_offsets = np.zeros((N,), dtype=np.int64)
-            vision_lengths = np.zeros((N,), dtype=np.int32)
-        else:
-            vision_offsets = None
-            vision_lengths = None
-            vision_dim = None
+        if vision_dim is None:
+            raise RuntimeError("has_vision True but vision_dim None")
+        vision_offsets = np.zeros((N,), dtype=np.int64)
+        vision_lengths = np.zeros((N,), dtype=np.int32)
+
 
         # ids file
         ids_path = os.path.join(out_dir, "ids.jsonl")
@@ -248,11 +245,9 @@ def build_memmap_from_token_shards(
         image_mask_mm = np.memmap(image_mask_bin, mode="w+", dtype=np.uint8, shape=(total_tokens,))
         text_mask_mm = np.memmap(text_mask_bin, mode="w+", dtype=np.uint8, shape=(total_tokens,))
 
-        if has_vision:
-            vision_bin = os.path.join(out_dir, "vision.bin")
-            vision_mm = np.memmap(vision_bin, mode="w+", dtype=vision_np_dtype, shape=(total_vision_elems,))
-        else:
-            vision_mm = None
+        vision_bin = os.path.join(out_dir, "vision.bin")
+        vision_mm = np.memmap(vision_bin, mode="w+", dtype=vision_np_dtype, shape=(total_vision_elems,))
+
 
         if has_pixel and store_pixel_values:
             assert pixel_shape is not None
@@ -311,30 +306,30 @@ def build_memmap_from_token_shards(
                             raise ValueError(f"image_grid_thw must have len=3, got {g}")
                         grid_thw[i, :] = np.array(g, dtype=np.int32)
 
-                if has_vision:
-                    ve = ex.get("vision_embeds", None)
-                    if ve is None:
-                        vision_offsets[i] = vision_cursor
-                        vision_lengths[i] = 0
-                    else:
-                        if not torch.is_tensor(ve):
-                            raise TypeError(f"vision_embeds must be torch.Tensor, got {type(ve)}")
-                        if ve.dim() == 1:
-                            ve = ve.view(1, -1)
-                        if ve.dim() != 2:
-                            raise ValueError(f"vision_embeds must be 2D after reshape, got {tuple(ve.shape)}")
+                ve = ex.get("vision_embeds", None)
 
-                        nimg, D = int(ve.shape[0]), int(ve.shape[1])
-                        if vision_dim != D:
-                            raise ValueError(f"vision_dim mismatch at item {i}: expected {vision_dim}, got {D}")
+                if ve is None:
+                    vision_offsets[i] = vision_cursor
+                    vision_lengths[i] = 0
+                else:
+                    if not torch.is_tensor(ve):
+                        raise TypeError(f"vision_embeds must be torch.Tensor, got {type(ve)}")
+                    if ve.dim() == 1:
+                        ve = ve.view(1, -1)
+                    if ve.dim() != 2:
+                        raise ValueError(f"vision_embeds must be 2D after reshape, got {tuple(ve.shape)}")
 
-                        vision_offsets[i] = vision_cursor
-                        vision_lengths[i] = nimg
+                    nimg, D = int(ve.shape[0]), int(ve.shape[1])
+                    if vision_dim != D:
+                        raise ValueError(f"vision_dim mismatch at item {i}: expected {vision_dim}, got {D}")
 
-                        flat = ve.detach().cpu().numpy().astype(vision_np_dtype, copy=False).reshape(-1)
-                        n_elems = int(flat.size)
-                        vision_mm[vision_cursor:vision_cursor + n_elems] = flat
-                        vision_cursor += n_elems
+                    vision_offsets[i] = vision_cursor
+                    vision_lengths[i] = nimg
+
+                    flat = ve.detach().cpu().numpy().astype(vision_np_dtype, copy=False).reshape(-1)
+                    n_elems = int(flat.size)
+                    vision_mm[vision_cursor:vision_cursor + n_elems] = flat
+                    vision_cursor += n_elems
 
                 if pixel_mm is not None:
                     pv = ex.get("pixel_values", None)
@@ -373,10 +368,9 @@ def build_memmap_from_token_shards(
         if has_grid and grid_thw is not None:
             np.save(os.path.join(out_dir, "image_grid_thw.npy"), grid_thw)
 
-        if has_vision:
-            np.save(os.path.join(out_dir, "vision_offsets.npy"), vision_offsets)
-            np.save(os.path.join(out_dir, "vision_lengths.npy"), vision_lengths)
-            np.save(os.path.join(out_dir, "vision_dim.npy"), np.array([int(vision_dim)], dtype=np.int32))
+        np.save(os.path.join(out_dir, "vision_offsets.npy"), vision_offsets)
+        np.save(os.path.join(out_dir, "vision_lengths.npy"), vision_lengths)
+        np.save(os.path.join(out_dir, "vision_dim.npy"), np.array([int(vision_dim)], dtype=np.int32))
 
         meta = {
             "version": 2,
@@ -516,42 +510,20 @@ class ESNLI_MemmapDataset(Dataset):
             shape=(self.total_tokens,),
         )
 
-        if self.has_grid:
-            self.grid_thw = np.load(os.path.join(self.mem_dir, "image_grid_thw.npy"))
-        else:
-            self.grid_thw = None
+        self.vision_offsets = np.load(os.path.join(self.mem_dir, "vision_offsets.npy"))
+        self.vision_lengths = np.load(os.path.join(self.mem_dir, "vision_lengths.npy"))
+        vd = np.load(os.path.join(self.mem_dir, "vision_dim.npy"))
+        self.D = int(vd[0])
 
-        if self.has_vision:
-            self.vision_offsets = np.load(os.path.join(self.mem_dir, "vision_offsets.npy"))
-            self.vision_lengths = np.load(os.path.join(self.mem_dir, "vision_lengths.npy"))
-            vd = np.load(os.path.join(self.mem_dir, "vision_dim.npy"))
-            self.D = int(vd[0])
+        v_dtype = np.float16 if self.vision_dtype == "float16" else np.float32
+        total_vision_elems = int((self.vision_lengths.astype(np.int64) * self.D).sum())
 
-            v_dtype = np.float16 if self.vision_dtype == "float16" else np.float32
-            total_vision_elems = int((self.vision_lengths.astype(np.int64) * self.D).sum())
-
-            self.vision_mm = np.memmap(
-                os.path.join(self.mem_dir, "vision.bin"),
-                mode="r",
-                dtype=v_dtype,
-                shape=(total_vision_elems,),
-            )
-        else:
-            self.vision_offsets = None
-            self.vision_lengths = None
-            self.vision_mm = None
-            self.D = None
-
-        if self.store_pixel_values:
-            C, H, W = self.pixel_shape
-            self.pixel_mm = np.memmap(
-                os.path.join(self.mem_dir, "pixel_values.bin"),
-                mode="r",
-                dtype=np.float16,
-                shape=(self.N, int(C), int(H), int(W)),
-            )
-        else:
-            self.pixel_mm = None
+        self.vision_mm = np.memmap(
+            os.path.join(self.mem_dir, "vision.bin"),
+            mode="r",
+            dtype=v_dtype,
+            shape=(total_vision_elems,),
+        )
 
         print(f"[ESNLI MemmapDataset] split={split} N={self.N} mem_dir={self.mem_dir}")
 

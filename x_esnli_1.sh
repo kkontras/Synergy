@@ -20,4 +20,4 @@ python train.py  --config ./configs/ESNLI/cache_lora.json  --default_config ./co
 
 
 
-#python ESNLI_CodeBook.py --split train --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI" --flickr_images_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI/flickr30k-images/" --model_name "Qwen/Qwen3-VL-2B-Instruct" --output_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 16
+python ESNLI_CodeBook.py --split validation --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI" --flickr_images_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI/flickr30k-images/" --model_name "Qwen/Qwen3-VL-2B-Instruct" --output_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 16

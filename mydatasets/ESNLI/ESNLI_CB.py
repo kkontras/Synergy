@@ -556,7 +556,7 @@ class ESNLI_MemmapDataset(Dataset):
         print(f"[ESNLI MemmapDataset] split={split} N={self.N} mem_dir={self.mem_dir}")
 
     def __len__(self) -> int:
-        return 10
+        return self.N
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         off = int(self.offsets[idx])

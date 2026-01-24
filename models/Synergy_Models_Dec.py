@@ -18,6 +18,7 @@ import os
 from peft import LoraConfig, get_peft_model
 import torch
 from typing import Any, Dict, List, Optional, Sequence
+from torchvision.transforms.functional import to_pil_image
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -2627,6 +2628,112 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
             out["losses"].update(synergy_losses)
         return out
 
+def save_vl_debug_plots(
+    images,
+    labels,
+    prompts,
+    generated_responses=None,   # <- NEW: list[str] length B (or None)
+    out_dir="debug_viz",
+    prefix="ex",
+    id2label=None,
+    max_chars=16000,
+    max_gen_chars=8000,
+):
+    """
+    Save one PNG per sample showing: image + (label id + label text) + prompt + generated response.
+
+    Args:
+        images: torch.Tensor [B,C,H,W] (float or uint8)
+        labels: torch.Tensor [B] (ints) or list/array
+        prompts: list[str] length B
+        generated_responses: list[str] length B (optional). If None, skips displaying it.
+        out_dir: output directory
+        prefix: filename prefix
+        id2label: dict[int,str], optional (defaults to {0:entailment,1:neutral,2:contradiction})
+        max_chars: truncate prompt for plotting (None to disable)
+        max_gen_chars: truncate generated response for plotting (None to disable)
+    """
+    import os
+    import textwrap
+    import torch
+    import matplotlib.pyplot as plt
+    import matplotlib
+    matplotlib.use("agg")
+
+    if id2label is None:
+        id2label = {0: "entailment", 1: "neutral", 2: "contradiction"}
+
+    def to_uint8_hwc(img_chw: torch.Tensor):
+        img = img_chw.detach().to("cpu")
+        if img.dtype.is_floating_point:
+            mx = float(img.max().item()) if img.numel() else 1.0
+            if mx <= 1.5:
+                img = img.clamp(0, 1) * 255.0
+            else:
+                img = img.clamp(0, 255)
+            img = img.to(torch.uint8)
+        else:
+            img = img.to(torch.uint8)
+
+        img = img.permute(1, 2, 0).contiguous()  # CHW -> HWC
+        if img.shape[-1] == 1:
+            img = img[..., 0]
+        return img.numpy()
+
+    os.makedirs(out_dir, exist_ok=True)
+    B = images.shape[0]
+
+    if generated_responses is not None and len(generated_responses) != B:
+        raise ValueError(f"generated_responses must have length {B}, got {len(generated_responses)}")
+
+    for i in range(B):
+        img_np = to_uint8_hwc(images[i])
+
+        if torch.is_tensor(labels):
+            y = int(labels[i].item())
+        else:
+            y = int(labels[i])
+        y_str = id2label.get(y, f"label_{y}")
+
+        prompt = prompts[i]
+        if max_chars is not None and len(prompt) > max_chars:
+            prompt = prompt[:max_chars] + "\n...[truncated]..."
+        wrapped_prompt = "\n".join(textwrap.wrap(prompt, width=110))
+
+        gen_block = ""
+        if generated_responses is not None:
+            gen = generated_responses[i]
+            if gen is None:
+                gen = ""
+            if max_gen_chars is not None and len(gen) > max_gen_chars:
+                gen = gen[:max_gen_chars] + "\n...[truncated]..."
+            wrapped_gen = "\n".join(textwrap.wrap(gen, width=110))
+            gen_block = f"\n\nGENERATED RESPONSE\n\n{wrapped_gen}"
+
+        fig = plt.figure(figsize=(12, 7), dpi=150)
+        ax_img = fig.add_axes([0.05, 0.12, 0.42, 0.82])
+        ax_txt = fig.add_axes([0.50, 0.12, 0.47, 0.82])
+        ax_txt.axis("off")
+
+        ax_img.imshow(img_np)
+        ax_img.axis("off")
+        ax_img.set_title(f"Label: {y} ({y_str})", fontsize=12)
+
+        ax_txt.text(
+            0.0, 1.0,
+            f"PROMPT\n\n{wrapped_prompt}{gen_block}",
+            va="top", ha="left",
+            fontsize=9,
+            family="monospace",
+        )
+
+        path = os.path.join(out_dir, f"{prefix}_{i:04d}.png")
+        fig.savefig(path, bbox_inches="tight")
+        plt.close(fig)
+
+    print(f"Saved {B} debug plots to: {out_dir}")
+
+
 
 class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
     """
@@ -2798,13 +2905,45 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
             label_options: List[str],
     ) -> List[str]:
 
-        instr_text = (
-            "Task: Decide whether the image and the hypothesis match.\n"
-            "Entailment: the image matches the hypothesis (supported).\n"
-            "Contradiction: the image does not match the hypothesis (refuted).\n"
-            "Neutral: not enough information in the image to determine a match.\n"
-            f"Answer format: Output exactly one label from: {label_options}.\n"
-        )
+        # instr_text = (
+        #     "Task: Decide whether the image and the hypothesis match.\n"
+        #     "Entailment: the image matches the hypothesis (supported).\n"
+        #     "Contradiction: the image does not match the hypothesis (refuted).\n"
+        #     "Neutral: not enough information in the image to determine a match.\n"
+        #     f"Answer format: Output exactly one label from: {label_options}.\n"
+        # )
+
+        instr_text = """\
+        You are given an image and a hypothesis about the image.
+        Decide whether the hypothesis is supported by the image.
+
+        Choose EXACTLY ONE label: entailment, neutral, or contradiction.
+
+        Definitions:
+        - entailment:
+          The hypothesis is clearly true given what is visible in the image.
+
+        - contradiction:
+          The hypothesis is clearly false given the image.
+          This includes cases where the hypothesis describes an action, state, or situation
+          that is incompatible with what is visible in the image.
+
+        - neutral:
+          The image does not provide enough information to decide.
+          The hypothesis could be true or false, and nothing visible contradicts it.
+
+        Important rules:
+        - "The image does not show the hypothesis" is NOT enough to choose neutral.
+        - If the hypothesis claims something that is NOT happening in the image
+          (e.g., walking vs sitting, outdoors vs clearly indoors), choose contradiction.
+        - Use neutral ONLY when the image neither supports NOR contradicts the hypothesis.
+
+        Answer format:
+        Label: one word only (entailment / neutral / contradiction)
+        Explanation: free text
+        
+        <CLS>
+        """
 
         return [
             f"Hypothesis:\n{str(h).strip()}\n\n{instr_text}"
@@ -2897,44 +3036,71 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
             return F.cross_entropy(logits, labels, weight=class_weights)
         return F.cross_entropy(logits, labels)
 
+
     @torch.no_grad()
     def generate_answer(
             self,
-            proc,  # the same dict you pass as x (processor output)
-            max_new_tokens=128,
+            proc,  # dict from self.processor(...), already includes images tensors if provided
+            max_new_tokens=256,
             temperature=0.7,
             top_p=0.9,
             do_sample=True,
+            min_new_tokens=20,
+            strip_prompt=True,
+            debug=False,
     ):
         self.backbone.eval()
 
         device = self.backbone.device
-        input_ids = proc["input_ids"].to(device)
-        attention_mask = proc["attention_mask"].to(device)
 
-        # If you used left padding (you did), this is important for many decoders:
-        eos_token_id = self.processor.tokenizer.eos_token_id
+        # Move ONLY tensor entries to model device (keeps lists/strings untouched)
+        gen_kwargs = {k: v.to(device) for k, v in proc.items() if torch.is_tensor(v)}
+
+        if "input_ids" not in gen_kwargs or "attention_mask" not in gen_kwargs:
+            raise ValueError("proc must contain at least input_ids and attention_mask")
+
+        input_ids = gen_kwargs["input_ids"]
+        attention_mask = gen_kwargs["attention_mask"]
+
+        tok = self.processor.tokenizer
+        eos_token_id = tok.eos_token_id
+        pad_token_id = self.pad_token_id if hasattr(self, "pad_token_id") else tok.pad_token_id
+
+        # Avoid immediate stop if prompt ends with EOS (common with some chat templates)
+        if eos_token_id is not None and input_ids.shape[1] > 1:
+            if (input_ids[:, -1] == eos_token_id).all():
+                input_ids = input_ids[:, :-1]
+                attention_mask = attention_mask[:, :-1]
+                gen_kwargs["input_ids"] = input_ids
+                gen_kwargs["attention_mask"] = attention_mask
 
         gen_ids = self.backbone.generate(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
+            **gen_kwargs,
             max_new_tokens=max_new_tokens,
-            min_new_tokens=2,
+            min_new_tokens=min_new_tokens,
             do_sample=do_sample,
-            temperature=temperature,
-            top_p=top_p,
+            temperature=temperature if do_sample else None,
+            top_p=top_p if do_sample else None,
+            pad_token_id=pad_token_id,
             eos_token_id=eos_token_id,
             return_dict_in_generate=False,
         )
 
-        print("input_ids:", input_ids.shape)
-        print("gen_ids:", gen_ids.shape)
-        print("new tokens:", gen_ids.shape[1] - input_ids.shape[1])
-        prompt_len = input_ids.shape[1]
-        new_token_ids = gen_ids[:, prompt_len:]
+        # Debug shapes
+        if debug:
+            print("input_ids:", input_ids.shape)
+            print("gen_ids:", gen_ids.shape)
+            print("new tokens:", gen_ids.shape[1] - input_ids.shape[1])
 
-        texts = self.processor.tokenizer.batch_decode(
-            new_token_ids,
+        # Decode only generated continuation (recommended)
+        if strip_prompt:
+            prompt_len = input_ids.shape[1]
+            gen_part = gen_ids[:, prompt_len:]
+        else:
+            gen_part = gen_ids
+
+        texts = tok.batch_decode(
+            gen_part,
             skip_special_tokens=True,
             clean_up_tokenization_spaces=False,
         )
@@ -2942,29 +3108,47 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
         return texts
 
     # ============================================================
-    #  Forward
+    #  Encode (UPDATED: pass vision tensors through)
+    # ============================================================
+    def _encode(self, input_ids, attention_mask, pixel_values=None, image_grid_thw=None):
+        kwargs = dict(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            output_hidden_states=True,
+            use_cache=False,
+            return_dict=True,
+        )
+        if pixel_values is not None:
+            kwargs["pixel_values"] = pixel_values
+        if image_grid_thw is not None:
+            kwargs["image_grid_thw"] = image_grid_thw
+
+        out = self.backbone(**kwargs)
+        return out.hidden_states[-1]
+
+    # ============================================================
+    #  Forward (FIXED: device usage, labels on device, returns)
     # ============================================================
     def forward(
-        self,
-        x,
-        *,
-        label=None,
-        return_features=False,
-        current_step=None,
-        image_token_mask=None,  # unused here (CLS readout); keep for compatibility
-        text_token_mask=None,   # unused here (CLS readout); keep for compatibility
-        **kwargs,
+            self,
+            x,
+            *,
+            label=None,
+            return_features=False,
+            current_step=None,
+            image_token_mask=None,
+            text_token_mask=None,
+            **kwargs,
     ):
         hint_texts = x[0]
         images = x[1]
-        device = images.device
 
+        model_device = self.backbone.device  # safer than images.device with device_map
         label_options = "entailment,neutral,contradiction"
 
+        # Build prompts
         texts = self.build_prompt_no_cls(hypothesis=hint_texts, label_options=label_options)
-        # prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
 
-        # texts: List[str]
         messages_batch = [
             [{"role": "user", "content": [
                 {"type": "image"},
@@ -2973,13 +3157,28 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
             for t in texts
         ]
         prompts = [
-            self.processor.apply_chat_template(
-                m, tokenize=False, add_generation_prompt=True
-            )
+            self.processor.apply_chat_template(m, tokenize=False, add_generation_prompt=True)
             for m in messages_batch
         ]
 
-        image_list = [img for img in images]
+
+        # DEBUG_IMG_DIR = "debug_input_images"
+        # os.makedirs(DEBUG_IMG_DIR, exist_ok=True)
+
+        # ------------------------------------------------------------------
+        # 1) Inspect RAW images tensor (what YOU think the image is)
+        # ------------------------------------------------------------------
+        # print("=== RAW INPUT IMAGES (before processor) ===")
+        # print("images shape:", images.shape, images.dtype, images.device)
+        # print(
+        #     "raw min/max/mean:",
+        #     images.min().item(),
+        #     images.max().item(),
+        #     images.mean().item(),
+        # )
+
+
+        image_list = [to_pil_image(img.detach().cpu().clamp(0, 1)) for img in images]
 
         proc = self.processor(
             text=prompts,
@@ -2988,24 +3187,35 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
             padding=True,
             truncation=True,
         )
-        proc.pop("token_type_ids", None)
-        proc = {k: v.to(device) for k, v in proc.items()}
-        # gen = self.backbone.generate(
-        #     **proc,
-        #     max_new_tokens=8,  # labels are short
-        #     do_sample=False,  # deterministic for classification
-        #     temperature=0.0,
-        # )
-        # pred_texts = self.processor.batch_decode(gen, skip_special_tokens=True)
-        # print(pred_texts)
+        # proc.pop("token_type_ids", None)
+        #
+        # # ------------------------------------------------------------------
+        # # 3) Inspect what the MODEL ACTUALLY GETS
+        # # ------------------------------------------------------------------
+        # print("\n=== PROCESSOR OUTPUT ===")
+        # print("proc keys:", proc.keys())
+        #
+        # pv = proc.get("pixel_values", None)
+        # if pv is None:
+        #     print("NO pixel_values in proc -> text-only VL!")
+        # else:
+        #     print("pixel_values shape:", pv.shape, pv.dtype, pv.device)
+        #     print(
+        #         "pixel_values min/max/mean:",
+        #         pv.min().item(),
+        #         pv.max().item(),
+        #         pv.mean().item(),
+        #     )
 
+        # Move tensors to model device (DO NOT move non-tensors)
+        proc = {k: (v.to(model_device) if torch.is_tensor(v) else v) for k, v in proc.items()}
 
         input_ids = proc["input_ids"]
         attention_mask = proc["attention_mask"]
-        pixel_values = proc["pixel_values"]
-        image_grid_thw = proc.get("image_grid_thw")
+        pixel_values = proc.get("pixel_values", None)
+        image_grid_thw = proc.get("image_grid_thw", None)
 
-
+        # Encode + CLS classification
         hidden = self._encode(
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -3013,28 +3223,43 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
             image_grid_thw=image_grid_thw,
         )
 
-        # # CLS readout (stable position)
         h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
         head_logits = self.enc_0(h_cls)
 
         losses = {}
         if label is not None:
+            if torch.is_tensor(label):
+                label = label.to(head_logits.device)
             losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, label)
 
-        # Optional eval-time generation parsing (kept off by default)
         preds = {"combined": head_logits}
         features = {"combined": h_cls}
         if return_features:
             features["hidden"] = hidden
 
-        print("###NEW ONE####")
-        print(F.softmax(head_logits, dim=-1))
-        print(label)
-        print(F.cross_entropy(head_logits, label, reduction='none'))
-        gen_texts = self.generate_answer(proc)
-        for i in gen_texts:
-            print("-----")
-            print(i)
+        # # Optional: generation for debugging
+        # gen_texts = self.generate_answer(
+        #     proc,
+        #     max_new_tokens=256,  # labels are short; keep tiny for debugging
+        #     do_sample=False,  # deterministic label output
+        #     temperature=0.0,
+        #     top_p=1.0,
+        #     min_new_tokens=1,
+        #     strip_prompt=True,
+        #     debug=True,
+        # )
+        #
+        # # Debug prints (optional)
+        # print("###NEW ONE####")
+        # print(torch.softmax(head_logits, dim=-1))
+        # print(label)
+        # if label is not None:
+        #     print(torch.nn.functional.cross_entropy(head_logits, label, reduction="none"))
+        # for t in gen_texts:
+        #     print("-----")
+        #     print(t)
+        #
+        # save_vl_debug_plots(images, label, prompts, generated_responses=gen_texts, out_dir="debug_viz", prefix="ESNLI")
 
         return {"preds": preds, "features": features, "losses": losses}
 

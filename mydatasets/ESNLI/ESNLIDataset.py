@@ -301,7 +301,7 @@ class ESNLI_VE_ClassificationDataset(Dataset):
 
     def __len__(self):
         # return len(self.keep_indices)
-        return 10
+        return 8
 
     def __getitem__(self, idx: int):
         real_idx = self.keep_indices[idx]

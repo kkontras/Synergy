@@ -17,3 +17,4 @@ CUDA_VISIBLE_DEVICES=6 python train.py  --config ./configs/ESNLI/cache_text_lora
 CUDA_VISIBLE_DEVICES=5 python train.py  --config ./configs/ESNLI/cache_lora.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.0 --batch_size 256
 
 CUDA_VISIBLE_DEVICES=5 python train.py  --config ./configs/ESNLI/synprom_lora.json  --default_config ./configs/ESNLI/default_config_esnli_mib.json --fold 0 --lr 0.0001 --wd 0.0 --batch_size 4
+CUDA_VISIBLE_DEVICES=5 python train.py  --config ./configs/ESNLI/synprom_lora.json  --default_config ./configs/ESNLI/default_config_esnli_syn.json --fold 0 --lr 0.0001 --wd 0.0 --batch_size 4

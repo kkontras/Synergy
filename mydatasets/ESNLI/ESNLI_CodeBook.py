@@ -403,18 +403,45 @@ def build_prompt_no_cls(
         hypothesis: Sequence[str],
         label_options: List[str],
 ) -> List[str]:
-    instr_text = (
-        "Task: Decide whether the image and the hypothesis match.\n"
-        "Entailment: the image matches the hypothesis (supported).\n"
-        "Contradiction: the image does not match the hypothesis (refuted).\n"
-        "Neutral: not enough information in the image to determine a match.\n"
-        f"Answer format: Output exactly one label from: {label_options}.\n"
-    )
+    instr_text = """\
+    You are given an image and a hypothesis about the image.
+    Decide whether the hypothesis is supported by the image.
+
+    Choose EXACTLY ONE label: entailment, neutral, or contradiction.
+
+    Definitions:
+    - entailment:
+      The hypothesis is clearly true given what is visible in the image.
+
+    - contradiction:
+      The hypothesis is clearly false given the image.
+      This includes cases where the hypothesis describes an action, state, or situation
+      that is incompatible with what is visible in the image.
+
+    - neutral:
+      The image does not provide enough information to decide.
+      The hypothesis could be true or false, and nothing visible contradicts it.
+
+    Important rules:
+    - "The image does not show the hypothesis" is NOT enough to choose neutral.
+    - If the hypothesis claims something that is NOT happening in the image
+      (e.g., walking vs sitting, outdoors vs clearly indoors), choose contradiction.
+    - Use neutral ONLY when the image neither supports NOR contradicts the hypothesis.
+
+    Answer format:
+    Label: one word only (entailment / neutral / contradiction)
+    Explanation: free text
+
+    <CLS>
+    """
 
     return [
         f"Hypothesis:\n{str(h).strip()}\n\n{instr_text}"
         for h in hypothesis
     ]
+
+
+
 # -----------------------------
 # Vision embedding extraction
 # -----------------------------
@@ -545,8 +572,7 @@ def main():
             images=pil_images,
             return_tensors="pt",
             padding=True,
-            truncation=True,
-            max_length=args.max_length,
+            truncation=True
         )
 
         input_ids_batch = enc["input_ids"].detach().cpu()

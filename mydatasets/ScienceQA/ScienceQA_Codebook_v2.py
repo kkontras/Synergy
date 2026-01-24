@@ -612,7 +612,7 @@ def build_and_save_cache(
                     attention_mask=attention_mask_tensor,
                 )
 
-            vision_embeds_cpu = [inputs_embeds[i].detach().cpu() for i in range(inputs_embeds.size(0))]
+            vision_embeds_cpu = [image_embeds[i].detach().cpu() for i in range(image_embeds.size(0))]
             vision_mask_cpu = [image_mask[i].detach().cpu() for i in range(image_mask.size(0))]
             deep_stack_viz_cpu = einops.rearrange(torch.cat([i.unsqueeze(dim=0) for i in deep_stack_viz], dim=0), "a (b i) f -> b a i f", b=image_mask.shape[0])
             deep_stack_viz_cpu = [deep_stack_viz_cpu[i].detach().cpu() for i in range(deep_stack_viz_cpu.size(0))]

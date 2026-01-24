@@ -237,9 +237,8 @@ def _infer_image_token_ids(tokenizer) -> List[int]:
         if isinstance(v, int) and v >= 0:
             ids.append(int(v))
 
-    cand_strs = ["<|vision_start|>", "<|vision_end|>"]
-    tid_start = tokenizer.convert_tokens_to_ids(cand_strs[0])
-    tid_end = tokenizer.convert_tokens_to_ids(cand_strs[1])
+
+    cand_strs = ["<|vision_start|>", "<|vision_end|>",'<|image_pad|>', '<|im_start|>', '<|im_end|>' ]
     for s in cand_strs:
         try:
             tid = tokenizer.convert_tokens_to_ids(s)
@@ -609,23 +608,10 @@ def main():
 
         texts = build_prompt_cls(hypothesis=texts)
 
-        messages_batch = [
-            [{"role": "user", "content": [
-                {"type": "image"},
-                {"type": "text", "text": t},
-            ]}]
-            for t in texts
-        ]
-        prompts = [
-            processor.apply_chat_template( m, tokenize=False, add_generation_prompt=True
-            )
-            for m in messages_batch
-        ]
-
         pil_images = [tensor_image_to_pil(images_t[i]) for i in range(images_t.size(0))]
 
         enc = processor(
-            text=prompts,
+            text=texts,
             images=pil_images,
             return_tensors="pt",
             padding=True,
@@ -681,7 +667,7 @@ def main():
             item: Dict[str, Any] = {
                 "id": ids[i],
                 "label": labels[i].detach().cpu(),
-                "prompt": prompts[i],
+                "prompt": texts[i],
                 "input_ids": input_ids_i,
                 "attention_mask": attention_i,
                 "masks": {

@@ -3606,15 +3606,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         image_mask = proc["image_mask"].to(device)
         vision_embeds = proc["vision_embeds"].to(device)
 
-        tok = self.processor.tokenizer
-        for tid in [151644, 872, 198, 151652, 151655, 151653]:
-            print(tid, repr(tok.convert_ids_to_tokens(tid)), repr(tok.decode([tid], skip_special_tokens=False)))
 
-        # inputs_embeds = torch.cat([vision_embeds, input_ids], dim=0)
-        print(input_ids.shape)
-        print(input_ids[0])
-        print(image_mask[0])
-        print(vision_embeds.shape)
         inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
         # input_ids, attention_mask = self._ensure_cls(input_ids, attention_mask)
 

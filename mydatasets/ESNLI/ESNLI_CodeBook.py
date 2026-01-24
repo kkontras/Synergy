@@ -605,6 +605,7 @@ def main():
                     pv = pixel_values.to(model.device, dtype=dtype, non_blocking=True)
                     gthw = image_grid_thw.to(model.device, non_blocking=True)
                     vis = extract_vision_embeds(model, pv, gthw)
+                    print("Vision embedding were extracted", vis.keys())
 
                 if torch.is_tensor(vis):
                     vision_embeds_cpu = [vis[i].detach().cpu() for i in range(vis.size(0))]

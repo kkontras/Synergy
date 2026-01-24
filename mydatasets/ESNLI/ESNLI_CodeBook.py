@@ -655,6 +655,7 @@ def main():
             vision_mask_cpu = [image_mask[i].detach().cpu() for i in range(image_mask.size(0))]
             deep_stack_viz_cpu = einops.rearrange(torch.cat([i.unsqueeze(dim=0) for i in deep_stack_viz], dim=0), "a (b i) f -> b a i f", b=image_mask_batch.shape[0])
             deep_stack_viz_cpu = [deep_stack_viz_cpu[i].detach().cpu() for i in range(deep_stack_viz_cpu.size(0))]
+            print(position_ids.shape)
             position_ids = position_ids.permute(1,0,2)
             position_ids_cpu = [position_ids[i].detach().cpu() for i in range(position_ids.size(0))]
 

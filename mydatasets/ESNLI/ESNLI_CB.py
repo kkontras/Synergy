@@ -520,6 +520,13 @@ class ESNLI_MemmapDataset(Dataset):
             dtype=v_dtype,
             shape=(total_vision_elems,),
         )
+        C, H, W = self.pixel_shape
+        self.pixel_mm = np.memmap(
+            os.path.join(self.mem_dir, "pixel_values.bin"),
+            mode="r",
+            dtype=np.float16,
+            shape=(self.N, int(C), int(H), int(W)),
+        )
 
         print(f"[ESNLI MemmapDataset] split={split} N={self.N} mem_dir={self.mem_dir}")
 

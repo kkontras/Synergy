@@ -4226,23 +4226,25 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         position_ids = proc["position_ids"].to(device)
         deep_stack_viz = proc["deep_stack_viz"].to(device)
 
-        print(vision_embeds.dtype)
-        print(deep_stack_viz.dtype)
-        print(position_ids.dtype)
-        print(input_ids.dtype)
+
 
         inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids.to(device)).float()
         # print(vision_embeds.shape)
         # print(inputs_embeds.shape)
         # print(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]).shape)
 
-        print(inputs_embeds.dtype)
-
         inputs_embeds = inputs_embeds.masked_scatter(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]), vision_embeds)
         deep_stack_viz = einops.rearrange(deep_stack_viz, "b c i j -> c (b i) j")
         # print(deep_stack_viz.shape)
 
         # inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
+
+
+        print(image_mask.dtype)
+        print(deep_stack_viz.dtype)
+        print(position_ids.dtype)
+        print(inputs_embeds.dtype)
+        print(attention_mask.dtype)
 
         out = self.backbone.model.language_model( 
             input_ids=None,

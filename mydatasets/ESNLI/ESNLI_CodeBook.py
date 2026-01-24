@@ -549,12 +549,7 @@ def main():
 
     processor = AutoProcessor.from_pretrained(args.model_name, trust_remote_code=True)
 
-    if args.bf16:
-        dtype = torch.bfloat16
-    elif args.fp16:
-        dtype = torch.float16
-    else:
-        dtype = torch.float32
+    dtype = torch.float32
 
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         args.model_name,

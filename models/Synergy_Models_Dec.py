@@ -3605,7 +3605,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             if image_grid_thw is not None:
                 image_grid_thw = image_grid_thw.to(device)
 
-            hidden = self._encode(
+            hidden = self.backbone(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 pixel_values=pixel_values,

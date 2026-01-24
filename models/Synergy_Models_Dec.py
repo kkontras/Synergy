@@ -2968,7 +2968,7 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
         device = input_ids.device
         cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)  # (B,)
         h = hidden[torch.arange(B, device=device), cls_pos]             # (B,d)
-
+        h = F.layer_norm(h, (h.shape[-1],))
         return h
 
     # ============================================================
@@ -3219,16 +3219,16 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
             features["hidden"] = hidden
 
         # # Optional: generation for debugging
-        gen_texts = self.generate_answer(
-            proc,
-            max_new_tokens=256,  # labels are short; keep tiny for debugging
-            do_sample=False,  # deterministic label output
-            temperature=0.0,
-            top_p=1.0,
-            min_new_tokens=10,
-            strip_prompt=True,
-            debug=True,
-        )
+        # gen_texts = self.generate_answer(
+        #     proc,
+        #     max_new_tokens=256,  # labels are short; keep tiny for debugging
+        #     do_sample=False,  # deterministic label output
+        #     temperature=0.0,
+        #     top_p=1.0,
+        #     min_new_tokens=10,
+        #     strip_prompt=True,
+        #     debug=True,
+        # )
 
         # Debug prints (optional)
         # print("###NEW ONE####")
@@ -3240,7 +3240,7 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
         #     print("-----")
         #     print(t)
 
-        save_vl_debug_plots(images, label, prompts, generated_responses=gen_texts, out_dir="debug_viz", prefix="ESNLI")
+        # save_vl_debug_plots(images, label, prompts, generated_responses=gen_texts, out_dir="debug_viz", prefix="ESNLI")
 
         return {"preds": preds, "features": features, "losses": losses}
 
@@ -3368,6 +3368,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         B = input_ids.size(0)
         cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)
         h = hidden[torch.arange(B, device=input_ids.device), cls_pos]
+        h = F.layer_norm(h, (h.shape[-1],))
         return h
 
     def _mc_ce_loss(self, logits, labels):

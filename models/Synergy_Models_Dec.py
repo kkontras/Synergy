@@ -3522,7 +3522,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         # GENERATION (uses cached vision if available)
         # ============================================================
         gen_texts = False
-        do_generate = kwargs.get("do_generate", False)  # set True when you want it
+        do_generate = kwargs.get("do_generate", True)  # set True when you want it
         if do_generate:
             # For debugging labels, deterministic decode is usually best
             max_new_tokens = int(kwargs.get("gen_max_new_tokens", 128))
@@ -3531,9 +3531,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             temperature = float(kwargs.get("gen_temperature", 0.0))
             top_p = float(kwargs.get("gen_top_p", 1.0))
 
-
-            # Generate from LM with inputs_embeds.
-            # lm = self.backbone.model.language_model
             eos_token_id = tok.eos_token_id
             pad_token_id = self.pad_token_id if hasattr(self, "pad_token_id") else tok.pad_token_id
 
@@ -3549,11 +3546,9 @@ class QwenVL_ScienceQA_Cached(nn.Module):
                     eos_token_id=eos_token_id,
                     pad_token_id=pad_token_id,
                 )
-                print(gen_ids)
 
-            tail = gen_ids[:, -max_new_tokens:]
             gen_texts = tok.batch_decode(
-                tail,
+                gen_ids,
                 skip_special_tokens=True,
                 clean_up_tokenization_spaces=False,
             )

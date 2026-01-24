@@ -613,6 +613,7 @@ def main():
                     vision_error = f"Unrecognized vision output type: {type(vis)}"
             except Exception as e:
                 vision_error = str(e)
+                print(vision_error)
 
         B = len(ids)
         for i in range(B):

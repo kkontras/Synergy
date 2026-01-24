@@ -461,8 +461,8 @@ class ESNLI_MemmapDataset(Dataset):
         self.N = int(meta["N"])
         self.total_tokens = int(meta["total_tokens"])
         self.input_ids_dtype = meta["input_ids_dtype"]
-        self.has_grid = bool(meta.get("has_image_grid_thw", False))
-        self.has_vision = bool(meta.get("has_vision_embeds", False))
+        self.has_grid = bool(meta.get("has_image_grid_thw", True))
+        self.has_vision = bool(meta.get("has_vision_embeds", True))
         self.vision_dtype = meta.get("vision_dtype", None)
         self.vision_dim = meta.get("vision_dim", None)
         self.store_pixel_values = bool(meta.get("store_pixel_values", False))

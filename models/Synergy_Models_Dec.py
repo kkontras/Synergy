@@ -3400,10 +3400,8 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         return out.hidden_states[-1]
 
     def _get_cls_token_repr(self, hidden, input_ids):
-        B = input_ids.size(0)
         cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)
-        h = hidden[torch.arange(B, device=input_ids.device), cls_pos]
-        return h
+        return hidden[:, cls_pos]
 
     def _mc_ce_loss(self, logits, labels):
         if hasattr(self.args, "class_weights") and self.args.class_weights is not None:
@@ -3433,11 +3431,8 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         for b in range(B):
             pos = image_mask[b].nonzero(as_tuple=False).view(-1)  # indices in [0..T)
-            print(pos)
             n_mask = int(pos.numel())
             n_vis = int(vision_embeds[b].size(0))
-
-            print(n_mask,n_vis)
 
             if (n_mask != n_vis):
                 raise ValueError(
@@ -3563,7 +3558,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         vision_embeds = proc["vision_embeds"].to(device)
 
         inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
-        print(inputs_embeds.shape)
 
         hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)
         h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)

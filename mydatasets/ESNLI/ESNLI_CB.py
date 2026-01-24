@@ -556,7 +556,8 @@ class ESNLI_MemmapDataset(Dataset):
         print(f"[ESNLI MemmapDataset] split={split} N={self.N} mem_dir={self.mem_dir}")
 
     def __len__(self) -> int:
-        return self.N
+        # return self.N
+        return 10
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         off = int(self.offsets[idx])
@@ -784,6 +785,6 @@ class ESNLI_MemmapDataloader:
                 persistent_workers=bool(persistent_workers) if int(num_workers) > 0 else False,
             )
 
-        self.train_loader = make_loader("train", shuffle=True)
+        self.train_loader = make_loader("validation", shuffle=True)
         self.valid_loader = make_loader("validation", shuffle=False)
         self.test_loader = make_loader("test", shuffle=False)

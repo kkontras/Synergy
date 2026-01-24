@@ -3500,7 +3500,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         tok = self.processor.tokenizer
         input_ids = proc["input_ids"].to(device)
         attention_mask = proc["attention_mask"].to(device)
-        print(attention_mask)
 
         image_mask = proc["image_mask"].to(device)
         vision_embeds = proc["vision_embeds"].to(device)

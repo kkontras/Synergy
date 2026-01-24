@@ -3391,14 +3391,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         )
         self.backbone = get_peft_model(self.backbone, lora_cfg)
 
-    def _encode(self, input_ids, attention_mask):
-        out = self.backbone(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            output_hidden_states=True,
-        )
-        return out.hidden_states[-1]
-
     def _get_cls_token_repr(self, hidden, input_ids):
         B = input_ids.size(0)
         cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)
@@ -3410,7 +3402,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             return F.cross_entropy(logits, labels, weight=self.args.class_weights.to(logits.device))
         return F.cross_entropy(logits, labels)
 
-    def _build_inputs_embeds_from_cache( 
+    def _build_inputs_embeds_from_cache(
             self,
             input_ids: torch.Tensor,  # (B, T)
             image_mask: torch.Tensor,  # (B, T) bool
@@ -3491,53 +3483,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         return texts
 
-    def _ensure_cls(self, input_ids: torch.Tensor, attention_mask: torch.Tensor):
-        """
-        Ensure each sequence has exactly one <CLS> token appended at the end.
-        If <CLS> already exists anywhere in the sequence, this is a no-op.
-
-        Args:
-            input_ids: LongTensor (B, T)
-            attention_mask: LongTensor/BoolTensor (B, T)
-
-        Returns:
-            (input_ids, attention_mask) possibly with one extra token appended (B, T+1)
-        """
-        if not isinstance(input_ids, torch.Tensor) or not isinstance(attention_mask, torch.Tensor):
-            raise TypeError("input_ids and attention_mask must be torch.Tensors")
-
-        if input_ids.ndim != 2 or attention_mask.ndim != 2:
-            raise ValueError(
-                f"Expected 2D tensors (B,T). Got input_ids {input_ids.shape}, attention_mask {attention_mask.shape}")
-
-        if input_ids.shape != attention_mask.shape:
-            raise ValueError(
-                f"input_ids and attention_mask must have same shape. Got {input_ids.shape} vs {attention_mask.shape}")
-
-        # If CLS already present, do nothing
-        if (input_ids == int(self.cls_token_id)).any():
-            return input_ids, attention_mask
-
-        B = input_ids.size(0)
-        device = input_ids.device
-
-        cls_col = torch.full(
-            (B, 1),
-            int(self.cls_token_id),
-            device=device,
-            dtype=input_ids.dtype,
-        )
-
-        cls_att = torch.ones(
-            (B, 1),
-            device=device,
-            dtype=attention_mask.dtype,
-        )
-
-        input_ids = torch.cat([input_ids, cls_col], dim=1)
-        attention_mask = torch.cat([attention_mask, cls_att], dim=1)
-        return input_ids, attention_mask
-
     def _encode_from_inputs_embeds(self, inputs_embeds, attention_mask):
         lm = self.backbone.model.language_model
         out = lm(
@@ -3555,6 +3500,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         tok = self.processor.tokenizer
         input_ids = proc["input_ids"].to(device)
         attention_mask = proc["attention_mask"].to(device)
+        print(attention_mask)
 
         image_mask = proc["image_mask"].to(device)
         vision_embeds = proc["vision_embeds"].to(device)
@@ -3567,8 +3513,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         losses = {}
         if label is not None:
-            if torch.is_tensor(label):
-                label = label.to(logits.device)
             losses["ce_loss_combined"] = self._mc_ce_loss(logits, label)
 
         preds = {"combined": logits}

@@ -238,6 +238,8 @@ def _infer_image_token_ids(tokenizer) -> List[int]:
             ids.append(int(v))
 
     cand_strs = ["<|vision_start|>", "<|vision_end|>"]
+    tid_start = tokenizer.convert_tokens_to_ids(cand_strs[0])
+    tid_end = tokenizer.convert_tokens_to_ids(cand_strs[1])
     for s in cand_strs:
         try:
             tid = tokenizer.convert_tokens_to_ids(s)

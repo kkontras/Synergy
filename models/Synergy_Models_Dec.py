@@ -19,6 +19,7 @@ from peft import LoraConfig, get_peft_model
 import torch
 from typing import Any, Dict, List, Optional, Sequence
 from torchvision.transforms.functional import to_pil_image
+import einops
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -3245,6 +3246,707 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
         return {"preds": preds, "features": features, "losses": losses}
 
 
+class QwenVL_ESNLI_Synergy_FrozenCLS_VisualEmb(nn.Module):
+    """
+    Multimodal (image+text) ScienceQA as 5-way classification.
+    Backbone is frozen EXCEPT:
+      - classifier head enc_0 (always trainable)
+      - (optional) learnable <CLS> embedding row ONLY (via gradient masking hook)
+      - (optional) final LM norm (cheap, sometimes helps)
+
+    Readout is the hidden state at the appended <CLS> token (placed at end of prompt).
+    """
+
+    def __init__(self, args, encs=None, **kwargs):
+        super().__init__()
+        encs = encs or []
+
+        self.args = args
+        self.synergy_coeff = getattr(args, "synergy_coeff", 0.0)
+        self.max_new_tokens = getattr(args, "max_new_tokens", 32)
+        self.num_classes = getattr(args, "num_classes")
+
+        model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
+        HF_CACHE = getattr(self.args, "save_base_dir", None)
+
+        # -----------------------------
+        # Processor / Tokenizer
+        # -----------------------------
+        self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=HF_CACHE)
+        tok = self.processor.tokenizer
+        tok.padding_side = "left"
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
+
+        # Add <CLS> token to tokenizer
+        added = tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
+        self.cls_token_id = tok.convert_tokens_to_ids("<CLS>")
+
+        self.backbone = Qwen3VLForConditionalGeneration.from_pretrained(
+            model_name,
+            dtype=torch.bfloat16 if getattr(args, "bf16", False) else torch.float16,
+            device_map="cuda:0",
+            cache_dir=HF_CACHE,
+        )
+
+        if added > 0:
+            self.backbone.resize_token_embeddings(len(tok))
+
+        cfg = self.backbone.config
+        self.image_token_id = cfg.image_token_id
+        self.image_token_str = tok.convert_ids_to_tokens(self.image_token_id)
+
+        if hasattr(cfg, "text_config") and hasattr(cfg.text_config, "hidden_size"):
+            self.d_model = cfg.text_config.hidden_size
+        else:
+            self.d_model = cfg.hidden_size
+
+        if len(encs) < 1:
+            raise ValueError("encs[0] must be provided as the 5-way classifier head.")
+        self.enc_0 = encs[0]
+
+        self._apply_lora()
+        self._load_cls_embedding()
+        self._setup_trainables()
+
+    def _setup_trainables(self):
+        # Freeze everything
+        for p in self.backbone.parameters():
+            p.requires_grad = False
+
+        if getattr(self.args, "lora_config", None) and self.args.lora_config.get("use_lora", False):
+            for n, p in self.backbone.named_parameters():
+                if "lora_" in n:
+                    p.requires_grad = True
+
+        for p in self.enc_0.parameters():
+            p.requires_grad = True
+
+        lm = self.backbone.model.language_model
+
+        if self.args.cls_finetune:
+            if getattr(self.args, "train_cls_row", True) and lm is not None and hasattr(lm, "embed_tokens"):
+                emb = lm.embed_tokens
+                # ensure grads flow to emb.weight (we'll mask them)
+                emb.weight.requires_grad = True
+
+                cls_id = int(self.cls_token_id)
+                # build a (vocab, hidden) mask with 1s only for cls row
+                mask = torch.zeros_like(emb.weight, dtype=torch.float32)
+                mask[cls_id].fill_(1.0)
+
+                def grad_mask_hook(grad):
+                    return grad * mask.to(grad.device, grad.dtype)
+
+                # register once
+                if not hasattr(self, "_cls_grad_hooked"):
+                    emb.weight.register_hook(grad_mask_hook)
+                    self._cls_grad_hooked = True
+
+        # NOTE: if you enabled synergy modules, mark them trainable here.
+
+    def load_cls_embedding(self, path, strict_dim=True):
+
+        assert os.path.isfile(path), f"CLS embedding file not found: {path}"
+
+        ckpt = torch.load(path, map_location="cpu")
+
+        if "cls_row" not in ckpt:
+            raise KeyError("CLS checkpoint must contain 'cls_row'")
+
+        cls_row = ckpt["cls_row"]
+        saved_cls_id = ckpt.get("cls_token_id", self.cls_token_id)
+
+        lm = self.backbone.model.language_model
+        if lm is None or not hasattr(lm, "embed_tokens"):
+            raise RuntimeError("Language model embedding table not found")
+
+        emb = lm.embed_tokens
+        current_cls_id = int(self.cls_token_id)
+
+        if strict_dim and cls_row.numel() != emb.weight.shape[1]:
+            raise ValueError(
+                f"CLS dim mismatch: saved {cls_row.numel()} vs model {emb.weight.shape[1]}"
+            )
+
+        if saved_cls_id != current_cls_id:
+            print(
+                f"[WARN] saved cls_token_id={saved_cls_id} "
+                f"!= current cls_token_id={current_cls_id} — copying to current index"
+            )
+
+        with torch.no_grad():
+            emb.weight[current_cls_id].copy_(
+                cls_row.to(emb.weight.device, emb.weight.dtype)
+            )
+
+        print(f"[OK] Loaded CLS embedding from {path}")
+
+    def _load_cls_embedding(self):
+
+        cls_path = getattr(self.args, "cls_emb_path", None)
+        save_base_dir = getattr(self.args, "save_base_dir", None)
+        if save_base_dir is None or cls_path is None:
+            return
+        cls_path = os.path.join(save_base_dir, cls_path)
+
+        self.load_cls_embedding(cls_path)
+
+    def _apply_lora(self):
+        cfg = getattr(self.args, "lora_config", None)
+        if not cfg or not cfg.get("use_lora", False):
+            return
+
+        lora_cfg = LoraConfig(
+            r=int(cfg.get("lora_r", 8)),
+            lora_alpha=int(cfg.get("lora_alpha", 8)),
+            lora_dropout=float(cfg.get("lora_dropout", 0.0)),
+            target_modules=list(cfg.get("lora_target_modules", ["q_proj", "v_proj"])),
+            bias=str(cfg.get("lora_bias", "none")),
+            task_type="CAUSAL_LM",
+        )
+
+        self.backbone = get_peft_model(self.backbone, lora_cfg)
+
+    def build_prompt_no_cls(self,hypothesis: Sequence[str] ) -> List[str]:
+
+        # instr_text = (
+        #     "Task: Decide whether the image and the hypothesis match.\n"
+        #     "Entailment: the image matches the hypothesis (supported).\n"
+        #     "Contradiction: the image does not match the hypothesis (refuted).\n"
+        #     "Neutral: not enough information in the image to determine a match.\n"
+        #     f"Answer format: Output exactly one label from: {label_options}.\n"
+        # )
+
+        instr_text = """
+        You are given an image and a hypothesis about the image.
+        Decide whether the hypothesis is supported by the image.
+
+        Choose EXACTLY ONE label: entailment, neutral, or contradiction.
+
+        Definitions:
+        - entailment:
+          The hypothesis is clearly true given what is visible in the image.
+
+        - contradiction:
+          The hypothesis is clearly false given the image.
+          This includes cases where the hypothesis describes an action, state, or situation
+          that is incompatible with what is visible in the image.
+
+        - neutral:
+          The image does not provide enough information to decide.
+          The hypothesis could be true or false, and nothing visible contradicts it.
+
+        Important rules:
+        - "The image does not show the hypothesis" is NOT enough to choose neutral.
+        - If the hypothesis claims something that is NOT happening in the image
+          (e.g., walking vs sitting, outdoors vs clearly indoors), choose contradiction.
+        - Use neutral ONLY when the image neither supports NOR contradicts the hypothesis.
+
+        Answer format:
+        Label: one word only (entailment / neutral / contradiction)
+        Explanation: free text
+
+        <CLS>
+        """
+
+        return [
+            f"Hypothesis:\n{str(h).strip()}\n\n{instr_text}"
+            for h in hypothesis
+        ]
+
+    # ============================================================
+    #  Encoding / readout
+    # ============================================================
+    def _encode(self, input_ids, attention_mask, pixel_values, image_grid_thw=None):
+        # IMPORTANT: no torch.no_grad() here; we need grads at least to CLS row + head
+        outputs = self.backbone(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            pixel_values=pixel_values,
+            image_grid_thw=image_grid_thw,
+            output_hidden_states=True,
+        )
+        return outputs.hidden_states[-1]  # (B, T, d)
+
+    def _get_cls_token_repr(self, hidden, input_ids):
+        B = input_ids.size(0)
+        device = input_ids.device
+        cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)  # (B,)
+        h = hidden[torch.arange(B, device=device), cls_pos]  # (B,d)
+        h = F.layer_norm(h, (h.shape[-1],))
+        return h
+
+    # ============================================================
+    #  (Optional) generation for eval-time parsing (unchanged)
+    # ============================================================
+    def _generate_raw_answers(self, proc, input_ids, *, letters_list):
+        gen_inputs = {
+            k: v for k, v in proc.items()
+            if k in ("input_ids", "attention_mask", "pixel_values", "image_grid_thw")
+        }
+        gen_inputs = {k: v.to(self.backbone.device) for k, v in gen_inputs.items()}
+
+        with torch.no_grad():
+            gen_ids = self.backbone.generate(
+                **gen_inputs,
+                max_new_tokens=self.max_new_tokens,
+                do_sample=False,
+            )
+
+        gen_ids_trimmed = [out_ids[len(in_ids):] for in_ids, out_ids in zip(input_ids, gen_ids)]
+        raw_answers = self.processor.batch_decode(
+            gen_ids_trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=True,
+        )
+
+        import re
+
+        def clean_answer(ans: str):
+            lines = [l.strip() for l in ans.splitlines() if l.strip()]
+            if not lines:
+                return ans.strip()
+            first = lines[0]
+            m = re.search(r"\(([A-Za-z])\)", first)
+            if m:
+                return f"({m.group(1).upper()})"
+            m2 = re.search(r"\b([A-Za-z])\b", first)
+            if m2:
+                return f"({m2.group(1).upper()})"
+            return first
+
+        cleaned = [clean_answer(ans) for ans in raw_answers]
+
+        pred_indices = []
+        for ans, letters in zip(cleaned, letters_list):
+            if not letters:
+                pred_indices.append(-1)
+                continue
+            letters_upper = [L.upper() for L in letters]
+            m = re.search(r"\(([A-Za-z])\)", ans)
+            if not m:
+                pred_indices.append(-1)
+                continue
+            letter = m.group(1).upper()
+            pred_indices.append(letters_upper.index(letter) if letter in letters_upper else -1)
+
+        pred_indices = torch.tensor(pred_indices, device=input_ids.device, dtype=torch.long)
+        return cleaned, pred_indices
+
+    def _mc_ce_loss(self, logits, labels):
+        if hasattr(self.args, "class_weights") and self.args.class_weights is not None:
+            class_weights = self.args.class_weights.to(logits.device)
+            return F.cross_entropy(logits, labels, weight=class_weights)
+        return F.cross_entropy(logits, labels)
+
+    @torch.no_grad()
+    def generate_answer(
+            self,
+            proc,  # dict from self.processor(...), already includes images tensors if provided
+            max_new_tokens=256,
+            temperature=0.7,
+            top_p=0.9,
+            do_sample=True,
+            min_new_tokens=20,
+            strip_prompt=True,
+            debug=False,
+    ):
+        self.backbone.eval()
+
+        device = self.backbone.device
+
+        # Move ONLY tensor entries to model device (keeps lists/strings untouched)
+        gen_kwargs = {k: v.to(device) for k, v in proc.items() if torch.is_tensor(v)}
+
+        if "input_ids" not in gen_kwargs or "attention_mask" not in gen_kwargs:
+            raise ValueError("proc must contain at least input_ids and attention_mask")
+
+        input_ids = gen_kwargs["input_ids"]
+        attention_mask = gen_kwargs["attention_mask"]
+
+        tok = self.processor.tokenizer
+        eos_token_id = tok.eos_token_id
+        pad_token_id = self.pad_token_id if hasattr(self, "pad_token_id") else tok.pad_token_id
+
+        # Avoid immediate stop if prompt ends with EOS (common with some chat templates)
+        if eos_token_id is not None and input_ids.shape[1] > 1:
+            if (input_ids[:, -1] == eos_token_id).all():
+                input_ids = input_ids[:, :-1]
+                attention_mask = attention_mask[:, :-1]
+                gen_kwargs["input_ids"] = input_ids
+                gen_kwargs["attention_mask"] = attention_mask
+
+        gen_ids = self.backbone.generate(
+            **gen_kwargs,
+            max_new_tokens=max_new_tokens,
+            min_new_tokens=min_new_tokens,
+            do_sample=do_sample,
+            temperature=temperature if do_sample else None,
+            top_p=top_p if do_sample else None,
+            pad_token_id=pad_token_id,
+            eos_token_id=eos_token_id,
+            return_dict_in_generate=False,
+        )
+
+        # # Debug shapes
+        # if debug:
+        #     print("input_ids:", input_ids.shape)
+        #     print("gen_ids:", gen_ids.shape)
+        #     print("new tokens:", gen_ids.shape[1] - input_ids.shape[1])
+
+        # Decode only generated continuation (recommended)
+        if strip_prompt:
+            prompt_len = input_ids.shape[1]
+            gen_part = gen_ids[:, prompt_len:]
+        else:
+            gen_part = gen_ids
+
+        texts = tok.batch_decode(
+            gen_part,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )
+
+        return texts
+
+    # ============================================================
+    #  Encode (UPDATED: pass vision tensors through)
+    # ============================================================
+    def _encode(self, input_ids, attention_mask, pixel_values=None, image_grid_thw=None):
+        kwargs = dict(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            output_hidden_states=True,
+            use_cache=False,
+            return_dict=True,
+        )
+        if pixel_values is not None:
+            kwargs["pixel_values"] = pixel_values
+        if image_grid_thw is not None:
+            kwargs["image_grid_thw"] = image_grid_thw
+
+        out = self.backbone(**kwargs)
+        return out.hidden_states[-1]
+
+    # ============================================================
+    #  Forward (FIXED: device usage, labels on device, returns)
+    # ============================================================
+
+    def extract_vision_embeds(self, pixel_values: torch.Tensor, image_grid_thw: torch.Tensor) -> torch.Tensor:
+
+        image_embeds, deepstack_image_embeds = self.backbone.get_image_features(pixel_values, image_grid_thw)
+        return  image_embeds, deepstack_image_embeds
+
+    def _get_tokenizer_from_processor(self, processor):
+        if hasattr(processor, "tokenizer") and processor.tokenizer is not None:
+            return processor.tokenizer
+        if hasattr(processor, "processor") and hasattr(processor.processor, "tokenizer"):
+            return processor.processor.tokenizer
+        return None
+
+    def _infer_image_token_ids(self, tokenizer) -> List[int]:
+        ids: List[int] = []
+
+        cand_strs = ['<|image_pad|>']
+        for s in cand_strs:
+            tid = tokenizer.convert_tokens_to_ids(s)
+            if isinstance(tid, int) and tid >= 0 and tid != getattr(tokenizer, "unk_token_id", -999):
+                ids.append(int(tid))
+
+        return sorted(set(ids))
+
+
+    def build_image_text_token_masks(self, enc_cpu: Dict[str, torch.Tensor], processor) -> Dict[str, torch.Tensor]:
+        """
+        Returns bool masks (CPU):
+          masks["image"] : [B,T]
+          masks["text"]  : [B,T]  (attention & ~image)
+
+        If processor provides an image mask, we use it.
+        Otherwise infer from tokenizer image token ids.
+
+        Asserts:
+          - image/text masks are not all-zero across the batch
+          - text mask has at least one token per sample (under attention)
+          - if image tokens are expected, image mask should not be all-zero (see note below)
+        """
+        input_ids = enc_cpu["input_ids"]
+        attention_mask = enc_cpu.get("attention_mask", None)
+        if attention_mask is None:
+            attention_mask = torch.ones_like(input_ids, dtype=torch.long)
+
+        att_bool = attention_mask.to(torch.bool)
+
+        def _finish(img_mask: torch.Tensor) -> Dict[str, torch.Tensor]:
+            img_mask = img_mask.to(torch.bool) & att_bool
+            txt_mask = att_bool & (~img_mask)
+
+            # ---- asserts ----
+            # Text should exist (otherwise prompt is empty / masking broken)
+            if (txt_mask.sum(dim=1) == 0).any():
+                bad = (txt_mask.sum(dim=1) == 0).nonzero(as_tuple=False).view(-1).tolist()
+                raise AssertionError(f"text_mask has zero tokens (under attention_mask) for samples: {bad}")
+
+            # At least some text tokens across batch
+            if txt_mask.sum().item() == 0:
+                raise AssertionError("text_mask is all-zero across the batch. attention_mask or masking is broken.")
+
+            # Image mask: depending on your prompting, it MAY be valid to have zero image tokens
+            # (e.g., if you accidentally built text-only prompts).
+            # But for VL prompts with an image, we usually want at least one image token.
+            if img_mask.sum().item() == 0:
+                raise AssertionError(
+                    "image_mask is all-zero across the batch. "
+                    "This usually means the processor did not insert image tokens (text-only), "
+                    "or image token ids were not inferred correctly."
+                )
+
+            return {"image": img_mask, "text": txt_mask}
+
+        # 1) Use processor-provided mask if available
+        candidate_keys = ["image_mask", "image_token_mask", "vision_token_mask", "media_token_mask"]
+        for k in candidate_keys:
+            m = enc_cpu.get(k, None)
+            if torch.is_tensor(m) and m.shape == input_ids.shape:
+                return _finish(m)
+
+        # 2) Infer from tokenizer image token ids
+        tok = self._get_tokenizer_from_processor(processor)
+        img_token_ids = self._infer_image_token_ids(tok)
+        if len(img_token_ids) > 0:
+            img_ids = torch.tensor(img_token_ids, dtype=input_ids.dtype, device=input_ids.device)
+            img_mask = torch.isin(input_ids, img_ids)
+            return _finish(img_mask)
+
+        # 3) No way to infer image tokens -> fail (since you asked to assert)
+        raise AssertionError(
+            "Could not build image_mask: no processor-provided image mask and no inferable image token ids. "
+            "Tokenizer may not expose image token ids, or this is not a VL tokenizer."
+        )
+
+    def _build_inputs_embeds_from_cache(
+            self,
+            input_ids: torch.Tensor,  # (B, T)
+            image_mask: torch.Tensor,  # (B, T) bool
+            vision_embeds: torch.Tensor,  # (B, N, d) or (N, d)
+            *,
+            strict: bool = True,  # if True, require N == num_image_positions
+    ):
+        """
+        Build inputs_embeds (B, T, d_model) where positions indicated by image_mask are
+        replaced by cached vision_embeds. Does NOT require vision_len.
+
+        If strict=True:
+          - requires for each sample: image_mask[b].sum() == vision_embeds[b].shape[0]
+        If strict=False:
+          - uses min(count_mask, count_embeds) and truncates the longer side.
+        """
+        lm = self.backbone.model.language_model
+        inputs_embeds = lm.embed_tokens(input_ids)  # (B, T, d_model)
+        B, T, d_model = inputs_embeds.shape
+
+        for b in range(B):
+            pos = image_mask[b].nonzero(as_tuple=False).view(-1)  # indices in [0..T)
+            n_mask = int(pos.numel())
+            n_vis = int(vision_embeds[b].size(0))
+
+            if (n_mask != n_vis):
+                raise ValueError(
+                    f"Sample {b}: image_mask has {n_mask} positions but vision_embeds has {n_vis} tokens"
+                )
+            inputs_embeds[b, pos, :] = vision_embeds[b].to(inputs_embeds.dtype)
+
+        return inputs_embeds
+
+    def _encode_from_inputs_embeds(self, inputs_embeds, attention_mask, deep_stack_viz):
+        out = self.backbone.model.language_model(
+            input_ids=None,
+            inputs_embeds=inputs_embeds,
+            attention_mask=attention_mask,
+            deepstack_visual_embeds=deep_stack_viz,
+            output_hidden_states=True,
+            return_dict=True,
+        )
+        return out.hidden_states[-1]
+
+    def forward(
+            self,
+            x,
+            *,
+            label=None,
+            return_features=False,
+            current_step=None,
+            image_token_mask=None,
+            text_token_mask=None,
+            **kwargs,
+    ):
+        hint_texts = x[0]
+        images = x[1]
+
+        model_device = self.backbone.device  # safer than images.device with device_map
+
+        # Build prompts
+        texts = self.build_prompt_no_cls(hypothesis=hint_texts)
+
+        messages_batch = [
+            [{"role": "user", "content": [
+                {"type": "image"},
+                {"type": "text", "text": t},
+            ]}]
+            for t in texts
+        ]
+        prompts = [
+            self.processor.apply_chat_template(m, tokenize=False, add_generation_prompt=True)
+            for m in messages_batch
+        ]
+
+        image_list = [to_pil_image(img.detach().cpu().clamp(0, 1)) for img in images]
+
+        proc = self.processor(
+            text=prompts,
+            images=image_list,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+        )
+
+        # proc.pop("token_type_ids", None)
+        #
+        # # ------------------------------------------------------------------
+        # # 3) Inspect what the MODEL ACTUALLY GETS
+        # # ------------------------------------------------------------------
+        # print("\n=== PROCESSOR OUTPUT ===")
+        # print("proc keys:", proc.keys())
+        #
+        # pv = proc.get("pixel_values", None)
+        # if pv is None:
+        #     print("NO pixel_values in proc -> text-only VL!")
+        # else:
+        #     print("pixel_values shape:", pv.shape, pv.dtype, pv.device)
+        #     print(
+        #         "pixel_values min/max/mean:",
+        #         pv.min().item(),
+        #         pv.max().item(),
+        #         pv.mean().item(),
+        #     )
+
+        # Move tensors to model device (DO NOT move non-tensors)
+        proc = {k: (v.to(model_device) if torch.is_tensor(v) else v) for k, v in proc.items()}
+
+        input_ids = proc["input_ids"]
+        attention_mask = proc["attention_mask"]
+        pixel_values = proc.get("pixel_values", None)
+        image_grid_thw = proc.get("image_grid_thw", None)
+
+        # lm = self.backbone.model.language_model
+        # inputs_embeds = lm.embed_tokens(input_ids)  # (B, T, d_model)
+        inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids)
+        position_ids = None
+        cache_position = None
+        with torch.no_grad():
+            pv = pixel_values.to(self.backbone.device, dtype=pixel_values.dtype, non_blocking=True)
+            gthw = image_grid_thw.to(self.backbone.device, non_blocking=True)
+            image_embeds, deep_stack_viz = self.extract_vision_embeds(pv, gthw)
+            image_embeds = torch.cat(image_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
+            # deep_stack_viz = torch.cat(deep_stack_viz, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
+            image_mask, _ = self.backbone.model.get_placeholder_mask( input_ids, inputs_embeds=inputs_embeds, image_features=image_embeds)
+            inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
+            image_mask = image_mask[...,0]
+
+            if position_ids is None:
+                attention_mask_tensor = (
+                    attention_mask if not isinstance(attention_mask, dict) else attention_mask["full_attention"]
+                )
+                if attention_mask_tensor is not None and attention_mask_tensor.ndim == 4:
+                    attention_mask_tensor = torch.diagonal(attention_mask_tensor[:, 0], dim1=1, dim2=2)
+                    # Only apply conversion for floating point tensors (inverted masks)
+                    if attention_mask_tensor.dtype.is_floating_point:
+                        attention_mask_tensor = attention_mask_tensor / torch.finfo(attention_mask_tensor.dtype).min
+                        attention_mask_tensor = (1.0 - attention_mask_tensor).int()
+
+                batch_size, seq_length, _ = inputs_embeds.shape
+                delta = (
+                    (cache_position[0] + self.rope_deltas).to(inputs_embeds.device)
+                    if cache_position is not None
+                    else 0
+                )
+                position_ids = torch.arange(seq_length, device=inputs_embeds.device)
+                position_ids = position_ids.view(1, -1).expand(batch_size, -1)
+                if cache_position is not None:  # otherwise `deltas` is an int `0`
+                    delta = delta.repeat_interleave(batch_size // delta.shape[0], dim=0)
+                position_ids = position_ids.add(delta)
+                position_ids = position_ids.unsqueeze(0).expand(3, -1, -1)
+
+
+        out = self.backbone.model.language_model(
+            input_ids=None,
+            inputs_embeds=inputs_embeds,
+            attention_mask=attention_mask,
+            visual_pos_masks=image_mask,
+            deepstack_visual_embeds=deep_stack_viz,
+            position_ids = position_ids,
+            output_hidden_states=True,
+            return_dict=True,
+        )
+        hidden = out.hidden_states[-1]
+
+        # masks_batch = self.build_image_text_token_masks(proc, self.processor)
+        # image_mask_batch = masks_batch["image"]  # bool [B,T]
+        # 
+        # inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask_batch, vis)
+        # hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask, deep_stack_viz)
+
+        # # Encode + CLS classification
+        # hidden = self._encode(
+        #     input_ids=input_ids,
+        #     attention_mask=attention_mask,
+        #     pixel_values=pixel_values,
+        #     image_grid_thw=image_grid_thw,
+        # )
+
+
+
+        h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
+        head_logits = self.enc_0(h_cls)
+
+        losses = {}
+        if label is not None:
+            if torch.is_tensor(label):
+                label = label.to(head_logits.device)
+            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, label)
+
+        preds = {"combined": head_logits}
+        features = {"combined": h_cls}
+        if return_features:
+            features["hidden"] = hidden
+
+        # # Optional: generation for debugging
+        # gen_texts = self.generate_answer(
+        #     proc,
+        #     max_new_tokens=256,  # labels are short; keep tiny for debugging
+        #     do_sample=False,  # deterministic label output
+        #     temperature=0.0,
+        #     top_p=1.0,
+        #     min_new_tokens=10,
+        #     strip_prompt=True,
+        #     debug=True,
+        # )
+
+        # Debug prints (optional)
+        # print("###NEW ONE####")
+        # print(torch.softmax(head_logits, dim=-1))
+        # print(label)
+        # if label is not None:
+        #     print(torch.nn.functional.cross_entropy(head_logits, label, reduction="none"))
+        # for t in gen_texts:
+        #     print("-----")
+        #     print(t)
+
+        # save_vl_debug_plots(images, label, prompts, generated_responses=gen_texts, out_dir="debug_viz", prefix="ESNLI")
+
+        return {"preds": preds, "features": features, "losses": losses}
+
 
 class QwenVL_ScienceQA_Cached(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
@@ -3275,6 +3977,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             device_map="cuda:0",
             cache_dir=hf_cache,
         )
+        print(self.backbone)
         if added > 0:
             self.backbone.resize_token_embeddings(len(tok))
 

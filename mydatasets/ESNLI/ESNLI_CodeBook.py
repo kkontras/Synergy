@@ -415,37 +415,37 @@ def make_loader(ds: Dataset, batch_size: int, num_workers: int, shuffle: bool = 
 # Prompt (NO CLS)
 # -----------------------------
 def build_prompt_cls( hypothesis: Sequence[str]) -> List[str]:
-    instr_text = """\
-    You are given an image and a hypothesis about the image.
-    Decide whether the hypothesis is supported by the image.
+    instr_text = """
+        You are given an image and a hypothesis about the image.
+        Decide whether the hypothesis is supported by the image.
 
-    Choose EXACTLY ONE label: entailment, neutral, or contradiction.
+        Choose EXACTLY ONE label: entailment, neutral, or contradiction.
 
-    Definitions:
-    - entailment:
-      The hypothesis is clearly true given what is visible in the image.
+        Definitions:
+        - entailment:
+          The hypothesis is clearly true given what is visible in the image.
 
-    - contradiction:
-      The hypothesis is clearly false given the image.
-      This includes cases where the hypothesis describes an action, state, or situation
-      that is incompatible with what is visible in the image.
+        - contradiction:
+          The hypothesis is clearly false given the image.
+          This includes cases where the hypothesis describes an action, state, or situation
+          that is incompatible with what is visible in the image.
 
-    - neutral:
-      The image does not provide enough information to decide.
-      The hypothesis could be true or false, and nothing visible contradicts it.
+        - neutral:
+          The image does not provide enough information to decide.
+          The hypothesis could be true or false, and nothing visible contradicts it.
 
-    Important rules:
-    - "The image does not show the hypothesis" is NOT enough to choose neutral.
-    - If the hypothesis claims something that is NOT happening in the image
-      (e.g., walking vs sitting, outdoors vs clearly indoors), choose contradiction.
-    - Use neutral ONLY when the image neither supports NOR contradicts the hypothesis.
+        Important rules:
+        - "The image does not show the hypothesis" is NOT enough to choose neutral.
+        - If the hypothesis claims something that is NOT happening in the image
+          (e.g., walking vs sitting, outdoors vs clearly indoors), choose contradiction.
+        - Use neutral ONLY when the image neither supports NOR contradicts the hypothesis.
 
-    Answer format:
-    Label: one word only (entailment / neutral / contradiction)
-    Explanation: free text
-
-    <CLS>
-    """
+        Answer format:
+        Label: one word only (entailment / neutral / contradiction)
+        Explanation: free text
+        
+        <CLS>
+        """
 
     return [
         f"Hypothesis:\n{str(h).strip()}\n\n{instr_text}"
@@ -580,13 +580,13 @@ def main():
     from tqdm import tqdm
 
     for batch in tqdm(dl, desc=f"[cache] {args.split}"):
-        texts: List[str] = batch["text"]
+        hyp: List[str] = batch["text"]
         images_t: torch.Tensor = batch["image"]  # [B,3,H,W]
         labels: torch.Tensor = batch["label"]    # [B]
         ids: List[str] = batch["id"]
         batch_size = images_t.shape[0]
 
-        texts = build_prompt_cls(hypothesis=texts)
+        texts = build_prompt_cls(hypothesis=hyp)
 
         messages_batch = [
             [{"role": "user", "content": [
@@ -603,7 +603,6 @@ def main():
 
         pil_images = [tensor_image_to_pil(images_t[i]) for i in range(images_t.size(0))]
 
-        print(images_t[0].shape)
         enc = processor(
             text=prompts,
             images=pil_images,
@@ -612,12 +611,8 @@ def main():
             truncation=True
         )
 
-        print(enc["pixel_values"].shape)
-        print(einops.rearrange(enc["pixel_values"], "(b c) (d e)1"))
-
         input_ids_batch = enc["input_ids"].detach().cpu()
         attention_batch = enc["attention_mask"].detach().cpu()
-
 
         enc_cpu_for_masks: Dict[str, torch.Tensor] = {
             "input_ids": input_ids_batch,
@@ -638,7 +633,18 @@ def main():
                 vis = extract_vision_embeds(model, pv, gthw)
                 vis = einops.rearrange(vis, "(b i) c -> b i c", b=batch_size)
 
+                pv = pixel_values.to(model.device, dtype=pixel_values.dtype, non_blocking=True)
+                gthw = image_grid_thw.to(model.device, non_blocking=True)
+                image_embeds, deep_stack_viz = extract_vision_embeds(pv, gthw)
+                image_embeds = torch.cat(image_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
+                image_mask, _ = model.model.get_placeholder_mask( input_ids_batch, inputs_embeds=inputs_embeds, image_features=image_embeds)
+                inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
+                image_mask = image_mask[...,0]
+
             vision_embeds_cpu = [vis[i].detach().cpu() for i in range(vis.size(0))]
+            vision_mask_cpu = [image_mask[i].detach().cpu() for i in range(image_mask.size(0))]
+            deep_stack_viz_cpu = [[j.detach().cpu() for j in deep_stack_viz[i]] for i in range(deep_stack_viz.size(0))]
+
         except Exception as e:
             raise Exception(e)
 
@@ -654,16 +660,22 @@ def main():
             input_ids_i = input_ids_batch[i, :L].contiguous()
             attention_i = attention_batch[i, :L].contiguous()
 
+            deep_stack_viz_cpu_i = deep_stack_viz_cpu[i, :L].contiguous()
+
             image_mask_i = image_mask_batch[i, :L].to(torch.uint8).contiguous()
             text_mask_i = text_mask_batch[i, :L].to(torch.uint8).contiguous()
+
+            image_mask_hf_i = vision_mask_cpu[i, :L].to(torch.uint8).contiguous()
 
             item: Dict[str, Any] = {
                 "id": ids[i],
                 "label": labels[i].detach().cpu(),
                 "prompt": prompts[i],
                 "input_ids": input_ids_i,
+                "deep_stack_viz": deep_stack_viz_cpu_i,
                 "attention_mask": attention_i,
                 "masks": {
+                    "image_hf": image_mask_hf_i,
                     "image": image_mask_i,
                     "text": text_mask_i,
                 },

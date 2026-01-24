@@ -363,6 +363,7 @@ class ESNLI_VE_Dataloader:
 
         total_cpus = multiprocessing.cpu_count()
         workers = max(1, min(24, total_cpus - 1))
+        workers = 0
 
         self.logger.info(f" CPUs: {total_cpus} | Workers: {workers}")
 

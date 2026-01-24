@@ -124,5 +124,6 @@ python train.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --defaul
 python train.py  --config ./configs/ScienceQA/cache_lora_DnR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 2 --alpha 1 --kmepoch 1
 python train.py  --config ./configs/ScienceQA/cache_lora_MCR.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 2 --l 1 --multil 1 --num_samples 2 --regby greedy --shuffle_type rand --contrcoeff 1
 
+--config ./configs/ScienceQA/cache_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5
 
 

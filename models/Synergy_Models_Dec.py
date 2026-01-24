@@ -3647,7 +3647,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             pad_token_id = self.pad_token_id if hasattr(self, "pad_token_id") else tok.pad_token_id
 
             with torch.no_grad():
-                gen_ids = lm.generate(
+                gen_ids = lm(
                     inputs_embeds=inputs_embeds,
                     attention_mask=attention_mask,
                     max_new_tokens=max_new_tokens,

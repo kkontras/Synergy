@@ -3414,36 +3414,72 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             self,
             input_ids: torch.Tensor,  # (B, T)
             image_mask: torch.Tensor,  # (B, T) bool
-            vision_embeds: torch.Tensor,  # (B, N, d) or (N, d) per-sample
+            vision_embeds: torch.Tensor,  # (B, N, d) or (N, d)
+            *,
+            strict: bool = True,  # if True, require N == num_image_positions
     ):
         """
-        Returns inputs_embeds (B, T, d_model) where image-token positions are replaced by cached vision_embeds.
+        Build inputs_embeds (B, T, d_model) where positions indicated by image_mask are
+        replaced by cached vision_embeds. Does NOT require vision_len.
+
+        If strict=True:
+          - requires for each sample: image_mask[b].sum() == vision_embeds[b].shape[0]
+        If strict=False:
+          - uses min(count_mask, count_embeds) and truncates the longer side.
         """
         lm = self.backbone.model.language_model
         if lm is None or not hasattr(lm, "embed_tokens"):
             raise RuntimeError("Cannot access LM token embeddings (embed_tokens).")
 
+        if input_ids.ndim != 2:
+            raise ValueError(f"input_ids must be (B,T), got {tuple(input_ids.shape)}")
+        if image_mask.ndim != 2:
+            raise ValueError(f"image_mask must be (B,T), got {tuple(image_mask.shape)}")
+
         # Text token embeddings
         inputs_embeds = lm.embed_tokens(input_ids)  # (B, T, d_model)
-
         B, T, d_model = inputs_embeds.shape
+
         if image_mask.shape != (B, T):
-            raise ValueError(f"image_mask must be (B,T) = {(B, T)}, got {tuple(image_mask.shape)}")
+            raise ValueError(f"image_mask must be (B,T)={(B, T)}, got {tuple(image_mask.shape)}")
 
-        # Normalize vision_embeds to per-batch (B, N, d)
+        # Normalize vision_embeds to (B, N, d)
         if vision_embeds.dim() == 2:
-            # If you pass one sample at a time, allow (N,d)
-            vision_embeds = vision_embeds.unsqueeze(0)  # (1,N,d)
-
+            vision_embeds = vision_embeds.unsqueeze(0)  # (1, N, d)
+        if vision_embeds.dim() != 3:
+            raise ValueError(f"vision_embeds must be (B,N,d) or (N,d), got {tuple(vision_embeds.shape)}")
         if vision_embeds.size(-1) != d_model:
             raise ValueError(f"vision_embeds last dim {vision_embeds.size(-1)} != d_model {d_model}")
 
-        # Splice per sample (variable N)
+        if vision_embeds.size(0) not in (1, B):
+            raise ValueError(f"vision_embeds batch dim must be 1 or B={B}, got {vision_embeds.size(0)}")
+
+        # If vision_embeds has batch=1, broadcast across batch (rare but supported)
+        if vision_embeds.size(0) == 1 and B > 1:
+            vision_embeds = vision_embeds.expand(B, -1, -1)
+
+        # Splice per sample
         for b in range(B):
             pos = image_mask[b].nonzero(as_tuple=False).view(-1)  # indices in [0..T)
-            if pos.numel() != n:
-                raise ValueError(f"Sample {b}: image_mask has {pos.numel()} positions but vision_len={n}")
-            inputs_embeds[b, pos, :] = vision_embeds[b, :n, :].to(inputs_embeds.dtype)
+            n_mask = int(pos.numel())
+            n_vis = int(vision_embeds[b].size(0))
+
+            if strict and (n_mask != n_vis):
+                raise ValueError(
+                    f"Sample {b}: image_mask has {n_mask} positions but vision_embeds has {n_vis} tokens"
+                )
+
+            n = min(n_mask, n_vis)
+            if n == 0:
+                continue
+
+            # Replace the first n image-token positions with first n vision tokens
+            inputs_embeds[b, pos[:n], :] = vision_embeds[b, :n, :].to(inputs_embeds.dtype)
+
+            if strict is False and n_mask != n_vis:
+                # (optional) warn once per sample for debugging
+                # print(f"[WARN] Sample {b}: n_mask={n_mask} n_vis={n_vis} -> using n={n}")
+                pass
 
         return inputs_embeds
 
@@ -3561,22 +3597,20 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         import torch.nn.functional as F
 
         proc = x
+        print(proc.shape)
         device = self.backbone.device
         tok = self.processor.tokenizer
-
-        # ----------------------------
-        # Required
-        # ----------------------------
         input_ids = proc["input_ids"].to(device)
         attention_mask = proc["attention_mask"].to(device)
-
         input_ids, attention_mask = self._ensure_cls(input_ids, attention_mask)
 
         image_mask = proc["image_mask"].to(device)
         vision_embeds = proc["vision_embeds"].to(device)
 
-        inputs_embeds = torch.cat([vision_embeds, input_ids], dim=0)
 
+        # inputs_embeds = torch.cat([vision_embeds, input_ids], dim=0)
+
+        inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
 
         # Encode via LM directly (skips vision tower)
         hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)

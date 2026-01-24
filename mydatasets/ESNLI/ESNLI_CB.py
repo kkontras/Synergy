@@ -195,16 +195,16 @@ def build_memmap_from_token_shards(
                 total_vision_elems += int(nimg * D)
 
                 # pv = ex["pixel_values"]
-                pv = einops.rearrange(ex["pixel_values"], "h (w c) -> c h w",c=3)
-                if not torch.is_tensor(pv):
-                    raise TypeError(f"pixel_values must be torch.Tensor, got {type(pv)}")
-                if pv.dim() != 2:
-                    raise ValueError(f"pixel_values must be [C,H,W], got shape={tuple(pv.shape)}")
-                has_pixel = True
-                print(pv.shape)
-                shp = (int(pv.shape[0]), int(pv.shape[1]), int(pv.shape[2]))
-                if pixel_shape is None:
-                    pixel_shape = shp
+                # pv = einops.rearrange(ex["pixel_values"], "h (w c) -> c h w",c=3)
+                # if not torch.is_tensor(pv):
+                #     raise TypeError(f"pixel_values must be torch.Tensor, got {type(pv)}")
+                # if pv.dim() != 2:
+                #     raise ValueError(f"pixel_values must be [C,H,W], got shape={tuple(pv.shape)}")
+                # has_pixel = True
+                # print(pv.shape)
+                # shp = (int(pv.shape[0]), int(pv.shape[1]), int(pv.shape[2]))
+                # if pixel_shape is None:
+                #     pixel_shape = shp
                 # elif pixel_shape != shp:
                 #     raise ValueError(f"pixel_values shape mismatch: saw {pixel_shape} then {shp}")
 
@@ -248,9 +248,9 @@ def build_memmap_from_token_shards(
         vision_mm = np.memmap(vision_bin, mode="w+", dtype=vision_np_dtype, shape=(total_vision_elems,))
 
 
-        C, H, W = pixel_shape
-        pixel_bin = os.path.join(out_dir, "pixel_values.bin")
-        pixel_mm = np.memmap(pixel_bin, mode="w+", dtype=np.float16, shape=(N, C, H, W))
+        # C, H, W = pixel_shape
+        # pixel_bin = os.path.join(out_dir, "pixel_values.bin")
+        # pixel_mm = np.memmap(pixel_bin, mode="w+", dtype=np.float16, shape=(N, C, H, W))
 
 
         # -------- Pass 2: fill --------
@@ -327,13 +327,13 @@ def build_memmap_from_token_shards(
                     vision_mm[vision_cursor:vision_cursor + n_elems] = flat
                     vision_cursor += n_elems
 
-                if pixel_mm is not None:
-                    pv = ex.get("pixel_values", None)
-                    if pv is None:
-                        pixel_mm[i, ...] = 0
-                    else:
-                        arr = pv.detach().cpu().numpy().astype(np.float16, copy=False)
-                        pixel_mm[i, ...] = arr
+                # if pixel_mm is not None:
+                #     pv = ex.get("pixel_values", None)
+                #     if pv is None:
+                #         pixel_mm[i, ...] = 0
+                #     else:
+                #         arr = pv.detach().cpu().numpy().astype(np.float16, copy=False)
+                #         pixel_mm[i, ...] = arr
 
                 token_cursor += L
                 i += 1
@@ -350,8 +350,8 @@ def build_memmap_from_token_shards(
         text_mask_mm.flush()
         if vision_mm is not None:
             vision_mm.flush()
-        if pixel_mm is not None:
-            pixel_mm.flush()
+        # if pixel_mm is not None:
+        #     pixel_mm.flush()
 
         ids_f.close()
         os.replace(ids_path + ".tmp", ids_path)
@@ -377,8 +377,9 @@ def build_memmap_from_token_shards(
             "has_vision_embeds": bool(has_vision),
             "vision_dtype": vision_dtype if has_vision else None,
             "vision_dim": int(vision_dim) if vision_dim is not None else None,
-            "store_pixel_values": has_pixel,
-            "pixel_shape": list(pixel_shape),
+            "store_pixel_values": bool(store_pixel_values and has_pixel),
+            "pixel_shape": list(pixel_shape) if (
+                        store_pixel_values and has_pixel and pixel_shape is not None) else None,
             "has_token_masks": True,
             "paths": {
                 "offsets": "offsets.npy",
@@ -424,7 +425,7 @@ class ESNLI_MemmapDataset(Dataset):
       - input_ids (1D long)
       - attention_mask (1D long)
       - image_mask (bool 1D)
-      - text_mask (bool 1D)
+      - text_mask (bool 1D) 
       - image_grid_thw (long[3]) if present
       - vision_embeds (float tensor [Nimg, D]) + vision_len (long) if present
       - pixel_values (float16 [C,H,W]) if stored

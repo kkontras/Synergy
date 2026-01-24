@@ -445,13 +445,46 @@ def build_prompt_no_cls(
 # -----------------------------
 # Vision embedding extraction
 # -----------------------------
-def extract_vision_embeds(model: Qwen3VLForConditionalGeneration, pixel_values: torch.Tensor, image_grid_thw: torch.Tensor) -> Any:
+def extract_vision_embeds(model, pixel_values: torch.Tensor, image_grid_thw: torch.Tensor) -> torch.Tensor:
+    """
+    Returns a Tensor of vision token embeddings (B, N, D).
+    Handles common Qwen3-VL variants where visual() returns:
+      - Tensor
+      - Tuple(Tensor, ...)
+      - Dict with known keys
+    """
+    print(pixel_values.shape)
+    print(image_grid_thw.shape)
     if hasattr(model, "model") and hasattr(model.model, "visual"):
-        return model.model.visual(pixel_values, grid_thw=image_grid_thw)
-    if hasattr(model, "visual"):
-        return model.visual(pixel_values, grid_thw=image_grid_thw)
-    raise AttributeError("No visual module found on model (expected model.model.visual or model.visual).")
+        out = model.model.visual(pixel_values, grid_thw=image_grid_thw)
+    elif hasattr(model, "visual"):
+        out = model.visual(pixel_values, grid_thw=image_grid_thw)
+    else:
+        raise AttributeError("No visual module found on model (expected model.model.visual or model.visual).")
 
+    # Case 1: direct tensor
+    if torch.is_tensor(out):
+        return out
+
+    # Case 2: tuple/list -> pick first tensor element
+    if isinstance(out, (tuple, list)):
+        for z in out:
+            if torch.is_tensor(z):
+                return z
+        raise TypeError(f"visual() returned tuple/list but no tensor found. Types: {[type(z) for z in out]}")
+
+    # Case 3: dict -> try common keys
+    if isinstance(out, dict):
+        for k in ["last_hidden_state", "hidden_states", "vision_embeds", "embeds", "features", "x"]:
+            if k in out and torch.is_tensor(out[k]):
+                return out[k]
+        # fallback: first tensor value
+        for v in out.values():
+            if torch.is_tensor(v):
+                return v
+        raise TypeError(f"visual() returned dict but no tensor values found. Keys: {list(out.keys())}")
+
+    raise TypeError(f"Unrecognized visual() output type: {type(out)}")
 
 # -----------------------------
 # Sharding
@@ -547,7 +580,7 @@ def main():
         images_t: torch.Tensor = batch["image"]  # [B,3,H,W]
         labels: torch.Tensor = batch["label"]    # [B]
         ids: List[str] = batch["id"]
-
+        batch_size = images_t.shape[0]
         label_options = "entailment, neutral, contradiction"
 
         texts = build_prompt_no_cls(hypothesis=texts, label_options=label_options)
@@ -590,30 +623,24 @@ def main():
         masks_batch = build_image_text_token_masks(enc_cpu_for_masks, processor)
         image_mask_batch = masks_batch["image"]  # bool [B,T]
         text_mask_batch = masks_batch["text"]    # bool [B,T]
-
+        print( batch["image"].shape)
         pixel_values = enc.get("pixel_values", None)
         image_grid_thw = enc.get("image_grid_thw", None)
 
         vision_embeds_cpu = None
         vision_error = None
 
-        if pixel_values is None or image_grid_thw is None:
-            vision_error = "Processor did not return pixel_values/image_grid_thw; cannot compute vision embeddings."
-        else:
-            try:
-                with torch.no_grad():
-                    pv = pixel_values.to(model.device, dtype=dtype, non_blocking=True)
-                    gthw = image_grid_thw.to(model.device, non_blocking=True)
-                    vis = extract_vision_embeds(model, pv, gthw)
-                    print("Vision embedding were extracted", vis.keys())
 
-                if torch.is_tensor(vis):
-                    vision_embeds_cpu = [vis[i].detach().cpu() for i in range(vis.size(0))]
-                else:
-                    vision_error = f"Unrecognized vision output type: {type(vis)}"
-            except Exception as e:
-                vision_error = str(e)
-                print(vision_error)
+        try:
+            with torch.no_grad():
+                pv = pixel_values.to(model.device, dtype=dtype, non_blocking=True)
+                gthw = image_grid_thw.to(model.device, non_blocking=True)
+                vis = extract_vision_embeds(model, pv, gthw).reshape(batch_size, 256, 2048)
+                print("Vision embedding were extracted", vis.shape)
+
+            vision_embeds_cpu = [vis[i].detach().cpu() for i in range(vis.size(0))]
+        except Exception as e:
+            raise Exception(e)
 
         B = len(ids)
         for i in range(B):
@@ -640,15 +667,9 @@ def main():
                 },
             }
 
-            if pixel_values is not None:
-                item["pixel_values"] = pixel_values[i].detach().cpu()
-            if image_grid_thw is not None:
-                item["image_grid_thw"] = image_grid_thw[i].detach().cpu()
-
-            if vision_embeds_cpu is not None:
-                item["vision_embeds"] = vision_embeds_cpu[i]
-            if vision_error is not None:
-                item["vision_embeds_error"] = vision_error
+            item["pixel_values"] = pixel_values[i].detach().cpu()
+            item["image_grid_thw"] = image_grid_thw[i].detach().cpu()
+            item["vision_embeds"] = vision_embeds_cpu[i]
 
             items.append(item)
 

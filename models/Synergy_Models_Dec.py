@@ -3691,7 +3691,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
                     do_sample=do_sample,
                     temperature=temperature,
                     top_p=top_p,
-                    strip_prompt=True,
                     debug=bool(kwargs.get("gen_debug", False)),
                 )
             for i in gen_texts:

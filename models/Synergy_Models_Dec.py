@@ -3415,7 +3415,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             input_ids: torch.Tensor,  # (B, T)
             image_mask: torch.Tensor,  # (B, T) bool
             vision_embeds: torch.Tensor,  # (B, N, d) or (N, d) per-sample
-            vision_len: torch.Tensor,  # (B,) or int per-sample
     ):
         """
         Returns inputs_embeds (B, T, d_model) where image-token positions are replaced by cached vision_embeds.
@@ -3441,7 +3440,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         # Splice per sample (variable N)
         for b in range(B):
-            n = int(vision_len[b].item()) if torch.is_tensor(vision_len) else int(vision_len)
             pos = image_mask[b].nonzero(as_tuple=False).view(-1)  # indices in [0..T)
             if pos.numel() != n:
                 raise ValueError(f"Sample {b}: image_mask has {pos.numel()} positions but vision_len={n}")
@@ -3572,35 +3570,17 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         input_ids = proc["input_ids"].to(device)
         attention_mask = proc["attention_mask"].to(device)
 
-        # Ensure CLS exists for stable readout
         input_ids, attention_mask = self._ensure_cls(input_ids, attention_mask)
-
-        # ----------------------------
-        # Decide pathway: cached vision vs pixel_values
-        # ----------------------------
-        print(proc.keys())
-        use_cached_vision = (
-                ("vision_embeds" in proc) and ("vision_len" in proc) and ("image_mask" in proc)
-        )
 
         image_mask = proc["image_mask"].to(device)
         vision_embeds = proc["vision_embeds"].to(device)
-        vision_len = proc["vision_len"].to(device)
 
-        # Build LM inputs_embeds with vision token slots filled from cache
-        inputs_embeds = self._build_inputs_embeds_from_cache(
-            input_ids=input_ids,
-            image_mask=image_mask,
-            vision_embeds=vision_embeds,
-            vision_len=vision_len,
-        )
+        inputs_embeds = torch.cat([vision_embeds, input_ids], dim=0)
+
 
         # Encode via LM directly (skips vision tower)
         hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)
 
-        # ----------------------------
-        # CLS readout -> classifier head
-        # ----------------------------
         h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
         logits = self.enc_0(h_cls)
 

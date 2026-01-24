@@ -300,13 +300,6 @@ def build_image_text_token_masks(enc_cpu: Dict[str, torch.Tensor], processor) ->
 
         return {"image": img_mask, "text": txt_mask}
 
-    # 1) Use processor-provided mask if available
-    candidate_keys = ["image_mask", "image_token_mask", "vision_token_mask", "media_token_mask"]
-    for k in candidate_keys:
-        m = enc_cpu.get(k, None)
-        if torch.is_tensor(m) and m.shape == input_ids.shape:
-            return _finish(m)
-
     # 2) Infer from tokenizer image token ids
     tok = _get_tokenizer_from_processor(processor)
     img_token_ids = _infer_image_token_ids(tok)

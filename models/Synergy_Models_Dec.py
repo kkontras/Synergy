@@ -4223,12 +4223,12 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         attention_mask = proc["attention_mask"].to(device)
         image_mask = proc["image_mask"].to(device)
         vision_embeds = proc["vision_embeds"].to(device)
-        position_ids = proc["position_ids"].to(device)
+        position_ids = proc["position_ids"].to(device)   
         deep_stack_viz = proc["deep_stack_viz"].to(device)
 
 
         inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids.cuda())
-        # print(inputs_embeds.shape)  
+        # print(inputs_embeds.shape)
         # print(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]).shape)
 
         inputs_embeds = inputs_embeds.masked_scatter(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]), vision_embeds)
@@ -4237,7 +4237,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         # inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
 
-        out = self.backbone.model.language_model(
+        out = self.backbone.model.language_model( 
             input_ids=None,
             position_ids = position_ids,
             inputs_embeds=inputs_embeds,

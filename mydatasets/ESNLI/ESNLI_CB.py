@@ -110,7 +110,7 @@ def _as_1d_cpu_tensor(x, dtype: Optional[torch.dtype] = None) -> torch.Tensor:
         t = x.detach().cpu().view(-1)
         return t.to(dtype) if dtype is not None else t
     try:
-        t = torch.as_tensor(x).detach().cpu().view(-1)
+        t = torch.as_tensor(x).contiguous().detach().cpu().view(-1)
         return t.to(dtype) if dtype is not None else t
     except Exception:
         return torch.empty((0,), dtype=dtype or torch.long)

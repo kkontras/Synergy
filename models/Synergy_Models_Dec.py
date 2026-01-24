@@ -4223,10 +4223,29 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         attention_mask = proc["attention_mask"].to(device)
         image_mask = proc["image_mask"].to(device)
         vision_embeds = proc["vision_embeds"].to(device)
+        position_ids = proc["position_ids"].to(device)
+        deep_stack_viz = proc["deep_stack_viz"].to(device)
 
-        inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
+        inputs_embeds = inputs_embeds.masked_scatter(image_mask, vision_embeds)
 
-        hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)
+        # inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
+
+        out = self.backbone.model.language_model(
+            input_ids=None,
+            position_ids = position_ids,
+            inputs_embeds=inputs_embeds,
+            attention_mask=attention_mask,
+            visual_pos_masks=image_mask,
+            deepstack_visual_embeds=deep_stack_viz,
+            output_hidden_states=True,
+            return_dict=True,
+            cache_position = None,
+            use_cache= False
+        )
+        hidden = out.hidden_states[-1]
+
+
+        # hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)
         h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
         logits = self.enc_0(h_cls)
 

@@ -3433,17 +3433,17 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         for b in range(B):
             pos = image_mask[b].nonzero(as_tuple=False).view(-1)  # indices in [0..T)
+            print(pos)
             n_mask = int(pos.numel())
             n_vis = int(vision_embeds[b].size(0))
+
+            print(n_mask,n_vis)
 
             if (n_mask != n_vis):
                 raise ValueError(
                     f"Sample {b}: image_mask has {n_mask} positions but vision_embeds has {n_vis} tokens"
                 )
-
-            n = n_vis
-
-            inputs_embeds[b, pos[:n], :] = vision_embeds[b, :n, :].to(inputs_embeds.dtype)
+            inputs_embeds[b, pos, :] = vision_embeds[b, :, :].to(inputs_embeds.dtype)
 
         return inputs_embeds
 
@@ -3565,7 +3565,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
         print(inputs_embeds.shape)
 
-        # Encode via LM directly (skips vision tower)
         hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)
         h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
         logits = self.enc_0(h_cls)

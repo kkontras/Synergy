@@ -25,7 +25,7 @@ class Monitor_n_Save():
         file_name = self._get_checkpoint_path()
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
-        if self.agent.logs["current_epoch"]<=1 and self.agent.config.model.start_over:
+        if self.agent.logs["current_epoch"]<=1 and self.agent.config.model.get("start_over", False):
             existing_ckpt = None
         else:
             existing_ckpt = self._load_existing_checkpoint(file_name)
@@ -189,7 +189,7 @@ class Monitor_n_Save():
                 wandb.log(wandb_out, step=self.agent.logs["current_step"]+1)
 
                 self.agent.logs["steps_no_improve"] = 0
-                self.save(verbose = True, is_best_dict=is_best_dict)
+                # self.save(verbose = True, is_best_dict=is_best_dict)
                 not_saved = False
             else:
                 self.agent.logs["steps_no_improve"] += 1

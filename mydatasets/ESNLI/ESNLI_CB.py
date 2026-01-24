@@ -559,6 +559,7 @@ class ESNLI_MemmapDataset(Dataset):
 
         out["vision_embeds"] = vision
         out["vision_len"] = torch.tensor(nimg, dtype=torch.long)
+        out["pixel_values"] = torch.from_numpy(np.array(self.pixel_mm[idx], copy=True))  # float16
 
         return out
 
@@ -623,11 +624,9 @@ def esnli_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0) -> 
         "text_mask": text_mask,
     }
 
-    if "image_grid_thw" in batch[0]:
-        data["image_grid_thw"] = torch.stack([b["image_grid_thw"] for b in batch], dim=0)
+    data["image_grid_thw"] = torch.stack([b["image_grid_thw"] for b in batch], dim=0)
 
-    if "pixel_values" in batch[0]:
-        data["pixel_values"] = torch.stack([b["pixel_values"] for b in batch], dim=0)
+    data["pixel_values"] = torch.stack([b["pixel_values"] for b in batch], dim=0)
 
     if "vision_embeds" in batch[0]:
         vis_list = [b["vision_embeds"] for b in batch]

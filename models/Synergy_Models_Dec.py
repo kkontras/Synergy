@@ -3502,8 +3502,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         image_mask = proc["image_mask"].to(device)
         vision_embeds = proc["vision_embeds"].to(device)
 
-        print(proc.keys())
-
         inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
 
         hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)

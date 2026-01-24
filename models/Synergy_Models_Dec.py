@@ -3495,6 +3495,53 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         return texts
 
+    def _ensure_cls(self, input_ids: torch.Tensor, attention_mask: torch.Tensor):
+        """
+        Ensure each sequence has exactly one <CLS> token appended at the end.
+        If <CLS> already exists anywhere in the sequence, this is a no-op.
+
+        Args:
+            input_ids: LongTensor (B, T)
+            attention_mask: LongTensor/BoolTensor (B, T)
+
+        Returns:
+            (input_ids, attention_mask) possibly with one extra token appended (B, T+1)
+        """
+        if not isinstance(input_ids, torch.Tensor) or not isinstance(attention_mask, torch.Tensor):
+            raise TypeError("input_ids and attention_mask must be torch.Tensors")
+
+        if input_ids.ndim != 2 or attention_mask.ndim != 2:
+            raise ValueError(
+                f"Expected 2D tensors (B,T). Got input_ids {input_ids.shape}, attention_mask {attention_mask.shape}")
+
+        if input_ids.shape != attention_mask.shape:
+            raise ValueError(
+                f"input_ids and attention_mask must have same shape. Got {input_ids.shape} vs {attention_mask.shape}")
+
+        # If CLS already present, do nothing
+        if (input_ids == int(self.cls_token_id)).any():
+            return input_ids, attention_mask
+
+        B = input_ids.size(0)
+        device = input_ids.device
+
+        cls_col = torch.full(
+            (B, 1),
+            int(self.cls_token_id),
+            device=device,
+            dtype=input_ids.dtype,
+        )
+
+        cls_att = torch.ones(
+            (B, 1),
+            device=device,
+            dtype=attention_mask.dtype,
+        )
+
+        input_ids = torch.cat([input_ids, cls_col], dim=1)
+        attention_mask = torch.cat([attention_mask, cls_att], dim=1)
+        return input_ids, attention_mask
+
     def _encode_from_inputs_embeds(self, inputs_embeds, attention_mask):
         lm = self.backbone.model.language_model
         out = lm(

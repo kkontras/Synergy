@@ -4238,8 +4238,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         # inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
 
-        print(position_ids)
-
 
         # print(input_embeds.shape)
         # print(vision_embeds.shape)
@@ -4250,7 +4248,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             inputs_embeds=input_embeds,
             attention_mask=attention_mask,
             visual_pos_masks=image_mask,
-            deepstack_visual_embeds=deep_stack_viz,
+            # deepstack_visual_embeds=deep_stack_viz,
             output_hidden_states=True,
             return_dict=True,
             cache_position = None,

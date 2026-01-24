@@ -4237,12 +4237,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         # inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
 
 
-        print(image_mask.dtype)
-        print(deep_stack_viz.dtype)
-        print(position_ids.dtype)
-        print(inputs_embeds.dtype)
-        print(attention_mask.dtype)
-
         out = self.backbone.model.language_model( 
             input_ids=None,
             position_ids = position_ids,

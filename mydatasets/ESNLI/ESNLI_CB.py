@@ -609,7 +609,8 @@ class ESNLI_MemmapDataset(Dataset):
                 self.pixel_mm = np.memmap(pv_path, mode="r", dtype=np.float16, shape=(self.N, int(C), int(H), int(W)))
 
     def __len__(self) -> int:
-        return self.N
+        # return self.N
+        return 100
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         off = int(self.offsets[idx])

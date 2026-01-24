@@ -103,8 +103,7 @@ class Trainer():
                 if self.agent.logs["current_step"] - self.agent.logs["saved_step"] > self.agent.config.early_stopping.get("save_every_step", float("inf")):
                         self.agent.accelerator.wait_for_everyone()
                         if self.agent.accelerator.is_main_process:
-                            pass
-                            # self.agent.monitor_n_saver.save(verbose=True)
+                            self.agent.monitor_n_saver.save(verbose=True)
 
                         #         prof.step()
                         #         print("We reached the step")

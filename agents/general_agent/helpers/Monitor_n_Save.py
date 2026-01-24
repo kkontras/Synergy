@@ -21,6 +21,7 @@ class Monitor_n_Save():
             model_save: bool = True,
             post_test_results: Optional[Dict[str, Any]] = None
     ) -> None:
+        return
         """Public method: save model, optimizer, encoders, logs, etc."""
         file_name = self._get_checkpoint_path()
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
@@ -189,7 +190,7 @@ class Monitor_n_Save():
                 wandb.log(wandb_out, step=self.agent.logs["current_step"]+1)
 
                 self.agent.logs["steps_no_improve"] = 0
-                # self.save(verbose = True, is_best_dict=is_best_dict)
+                self.save(verbose = True, is_best_dict=is_best_dict)
                 not_saved = False
             else:
                 self.agent.logs["steps_no_improve"] += 1

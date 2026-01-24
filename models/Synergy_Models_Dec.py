@@ -3400,15 +3400,17 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         return out.hidden_states[-1]
 
     def _get_cls_token_repr(self, hidden, input_ids):
+        B = input_ids.size(0)
         cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)
-        return hidden[:, cls_pos]
+        h = hidden[torch.arange(B, device=input_ids.device), cls_pos]
+        return h
 
     def _mc_ce_loss(self, logits, labels):
         if hasattr(self.args, "class_weights") and self.args.class_weights is not None:
             return F.cross_entropy(logits, labels, weight=self.args.class_weights.to(logits.device))
         return F.cross_entropy(logits, labels)
 
-    def _build_inputs_embeds_from_cache(
+    def _build_inputs_embeds_from_cache( 
             self,
             input_ids: torch.Tensor,  # (B, T)
             image_mask: torch.Tensor,  # (B, T) bool

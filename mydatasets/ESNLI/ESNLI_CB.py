@@ -956,6 +956,6 @@ class ESNLI_MemmapDataloader:
                 persistent_workers=bool(persistent_workers) if int(num_workers) > 0 else False,
             )
 
-        self.train_loader = make_loader("validation", shuffle=True) if os.path.isdir(os.path.join(cache_root, "validation")) else None
+        self.train_loader = make_loader("validation", shuffle=False) if os.path.isdir(os.path.join(cache_root, "validation")) else None
         self.valid_loader = make_loader("validation", shuffle=False) if os.path.isdir(os.path.join(cache_root, "validation")) else None
         self.test_loader = make_loader("test", shuffle=False) if os.path.isdir(os.path.join(cache_root, "test")) else None

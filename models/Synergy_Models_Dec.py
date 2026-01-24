@@ -3410,6 +3410,45 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             return F.cross_entropy(logits, labels, weight=self.args.class_weights.to(logits.device))
         return F.cross_entropy(logits, labels)
 
+    def _build_inputs_embeds_from_cache(
+            self,
+            input_ids: torch.Tensor,  # (B, T)
+            image_mask: torch.Tensor,  # (B, T) bool
+            vision_embeds: torch.Tensor,  # (B, N, d) or (N, d) per-sample
+            vision_len: torch.Tensor,  # (B,) or int per-sample
+    ):
+        """
+        Returns inputs_embeds (B, T, d_model) where image-token positions are replaced by cached vision_embeds.
+        """
+        lm = self.backbone.model.language_model
+        if lm is None or not hasattr(lm, "embed_tokens"):
+            raise RuntimeError("Cannot access LM token embeddings (embed_tokens).")
+
+        # Text token embeddings
+        inputs_embeds = lm.embed_tokens(input_ids)  # (B, T, d_model)
+
+        B, T, d_model = inputs_embeds.shape
+        if image_mask.shape != (B, T):
+            raise ValueError(f"image_mask must be (B,T) = {(B, T)}, got {tuple(image_mask.shape)}")
+
+        # Normalize vision_embeds to per-batch (B, N, d)
+        if vision_embeds.dim() == 2:
+            # If you pass one sample at a time, allow (N,d)
+            vision_embeds = vision_embeds.unsqueeze(0)  # (1,N,d)
+
+        if vision_embeds.size(-1) != d_model:
+            raise ValueError(f"vision_embeds last dim {vision_embeds.size(-1)} != d_model {d_model}")
+
+        # Splice per sample (variable N)
+        for b in range(B):
+            n = int(vision_len[b].item()) if torch.is_tensor(vision_len) else int(vision_len)
+            pos = image_mask[b].nonzero(as_tuple=False).view(-1)  # indices in [0..T)
+            if pos.numel() != n:
+                raise ValueError(f"Sample {b}: image_mask has {pos.numel()} positions but vision_len={n}")
+            inputs_embeds[b, pos, :] = vision_embeds[b, :n, :].to(inputs_embeds.dtype)
+
+        return inputs_embeds
+
     @torch.no_grad()
     def generate_answer(
             self,
@@ -3456,34 +3495,164 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         return texts
 
+    def _encode_from_inputs_embeds(self, inputs_embeds, attention_mask):
+        lm = self.backbone.model.language_model
+        out = lm(
+            inputs_embeds=inputs_embeds,
+            attention_mask=attention_mask,
+            output_hidden_states=True,
+            use_cache=False,
+            return_dict=True,
+        )
+        return out.hidden_states[-1]
+
     def forward(self, x, *, label=None, return_features=False, **kwargs):
+        """
+        Uses cached vision_embeds (if present) to avoid running the vision tower.
+        Also runs generation (optional debug/analysis) using the SAME pathway.
+        """
+        import torch
+        import torch.nn.functional as F
+
         proc = x
         device = self.backbone.device
+        tok = self.processor.tokenizer
+
+        # ----------------------------
+        # Required
+        # ----------------------------
         input_ids = proc["input_ids"].to(device)
         attention_mask = proc["attention_mask"].to(device)
 
-        hidden = self._encode(input_ids, attention_mask)
+        # Ensure CLS exists for stable readout
+        input_ids, attention_mask = self._ensure_cls(input_ids, attention_mask)
+
+        # ----------------------------
+        # Decide pathway: cached vision vs pixel_values
+        # ----------------------------
+        use_cached_vision = (
+                ("vision_embeds" in proc) and ("vision_len" in proc) and ("image_mask" in proc)
+        )
+
+        if use_cached_vision:
+            image_mask = proc["image_mask"].to(device)
+            vision_embeds = proc["vision_embeds"].to(device)
+            vision_len = proc["vision_len"].to(device)
+
+            # Build LM inputs_embeds with vision token slots filled from cache
+            inputs_embeds = self._build_inputs_embeds_from_cache(
+                input_ids=input_ids,
+                image_mask=image_mask,
+                vision_embeds=vision_embeds,
+                vision_len=vision_len,
+            )
+
+            # Encode via LM directly (skips vision tower)
+            hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)
+
+        else:
+            pixel_values = proc.get("pixel_values", None)
+            if pixel_values is not None:
+                pixel_values = pixel_values.to(device)
+            image_grid_thw = proc.get("image_grid_thw", None)
+            if image_grid_thw is not None:
+                image_grid_thw = image_grid_thw.to(device)
+
+            hidden = self._encode(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                pixel_values=pixel_values,
+                image_grid_thw=image_grid_thw,
+            )
+
+        # ----------------------------
+        # CLS readout -> classifier head
+        # ----------------------------
         h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
         logits = self.enc_0(h_cls)
 
-
-
         losses = {}
         if label is not None:
+            if torch.is_tensor(label):
+                label = label.to(logits.device)
             losses["ce_loss_combined"] = self._mc_ce_loss(logits, label)
 
-        print("###NEW ONE####")
-        print(logits)
-        print(label)
-        print(F.cross_entropy(logits, label, reduction='none'))
-        gen_texts = self.generate_answer(proc)
-        for i in gen_texts:
-            print(i)
-
+        preds = {"combined": logits}
         features = {"combined": h_cls}
+        if return_features:
+            features["hidden"] = hidden
+
+        # ============================================================
+        # GENERATION (uses cached vision if available)
+        # ============================================================
+        gen_texts = None
+        do_generate = kwargs.get("do_generate", False)  # set True when you want it
+        if do_generate:
+            # For debugging labels, deterministic decode is usually best
+            max_new_tokens = int(kwargs.get("gen_max_new_tokens", 128))
+            min_new_tokens = int(kwargs.get("gen_min_new_tokens", 10))
+            do_sample = bool(kwargs.get("gen_do_sample", False))
+            temperature = float(kwargs.get("gen_temperature", 0.0))
+            top_p = float(kwargs.get("gen_top_p", 1.0))
+
+            if use_cached_vision:
+                # Generate from LM with inputs_embeds.
+                lm = self.backbone.model.language_model
+                eos_token_id = tok.eos_token_id
+                pad_token_id = self.pad_token_id if hasattr(self, "pad_token_id") else tok.pad_token_id
+
+                with torch.no_grad():
+                    gen_ids = lm.generate(
+                        inputs_embeds=inputs_embeds,
+                        attention_mask=attention_mask,
+                        max_new_tokens=max_new_tokens,
+                        min_new_tokens=min_new_tokens,
+                        do_sample=do_sample,
+                        temperature=temperature if do_sample else None,
+                        top_p=top_p if do_sample else None,
+                        eos_token_id=eos_token_id,
+                        pad_token_id=pad_token_id,
+                    )
+
+                # When generating from inputs_embeds, output sequences are token ids but
+                # we don't have a clean "prompt_len" in tokens if the model internally
+                # handles special multimodal tokens. For debugging, decode the tail.
+                # We'll decode only the last max_new_tokens tokens.
+                tail = gen_ids[:, -max_new_tokens:]
+                gen_texts = tok.batch_decode(
+                    tail,
+                    skip_special_tokens=True,
+                    clean_up_tokenization_spaces=False,
+                )
+
+            else:
+                # Use your existing generate_answer which calls backbone.generate with pixel_values, etc.
+                gen_proc = {"input_ids": input_ids, "attention_mask": attention_mask}
+                if "pixel_values" in proc and proc["pixel_values"] is not None:
+                    gen_proc["pixel_values"] = proc["pixel_values"].to(device)
+                if "image_grid_thw" in proc and proc["image_grid_thw"] is not None:
+                    gen_proc["image_grid_thw"] = proc["image_grid_thw"].to(device)
+
+                gen_texts = self.generate_answer(
+                    gen_proc,
+                    max_new_tokens=max_new_tokens,
+                    min_new_tokens=min_new_tokens,
+                    do_sample=do_sample,
+                    temperature=temperature,
+                    top_p=top_p,
+                    strip_prompt=True,
+                    debug=bool(kwargs.get("gen_debug", False)),
+                )
+            for i in gen_texts:
+                print("---------")
+                print(i)
+        out = {"preds": preds, "features": features, "losses": losses}
+        if gen_texts is not None:
+            out["generated_text"] = gen_texts
+
+        return out
 
 
-        return {"preds": {"combined": logits}, "features":  features, "losses": losses}
 class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()

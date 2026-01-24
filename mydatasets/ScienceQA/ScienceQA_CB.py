@@ -796,7 +796,7 @@ class ScienceQA_MemmapDataloader:
         prefetch_factor: int = 2,
         persistent_workers: bool = True,
         pin_memory: bool = True,
-        force_rebuild_memmap: bool = True,
+        force_rebuild_memmap: bool = False,
     ):
         cache_root = config.dataset.cache_root
         batch_size = int(config.training_params.batch_size)
@@ -821,7 +821,7 @@ class ScienceQA_MemmapDataloader:
             f"vision_dtype={vision_dtype} | deep_dim={deep_dim} | force_rebuild_memmap={force_rebuild_memmap}"
         )
 
-        for split in ("validation", "test"):
+        for split in ("test", "test"):
             split_dir = os.path.join(cache_root, split)
             if not os.path.isdir(split_dir):
                 continue
@@ -863,6 +863,6 @@ class ScienceQA_MemmapDataloader:
                 persistent_workers=bool(persistent_workers) if int(num_workers) > 0 else False,
             )
 
-        self.train_loader = make_loader("validation", shuffle=True) if os.path.isdir(os.path.join(cache_root, "validation")) else None
-        self.valid_loader = make_loader("validation", shuffle=False) if os.path.isdir(os.path.join(cache_root, "validation")) else None
+        self.train_loader = make_loader("test", shuffle=True) if os.path.isdir(os.path.join(cache_root, "validation")) else None
+        self.valid_loader = make_loader("test", shuffle=False) if os.path.isdir(os.path.join(cache_root, "validation")) else None
         self.test_loader = make_loader("test", shuffle=False) if os.path.isdir(os.path.join(cache_root, "test")) else None

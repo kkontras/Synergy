@@ -725,7 +725,6 @@ class ESNLI_MemmapDataset(Dataset):
         if self.pixel_mm is not None:
             out["pixel_values"] = torch.from_numpy(np.array(self.pixel_mm[idx], copy=True))  # float16
 
-        print(out.keys())
         return out
 
 

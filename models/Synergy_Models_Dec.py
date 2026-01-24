@@ -3610,7 +3610,8 @@ class QwenVL_ScienceQA_Cached(nn.Module):
                 attention_mask=attention_mask,
                 pixel_values=pixel_values,
                 image_grid_thw=image_grid_thw,
-            ).hidden_states[-1]
+            )
+            hidden = hidden.hidden_states[-1]
 
         # ----------------------------
         # CLS readout -> classifier head

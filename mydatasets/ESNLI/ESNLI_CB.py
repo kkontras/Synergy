@@ -610,7 +610,7 @@ class ESNLI_MemmapDataset(Dataset):
 
     def __len__(self) -> int:
         # return self.N
-        return 100
+        return 10
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         off = int(self.offsets[idx])

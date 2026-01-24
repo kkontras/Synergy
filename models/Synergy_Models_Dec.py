@@ -4223,7 +4223,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         attention_mask = proc["attention_mask"].to(device)
         image_mask = proc["image_mask"].to(device)
         vision_embeds = proc["vision_embeds"].to(device)
-        position_ids = proc["position_ids"].to(device)   
+        position_ids = proc["position_ids"].to(device)
         deep_stack_viz = proc["deep_stack_viz"].to(device)
 
 

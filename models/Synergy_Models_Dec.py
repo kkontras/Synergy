@@ -4186,7 +4186,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
     def _precompute_mask_token_ids(self):
         tok = self.processor.tokenizer
 
-        vision_candidates = [
+        q = [
             "<|vision_start|>", "<|vision_end|>", "<|image_pad|>", "<|video_pad|>",
             "<image>", "<img>", "<|image|>"
         ]

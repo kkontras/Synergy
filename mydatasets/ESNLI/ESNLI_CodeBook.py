@@ -220,23 +220,6 @@ def _get_tokenizer_from_processor(processor):
 
 def _infer_image_token_ids(tokenizer) -> List[int]:
     ids: List[int] = []
-    if tokenizer is None:
-        return ids
-
-    attr_names = [
-        "image_token_id",
-        "image_start_token_id",
-        "image_end_token_id",
-        "vision_start_token_id",
-        "vision_end_token_id",
-        "im_start_id",
-        "im_end_id",
-    ]
-    for name in attr_names:
-        v = getattr(tokenizer, name, None)
-        if isinstance(v, int) and v >= 0:
-            ids.append(int(v))
-
 
     cand_strs = ["<|vision_start|>", "<|vision_end|>",'<|image_pad|>', '<|im_start|>', '<|im_end|>' ]
     for s in cand_strs:
@@ -297,16 +280,19 @@ def build_image_text_token_masks(enc_cpu: Dict[str, torch.Tensor], processor) ->
 
         return {"image": img_mask, "text": txt_mask}
 
+    # 1) Use processor-provided mask if available
+    candidate_keys = ["image_mask", "image_token_mask", "vision_token_mask", "media_token_mask"]
+    for k in candidate_keys:
+        m = enc_cpu.get(k, None)
+        if torch.is_tensor(m) and m.shape == input_ids.shape:
+            return _finish(m)
+
     # 2) Infer from tokenizer image token ids
     tok = _get_tokenizer_from_processor(processor)
     img_token_ids = _infer_image_token_ids(tok)
-    print(img_token_ids)
     if len(img_token_ids) > 0:
         img_ids = torch.tensor(img_token_ids, dtype=input_ids.dtype, device=input_ids.device)
         img_mask = torch.isin(input_ids, img_ids)
-        print(input_ids)
-        print(img_ids)
-        print(img_mask)
         return _finish(img_mask)
 
     # 3) No way to infer image tokens -> fail (since you asked to assert)
@@ -602,10 +588,23 @@ def main():
 
         texts = build_prompt_cls(hypothesis=texts)
 
+        messages_batch = [
+            [{"role": "user", "content": [
+                {"type": "image"},
+                {"type": "text", "text": t},
+            ]}]
+            for t in texts
+        ]
+        prompts = [
+            processor.apply_chat_template( m, tokenize=False, add_generation_prompt=True
+            )
+            for m in messages_batch
+        ]
+
         pil_images = [tensor_image_to_pil(images_t[i]) for i in range(images_t.size(0))]
 
         enc = processor(
-            text=texts,
+            text=prompts,
             images=pil_images,
             return_tensors="pt",
             padding=True,
@@ -661,7 +660,7 @@ def main():
             item: Dict[str, Any] = {
                 "id": ids[i],
                 "label": labels[i].detach().cpu(),
-                "prompt": texts[i],
+                "prompt": prompts[i],
                 "input_ids": input_ids_i,
                 "attention_mask": attention_i,
                 "masks": {

@@ -237,7 +237,7 @@ def _infer_image_token_ids(tokenizer) -> List[int]:
         if isinstance(v, int) and v >= 0:
             ids.append(int(v))
 
-    cand_strs = ["<image>", "<img>", "<vision>", "<im_start>", "<im_end>", "<vision_start>", "<vision_end>"]
+    cand_strs = ["<|vision_start|>", "<|vision_end|>"]
     for s in cand_strs:
         try:
             tid = tokenizer.convert_tokens_to_ids(s)
@@ -249,6 +249,9 @@ def _infer_image_token_ids(tokenizer) -> List[int]:
     return sorted(set(ids))
 
 
+from typing import Dict
+import torch
+
 def build_image_text_token_masks(enc_cpu: Dict[str, torch.Tensor], processor) -> Dict[str, torch.Tensor]:
     """
     Returns bool masks (CPU):
@@ -257,36 +260,66 @@ def build_image_text_token_masks(enc_cpu: Dict[str, torch.Tensor], processor) ->
 
     If processor provides an image mask, we use it.
     Otherwise infer from tokenizer image token ids.
+
+    Asserts:
+      - image/text masks are not all-zero across the batch
+      - text mask has at least one token per sample (under attention)
+      - if image tokens are expected, image mask should not be all-zero (see note below)
     """
     input_ids = enc_cpu["input_ids"]
     attention_mask = enc_cpu.get("attention_mask", None)
     if attention_mask is None:
         attention_mask = torch.ones_like(input_ids, dtype=torch.long)
 
+    att_bool = attention_mask.to(torch.bool)
+
+    def _finish(img_mask: torch.Tensor) -> Dict[str, torch.Tensor]:
+        img_mask = img_mask.to(torch.bool) & att_bool
+        txt_mask = att_bool & (~img_mask)
+
+        # ---- asserts ----
+        # Text should exist (otherwise prompt is empty / masking broken)
+        if (txt_mask.sum(dim=1) == 0).any():
+            bad = (txt_mask.sum(dim=1) == 0).nonzero(as_tuple=False).view(-1).tolist()
+            raise AssertionError(f"text_mask has zero tokens (under attention_mask) for samples: {bad}")
+
+        # At least some text tokens across batch
+        if txt_mask.sum().item() == 0:
+            raise AssertionError("text_mask is all-zero across the batch. attention_mask or masking is broken.")
+
+        # Image mask: depending on your prompting, it MAY be valid to have zero image tokens
+        # (e.g., if you accidentally built text-only prompts).
+        # But for VL prompts with an image, we usually want at least one image token.
+        if img_mask.sum().item() == 0:
+            raise AssertionError(
+                "image_mask is all-zero across the batch. "
+                "This usually means the processor did not insert image tokens (text-only), "
+                "or image token ids were not inferred correctly."
+            )
+
+        return {"image": img_mask, "text": txt_mask}
+
+    # 1) Use processor-provided mask if available
     candidate_keys = ["image_mask", "image_token_mask", "vision_token_mask", "media_token_mask"]
     for k in candidate_keys:
         m = enc_cpu.get(k, None)
         if torch.is_tensor(m) and m.shape == input_ids.shape:
-            img_mask = m.to(torch.bool)
-            att_bool = attention_mask.to(torch.bool)
-            img_mask = img_mask & att_bool
-            txt_mask = att_bool & (~img_mask)
-            return {"image": img_mask, "text": txt_mask}
+            return _finish(m)
 
+    # 2) Infer from tokenizer image token ids
     tok = _get_tokenizer_from_processor(processor)
     img_token_ids = _infer_image_token_ids(tok)
     if len(img_token_ids) > 0:
         img_ids = torch.tensor(img_token_ids, dtype=input_ids.dtype, device=input_ids.device)
         img_mask = torch.isin(input_ids, img_ids)
-        att_bool = attention_mask.to(torch.bool)
-        img_mask = img_mask & att_bool
-        txt_mask = att_bool & (~img_mask)
-        return {"image": img_mask, "text": txt_mask}
+        return _finish(img_mask)
 
-    att_bool = attention_mask.to(torch.bool)
-    img_mask = torch.zeros_like(input_ids, dtype=torch.bool) & att_bool
-    txt_mask = att_bool & (~img_mask)
-    return {"image": img_mask, "text": txt_mask}
+    # 3) No way to infer image tokens -> fail (since you asked to assert)
+    raise AssertionError(
+        "Could not build image_mask: no processor-provided image mask and no inferable image token ids. "
+        "Tokenizer may not expose image token ids, or this is not a VL tokenizer."
+    )
+
 
 
 # -----------------------------
@@ -400,10 +433,7 @@ def make_loader(ds: Dataset, batch_size: int, num_workers: int, shuffle: bool = 
 # -----------------------------
 # Prompt (NO CLS)
 # -----------------------------
-def build_prompt_no_cls(
-        hypothesis: Sequence[str],
-        label_options: List[str],
-) -> List[str]:
+def build_prompt_cls( hypothesis: Sequence[str]) -> List[str]:
     instr_text = """\
     You are given an image and a hypothesis about the image.
     Decide whether the hypothesis is supported by the image.
@@ -574,9 +604,8 @@ def main():
         labels: torch.Tensor = batch["label"]    # [B]
         ids: List[str] = batch["id"]
         batch_size = images_t.shape[0]
-        label_options = "entailment, neutral, contradiction"
 
-        texts = build_prompt_no_cls(hypothesis=texts, label_options=label_options)
+        texts = build_prompt_cls(hypothesis=texts)
 
         messages_batch = [
             [{"role": "user", "content": [
@@ -603,6 +632,8 @@ def main():
 
         input_ids_batch = enc["input_ids"].detach().cpu()
         attention_batch = enc["attention_mask"].detach().cpu()
+
+        # print(enc.keys())
 
         # Build token masks on CPU
         enc_cpu_for_masks: Dict[str, torch.Tensor] = {

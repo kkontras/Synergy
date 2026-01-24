@@ -57,6 +57,7 @@ import random
 import multiprocessing
 from typing import Dict, Any, List, Optional, Tuple
 
+import einops
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -193,7 +194,8 @@ def build_memmap_from_token_shards(
 
                 total_vision_elems += int(nimg * D)
 
-                pv = ex["pixel_values"]
+                # pv = ex["pixel_values"]
+                pv = einops.rearrange(ex["pixel_values"], "h (w c) -> c h w",c=3)
                 if not torch.is_tensor(pv):
                     raise TypeError(f"pixel_values must be torch.Tensor, got {type(pv)}")
                 if pv.dim() != 2:

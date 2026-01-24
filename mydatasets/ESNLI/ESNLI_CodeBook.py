@@ -32,6 +32,7 @@ import logging
 import urllib.request
 from typing import Any, Dict, List, Optional, Sequence
 
+import einops
 import numpy as np
 import pandas as pd
 import torch
@@ -453,8 +454,6 @@ def extract_vision_embeds(model, pixel_values: torch.Tensor, image_grid_thw: tor
       - Tuple(Tensor, ...)
       - Dict with known keys
     """
-    print(pixel_values.shape)
-    print(image_grid_thw.shape)
     if hasattr(model, "model") and hasattr(model.model, "visual"):
         out = model.model.visual(pixel_values, grid_thw=image_grid_thw)
     elif hasattr(model, "visual"):
@@ -623,20 +622,15 @@ def main():
         masks_batch = build_image_text_token_masks(enc_cpu_for_masks, processor)
         image_mask_batch = masks_batch["image"]  # bool [B,T]
         text_mask_batch = masks_batch["text"]    # bool [B,T]
-        print( batch["image"].shape)
         pixel_values = enc.get("pixel_values", None)
         image_grid_thw = enc.get("image_grid_thw", None)
-
-        vision_embeds_cpu = None
-        vision_error = None
-
 
         try:
             with torch.no_grad():
                 pv = pixel_values.to(model.device, dtype=dtype, non_blocking=True)
                 gthw = image_grid_thw.to(model.device, non_blocking=True)
-                vis = extract_vision_embeds(model, pv, gthw).reshape(batch_size, 256, 2048)
-                print("Vision embedding were extracted", vis.shape)
+                vis = extract_vision_embeds(model, pv, gthw)
+                vis = einops.rearrange(vis, "(b i) c -> b i c", b=batch_size)
 
             vision_embeds_cpu = [vis[i].detach().cpu() for i in range(vis.size(0))]
         except Exception as e:

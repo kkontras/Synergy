@@ -39,7 +39,7 @@ def _pad_2d_by_rows(seqs: List[torch.Tensor], pad_val: float = 0.0):
         return torch.empty((0, 0, 0)), torch.empty((0, 0), dtype=torch.bool)
 
     D = 0
-    ref_dtype = torch.float16
+    ref_dtype = torch.float32
     for x in seqs:
         if torch.is_tensor(x) and x.numel() > 0 and x.dim() == 2:
             D = int(x.shape[1])
@@ -79,13 +79,13 @@ def _pad_deep_3d(seqs: List[torch.Tensor], deep_dim: int, pad_val: float = 0.0):
     B = len(seqs)
     if B == 0:
         return (
-            torch.empty((0, 0, 0, deep_dim), dtype=torch.float16),
+            torch.empty((0, 0, 0, deep_dim), dtype=torch.float32),
             torch.empty((0, 0, 0), dtype=torch.bool),
         )
 
     Tmax = 0
     Nmax = 0
-    ref_dtype = torch.float16
+    ref_dtype = torch.float32
 
     for x in seqs:
         if torch.is_tensor(x) and x.numel() > 0:
@@ -156,13 +156,13 @@ def esnli_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0) -> 
             pass
 
     if "vision_embeds" in batch[0]:
-        vis_list = [b.get("vision_embeds", torch.empty((0, 0), dtype=torch.float16)) for b in batch]
+        vis_list = [b.get("vision_embeds", torch.empty((0, 0), dtype=torch.float32)) for b in batch]
         vis_pad, vis_mask = _pad_2d_by_rows(vis_list, pad_val=0.0)
         data["vision_embeds"] = vis_pad
         data["vision_mask"] = vis_mask
 
     if "deep_stack_viz" in batch[0]:
-        deep_list = [b.get("deep_stack_viz", torch.empty((0, 0, 2048), dtype=torch.float16)) for b in batch]
+        deep_list = [b.get("deep_stack_viz", torch.empty((0, 0, 2048), dtype=torch.float32)) for b in batch]
         deep_dim = 2048
         for x in deep_list:
             if torch.is_tensor(x) and x.numel() > 0:
@@ -224,10 +224,10 @@ def _as_position_ids_1d(x, L: int) -> torch.Tensor:
 
 def _as_deep_3d(ex_deep: Any, deep_dim: int = 2048) -> torch.Tensor:
     if ex_deep is None:
-        return torch.empty((0, 0, deep_dim), dtype=torch.float16)
+        return torch.empty((0, 0, deep_dim), dtype=torch.float32)
     t = ex_deep.detach().cpu() if torch.is_tensor(ex_deep) else torch.as_tensor(ex_deep).detach().cpu()
     if t.numel() == 0:
-        return torch.empty((0, 0, deep_dim), dtype=torch.float16)
+        return torch.empty((0, 0, deep_dim), dtype=torch.float32)
 
     if t.dim() == 3:
         T, N, D = int(t.shape[0]), int(t.shape[1]), int(t.shape[2])
@@ -237,7 +237,7 @@ def _as_deep_3d(ex_deep: Any, deep_dim: int = 2048) -> torch.Tensor:
             else:
                 pad = torch.zeros((T, N, deep_dim - D), dtype=t.dtype)
                 t = torch.cat([t, pad], dim=-1)
-        return t.to(torch.float16)
+        return t.to(torch.float32)
 
     if t.dim() == 4:
         return _as_deep_3d(t[0], deep_dim=deep_dim)
@@ -251,14 +251,14 @@ def _as_deep_3d(ex_deep: Any, deep_dim: int = 2048) -> torch.Tensor:
             else:
                 pad = torch.zeros((int(flat.shape[0]), deep_dim - D), dtype=flat.dtype)
                 flat = torch.cat([flat, pad], dim=-1)
-        return flat.view(1, int(flat.shape[0]), deep_dim).to(torch.float16)
+        return flat.view(1, int(flat.shape[0]), deep_dim).to(torch.float32)
 
     flat = t.reshape(-1)
     if flat.numel() < deep_dim:
         pad = torch.zeros((deep_dim - flat.numel(),), dtype=flat.dtype)
         flat = torch.cat([flat, pad], dim=0)
     flat = flat[:deep_dim]
-    return flat.view(1, 1, deep_dim).to(torch.float16)
+    return flat.view(1, 1, deep_dim).to(torch.float32)
 
 
 class ESNLI_MemmapDataset(Dataset):
@@ -368,13 +368,13 @@ class ESNLI_MemmapDataset(Dataset):
         if ve is not None:
             ve_t = ve.detach().cpu() if torch.is_tensor(ve) else torch.as_tensor(ve).detach().cpu()
             if ve_t.numel() == 0:
-                out["vision_embeds"] = torch.empty((0, 0), dtype=torch.float16)
+                out["vision_embeds"] = torch.empty((0, 0), dtype=torch.float32)
             else:
                 if ve_t.dim() == 1:
                     ve_t = ve_t.view(1, -1)
                 elif ve_t.dim() != 2:
                     ve_t = ve_t.view(1, -1)
-                out["vision_embeds"] = ve_t.to(torch.float16 if ve_t.dtype != torch.float32 else torch.float32)
+                out["vision_embeds"] = ve_t.to(torch.float32 if ve_t.dtype != torch.float32 else torch.float32)
 
         # optional deep
         dv = ex.get("deep_stack_viz", None)
@@ -385,7 +385,7 @@ class ESNLI_MemmapDataset(Dataset):
         pv = ex.get("pixel_values", None)
         if pv is not None:
             pv_t = pv.detach().cpu() if torch.is_tensor(pv) else torch.as_tensor(pv).detach().cpu()
-            out["pixel_values"] = pv_t.to(torch.float16)
+            out["pixel_values"] = pv_t.to(torch.float32)
 
         return out
 

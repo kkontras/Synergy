@@ -4238,6 +4238,8 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         # inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
 
+        print(position_ids)
+
 
         # print(input_embeds.shape)
         # print(vision_embeds.shape)

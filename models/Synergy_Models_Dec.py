@@ -3843,7 +3843,6 @@ class QwenVL_ESNLI_Synergy_FrozenCLS_VisualEmb(nn.Module):
         # inputs_embeds = lm.embed_tokens(input_ids)  # (B, T, d_model)
         inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids)
         position_ids = None
-        cache_position = None
         with torch.no_grad():
             pv = pixel_values.to(self.backbone.device, dtype=pixel_values.dtype, non_blocking=True)
             gthw = image_grid_thw.to(self.backbone.device, non_blocking=True)
@@ -3921,18 +3920,29 @@ class QwenVL_ESNLI_Synergy_FrozenCLS_VisualEmb(nn.Module):
         #          252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265,
         #          266, 267, 268]], device='cuda:0')
 
-        out = self.backbone.model.language_model(
-            input_ids=None,
-            inputs_embeds=inputs_embeds,
-            attention_mask=attention_mask,
-            visual_pos_masks=image_mask,
-            deepstack_visual_embeds=deep_stack_viz,
-            position_ids = position_ids,
-            output_hidden_states=True,
-            return_dict=True,
-            use_cache= False
-        )
-        hidden = out.hidden_states[-1]
+        # input_ids = None,
+        # position_ids = position_ids,
+        # attention_mask = attention_mask,
+        # past_key_values = past_key_values,
+        # inputs_embeds = inputs_embeds,
+        # cache_position = cache_position,
+        # visual_pos_masks = visual_pos_masks,
+        # deepstack_visual_embeds = deepstack_visual_embeds,
+        # ** kwargs,
+
+        # out = self.backbone.model.language_model(
+        #     input_ids=None,
+        #     position_ids = position_ids,
+        #     inputs_embeds=inputs_embeds,
+        #     attention_mask=attention_mask,
+        #     visual_pos_masks=image_mask,
+        #     deepstack_visual_embeds=deep_stack_viz,
+        #     output_hidden_states=True,
+        #     return_dict=True,
+        #     cache_position = False,
+        #     use_cache= False
+        # )
+        # hidden = out.hidden_states[-1]
 
         # masks_batch = self.build_image_text_token_masks(proc, self.processor)
         # image_mask_batch = masks_batch["image"]  # bool [B,T]
@@ -3941,12 +3951,12 @@ class QwenVL_ESNLI_Synergy_FrozenCLS_VisualEmb(nn.Module):
         # hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask, deep_stack_viz)
 
         # # Encode + CLS classification
-        # hidden_1 = self._encode(
-        #     input_ids=input_ids,
-        #     attention_mask=attention_mask,
-        #     pixel_values=pixel_values,
-        #     image_grid_thw=image_grid_thw,
-        # )
+        hidden = self._encode(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            pixel_values=pixel_values,
+            image_grid_thw=image_grid_thw,
+        )
 
 
 

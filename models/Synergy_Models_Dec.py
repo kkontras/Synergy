@@ -4229,8 +4229,9 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids.cuda())
         print(inputs_embeds.shape)
-        print(image_mask.shape)
-        inputs_embeds = inputs_embeds.masked_scatter(image_mask, vision_embeds)
+        print(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]).shape)
+
+        inputs_embeds = inputs_embeds.masked_scatter(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]), vision_embeds)
 
         deep_stack_viz = einops.rearrange(deep_stack_viz, "b c i j -> c (b i) j")
 

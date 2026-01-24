@@ -661,8 +661,7 @@ def main():
         except Exception as e:
             raise Exception(e)
 
-        pixel_values = einops.rearrange(pixel_values, "(b i) (c i) -> b c i i", b=batch_size)
-        print(pixel_values.shape)
+        pixel_values = einops.rearrange(pixel_values, "(b i) c -> b i c", b=batch_size)
 
         B = len(ids)
         for i in range(B):

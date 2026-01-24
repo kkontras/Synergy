@@ -194,17 +194,16 @@ def build_memmap_from_token_shards(
                 total_vision_elems += int(nimg * D)
 
                 pv = ex["pixel_values"]
-                print(ex["pixel_values"].shape)
                 if not torch.is_tensor(pv):
                     raise TypeError(f"pixel_values must be torch.Tensor, got {type(pv)}")
-                if pv.dim() != 3:
+                if pv.dim() != 2:
                     raise ValueError(f"pixel_values must be [C,H,W], got shape={tuple(pv.shape)}")
                 has_pixel = True
-                shp = (int(pv.shape[0]), int(pv.shape[1]), int(pv.shape[2]))
-                if pixel_shape is None:
-                    pixel_shape = shp
-                elif pixel_shape != shp:
-                    raise ValueError(f"pixel_values shape mismatch: saw {pixel_shape} then {shp}")
+                # shp = (int(pv.shape[0]), int(pv.shape[1]), int(pv.shape[2]))
+                # if pixel_shape is None:
+                #     pixel_shape = shp
+                # elif pixel_shape != shp:
+                #     raise ValueError(f"pixel_values shape mismatch: saw {pixel_shape} then {shp}")
 
         if input_ids_dtype not in ("int32", "int64"):
             raise ValueError("input_ids_dtype must be 'int32' or 'int64'")

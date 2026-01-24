@@ -4018,8 +4018,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         self.backbone = Qwen3VLForConditionalGeneration.from_pretrained(
             model_name,
-            torch_dtype=torch.bfloat16 if getattr(args, "bf16", False) else torch.float16,
-            device_map="cuda:0",
             cache_dir=hf_cache,
         )
         print(self.backbone)
@@ -4228,7 +4226,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
 
 
-        inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids.to(device)).float()
+        inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids.to(device))
         # print(vision_embeds.shape)
         # print(inputs_embeds.shape)
         # print(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]).shape)

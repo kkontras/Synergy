@@ -603,6 +603,7 @@ def main():
 
         pil_images = [tensor_image_to_pil(images_t[i]) for i in range(images_t.size(0))]
 
+        print(images_t[0].shape)
         enc = processor(
             text=prompts,
             images=pil_images,
@@ -611,19 +612,18 @@ def main():
             truncation=True
         )
 
+        print(enc["pixel_values"].shape)
+        print(einops.rearrange(enc["pixel_values"], "(b c) (d e)1"))
+
         input_ids_batch = enc["input_ids"].detach().cpu()
         attention_batch = enc["attention_mask"].detach().cpu()
 
-        # print(enc.keys())
 
-        # Build token masks on CPU
         enc_cpu_for_masks: Dict[str, torch.Tensor] = {
             "input_ids": input_ids_batch,
             "attention_mask": attention_batch,
         }
-        for kk in ["image_mask", "image_token_mask", "vision_token_mask", "media_token_mask"]:
-            if kk in enc and torch.is_tensor(enc[kk]):
-                enc_cpu_for_masks[kk] = enc[kk].detach().cpu()
+        enc_cpu_for_masks["image_mask"] = enc['image_mask'].detach().cpu()
 
         masks_batch = build_image_text_token_masks(enc_cpu_for_masks, processor)
         image_mask_batch = masks_batch["image"]  # bool [B,T]

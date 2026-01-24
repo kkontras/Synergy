@@ -2913,7 +2913,7 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
         #     f"Answer format: Output exactly one label from: {label_options}.\n"
         # )
 
-        instr_text = """\
+        instr_text = """
         You are given an image and a hypothesis about the image.
         Decide whether the hypothesis is supported by the image.
 
@@ -2966,11 +2966,9 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
     def _get_cls_token_repr(self, hidden, input_ids):
         B = input_ids.size(0)
         device = input_ids.device
-
-        # position of <CLS> (assumes exactly once per sample)
         cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)  # (B,)
         h = hidden[torch.arange(B, device=device), cls_pos]             # (B,d)
-        h = F.layer_norm(h, (h.shape[-1],))
+
         return h
 
     # ============================================================
@@ -3161,23 +3159,6 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
             for m in messages_batch
         ]
 
-
-        # DEBUG_IMG_DIR = "debug_input_images"
-        # os.makedirs(DEBUG_IMG_DIR, exist_ok=True)
-
-        # ------------------------------------------------------------------
-        # 1) Inspect RAW images tensor (what YOU think the image is)
-        # ------------------------------------------------------------------
-        # print("=== RAW INPUT IMAGES (before processor) ===")
-        # print("images shape:", images.shape, images.dtype, images.device)
-        # print(
-        #     "raw min/max/mean:",
-        #     images.min().item(),
-        #     images.max().item(),
-        #     images.mean().item(),
-        # )
-
-
         image_list = [to_pil_image(img.detach().cpu().clamp(0, 1)) for img in images]
 
         proc = self.processor(
@@ -3192,20 +3173,20 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
         # # ------------------------------------------------------------------
         # # 3) Inspect what the MODEL ACTUALLY GETS
         # # ------------------------------------------------------------------
-        # print("\n=== PROCESSOR OUTPUT ===")
-        # print("proc keys:", proc.keys())
-        #
-        # pv = proc.get("pixel_values", None)
-        # if pv is None:
-        #     print("NO pixel_values in proc -> text-only VL!")
-        # else:
-        #     print("pixel_values shape:", pv.shape, pv.dtype, pv.device)
-        #     print(
-        #         "pixel_values min/max/mean:",
-        #         pv.min().item(),
-        #         pv.max().item(),
-        #         pv.mean().item(),
-        #     )
+        print("\n=== PROCESSOR OUTPUT ===")
+        print("proc keys:", proc.keys())
+
+        pv = proc.get("pixel_values", None)
+        if pv is None:
+            print("NO pixel_values in proc -> text-only VL!")
+        else:
+            print("pixel_values shape:", pv.shape, pv.dtype, pv.device)
+            print(
+                "pixel_values min/max/mean:",
+                pv.min().item(),
+                pv.max().item(),
+                pv.mean().item(),
+            )
 
         # Move tensors to model device (DO NOT move non-tensors)
         proc = {k: (v.to(model_device) if torch.is_tensor(v) else v) for k, v in proc.items()}
@@ -3238,18 +3219,18 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
             features["hidden"] = hidden
 
         # # Optional: generation for debugging
-        # gen_texts = self.generate_answer(
-        #     proc,
-        #     max_new_tokens=256,  # labels are short; keep tiny for debugging
-        #     do_sample=False,  # deterministic label output
-        #     temperature=0.0,
-        #     top_p=1.0,
-        #     min_new_tokens=1,
-        #     strip_prompt=True,
-        #     debug=True,
-        # )
-        #
-        # # Debug prints (optional)
+        gen_texts = self.generate_answer(
+            proc,
+            max_new_tokens=256,  # labels are short; keep tiny for debugging
+            do_sample=False,  # deterministic label output
+            temperature=0.0,
+            top_p=1.0,
+            min_new_tokens=10,
+            strip_prompt=True,
+            debug=True,
+        )
+
+        # Debug prints (optional)
         # print("###NEW ONE####")
         # print(torch.softmax(head_logits, dim=-1))
         # print(label)
@@ -3258,19 +3239,11 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
         # for t in gen_texts:
         #     print("-----")
         #     print(t)
-        #
-        # save_vl_debug_plots(images, label, prompts, generated_responses=gen_texts, out_dir="debug_viz", prefix="ESNLI")
+
+        save_vl_debug_plots(images, label, prompts, generated_responses=gen_texts, out_dir="debug_viz", prefix="ESNLI")
 
         return {"preds": preds, "features": features, "losses": losses}
 
-
-# import os
-# import torch
-# import torch.nn as nn
-# import torch.nn.functional as F
-#
-# from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
-# from peft import LoraConfig, get_peft_model
 
 
 class QwenVL_ScienceQA_Cached(nn.Module):
@@ -4533,265 +4506,6 @@ class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
         return {"preds": {"combined": logits,"c": logits_text,"g": logits_image}, "features":  features, "losses": losses}
 
 
-class QwenVL_ESNLI(nn.Module):
-    """
-    Multimodal (image+text) ScienceQA as 5-way classification.
-    Backbone is frozen EXCEPT:
-      - classifier head enc_0 (always trainable)
-      - (optional) learnable <CLS> embedding row ONLY (via gradient masking hook)
-      - (optional) final LM norm (cheap, sometimes helps)
-
-    Readout is the hidden state at the appended <CLS> token (placed at end of prompt).
-    """
-
-    def __init__(self, args, encs=None, **kwargs):
-        super().__init__()
-        encs = encs or []
-
-        self.args = args
-        self.synergy_coeff = getattr(args, "synergy_coeff", 0.0)
-        self.max_new_tokens = getattr(args, "max_new_tokens", 32)
-        self.num_classes = getattr(args, "num_classes")
-
-        model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        HF_CACHE = getattr(self.args, "save_base_dir", None)
-
-        # -----------------------------
-        # Processor / Tokenizer
-        # -----------------------------
-        self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=HF_CACHE)
-        tok = self.processor.tokenizer
-        tok.padding_side = "left"
-        if tok.pad_token is None:
-            tok.pad_token = tok.eos_token
-
-        # Add <CLS> token to tokenizer
-        added = tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
-        self.cls_token_id = tok.convert_tokens_to_ids("<CLS>")
-
-        self.backbone = Qwen3VLForConditionalGeneration.from_pretrained(
-            model_name,
-            dtype=torch.bfloat16 if getattr(args, "bf16", False) else torch.float16,
-            device_map="cuda:0",
-            cache_dir=HF_CACHE,
-        )
-
-        if added > 0:
-            self.backbone.resize_token_embeddings(len(tok))
-
-        cfg = self.backbone.config
-        self.image_token_id = cfg.image_token_id
-        self.image_token_str = tok.convert_ids_to_tokens(self.image_token_id)
-
-        if hasattr(cfg, "text_config") and hasattr(cfg.text_config, "hidden_size"):
-            self.d_model = cfg.text_config.hidden_size
-        else:
-            self.d_model = cfg.hidden_size
-
-        if len(encs) < 1:
-            raise ValueError("encs[0] must be provided as the 5-way classifier head.")
-        self.enc_0 = encs[0]
-
-        self._apply_lora()
-
-        self._load_cls_embedding()
-        self._setup_trainables()
-
-    def _setup_trainables(self):
-        # Freeze everything
-        for p in self.backbone.parameters():
-            p.requires_grad = False
-
-        if getattr(self.args, "lora_config", None) and self.args.lora_config.get("use_lora", False):
-            for n, p in self.backbone.named_parameters():
-                if "lora_" in n:
-                    p.requires_grad = True
-
-        for p in self.enc_0.parameters():
-            p.requires_grad = True
-
-        lm = self.backbone.model.language_model
-
-        if self.args.cls_finetune:
-            if getattr(self.args, "train_cls_row", True) and lm is not None and hasattr(lm, "embed_tokens"):
-                emb = lm.embed_tokens
-                # ensure grads flow to emb.weight (we'll mask them)
-                emb.weight.requires_grad = True
-
-                cls_id = int(self.cls_token_id)
-                # build a (vocab, hidden) mask with 1s only for cls row
-                mask = torch.zeros_like(emb.weight, dtype=torch.float32)
-                mask[cls_id].fill_(1.0)
-
-                def grad_mask_hook(grad):
-                    return grad * mask.to(grad.device, grad.dtype)
-
-                # register once
-                if not hasattr(self, "_cls_grad_hooked"):
-                    emb.weight.register_hook(grad_mask_hook)
-                    self._cls_grad_hooked = True
-
-        # NOTE: if you enabled synergy modules, mark them trainable here.
-
-
-    def load_cls_embedding(self, path, strict_dim=True):
-
-        assert os.path.isfile(path), f"CLS embedding file not found: {path}"
-
-        ckpt = torch.load(path, map_location="cpu")
-
-        if "cls_row" not in ckpt:
-            raise KeyError("CLS checkpoint must contain 'cls_row'")
-
-        cls_row = ckpt["cls_row"]
-        saved_cls_id = ckpt.get("cls_token_id", self.cls_token_id)
-
-        lm = self.backbone.model.language_model
-        if lm is None or not hasattr(lm, "embed_tokens"):
-            raise RuntimeError("Language model embedding table not found")
-
-        emb = lm.embed_tokens
-        current_cls_id = int(self.cls_token_id)
-
-        if strict_dim and cls_row.numel() != emb.weight.shape[1]:
-            raise ValueError(
-                f"CLS dim mismatch: saved {cls_row.numel()} vs model {emb.weight.shape[1]}"
-            )
-
-        if saved_cls_id != current_cls_id:
-            print(
-                f"[WARN] saved cls_token_id={saved_cls_id} "
-                f"!= current cls_token_id={current_cls_id} — copying to current index"
-            )
-
-        with torch.no_grad():
-            emb.weight[current_cls_id].copy_(
-                cls_row.to(emb.weight.device, emb.weight.dtype)
-            )
-
-        print(f"[OK] Loaded CLS embedding from {path}")
-
-
-    def _load_cls_embedding(self):
-
-        cls_path = getattr(self.args, "cls_emb_path", None)
-        save_base_dir = getattr(self.args, "save_base_dir", None)
-        if save_base_dir is None or cls_path is None:
-            return
-        cls_path = os.path.join(save_base_dir, cls_path)
-
-        self.load_cls_embedding(cls_path)
-
-    def _apply_lora(self):
-        cfg = getattr(self.args, "lora_config", None)
-        if not cfg or not cfg.get("use_lora", False):
-            return
-
-        lora_cfg = LoraConfig(
-            r=int(cfg.get("lora_r", 8)),
-            lora_alpha=int(cfg.get("lora_alpha", 8)),
-            lora_dropout=float(cfg.get("lora_dropout", 0.0)),
-            target_modules=list(cfg.get("lora_target_modules", ["q_proj", "v_proj"])),
-            bias=str(cfg.get("lora_bias", "none")),
-            task_type="CAUSAL_LM",
-        )
-
-        self.backbone = get_peft_model(self.backbone, lora_cfg)
-
-
-
-    def _encode(self, input_ids, attention_mask, pixel_values, image_grid_thw=None):
-        # IMPORTANT: no torch.no_grad() here; we need grads at least to CLS row + head
-        outputs = self.backbone(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            pixel_values=pixel_values,
-            image_grid_thw=image_grid_thw,
-            output_hidden_states=True,
-        )
-        return outputs.hidden_states[-1]  # (B, T, d)
-
-    def _get_cls_token_repr(self, hidden, input_ids):
-        B = input_ids.size(0)
-        device = input_ids.device
-
-        # position of <CLS> (assumes exactly once per sample)
-        cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)  # (B,)
-        h = hidden[torch.arange(B, device=device), cls_pos]             # (B,d)
-        h = F.layer_norm(h, (h.shape[-1],))
-        return h
-
-    def _mc_ce_loss(self, logits, labels):
-        if hasattr(self.args, "class_weights") and self.args.class_weights is not None:
-            class_weights = self.args.class_weights.to(logits.device)
-            return F.cross_entropy(logits, labels, weight=class_weights)
-        return F.cross_entropy(logits, labels)
-
-    def _build_prompts_with_choices(self, hint_texts):
-        prompts = []
-        for hint in hint_texts:
-            parts = []
-            if hint is not None and hint.strip():
-                parts.append(hint.strip())
-            prompts.append("\n".join(parts))
-        return prompts
-
-    def forward(
-        self,
-        x,
-        *,
-        label=None,
-        return_features=False,
-        current_step=None,
-        image_token_mask=None,  # unused here (CLS readout); keep for compatibility
-        text_token_mask=None,   # unused here (CLS readout); keep for compatibility
-        **kwargs,
-    ):
-        hint_texts = x[0]
-        images = x[1]
-
-        device = images.device
-
-        prompts = self._build_prompts_with_choices(hint_texts)
-        prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
-        image_list = [img for img in images]
-
-        proc = self.processor(
-            text=prompts_with_image,
-            images=image_list,
-            padding=True,
-            truncation=True,
-            return_tensors="pt",
-        )
-        proc = {k: v.to(device) for k, v in proc.items()}
-
-        input_ids = proc["input_ids"]
-        attention_mask = proc["attention_mask"]
-        pixel_values = proc["pixel_values"]
-        image_grid_thw = proc.get("image_grid_thw")
-
-        hidden = self._encode(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            pixel_values=pixel_values,
-            image_grid_thw=image_grid_thw,
-        )
-
-        # # CLS readout (stable position)
-        h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
-        head_logits = self.enc_0(h_cls)
-
-        losses = {}
-        if label is not None:
-            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, label)
-
-        # Optional eval-time generation parsing (kept off by default)
-        preds = {"combined": head_logits}
-        features = {"combined": h_cls}
-        if return_features:
-            features["hidden"] = hidden
-
-        return {"preds": preds, "features": features, "losses": losses}
 
 
 # ============================================================

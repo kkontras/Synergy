@@ -628,13 +628,13 @@ def esnli_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0) -> 
     data: Dict[str, Any] = {
         "input_ids": input_ids,
         "attention_mask": attention_mask,
-        "image_mask": image_mask,
+        "image_mask": image_mask, 
         "text_mask": text_mask,
     }
 
-    data["image_grid_thw"] = torch.stack([b["image_grid_thw"] for b in batch], dim=0)
+    # data["image_grid_thw"] = torch.stack([b["image_grid_thw"] for b in batch], dim=0)
 
-    data["pixel_values"] = torch.stack([b["pixel_values"] for b in batch], dim=0)
+    # data["pixel_values"] = torch.stack([b["pixel_values"] for b in batch], dim=0)
 
     if "vision_embeds" in batch[0]:
         vis_list = [b["vision_embeds"] for b in batch]

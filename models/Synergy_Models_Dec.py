@@ -3428,37 +3428,9 @@ class QwenVL_ScienceQA_Cached(nn.Module):
           - uses min(count_mask, count_embeds) and truncates the longer side.
         """
         lm = self.backbone.model.language_model
-        if lm is None or not hasattr(lm, "embed_tokens"):
-            raise RuntimeError("Cannot access LM token embeddings (embed_tokens).")
-
-        if input_ids.ndim != 2:
-            raise ValueError(f"input_ids must be (B,T), got {tuple(input_ids.shape)}")
-        if image_mask.ndim != 2:
-            raise ValueError(f"image_mask must be (B,T), got {tuple(image_mask.shape)}")
-
-        # Text token embeddings
         inputs_embeds = lm.embed_tokens(input_ids)  # (B, T, d_model)
         B, T, d_model = inputs_embeds.shape
 
-        if image_mask.shape != (B, T):
-            raise ValueError(f"image_mask must be (B,T)={(B, T)}, got {tuple(image_mask.shape)}")
-
-        # Normalize vision_embeds to (B, N, d)
-        if vision_embeds.dim() == 2:
-            vision_embeds = vision_embeds.unsqueeze(0)  # (1, N, d)
-        if vision_embeds.dim() != 3:
-            raise ValueError(f"vision_embeds must be (B,N,d) or (N,d), got {tuple(vision_embeds.shape)}")
-        if vision_embeds.size(-1) != d_model:
-            raise ValueError(f"vision_embeds last dim {vision_embeds.size(-1)} != d_model {d_model}")
-
-        if vision_embeds.size(0) not in (1, B):
-            raise ValueError(f"vision_embeds batch dim must be 1 or B={B}, got {vision_embeds.size(0)}")
-
-        # If vision_embeds has batch=1, broadcast across batch (rare but supported)
-        if vision_embeds.size(0) == 1 and B > 1:
-            vision_embeds = vision_embeds.expand(B, -1, -1)
-
-        # Splice per sample
         for b in range(B):
             pos = image_mask[b].nonzero(as_tuple=False).view(-1)  # indices in [0..T)
             n_mask = int(pos.numel())
@@ -3471,9 +3443,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
             n = n_vis
 
-            # Replace the first n image-token positions with first n vision tokens
             inputs_embeds[b, pos[:n], :] = vision_embeds[b, :n, :].to(inputs_embeds.dtype)
-
 
         return inputs_embeds
 
@@ -3577,7 +3547,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             inputs_embeds=inputs_embeds,
             attention_mask=attention_mask,
             output_hidden_states=True,
-            use_cache=False,
             return_dict=True,
         )
         return out.hidden_states[-1]
@@ -3599,13 +3568,11 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         image_mask = proc["image_mask"].to(device)
         vision_embeds = proc["vision_embeds"].to(device)
 
-
         inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
-        # input_ids, attention_mask = self._ensure_cls(input_ids, attention_mask)
+        print(inputs_embeds)
 
         # Encode via LM directly (skips vision tower)
         hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)
-
         h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
         logits = self.enc_0(h_cls)
 

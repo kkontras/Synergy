@@ -221,7 +221,7 @@ def _get_tokenizer_from_processor(processor):
 def _infer_image_token_ids(tokenizer) -> List[int]:
     ids: List[int] = []
 
-    cand_strs = ["<|vision_start|>", "<|vision_end|>",'<|image_pad|>', '<|im_start|>', '<|im_end|>' ]
+    cand_strs = ['<|image_pad|>']
     for s in cand_strs:
         tid = tokenizer.convert_tokens_to_ids(s)
         if isinstance(tid, int) and tid >= 0 and tid != getattr(tokenizer, "unk_token_id", -999):

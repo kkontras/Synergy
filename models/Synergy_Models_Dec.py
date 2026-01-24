@@ -4221,17 +4221,18 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         attention_mask = proc["attention_mask"].to(device)
         image_mask = proc["image_mask"].to(device)
         vision_embeds = proc["vision_embeds"].to(device)
+        input_embeds = proc["input_embeds"].to(device)
         position_ids = proc["position_ids"].to(device)
         deep_stack_viz = proc["deep_stack_viz"].to(device)
 
 
 
-        inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids.to(device))
+        # inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids.to(device))
         # print(vision_embeds.shape)
         # print(inputs_embeds.shape)
         # print(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]).shape)
 
-        inputs_embeds = inputs_embeds.masked_scatter(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]), vision_embeds)
+        # inputs_embeds = inputs_embeds.masked_scatter(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]), vision_embeds)
         deep_stack_viz = einops.rearrange(deep_stack_viz, "b c i j -> c (b i) j")
         # print(deep_stack_viz.shape)
 
@@ -4241,7 +4242,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         out = self.backbone.model.language_model( 
             input_ids=None,
             position_ids = position_ids,
-            inputs_embeds=inputs_embeds,
+            inputs_embeds=input_embeds,
             attention_mask=attention_mask,
             visual_pos_masks=image_mask,
             deepstack_visual_embeds=deep_stack_viz,

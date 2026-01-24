@@ -597,22 +597,21 @@ def main():
         vision_embeds_cpu = None
         vision_error = None
 
-        if args.cache_vision_embeds:
-            if pixel_values is None or image_grid_thw is None:
-                vision_error = "Processor did not return pixel_values/image_grid_thw; cannot compute vision embeddings."
-            else:
-                try:
-                    with torch.no_grad():
-                        pv = pixel_values.to(model.device, dtype=dtype, non_blocking=True)
-                        gthw = image_grid_thw.to(model.device, non_blocking=True)
-                        vis = extract_vision_embeds(model, pv, gthw)
+        if pixel_values is None or image_grid_thw is None:
+            vision_error = "Processor did not return pixel_values/image_grid_thw; cannot compute vision embeddings."
+        else:
+            try:
+                with torch.no_grad():
+                    pv = pixel_values.to(model.device, dtype=dtype, non_blocking=True)
+                    gthw = image_grid_thw.to(model.device, non_blocking=True)
+                    vis = extract_vision_embeds(model, pv, gthw)
 
-                    if torch.is_tensor(vis):
-                        vision_embeds_cpu = [vis[i].detach().cpu() for i in range(vis.size(0))]
-                    else:
-                        vision_error = f"Unrecognized vision output type: {type(vis)}"
-                except Exception as e:
-                    vision_error = str(e)
+                if torch.is_tensor(vis):
+                    vision_embeds_cpu = [vis[i].detach().cpu() for i in range(vis.size(0))]
+                else:
+                    vision_error = f"Unrecognized vision output type: {type(vis)}"
+            except Exception as e:
+                vision_error = str(e)
 
         B = len(ids)
         for i in range(B):
@@ -644,11 +643,10 @@ def main():
             if image_grid_thw is not None:
                 item["image_grid_thw"] = image_grid_thw[i].detach().cpu()
 
-            if args.cache_vision_embeds:
-                if vision_embeds_cpu is not None:
-                    item["vision_embeds"] = vision_embeds_cpu[i]
-                if vision_error is not None:
-                    item["vision_embeds_error"] = vision_error
+            if vision_embeds_cpu is not None:
+                item["vision_embeds"] = vision_embeds_cpu[i]
+            if vision_error is not None:
+                item["vision_embeds_error"] = vision_error
 
             items.append(item)
 
@@ -671,7 +669,6 @@ def main():
         "cache_vision_embeds": bool(args.cache_vision_embeds),
         "dtype": str(dtype),
         "notes": [
-            "Cache does NOT include <CLS>. Append <CLS> at training time.",
             "vision_embeds come from model.model.visual(pixel_values, grid_thw=image_grid_thw).",
             "Token-level masks saved in item['masks']: {'image':..., 'text':...} aligned with input_ids.",
             "Split mapping: validation -> dev",

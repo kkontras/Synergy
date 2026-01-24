@@ -166,7 +166,7 @@ def build_memmap_from_token_shards(
                 inp: torch.Tensor = ex["input_ids"]
                 total_tokens += int(inp.numel())
 
-                # masks required 
+                # masks required
                 masks = ex.get("masks", None)
                 if masks is None or ("image" not in masks) or ("text" not in masks):
                     raise KeyError(

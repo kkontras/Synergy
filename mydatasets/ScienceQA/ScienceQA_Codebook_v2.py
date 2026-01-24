@@ -634,7 +634,7 @@ def build_and_save_cache(
             attn_1d = attention_mask[b, -true_len:].contiguous()
 
             position_ids_i = position_ids_cpu[b]
-            deep_stack_viz_cpu_i = deep_stack_viz_cpu[b].contiguous()
+            deep_stack_viz_cpu_i = deep_stack_viz_cpu[b]
             image_mask_hf_i = vision_mask_cpu[b].to(torch.uint8).contiguous()
             vision_embeds_cpu_i = vision_embeds_cpu[b]
 

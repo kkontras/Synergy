@@ -3642,12 +3642,12 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
 
             # Generate from LM with inputs_embeds.
-            lm = self.backbone.model.language_model
+            # lm = self.backbone.model.language_model
             eos_token_id = tok.eos_token_id
             pad_token_id = self.pad_token_id if hasattr(self, "pad_token_id") else tok.pad_token_id
 
             with torch.no_grad():
-                gen_ids = lm(
+                gen_ids = self.backbone.generate(
                     inputs_embeds=inputs_embeds,
                     attention_mask=attention_mask,
                     max_new_tokens=max_new_tokens,

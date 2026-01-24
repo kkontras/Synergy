@@ -3577,6 +3577,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         # ----------------------------
         # Decide pathway: cached vision vs pixel_values
         # ----------------------------
+        print(proc.keys())
         use_cached_vision = (
                 ("vision_embeds" in proc) and ("vision_len" in proc) and ("image_mask" in proc)
         )
@@ -3603,7 +3604,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
                 pixel_values = pixel_values.to(device)
             image_grid_thw = proc.get("image_grid_thw", None)
             if image_grid_thw is not None:
-                image_grid_thw = image_grid_thw.to(device) 
+                image_grid_thw = image_grid_thw.to(device)
 
             hidden = self.backbone(
                 input_ids=input_ids,

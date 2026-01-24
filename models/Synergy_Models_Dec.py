@@ -2732,7 +2732,7 @@ def save_vl_debug_plots(
         fig.savefig(path, bbox_inches="tight")
         plt.close(fig)
 
-    print(f"Saved {B} debug plots to: {out_dir}") 
+    print(f"Saved {B} debug plots to: {out_dir}")
 
 
 

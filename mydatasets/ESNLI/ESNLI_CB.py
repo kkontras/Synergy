@@ -162,7 +162,6 @@ def build_memmap_from_token_shards(
                 raise RuntimeError(f"Shard length mismatch: {r['path']} manifest={r['n']} actual={len(items)}")
 
             for ex in items:
-                print(ex.keys())
                 inp: torch.Tensor = ex["input_ids"]
                 total_tokens += int(inp.numel())
 
@@ -174,40 +173,37 @@ def build_memmap_from_token_shards(
                         f"Rebuild your cache shards to include token masks."
                     )
 
-                if (not has_grid) and ("image_grid_thw" in ex) and (ex["image_grid_thw"] is not None):
-                    has_grid = True
+                has_grid = True
 
-                if ("vision_embeds" in ex) and (ex["vision_embeds"] is not None):
-                    ve = ex["vision_embeds"]
-                    if not torch.is_tensor(ve):
-                        raise TypeError(f"vision_embeds must be torch.Tensor, got {type(ve)}")
-                    has_vision = True
-                    if ve.dim() == 1:
-                        D = int(ve.numel()); nimg = 1
-                    elif ve.dim() == 2:
-                        nimg, D = int(ve.shape[0]), int(ve.shape[1])
-                    else:
-                        raise ValueError(f"vision_embeds must be 1D or 2D, got shape={tuple(ve.shape)}")
+                ve = ex["vision_embeds"]
+                if not torch.is_tensor(ve):
+                    raise TypeError(f"vision_embeds must be torch.Tensor, got {type(ve)}")
+                has_vision = True
+                if ve.dim() == 1:
+                    D = int(ve.numel()); nimg = 1
+                elif ve.dim() == 2:
+                    nimg, D = int(ve.shape[0]), int(ve.shape[1])
+                else:
+                    raise ValueError(f"vision_embeds must be 1D or 2D, got shape={tuple(ve.shape)}")
 
-                    if vision_dim is None:
-                        vision_dim = D
-                    elif vision_dim != D:
-                        raise ValueError(f"vision_dim mismatch: saw {vision_dim} then {D}")
+                if vision_dim is None:
+                    vision_dim = D
+                elif vision_dim != D:
+                    raise ValueError(f"vision_dim mismatch: saw {vision_dim} then {D}")
 
-                    total_vision_elems += int(nimg * D)
+                total_vision_elems += int(nimg * D)
 
-                if store_pixel_values and ("pixel_values" in ex) and (ex["pixel_values"] is not None):
-                    pv = ex["pixel_values"]
-                    if not torch.is_tensor(pv):
-                        raise TypeError(f"pixel_values must be torch.Tensor, got {type(pv)}")
-                    if pv.dim() != 3:
-                        raise ValueError(f"pixel_values must be [C,H,W], got shape={tuple(pv.shape)}")
-                    has_pixel = True
-                    shp = (int(pv.shape[0]), int(pv.shape[1]), int(pv.shape[2]))
-                    if pixel_shape is None:
-                        pixel_shape = shp
-                    elif pixel_shape != shp:
-                        raise ValueError(f"pixel_values shape mismatch: saw {pixel_shape} then {shp}")
+                pv = ex["pixel_values"]
+                if not torch.is_tensor(pv):
+                    raise TypeError(f"pixel_values must be torch.Tensor, got {type(pv)}")
+                if pv.dim() != 3:
+                    raise ValueError(f"pixel_values must be [C,H,W], got shape={tuple(pv.shape)}")
+                has_pixel = True
+                shp = (int(pv.shape[0]), int(pv.shape[1]), int(pv.shape[2]))
+                if pixel_shape is None:
+                    pixel_shape = shp
+                elif pixel_shape != shp:
+                    raise ValueError(f"pixel_values shape mismatch: saw {pixel_shape} then {shp}")
 
         if input_ids_dtype not in ("int32", "int64"):
             raise ValueError("input_ids_dtype must be 'int32' or 'int64'")

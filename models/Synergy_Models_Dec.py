@@ -3454,6 +3454,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             self,
             proc,  # the same dict you pass as x (processor output)
             max_new_tokens=128,
+            min_new_tokens=2,
             temperature=0.7,
             top_p=0.9,
             do_sample=True,
@@ -3472,7 +3473,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             input_ids=input_ids,
             attention_mask=attention_mask,
             max_new_tokens=max_new_tokens,
-            min_new_tokens=2,
+            min_new_tokens=min_new_tokens,
             do_sample=do_sample,
             temperature=temperature,
             top_p=top_p,

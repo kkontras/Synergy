@@ -447,13 +447,7 @@ def build_prompt_no_cls(
 # Vision embedding extraction
 # -----------------------------
 def extract_vision_embeds(model, pixel_values: torch.Tensor, image_grid_thw: torch.Tensor) -> torch.Tensor:
-    """
-    Returns a Tensor of vision token embeddings (B, N, D).
-    Handles common Qwen3-VL variants where visual() returns:
-      - Tensor
-      - Tuple(Tensor, ...)
-      - Dict with known keys
-    """
+
     if hasattr(model, "model") and hasattr(model.model, "visual"):
         out = model.model.visual(pixel_values, grid_thw=image_grid_thw)
     elif hasattr(model, "visual"):

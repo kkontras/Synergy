@@ -25,7 +25,7 @@ class Monitor_n_Save():
         file_name = self._get_checkpoint_path()
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
-        if self.agent.logs["current_epoch"]==0 and self.agent.config.model.start_over:
+        if self.agent.logs["current_epoch"]<=1 and self.agent.config.model.start_over:
             existing_ckpt = None
         else:
             existing_ckpt = self._load_existing_checkpoint(file_name)

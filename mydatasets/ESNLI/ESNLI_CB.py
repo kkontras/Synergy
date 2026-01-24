@@ -165,7 +165,6 @@ def esnli_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0) -> 
         vis_list = [b.get("input_embeds", torch.empty((0, 0), dtype=torch.float32)) for b in batch]
         vis_pad, vis_mask = _pad_2d_by_rows(vis_list, pad_val=0.0)
         data["input_embeds"] = vis_pad
-        data["input_embeds"] = vis_mask
 
     if "deep_stack_viz" in batch[0]:
         deep_list = [b.get("deep_stack_viz", torch.empty((0, 0, 2048), dtype=torch.float32)) for b in batch]
@@ -395,8 +394,6 @@ class ESNLI_MemmapDataset(Dataset):
                     ve_t = ve_t.view(1, -1)
                 out["input_embeds"] = ve_t.to(torch.float32 if ve_t.dtype != torch.float32 else torch.float32)
 
-        print(out["vision_embeds"].shape)
-        print(out["input_embeds"].shape)
         out["deep_stack_viz"] = _as_deep_3d(ex.get("deep_stack_viz"), deep_dim=self.deep_dim)
 
         return out

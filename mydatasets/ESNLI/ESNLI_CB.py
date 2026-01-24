@@ -194,6 +194,7 @@ def build_memmap_from_token_shards(
                 total_vision_elems += int(nimg * D)
 
                 pv = ex["pixel_values"]
+                print(ex["pixel_values"].shape)
                 if not torch.is_tensor(pv):
                     raise TypeError(f"pixel_values must be torch.Tensor, got {type(pv)}")
                 if pv.dim() != 3:

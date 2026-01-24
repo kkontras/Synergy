@@ -3658,6 +3658,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
                     eos_token_id=eos_token_id,
                     pad_token_id=pad_token_id,
                 )
+                print(gen_ids)
 
             tail = gen_ids[:, -max_new_tokens:]
             gen_texts = tok.batch_decode(

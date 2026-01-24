@@ -562,6 +562,7 @@ class ScienceQA_MemmapDataset(Dataset):
                 end = voff + nimg * self.D
                 flat = np.array(self.vision_mm[start:end], copy=True)
                 out["vision_embeds"] = torch.from_numpy(flat).view(nimg, self.D)
+            print(out["vision_embeds"].shape)
             out["vision_len"] = torch.tensor(nimg, dtype=torch.long)
 
         if self.deep_mm is not None and self.deep_offsets is not None and self.deep_tlens is not None and self.deep_nlens is not None:

@@ -578,26 +578,19 @@ class ESNLI_MemmapDataset(Dataset):
             "text_mask": text_mask,
         }
 
-        if self.has_grid and self.grid_thw is not None:
-            out["image_grid_thw"] = torch.from_numpy(np.array(self.grid_thw[idx], copy=True)).to(torch.long)
+        voff = int(self.vision_offsets[idx])
+        nimg = int(self.vision_lengths[idx])
 
-        if self.has_vision and self.vision_mm is not None:
-            voff = int(self.vision_offsets[idx])
-            nimg = int(self.vision_lengths[idx])
+        if nimg == 0:
+            vision = torch.empty((0, self.D), dtype=torch.float16 if self.vision_dtype == "float16" else torch.float32)
+        else:
+            start = voff
+            end = voff + nimg * self.D
+            flat = np.array(self.vision_mm[start:end], copy=True)
+            vision = torch.from_numpy(flat).view(nimg, self.D)
 
-            if nimg == 0:
-                vision = torch.empty((0, self.D), dtype=torch.float16 if self.vision_dtype == "float16" else torch.float32)
-            else:
-                start = voff
-                end = voff + nimg * self.D
-                flat = np.array(self.vision_mm[start:end], copy=True)
-                vision = torch.from_numpy(flat).view(nimg, self.D)
-
-            out["vision_embeds"] = vision
-            out["vision_len"] = torch.tensor(nimg, dtype=torch.long)
-
-        if self.pixel_mm is not None:
-            out["pixel_values"] = torch.from_numpy(np.array(self.pixel_mm[idx], copy=True))  # float16
+        out["vision_embeds"] = vision
+        out["vision_len"] = torch.tensor(nimg, dtype=torch.long)
 
         return out
 

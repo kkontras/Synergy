@@ -649,6 +649,7 @@ def main():
                     attention_mask=attention_mask_tensor,
                 )
 
+            input_embeds_cpu = [inputs_embeds[i].detach().cpu() for i in range(inputs_embeds.size(0))]
             vision_embeds_cpu = [image_embeds_keep[i].detach().cpu() for i in range(image_embeds_keep.size(0))]
             vision_mask_cpu = [image_mask[i].detach().cpu() for i in range(image_mask.size(0))]
             deep_stack_viz_cpu = einops.rearrange(torch.cat([i.unsqueeze(dim=0) for i in deep_stack_viz], dim=0), "a (b i) f -> b a i f", b=image_mask_batch.shape[0])
@@ -696,6 +697,7 @@ def main():
             item["pixel_values"] = pixel_values[i].detach().cpu()
             item["image_grid_thw"] = image_grid_thw[i].detach().cpu()
             item["vision_embeds"] = vision_embeds_cpu[i].detach().cpu()
+            item["input_embeds"] = input_embeds_cpu[i].detach().cpu()
 
             items.append(item)
 

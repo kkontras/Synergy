@@ -3403,7 +3403,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         B = input_ids.size(0)
         cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)
         h = hidden[torch.arange(B, device=input_ids.device), cls_pos]
-        return F.layer_norm(h, (h.shape[-1],))
+        return h
 
     def _mc_ce_loss(self, logits, labels):
         if hasattr(self.args, "class_weights") and self.args.class_weights is not None:

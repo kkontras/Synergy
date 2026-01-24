@@ -199,9 +199,9 @@ def build_memmap_from_token_shards(
                 if pv.dim() != 2:
                     raise ValueError(f"pixel_values must be [C,H,W], got shape={tuple(pv.shape)}")
                 has_pixel = True
-                # shp = (int(pv.shape[0]), int(pv.shape[1]), int(pv.shape[2]))
-                # if pixel_shape is None:
-                #     pixel_shape = shp
+                shp = (int(pv.shape[0]), int(pv.shape[1]), int(pv.shape[2]))
+                if pixel_shape is None:
+                    pixel_shape = shp
                 # elif pixel_shape != shp:
                 #     raise ValueError(f"pixel_values shape mismatch: saw {pixel_shape} then {shp}")
 

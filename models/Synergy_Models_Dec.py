@@ -3603,13 +3603,14 @@ class QwenVL_ScienceQA_Cached(nn.Module):
                 pixel_values = pixel_values.to(device)
             image_grid_thw = proc.get("image_grid_thw", None)
             if image_grid_thw is not None:
-                image_grid_thw = image_grid_thw.to(device)
+                image_grid_thw = image_grid_thw.to(device) 
 
             hidden = self.backbone(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 pixel_values=pixel_values,
                 image_grid_thw=image_grid_thw,
+                output_hidden_states=True,
             )
             hidden = hidden.hidden_states[-1]
 

@@ -3552,12 +3552,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         return out.hidden_states[-1]
 
     def forward(self, x, *, label=None, return_features=False, **kwargs):
-        """
-        Uses cached vision_embeds (if present) to avoid running the vision tower.
-        Also runs generation (optional debug/analysis) using the SAME pathway.
-        """
-        import torch
-        import torch.nn.functional as F
 
         proc = x
         device = self.backbone.device
@@ -3569,7 +3563,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         vision_embeds = proc["vision_embeds"].to(device)
 
         inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
-        print(inputs_embeds)
+        print(inputs_embeds.shape)
 
         # Encode via LM directly (skips vision tower)
         hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)

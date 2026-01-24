@@ -4225,7 +4225,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         position_ids = proc["position_ids"].to(device)
         deep_stack_viz = proc["deep_stack_viz"].to(device)
 
-
+        position_ids = position_ids.permute(1, 0, 2)
 
         # inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids.to(device))
         # print(vision_embeds.shape)

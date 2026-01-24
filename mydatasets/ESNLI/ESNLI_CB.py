@@ -394,17 +394,10 @@ class ESNLI_MemmapDataset(Dataset):
                 elif ve_t.dim() != 2:
                     ve_t = ve_t.view(1, -1)
                 out["input_embeds"] = ve_t.to(torch.float32 if ve_t.dtype != torch.float32 else torch.float32)
-        print(out["input_embeds"].shape)
-        # optional deep
-        dv = ex.get("deep_stack_viz", None)
-        if dv is not None:
-            out["deep_stack_viz"] = _as_deep_3d(dv, deep_dim=self.deep_dim)
 
-        # optional pixel
-        pv = ex.get("pixel_values", None)
-        if pv is not None:
-            pv_t = pv.detach().cpu() if torch.is_tensor(pv) else torch.as_tensor(pv).detach().cpu()
-            out["pixel_values"] = pv_t.to(torch.float32)
+        print(out["vision_embeds"].shape)
+        print(out["input_embeds"].shape)
+        out["deep_stack_viz"] = _as_deep_3d(ex.get("deep_stack_viz"), deep_dim=self.deep_dim)
 
         return out
 

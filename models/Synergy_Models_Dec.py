@@ -3583,38 +3583,20 @@ class QwenVL_ScienceQA_Cached(nn.Module):
                 ("vision_embeds" in proc) and ("vision_len" in proc) and ("image_mask" in proc)
         )
 
-        if use_cached_vision:
-            image_mask = proc["image_mask"].to(device)
-            vision_embeds = proc["vision_embeds"].to(device)
-            vision_len = proc["vision_len"].to(device)
+        image_mask = proc["image_mask"].to(device)
+        vision_embeds = proc["vision_embeds"].to(device)
+        vision_len = proc["vision_len"].to(device)
 
-            # Build LM inputs_embeds with vision token slots filled from cache
-            inputs_embeds = self._build_inputs_embeds_from_cache(
-                input_ids=input_ids,
-                image_mask=image_mask,
-                vision_embeds=vision_embeds,
-                vision_len=vision_len,
-            )
+        # Build LM inputs_embeds with vision token slots filled from cache
+        inputs_embeds = self._build_inputs_embeds_from_cache(
+            input_ids=input_ids,
+            image_mask=image_mask,
+            vision_embeds=vision_embeds,
+            vision_len=vision_len,
+        )
 
-            # Encode via LM directly (skips vision tower)
-            hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)
-
-        else:
-            pixel_values = proc.get("pixel_values", None)
-            if pixel_values is not None:
-                pixel_values = pixel_values.to(device)
-            image_grid_thw = proc.get("image_grid_thw", None)
-            if image_grid_thw is not None:
-                image_grid_thw = image_grid_thw.to(device)
-
-            hidden = self.backbone(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                pixel_values=pixel_values,
-                image_grid_thw=image_grid_thw,
-                output_hidden_states=True,
-            )
-            hidden = hidden.hidden_states[-1]
+        # Encode via LM directly (skips vision tower)
+        hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)
 
         # ----------------------------
         # CLS readout -> classifier head
@@ -3646,52 +3628,32 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             temperature = float(kwargs.get("gen_temperature", 0.0))
             top_p = float(kwargs.get("gen_top_p", 1.0))
 
-            if use_cached_vision:
-                # Generate from LM with inputs_embeds.
-                lm = self.backbone.model.language_model
-                eos_token_id = tok.eos_token_id
-                pad_token_id = self.pad_token_id if hasattr(self, "pad_token_id") else tok.pad_token_id
 
-                with torch.no_grad():
-                    gen_ids = lm.generate(
-                        inputs_embeds=inputs_embeds,
-                        attention_mask=attention_mask,
-                        max_new_tokens=max_new_tokens,
-                        min_new_tokens=min_new_tokens,
-                        do_sample=do_sample,
-                        temperature=temperature if do_sample else None,
-                        top_p=top_p if do_sample else None,
-                        eos_token_id=eos_token_id,
-                        pad_token_id=pad_token_id,
-                    )
+            # Generate from LM with inputs_embeds.
+            lm = self.backbone.model.language_model
+            eos_token_id = tok.eos_token_id
+            pad_token_id = self.pad_token_id if hasattr(self, "pad_token_id") else tok.pad_token_id
 
-                # When generating from inputs_embeds, output sequences are token ids but
-                # we don't have a clean "prompt_len" in tokens if the model internally
-                # handles special multimodal tokens. For debugging, decode the tail.
-                # We'll decode only the last max_new_tokens tokens.
-                tail = gen_ids[:, -max_new_tokens:]
-                gen_texts = tok.batch_decode(
-                    tail,
-                    skip_special_tokens=True,
-                    clean_up_tokenization_spaces=False,
-                )
-
-            else:
-                # Use your existing generate_answer which calls backbone.generate with pixel_values, etc.
-                gen_proc = {"input_ids": input_ids, "attention_mask": attention_mask}
-                if "pixel_values" in proc and proc["pixel_values"] is not None:
-                    gen_proc["pixel_values"] = proc["pixel_values"].to(device)
-                if "image_grid_thw" in proc and proc["image_grid_thw"] is not None:
-                    gen_proc["image_grid_thw"] = proc["image_grid_thw"].to(device)
-
-                gen_texts = self.generate_answer(
-                    gen_proc,
+            with torch.no_grad():
+                gen_ids = lm.generate(
+                    inputs_embeds=inputs_embeds,
+                    attention_mask=attention_mask,
                     max_new_tokens=max_new_tokens,
                     min_new_tokens=min_new_tokens,
                     do_sample=do_sample,
-                    temperature=temperature,
-                    top_p=top_p
+                    temperature=temperature if do_sample else None,
+                    top_p=top_p if do_sample else None,
+                    eos_token_id=eos_token_id,
+                    pad_token_id=pad_token_id,
                 )
+
+            tail = gen_ids[:, -max_new_tokens:]
+            gen_texts = tok.batch_decode(
+                tail,
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=False,
+            )
+
             for i in gen_texts:
                 print("---------")
                 print(i)

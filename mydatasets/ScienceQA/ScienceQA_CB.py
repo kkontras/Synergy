@@ -765,6 +765,7 @@ class ScienceQA_MemmapDataloader:
         if num_workers is None:
             total_cpus = multiprocessing.cpu_count()
             num_workers = max(2, min(8, total_cpus // 8 if total_cpus >= 16 else 4))
+            num_workers = 0
 
         print(
             f"[ScienceQA MemmapLoader] CPUs={multiprocessing.cpu_count()} | num_workers={num_workers} | "

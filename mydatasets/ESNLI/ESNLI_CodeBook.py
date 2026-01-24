@@ -677,7 +677,7 @@ def main():
             attention_i = attention_batch[i].contiguous()
             position_ids_i = position_ids_cpu[i]
 
-            deep_stack_viz_cpu_i = deep_stack_viz_cpu[i].contiguous()
+            deep_stack_viz_cpu_i = deep_stack_viz_cpu[i]
 
             image_mask_i = image_mask_batch[i].to(torch.uint8).contiguous()
             text_mask_i = text_mask_batch[i].to(torch.uint8).contiguous()

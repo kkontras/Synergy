@@ -304,6 +304,9 @@ def build_image_text_token_masks(enc_cpu: Dict[str, torch.Tensor], processor) ->
     if len(img_token_ids) > 0:
         img_ids = torch.tensor(img_token_ids, dtype=input_ids.dtype, device=input_ids.device)
         img_mask = torch.isin(input_ids, img_ids)
+        print(input_ids)
+        print(img_ids)
+        print(img_mask)
         return _finish(img_mask)
 
     # 3) No way to infer image tokens -> fail (since you asked to assert)

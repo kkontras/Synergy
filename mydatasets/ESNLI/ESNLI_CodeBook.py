@@ -402,7 +402,7 @@ def make_loader(ds: Dataset, batch_size: int, num_workers: int, shuffle: bool = 
         ds,
         batch_size=batch_size,
         shuffle=shuffle,
-        num_workers=num_workers,
+        num_workers=0,
         pin_memory=True,
         drop_last=False,
         collate_fn=collate,
@@ -618,7 +618,6 @@ def main():
             "input_ids": input_ids_batch,
             "attention_mask": attention_batch,
         }
-        enc_cpu_for_masks["image_mask"] = enc['image_mask'].detach().cpu()
 
         masks_batch = build_image_text_token_masks(enc_cpu_for_masks, processor)
         image_mask_batch = masks_batch["image"]  # bool [B,T]
@@ -626,24 +625,40 @@ def main():
         pixel_values = enc.get("pixel_values", None)
         image_grid_thw = enc.get("image_grid_thw", None)
 
+        inputs_embeds = model.model.get_input_embeddings()(input_ids_batch.cuda())
+
         try:
             with torch.no_grad():
-                pv = pixel_values.to(model.device, dtype=dtype, non_blocking=True)
-                gthw = image_grid_thw.to(model.device, non_blocking=True)
-                vis = extract_vision_embeds(model, pv, gthw)
-                vis = einops.rearrange(vis, "(b i) c -> b i c", b=batch_size)
-
                 pv = pixel_values.to(model.device, dtype=pixel_values.dtype, non_blocking=True)
                 gthw = image_grid_thw.to(model.device, non_blocking=True)
-                image_embeds, deep_stack_viz = extract_vision_embeds(pv, gthw)
+                image_embeds, deep_stack_viz = model.get_image_features(pv, gthw)
                 image_embeds = torch.cat(image_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
                 image_mask, _ = model.model.get_placeholder_mask( input_ids_batch, inputs_embeds=inputs_embeds, image_features=image_embeds)
                 inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
                 image_mask = image_mask[...,0]
 
-            vision_embeds_cpu = [vis[i].detach().cpu() for i in range(vis.size(0))]
+                attention_mask_tensor = (
+                    attention_batch if not isinstance(attention_batch, dict) else attention_batch["full_attention"]
+                )
+                if attention_mask_tensor is not None and attention_mask_tensor.ndim == 4:
+                    attention_mask_tensor = torch.diagonal(attention_mask_tensor[:, 0], dim1=1, dim2=2)
+                    # Only apply conversion for floating point tensors (inverted masks)
+                    if attention_mask_tensor.dtype.is_floating_point:
+                        attention_mask_tensor = attention_mask_tensor / torch.finfo(attention_mask_tensor.dtype).min
+                        attention_mask_tensor = (1.0 - attention_mask_tensor).int()
+                position_ids, _ = model.model.get_rope_index(
+                    input_ids_batch,
+                    image_grid_thw,
+                    None,
+                    attention_mask=attention_mask_tensor,
+                )
+
+            vision_embeds_cpu = [inputs_embeds[i].detach().cpu() for i in range(inputs_embeds.size(0))]
             vision_mask_cpu = [image_mask[i].detach().cpu() for i in range(image_mask.size(0))]
-            deep_stack_viz_cpu = [[j.detach().cpu() for j in deep_stack_viz[i]] for i in range(deep_stack_viz.size(0))]
+            deep_stack_viz_cpu = einops.rearrange(torch.cat([i.unsqueeze(dim=0) for i in deep_stack_viz], dim=0), "a (b i) f -> b a i f", b=image_mask_batch.shape[0])
+            deep_stack_viz_cpu = [deep_stack_viz_cpu[i].detach().cpu() for i in range(deep_stack_viz_cpu.size(0))]
+            position_ids = position_ids.permute(1,0,2)
+            position_ids_cpu = [position_ids[i].detach().cpu() for i in range(position_ids.size(0))]
 
         except Exception as e:
             raise Exception(e)
@@ -657,15 +672,16 @@ def main():
             if L <= 0:
                 L = 1
 
-            input_ids_i = input_ids_batch[i, :L].contiguous()
-            attention_i = attention_batch[i, :L].contiguous()
+            input_ids_i = input_ids_batch[i].contiguous()
+            attention_i = attention_batch[i].contiguous()
+            position_ids_i = position_ids_cpu[i]
 
-            deep_stack_viz_cpu_i = deep_stack_viz_cpu[i, :L].contiguous()
+            deep_stack_viz_cpu_i = deep_stack_viz_cpu[i].contiguous()
 
-            image_mask_i = image_mask_batch[i, :L].to(torch.uint8).contiguous()
-            text_mask_i = text_mask_batch[i, :L].to(torch.uint8).contiguous()
+            image_mask_i = image_mask_batch[i].to(torch.uint8).contiguous()
+            text_mask_i = text_mask_batch[i].to(torch.uint8).contiguous()
 
-            image_mask_hf_i = vision_mask_cpu[i, :L].to(torch.uint8).contiguous()
+            image_mask_hf_i = vision_mask_cpu[i].to(torch.uint8).contiguous()
 
             item: Dict[str, Any] = {
                 "id": ids[i],
@@ -674,9 +690,9 @@ def main():
                 "input_ids": input_ids_i,
                 "deep_stack_viz": deep_stack_viz_cpu_i,
                 "attention_mask": attention_i,
+                "position_ids": position_ids_i,
                 "masks": {
-                    "image_hf": image_mask_hf_i,
-                    "image": image_mask_i,
+                    "image": image_mask_hf_i,
                     "text": text_mask_i,
                 },
             }

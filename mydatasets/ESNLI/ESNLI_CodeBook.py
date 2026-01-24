@@ -632,6 +632,7 @@ def main():
                 pv = pixel_values.to(model.device, dtype=pixel_values.dtype, non_blocking=True)
                 gthw = image_grid_thw.to(model.device, non_blocking=True)
                 image_embeds, deep_stack_viz = model.get_image_features(pv, gthw)
+                image_embeds_keep = torch.cat([image_embeds[i].unsqueeze(dim=0) for i in range(len(image_embeds))], dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
                 image_embeds = torch.cat(image_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
                 image_mask, _ = model.model.get_placeholder_mask( input_ids_batch, inputs_embeds=inputs_embeds, image_features=image_embeds)
                 inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
@@ -653,7 +654,7 @@ def main():
                     attention_mask=attention_mask_tensor,
                 )
 
-            vision_embeds_cpu = [inputs_embeds[i].detach().cpu() for i in range(inputs_embeds.size(0))]
+            vision_embeds_cpu = [image_embeds_keep[i].detach().cpu() for i in range(image_embeds_keep.size(0))]
             vision_mask_cpu = [image_mask[i].detach().cpu() for i in range(image_mask.size(0))]
             deep_stack_viz_cpu = einops.rearrange(torch.cat([i.unsqueeze(dim=0) for i in deep_stack_viz], dim=0), "a (b i) f -> b a i f", b=image_mask_batch.shape[0])
             deep_stack_viz_cpu = [deep_stack_viz_cpu[i].detach().cpu() for i in range(deep_stack_viz_cpu.size(0))]
@@ -699,7 +700,7 @@ def main():
 
             item["pixel_values"] = pixel_values[i].detach().cpu()
             item["image_grid_thw"] = image_grid_thw[i].detach().cpu()
-            item["vision_embeds"] = vision_embeds_cpu[i]
+            item["vision_embeds"] = vision_embeds_cpu[i].detach().cpu()
 
             items.append(item)
 

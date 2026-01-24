@@ -593,7 +593,7 @@ def build_and_save_cache(
                 image_embeds, deep_stack_viz = model.get_image_features(pv, gthw)
                 image_embeds_keep = torch.cat([image_embeds[i].unsqueeze(dim=0) for i in range(len(image_embeds))], dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
                 image_embeds = torch.cat(image_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
-                image_mask, _ = model.model.get_placeholder_mask( input_ids, inputs_embeds=image_embeds_keep, image_features=image_embeds_keep)
+                image_mask, _ = model.model.get_placeholder_mask( input_ids, inputs_embeds=inputs_embeds, image_features=image_embeds)
                 inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
                 image_mask = image_mask[...,0]
 

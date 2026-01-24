@@ -425,7 +425,7 @@ class ESNLI_MemmapDataset(Dataset):
       - input_ids (1D long)
       - attention_mask (1D long)
       - image_mask (bool 1D)
-      - text_mask (bool 1D) 
+      - text_mask (bool 1D)
       - image_grid_thw (long[3]) if present
       - vision_embeds (float tensor [Nimg, D]) + vision_len (long) if present
       - pixel_values (float16 [C,H,W]) if stored
@@ -521,13 +521,13 @@ class ESNLI_MemmapDataset(Dataset):
             dtype=v_dtype,
             shape=(total_vision_elems,),
         )
-        C, H, W = self.pixel_shape
-        self.pixel_mm = np.memmap(
-            os.path.join(self.mem_dir, "pixel_values.bin"),
-            mode="r",
-            dtype=np.float16,
-            shape=(self.N, int(C), int(H), int(W)),
-        )
+        # C, H, W = self.pixel_shape
+        # self.pixel_mm = np.memmap(
+        #     os.path.join(self.mem_dir, "pixel_values.bin"),
+        #     mode="r",
+        #     dtype=np.float16,
+        #     shape=(self.N, int(C), int(H), int(W)),
+        # )
 
         print(f"[ESNLI MemmapDataset] split={split} N={self.N} mem_dir={self.mem_dir}")
 
@@ -567,7 +567,7 @@ class ESNLI_MemmapDataset(Dataset):
 
         out["vision_embeds"] = vision
         out["vision_len"] = torch.tensor(nimg, dtype=torch.long)
-        out["pixel_values"] = torch.from_numpy(np.array(self.pixel_mm[idx], copy=True))  # float16
+        # out["pixel_values"] = torch.from_numpy(np.array(self.pixel_mm[idx], copy=True))  # float16
 
         return out
 

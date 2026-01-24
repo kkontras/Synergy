@@ -3608,7 +3608,9 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
 
         # inputs_embeds = torch.cat([vision_embeds, input_ids], dim=0)
-
+        print(input_ids.shape)
+        print(image_mask.sum())
+        print(vision_embeds.shape)
         inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
         # input_ids, attention_mask = self._ensure_cls(input_ids, attention_mask)
 

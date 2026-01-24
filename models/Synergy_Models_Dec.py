@@ -3484,8 +3484,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         return texts
 
     def _encode_from_inputs_embeds(self, inputs_embeds, attention_mask):
-        lm = self.backbone.model.language_model
-        out = lm(
+        out = self.backbone.model.language_model(
             inputs_embeds=inputs_embeds,
             attention_mask=attention_mask,
             output_hidden_states=True,

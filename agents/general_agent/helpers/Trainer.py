@@ -287,9 +287,9 @@ class Trainer():
 
             self.agent.bias_infuser.plot_bias()
             if self.agent.config.training_params.validation:
-                self.agent.validator_tester.validate()
-                if self.agent.config.training_params.rec_test:
-                    self.agent.validator_tester.validate(test_set=True)
+                # self.agent.validator_tester.validate()
+                # if self.agent.config.training_params.rec_test:
+                #     self.agent.validator_tester.validate(test_set=True)
                 self.agent.monitor_n_saver.monitoring()
                 if self.agent.evaluators.train_evaluator.get_early_stop(): return
                 self.agent.model.train()

@@ -520,7 +520,7 @@ def main():
     ap.add_argument("--max_samples", type=int, default=-1)
 
     ap.add_argument("--max_length", type=int, default=512)
-    ap.add_argument("--batch_size", type=int, default=4)
+    ap.add_argument("--batch_size", type=int, default=1)
     ap.add_argument("--num_workers", type=int, default=4)
     ap.add_argument("--shard_size", type=int, default=1000)
 

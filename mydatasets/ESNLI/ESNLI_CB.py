@@ -245,13 +245,10 @@ def build_memmap_from_token_shards(
         vision_mm = np.memmap(vision_bin, mode="w+", dtype=vision_np_dtype, shape=(total_vision_elems,))
 
 
-        if has_pixel and store_pixel_values:
-            assert pixel_shape is not None
-            C, H, W = pixel_shape
-            pixel_bin = os.path.join(out_dir, "pixel_values.bin")
-            pixel_mm = np.memmap(pixel_bin, mode="w+", dtype=np.float16, shape=(N, C, H, W))
-        else:
-            pixel_mm = None
+        C, H, W = pixel_shape
+        pixel_bin = os.path.join(out_dir, "pixel_values.bin")
+        pixel_mm = np.memmap(pixel_bin, mode="w+", dtype=np.float16, shape=(N, C, H, W))
+
 
         # -------- Pass 2: fill --------
         token_cursor = 0
@@ -377,8 +374,8 @@ def build_memmap_from_token_shards(
             "has_vision_embeds": bool(has_vision),
             "vision_dtype": vision_dtype if has_vision else None,
             "vision_dim": int(vision_dim) if vision_dim is not None else None,
-            "store_pixel_values": bool(store_pixel_values and has_pixel),
-            "pixel_shape": list(pixel_shape) if (store_pixel_values and has_pixel and pixel_shape is not None) else None,
+            "store_pixel_values": has_pixel,
+            "pixel_shape": list(pixel_shape),
             "has_token_masks": True,
             "paths": {
                 "offsets": "offsets.npy",

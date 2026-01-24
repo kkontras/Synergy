@@ -3630,7 +3630,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         # ============================================================
         # GENERATION (uses cached vision if available)
         # ============================================================
-        gen_texts = None
+        gen_texts = False
         do_generate = kwargs.get("do_generate", True)  # set True when you want it
         if do_generate:
             # For debugging labels, deterministic decode is usually best

@@ -661,6 +661,8 @@ def main():
         except Exception as e:
             raise Exception(e)
 
+        pixel_values = einops.rearrange(pixel_values, "(b i) c -> b i c", b=batch_size)
+
         B = len(ids)
         for i in range(B):
             # trim to real length (assumes attention_mask marks real tokens)

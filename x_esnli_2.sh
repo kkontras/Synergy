@@ -3,7 +3,7 @@ srun --gres=gpu:1 --time=60:00:00 -p pi_ppliang --nodelist=node2500 -c 15 --mem=
 #conda activate synergy_new
 
 cd /scratch/kkontras/Synergy/mydatasets/ESNLI
-
+rm -rfv /scratch/kkontras/ESNLI/cache_qwen3_vl_2b_nocls_vis/*/_mm
 CUDA_VISIBLE_DEVICES=5 python ESNLI_CodeBook.py --split train --data_root "/scratch/kkontras/ESNLI" --flickr_images_dir "/scratch/kkontras/ESNLI/flickr30k-images/" --model_name "Qwen/Qwen3-VL-2B-Instruct" --output_dir "/scratch/kkontras/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 32
 CUDA_VISIBLE_DEVICES=6 python ESNLI_CodeBook.py --split validation --data_root "/scratch/kkontras/ESNLI" --flickr_images_dir "/scratch/kkontras/ESNLI/flickr30k-images/" --model_name "Qwen/Qwen3-VL-2B-Instruct" --output_dir "/scratch/kkontras/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 32
 CUDA_VISIBLE_DEVICES=7 python ESNLI_CodeBook.py --split test --data_root "/scratch/kkontras/ESNLI" --flickr_images_dir "/scratch/kkontras/ESNLI/flickr30k-images/" --model_name "Qwen/Qwen3-VL-2B-Instruct" --output_dir "/scratch/kkontras/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 32

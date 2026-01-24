@@ -740,7 +740,7 @@ class ESNLI_MemmapDataloader:
         )
 
         # Ensure memmap exists BEFORE creating DataLoader workers
-        for split in ( "train", "validation", "test"):
+        for split in ( "validation", "test"):
             split_dir = os.path.join(cache_root, split)
             mem_dir = os.path.join(split_dir, "_memmap")
             meta_path = os.path.join(mem_dir, "meta.json")

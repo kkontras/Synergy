@@ -628,7 +628,7 @@ def esnli_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0) -> 
     data: Dict[str, Any] = {
         "input_ids": input_ids,
         "attention_mask": attention_mask,
-        "image_mask": image_mask, 
+        "image_mask": image_mask,
         "text_mask": text_mask,
     }
 

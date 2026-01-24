@@ -40,6 +40,7 @@ Example:
     --num_workers 8 \
     --cache_image_embeds
 """
+from torchvision import transforms
 
 import os
 import json
@@ -317,6 +318,7 @@ class ScienceQA_Raw(Dataset):
         require_outside_knowledge: bool = True,
         drop_near_blank: bool = True,
         blank_std_thresh: float = 0.01,
+        image_size: int = 224,
         max_samples: int = 0,
     ):
         super().__init__()
@@ -333,14 +335,27 @@ class ScienceQA_Raw(Dataset):
         if max_samples and max_samples > 0:
             self.keep_indices = self.keep_indices[:max_samples]
 
+        self.train_tf = transforms.Compose([
+            transforms.Resize((image_size, image_size)),
+            transforms.ToTensor(),
+        ])
+        self.eval_tf = self.train_tf
+
     def __len__(self) -> int:
         return len(self.keep_indices)
+
+    def _load_image(self, pil_img: Image.Image):
+        pil_img = pil_img.convert("RGB")
+        if self.split == "train":
+            return self.train_tf(pil_img)
+        else:
+            return self.eval_tf(pil_img)
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         ridx = self.keep_indices[idx]
         ex = self.raw_ds[ridx]
 
-        img: Image.Image = ex["image"].convert("RGB")
+        img: Image.Image = self._load_image(ex["image"])
 
         hint_text = build_scienceqa_hint_text(ex)
 

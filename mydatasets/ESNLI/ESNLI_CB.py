@@ -725,6 +725,7 @@ class ESNLI_MemmapDataset(Dataset):
         if self.pixel_mm is not None:
             out["pixel_values"] = torch.from_numpy(np.array(self.pixel_mm[idx], copy=True))  # float16
 
+        print(out.keys())
         return out
 
 
@@ -959,6 +960,6 @@ class ESNLI_MemmapDataloader:
             )
 
         # Standard split mapping
-        self.train_loader = make_loader("validation", shuffle=True) if os.path.isdir(os.path.join(cache_root, "train")) else None
+        self.train_loader = make_loader("validation", shuffle=True) if os.path.isdir(os.path.join(cache_root, "validation")) else None
         self.valid_loader = make_loader("validation", shuffle=False) if os.path.isdir(os.path.join(cache_root, "validation")) else None
         self.test_loader = make_loader("test", shuffle=False) if os.path.isdir(os.path.join(cache_root, "test")) else None

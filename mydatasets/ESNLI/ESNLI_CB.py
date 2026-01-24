@@ -376,7 +376,7 @@ class ESNLI_MemmapDataset(Dataset):
                     ve_t = ve_t.view(1, -1)
                 out["vision_embeds"] = ve_t.to(torch.float32 if ve_t.dtype != torch.float32 else torch.float32)
 
-        print(ex.keys())
+        print(ex["input_embeds"].shape)
         # optional vision
         ve = ex.get("input_embeds", None)
         if ve is not None:

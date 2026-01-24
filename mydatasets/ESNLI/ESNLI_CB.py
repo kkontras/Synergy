@@ -313,7 +313,7 @@ class ESNLI_MemmapDataset(Dataset):
         self.items = items
 
     def __len__(self) -> int:
-        return len(self.items)
+        return 10
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         ex = self.items[idx]

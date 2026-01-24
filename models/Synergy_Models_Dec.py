@@ -4020,7 +4020,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             model_name,
             cache_dir=hf_cache,
         )
-        print(self.backbone)
         if added > 0:
             self.backbone.resize_token_embeddings(len(tok))
 

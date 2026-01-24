@@ -3602,7 +3602,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         tok = self.processor.tokenizer
         input_ids = proc["input_ids"].to(device)
         attention_mask = proc["attention_mask"].to(device)
-        input_ids, attention_mask = self._ensure_cls(input_ids, attention_mask)
 
         image_mask = proc["image_mask"].to(device)
         vision_embeds = proc["vision_embeds"].to(device)
@@ -3611,6 +3610,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         # inputs_embeds = torch.cat([vision_embeds, input_ids], dim=0)
 
         inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
+        # input_ids, attention_mask = self._ensure_cls(input_ids, attention_mask)
 
         # Encode via LM directly (skips vision tower)
         hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)

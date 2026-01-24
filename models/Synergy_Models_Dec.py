@@ -3597,7 +3597,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         import torch.nn.functional as F
 
         proc = x
-        print(proc.shape)
+        print(proc.keys())
         device = self.backbone.device
         tok = self.processor.tokenizer
         input_ids = proc["input_ids"].to(device)

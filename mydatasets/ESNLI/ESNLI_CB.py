@@ -222,6 +222,25 @@ def build_memmap_from_token_shards(
                 ve = ex.get("vision_embeds", None)
                 if ve is not None:
                     ve_t = ve.detach().cpu() if torch.is_tensor(ve) else torch.as_tensor(ve).detach().cpu()
+                    # DEBUG: inspect raw shard content (prints once)
+                    if not hasattr(build_memmap_from_token_shards, "_dbg_printed"):
+                        build_memmap_from_token_shards._dbg_printed = True
+                        print("=== DEBUG (raw shard example) ===")
+                        print("vision_embeds raw shape:", tuple(ve_t.shape))
+                        g = ex.get("image_grid_thw", None)
+                        if torch.is_tensor(g):
+                            g = g.detach().cpu().tolist()
+                        print("image_grid_thw:", g)
+                        pv = ex.get("pixel_values", None)
+                        if pv is None:
+                            print("pixel_values: None")
+                        else:
+                            pv_t = pv.detach().cpu() if torch.is_tensor(pv) else torch.as_tensor(pv).detach().cpu()
+                            print("pixel_values shape:", tuple(pv_t.shape))
+                        print("id:", ex.get("id", None))
+                        print("===============================")
+
+
                     if ve_t.numel() > 0:
                         has_vision = True
                         if ve_t.dim() == 1:

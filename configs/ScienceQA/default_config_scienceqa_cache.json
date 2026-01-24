@@ -51,7 +51,7 @@
   "dataset": {
     "dataloader_class": "ScienceQA_MemmapDataloader",
     "data_roots": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA",
-    "cache_root": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_tokens2B"
+    "cache_root": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_qwen3_vl_2b_nocls_vis"
   },
   "model": {
     "save_base_dir": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA"

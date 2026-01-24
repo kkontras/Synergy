@@ -240,12 +240,9 @@ def _infer_image_token_ids(tokenizer) -> List[int]:
 
     cand_strs = ["<|vision_start|>", "<|vision_end|>",'<|image_pad|>', '<|im_start|>', '<|im_end|>' ]
     for s in cand_strs:
-        try:
-            tid = tokenizer.convert_tokens_to_ids(s)
-            if isinstance(tid, int) and tid >= 0 and tid != getattr(tokenizer, "unk_token_id", -999):
-                ids.append(int(tid))
-        except Exception:
-            pass
+        tid = tokenizer.convert_tokens_to_ids(s)
+        if isinstance(tid, int) and tid >= 0 and tid != getattr(tokenizer, "unk_token_id", -999):
+            ids.append(int(tid))
 
     return sorted(set(ids))
 
@@ -303,6 +300,7 @@ def build_image_text_token_masks(enc_cpu: Dict[str, torch.Tensor], processor) ->
     # 2) Infer from tokenizer image token ids
     tok = _get_tokenizer_from_processor(processor)
     img_token_ids = _infer_image_token_ids(tok)
+    print(img_token_ids)
     if len(img_token_ids) > 0:
         img_ids = torch.tensor(img_token_ids, dtype=input_ids.dtype, device=input_ids.device)
         img_mask = torch.isin(input_ids, img_ids)

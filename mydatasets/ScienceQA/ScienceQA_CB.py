@@ -552,18 +552,65 @@ class ScienceQA_MemmapDataset(Dataset):
             "hint_mask": torch.from_numpy(np.array(self.hint_mm[off:off + L], copy=True)).bool(),
         }
 
-        if self.vision_mm is not None and self.vision_offsets is not None and self.vision_lengths is not None and self.D > 0:
-            voff = int(self.vision_offsets[idx])
-            nimg = int(self.vision_lengths[idx])
+        # if self.vision_mm is not None and self.vision_offsets is not None and self.vision_lengths is not None and self.D > 0:
+        #     voff = int(self.vision_offsets[idx])
+        #     nimg = int(self.vision_lengths[idx])
+        #     if nimg <= 0:
+        #         out["vision_embeds"] = torch.empty((0, self.D), dtype=torch.float16 if self.vision_dtype == "float16" else torch.float32)
+        #     else:
+        #         start = voff
+        #         end = voff + nimg * self.D
+        #         flat = np.array(self.vision_mm[start:end], copy=True)
+        #         out["vision_embeds"] = torch.from_numpy(flat).view(nimg, self.D)
+        #     print(out["vision_embeds"].shape)
+        #     out["vision_len"] = torch.tensor(nimg, dtype=torch.long)
+
+        # ---- vision (ROBUST) ----
+        if (
+            self.vision_mm is not None
+            and self.vision_offsets is not None
+            and self.vision_lengths is not None
+            and self.D > 0
+        ):
+            voff_raw = int(self.vision_offsets[idx])
+            nimg_raw = int(self.vision_lengths[idx])
+
+            # total number of float entries in the 1D vision memmap
+            total_elems = int(self.vision_mm.shape[0])
+
+            # Prefer: offsets are ELEMENT offsets
+            start = voff_raw
+            nimg = max(0, nimg_raw)
+            end = start + nimg * self.D
+
+            # If it doesn't fit, try interpreting offsets as ROW offsets: start = voff * D
+            if (start < 0) or (end > total_elems):
+                start = voff_raw * self.D
+                end = start + nimg * self.D
+
+            # Final clamp so slice is always valid
+            if start < 0:
+                start = 0
+            if start > total_elems:
+                start = total_elems
+
+            avail = total_elems - start
+            max_nimg = avail // self.D if self.D > 0 else 0
+            if nimg > max_nimg:
+                nimg = int(max_nimg)
+            end = start + nimg * self.D
+
             if nimg <= 0:
-                out["vision_embeds"] = torch.empty((0, self.D), dtype=torch.float16 if self.vision_dtype == "float16" else torch.float32)
+                out["vision_embeds"] = torch.empty(
+                    (0, self.D),
+                    dtype=torch.float16 if self.vision_dtype == "float16" else torch.float32,
+                )
             else:
-                start = voff
-                end = voff + nimg * self.D
                 flat = np.array(self.vision_mm[start:end], copy=True)
                 out["vision_embeds"] = torch.from_numpy(flat).view(nimg, self.D)
-            print(out["vision_embeds"].shape)
-            out["vision_len"] = torch.tensor(nimg, dtype=torch.long)
+
+            # IMPORTANT: vision_len must match the returned vision_embeds.shape[0]
+            out["vision_len"] = torch.tensor(int(nimg), dtype=torch.long)
 
         if self.deep_mm is not None and self.deep_offsets is not None and self.deep_tlens is not None and self.deep_nlens is not None:
             doff = int(self.deep_offsets[idx])
@@ -749,7 +796,7 @@ class ScienceQA_MemmapDataloader:
         prefetch_factor: int = 2,
         persistent_workers: bool = True,
         pin_memory: bool = True,
-        force_rebuild_memmap: bool = False,
+        force_rebuild_memmap: bool = True,
     ):
         cache_root = config.dataset.cache_root
         batch_size = int(config.training_params.batch_size)

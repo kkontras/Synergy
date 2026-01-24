@@ -883,7 +883,7 @@ class ESNLI_MemmapDataloader:
         prefetch_factor: int = 2,
         persistent_workers: bool = True,
         pin_memory: bool = True,
-        force_rebuild_memmap: bool = True,
+        force_rebuild_memmap: bool = False,
     ):
         cache_root = config.dataset.cache_root
         batch_size = int(config.training_params.batch_size)

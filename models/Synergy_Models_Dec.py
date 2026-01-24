@@ -3690,8 +3690,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
                     min_new_tokens=min_new_tokens,
                     do_sample=do_sample,
                     temperature=temperature,
-                    top_p=top_p,
-                    debug=bool(kwargs.get("gen_debug", False)),
+                    top_p=top_p
                 )
             for i in gen_texts:
                 print("---------")

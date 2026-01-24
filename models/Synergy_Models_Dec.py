@@ -3841,6 +3841,7 @@ class QwenVL_ESNLI_Synergy_FrozenCLS_VisualEmb(nn.Module):
 
         # lm = self.backbone.model.language_model
         # inputs_embeds = lm.embed_tokens(input_ids)  # (B, T, d_model)
+        self.backbone.eval()
         inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids)
         position_ids = None
         with torch.no_grad():

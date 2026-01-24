@@ -102,19 +102,6 @@ def _ensure_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)
 
 
-def _as_1d_cpu_tensor(x, dtype: Optional[torch.dtype] = None) -> torch.Tensor:
-    """Best-effort: turn x into 1D CPU tensor. Missing/None -> empty."""
-    if x is None:
-        return torch.empty((0,), dtype=dtype or torch.long)
-    if torch.is_tensor(x):
-        t = x.detach().cpu().view(-1)
-        return t.to(dtype) if dtype is not None else t
-    try:
-        t = torch.as_tensor(x).detach().cpu().view(-1)
-        return t.to(dtype) if dtype is not None else t
-    except Exception:
-        return torch.empty((0,), dtype=dtype or torch.long)
-
 
 def _as_bool_1d_cpu_tensor(x, L: int) -> torch.Tensor:
     """Best-effort bool mask length L. Missing -> zeros. Wrong length -> pad/crop."""
@@ -797,6 +784,20 @@ def _pad_2d_by_rows(seqs: List[torch.Tensor], pad_val: float = 0.0) -> Tuple[tor
             mask[i, :n] = True
 
     return padded, mask
+
+def _as_1d_cpu_tensor(x, dtype: Optional[torch.dtype] = None) -> torch.Tensor:
+    """Best-effort: turn x into 1D CPU tensor. Missing/None -> empty."""
+    if x is None:
+        return torch.empty((0,), dtype=dtype or torch.long)
+    if torch.is_tensor(x):
+        # reshape handles non-contiguous tensors safely
+        t = x.detach().cpu().reshape(-1)
+        return t.to(dtype) if dtype is not None else t
+    try:
+        t = torch.as_tensor(x).detach().cpu().reshape(-1)
+        return t.to(dtype) if dtype is not None else t
+    except Exception:
+        return torch.empty((0,), dtype=dtype or torch.long)
 
 
 def esnli_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0) -> Dict[str, Any]:

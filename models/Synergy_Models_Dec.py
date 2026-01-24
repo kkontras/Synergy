@@ -3084,11 +3084,11 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
             return_dict_in_generate=False,
         )
 
-        # Debug shapes
-        if debug:
-            print("input_ids:", input_ids.shape)
-            print("gen_ids:", gen_ids.shape)
-            print("new tokens:", gen_ids.shape[1] - input_ids.shape[1])
+        # # Debug shapes
+        # if debug:
+        #     print("input_ids:", input_ids.shape)
+        #     print("gen_ids:", gen_ids.shape)
+        #     print("new tokens:", gen_ids.shape[1] - input_ids.shape[1])
 
         # Decode only generated continuation (recommended)
         if strip_prompt:
@@ -3173,20 +3173,20 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
         # # ------------------------------------------------------------------
         # # 3) Inspect what the MODEL ACTUALLY GETS
         # # ------------------------------------------------------------------
-        print("\n=== PROCESSOR OUTPUT ===")
-        print("proc keys:", proc.keys())
-
-        pv = proc.get("pixel_values", None)
-        if pv is None:
-            print("NO pixel_values in proc -> text-only VL!")
-        else:
-            print("pixel_values shape:", pv.shape, pv.dtype, pv.device)
-            print(
-                "pixel_values min/max/mean:",
-                pv.min().item(),
-                pv.max().item(),
-                pv.mean().item(),
-            )
+        # print("\n=== PROCESSOR OUTPUT ===")
+        # print("proc keys:", proc.keys())
+        #
+        # pv = proc.get("pixel_values", None)
+        # if pv is None:
+        #     print("NO pixel_values in proc -> text-only VL!")
+        # else:
+        #     print("pixel_values shape:", pv.shape, pv.dtype, pv.device)
+        #     print(
+        #         "pixel_values min/max/mean:",
+        #         pv.min().item(),
+        #         pv.max().item(),
+        #         pv.mean().item(),
+        #     )
 
         # Move tensors to model device (DO NOT move non-tensors)
         proc = {k: (v.to(model_device) if torch.is_tensor(v) else v) for k, v in proc.items()}

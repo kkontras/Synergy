@@ -3464,22 +3464,16 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             n_mask = int(pos.numel())
             n_vis = int(vision_embeds[b].size(0))
 
-            if strict and (n_mask != n_vis):
+            if (n_mask != n_vis):
                 raise ValueError(
                     f"Sample {b}: image_mask has {n_mask} positions but vision_embeds has {n_vis} tokens"
                 )
 
-            n = min(n_mask, n_vis)
-            if n == 0:
-                continue
+            n = n_vis
 
             # Replace the first n image-token positions with first n vision tokens
             inputs_embeds[b, pos[:n], :] = vision_embeds[b, :n, :].to(inputs_embeds.dtype)
 
-            if strict is False and n_mask != n_vis:
-                # (optional) warn once per sample for debugging
-                # print(f"[WARN] Sample {b}: n_mask={n_mask} n_vis={n_vis} -> using n={n}")
-                pass
 
         return inputs_embeds
 

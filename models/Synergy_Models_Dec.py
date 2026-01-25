@@ -4282,7 +4282,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         # print(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]).shape)
 
         # inputs_embeds = inputs_embeds.masked_scatter(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]), vision_embeds)
-        position_ids = einops.rearrange(position_ids, "b c i j-> c b j", i=1)
+        position_ids = einops.rearrange(position_ids, "b c i j-> c b (i j)", i=1)
         # deep_stack_viz = einops.rearrange(deep_stack_viz, "b c i j -> c (b i) j")
         deep_stack_viz = [deep_stack_viz[i] for i in range(len(deep_stack_viz))]
         # print(deep_stack_viz.shape)

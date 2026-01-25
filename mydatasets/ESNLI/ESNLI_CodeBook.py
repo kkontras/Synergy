@@ -517,6 +517,7 @@ def main():
         trust_remote_code=True,
     )
     model.eval()
+    model.requires_grad_(False)
 
     split_out = os.path.join(args.output_dir, args.split)
     os.makedirs(split_out, exist_ok=True)
@@ -580,12 +581,22 @@ def main():
         input_ids_cpu = input_ids.detach().cpu()
         attention_cpu = attention_mask.detach().cpu()
 
-        # Build token embeddings then scatter image features
-        token_embeds = model.model.get_input_embeddings()(input_ids.to(model.device))  # (B,T,2048)
 
+        # Build token embeddings then scatter image features
         with torch.no_grad():
+            input_ids_d = input_ids.to(model.device, non_blocking=True)
+            attn_d = attention_mask.to(model.device, non_blocking=True)
+
+            token_embeds = model.model.get_input_embeddings()(input_ids_d)  # (B,T,2048)
+
             pv = pixel_values.to(model.device, dtype=pixel_values.dtype, non_blocking=True)
             gthw = image_grid_thw.to(model.device, non_blocking=True)
+
+
+            print("model device example:", next(model.parameters()).device)
+            print("token_embeds device:", token_embeds.device)
+            print("pixel_values device after .to:", pv.shape)
+            print("pixel_values device after .to:", gthw.device)
 
             image_embeds_list, deep_stack_viz_list = model.get_image_features(pv, gthw)
 
@@ -601,13 +612,13 @@ def main():
             token_embeds = token_embeds.masked_scatter(placeholder_mask, image_embeds_cat)
 
             # Force fp16 for caching (your requirement)
-            token_embeds = token_embeds.to(torch.float16)
+            # token_embeds = token_embeds.to(torch.float16)
 
             position_ids, _ = model.model.get_rope_index(
-                input_ids.to(model.device),
+                input_ids_d,
                 gthw,
                 None,
-                attention_mask=attention_mask.to(model.device),
+                attention_mask=attn_d,
             )
 
         # Normalize + CPU

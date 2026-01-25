@@ -1,26 +1,18 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-ESNLI-VE cache builder for Qwen/Qwen3-VL-2B-Instruct
-- NO <CLS> in cached tokens (append later)
-- YES vision embeddings cached
-- YES token-level masks cached:
-    item["masks"]["image"] : uint8 [L]
-    item["masks"]["text"]  : uint8 [L]   (attention & ~image)
-
-This version DOES NOT assume local CSV names.
-It downloads/uses the ESNLI-VE repo zip and auto-finds train/dev/test files.
-
-Usage:
-python esnli_cache_qwen3vl_2b_nocls_vis_WITH_MASKS.py \
-  --data_root /scratch/kkontras/ESNLI \
-  --flickr_images_dir /scratch/kkontras/ESNLI/flickr30k-images \
-  --model_name Qwen/Qwen3-VL-2B-Instruct \
-  --output_dir /scratch/kkontras/ESNLI/cache_qwen3_vl_2b_nocls_vis \
-  --split validation \
-  --source evil
-"""
+# esnli_cache_qwen3vl_b1_proof_dump_and_verify.py
+# Batch-size=1 ONLY. "Proofed" against padding/collation mistakes by:
+#   (1) Saving EXACT tensors you will pass to language_model (no extra trimming beyond attention keep)
+#   (2) Immediately re-loading the just-written shard and printing shapes + stats
+#
+# Saves per item:
+#   input_ids            : (1, L) int64
+#   attention_mask       : (1, L) int64
+#   position_ids         : (3, 1, L) int64
+#   input_embeds         : (1, L, 2048) float16
+#   visual_pos_masks     : (1, L) bool
+#   deepstack_visual_embeds : (K, 64, 2048) float32 (K levels; e.g. 3)
+# plus id/label/prompt
+#
+# IMPORTANT: this script enforces batch_size=1 and will error otherwise.
 
 import os
 import json
@@ -32,7 +24,6 @@ import logging
 import urllib.request
 from typing import Any, Dict, List, Optional, Sequence
 
-import einops
 import numpy as np
 import pandas as pd
 import torch
@@ -40,18 +31,14 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
 
-from transformers import AutoProcessor
-from transformers import Qwen3VLForConditionalGeneration
+from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
 
-# -----------------------------
-# Labels
-# -----------------------------
 LABEL2IDX = {"entailment": 0, "neutral": 1, "contradiction": 2}
 
 
 # -----------------------------
-# Download / repo handling (ROBUST)
+# Download / repo handling
 # -----------------------------
 def _download_url(url: str, dst_path: str, logger: logging.Logger) -> None:
     os.makedirs(os.path.dirname(dst_path), exist_ok=True)
@@ -63,10 +50,6 @@ def _download_url(url: str, dst_path: str, logger: logging.Logger) -> None:
 
 
 def ensure_esnli_repo(cache_root: str, source: str, logger: logging.Logger) -> str:
-    """
-    Downloads and extracts a repo zip into cache_root if needed.
-    Returns extracted folder path.
-    """
     if source == "evil":
         zip_url = "https://github.com/multimodal-ai-lab/e-ViL/archive/refs/heads/main.zip"
         zip_name = "e-ViL-main.zip"
@@ -96,12 +79,8 @@ def ensure_esnli_repo(cache_root: str, source: str, logger: logging.Logger) -> s
 
 
 def find_esnli_ve_split_files(repo_root: str) -> Dict[str, str]:
-    """
-    Best-effort search for train/dev/test files in extracted repo.
-    """
     candidates = glob.glob(os.path.join(repo_root, "**", "*.*"), recursive=True)
     split_paths: Dict[str, str] = {}
-
     for split in ["train", "dev", "test"]:
         best = []
         for p in candidates:
@@ -116,7 +95,6 @@ def find_esnli_ve_split_files(repo_root: str) -> Dict[str, str]:
                 )
             )
             split_paths[split] = best[0]
-
     missing = [s for s in ["train", "dev", "test"] if s not in split_paths]
     if missing:
         raise RuntimeError(f"Could not find split files for {missing} inside {repo_root}. Found: {split_paths}")
@@ -176,10 +154,6 @@ def label_to_index(gold: Any) -> int:
 
 
 def find_image_path(fid: str, flickr_images_dir: str) -> Optional[str]:
-    """
-    fid can be '1000092795' or '1000092795.jpg'
-    Searches recursively as fallback.
-    """
     if fid is None:
         return None
     fid = str(fid).strip()
@@ -208,110 +182,9 @@ def tensor_image_to_pil(img_t: torch.Tensor) -> Image.Image:
 
 
 # -----------------------------
-# Token-mask helpers
-# -----------------------------
-def _get_tokenizer_from_processor(processor):
-    if hasattr(processor, "tokenizer") and processor.tokenizer is not None:
-        return processor.tokenizer
-    if hasattr(processor, "processor") and hasattr(processor.processor, "tokenizer"):
-        return processor.processor.tokenizer
-    return None
-
-
-def _infer_image_token_ids(tokenizer) -> List[int]:
-    ids: List[int] = []
-
-    cand_strs = ['<|image_pad|>']
-    for s in cand_strs:
-        tid = tokenizer.convert_tokens_to_ids(s)
-        if isinstance(tid, int) and tid >= 0 and tid != getattr(tokenizer, "unk_token_id", -999):
-            ids.append(int(tid))
-
-    return sorted(set(ids))
-
-
-from typing import Dict
-import torch
-
-def build_image_text_token_masks(enc_cpu: Dict[str, torch.Tensor], processor) -> Dict[str, torch.Tensor]:
-    """
-    Returns bool masks (CPU):
-      masks["image"] : [B,T]
-      masks["text"]  : [B,T]  (attention & ~image)
-
-    If processor provides an image mask, we use it.
-    Otherwise infer from tokenizer image token ids.
-
-    Asserts:
-      - image/text masks are not all-zero across the batch
-      - text mask has at least one token per sample (under attention)
-      - if image tokens are expected, image mask should not be all-zero (see note below)
-    """
-    input_ids = enc_cpu["input_ids"]
-    attention_mask = enc_cpu.get("attention_mask", None)
-    if attention_mask is None:
-        attention_mask = torch.ones_like(input_ids, dtype=torch.long)
-
-    att_bool = attention_mask.to(torch.bool)
-
-    def _finish(img_mask: torch.Tensor) -> Dict[str, torch.Tensor]:
-        img_mask = img_mask.to(torch.bool) & att_bool
-        txt_mask = att_bool & (~img_mask)
-
-        # ---- asserts ----
-        # Text should exist (otherwise prompt is empty / masking broken)
-        if (txt_mask.sum(dim=1) == 0).any():
-            bad = (txt_mask.sum(dim=1) == 0).nonzero(as_tuple=False).view(-1).tolist()
-            raise AssertionError(f"text_mask has zero tokens (under attention_mask) for samples: {bad}")
-
-        # At least some text tokens across batch
-        if txt_mask.sum().item() == 0:
-            raise AssertionError("text_mask is all-zero across the batch. attention_mask or masking is broken.")
-
-        # Image mask: depending on your prompting, it MAY be valid to have zero image tokens
-        # (e.g., if you accidentally built text-only prompts).
-        # But for VL prompts with an image, we usually want at least one image token.
-        if img_mask.sum().item() == 0:
-            raise AssertionError(
-                "image_mask is all-zero across the batch. "
-                "This usually means the processor did not insert image tokens (text-only), "
-                "or image token ids were not inferred correctly."
-            )
-
-        return {"image": img_mask, "text": txt_mask}
-
-    # 1) Use processor-provided mask if available
-    candidate_keys = ["image_mask", "image_token_mask", "vision_token_mask", "media_token_mask"]
-    for k in candidate_keys:
-        m = enc_cpu.get(k, None)
-        if torch.is_tensor(m) and m.shape == input_ids.shape:
-            return _finish(m)
-
-    # 2) Infer from tokenizer image token ids
-    tok = _get_tokenizer_from_processor(processor)
-    img_token_ids = _infer_image_token_ids(tok)
-    if len(img_token_ids) > 0:
-        img_ids = torch.tensor(img_token_ids, dtype=input_ids.dtype, device=input_ids.device)
-        img_mask = torch.isin(input_ids, img_ids)
-        return _finish(img_mask)
-
-    # 3) No way to infer image tokens -> fail (since you asked to assert)
-    raise AssertionError(
-        "Could not build image_mask: no processor-provided image mask and no inferable image token ids. "
-        "Tokenizer may not expose image token ids, or this is not a VL tokenizer."
-    )
-
-
-
-# -----------------------------
 # Dataset + Dataloader
 # -----------------------------
 class ESNLIVE_Dataset(Dataset):
-    """
-    ESNLI-VE dataset returning hypothesis + image + label.
-    Loads split rows from repo zip, not by local CSV naming.
-    """
-
     def __init__(
         self,
         data_root: str,
@@ -359,8 +232,7 @@ class ESNLIVE_Dataset(Dataset):
         self.logger.info(f"split={split} kept {len(self.keep)} / {len(self.rows)}")
 
     def __len__(self) -> int:
-        # return len(self.keep)
-        return 20
+        return 10
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         ex = self.rows[self.keep[idx]]
@@ -382,6 +254,7 @@ class ESNLIVE_Dataset(Dataset):
 
 
 def collate(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
+    # NOTE: this collate can support B>1 but we enforce B=1 later.
     return {
         "id": [b["id"] for b in batch],
         "text": [b["text"] for b in batch],
@@ -403,103 +276,84 @@ def make_loader(ds: Dataset, batch_size: int, num_workers: int, shuffle: bool = 
         ds,
         batch_size=batch_size,
         shuffle=shuffle,
-        num_workers=0,
+        num_workers=int(num_workers),
         pin_memory=True,
         drop_last=False,
         collate_fn=collate,
-        worker_init_fn=seed_worker,
+        worker_init_fn=seed_worker if int(num_workers) > 0 else None,
         generator=g,
     )
 
 
 # -----------------------------
-# Prompt (NO CLS)
+# Prompt
 # -----------------------------
-def build_prompt_cls( hypothesis: Sequence[str]) -> List[str]:
+def build_prompt_cls(hypothesis: Sequence[str]) -> List[str]:
     instr_text = """
-        You are given an image and a hypothesis about the image.
-        Decide whether the hypothesis is supported by the image.
+You are given an image and a hypothesis about the image.
+Decide whether the hypothesis is supported by the image.
 
-        Choose EXACTLY ONE label: entailment, neutral, or contradiction.
+Choose EXACTLY ONE label: entailment, neutral, or contradiction.
 
-        Definitions:
-        - entailment:
-          The hypothesis is clearly true given what is visible in the image.
+Answer format:
+Label: one word only (entailment / neutral / contradiction)
+Explanation: free text
 
-        - contradiction:
-          The hypothesis is clearly false given the image.
-          This includes cases where the hypothesis describes an action, state, or situation
-          that is incompatible with what is visible in the image.
-
-        - neutral:
-          The image does not provide enough information to decide.
-          The hypothesis could be true or false, and nothing visible contradicts it.
-
-        Important rules:
-        - "The image does not show the hypothesis" is NOT enough to choose neutral.
-        - If the hypothesis claims something that is NOT happening in the image
-          (e.g., walking vs sitting, outdoors vs clearly indoors), choose contradiction.
-        - Use neutral ONLY when the image neither supports NOR contradicts the hypothesis.
-
-        Answer format:
-        Label: one word only (entailment / neutral / contradiction)
-        Explanation: free text
-        
-        <CLS>
-        """
-
-    return [
-        f"Hypothesis:\n{str(h).strip()}\n\n{instr_text}"
-        for h in hypothesis
-    ]
-
+<CLS>
+"""
+    return [f"Hypothesis:\n{str(h).strip()}\n\n{instr_text}" for h in hypothesis]
 
 
 # -----------------------------
-# Vision embedding extraction
+# Shard write + immediate verify
 # -----------------------------
-def extract_vision_embeds(model, pixel_values: torch.Tensor, image_grid_thw: torch.Tensor) -> torch.Tensor:
-
-    if hasattr(model, "model") and hasattr(model.model, "visual"):
-        out = model.model.visual(pixel_values, grid_thw=image_grid_thw)
-    elif hasattr(model, "visual"):
-        out = model.visual(pixel_values, grid_thw=image_grid_thw)
-    else:
-        raise AttributeError("No visual module found on model (expected model.model.visual or model.visual).")
-
-    # Case 1: direct tensor
-    if torch.is_tensor(out):
-        return out
-
-    # Case 2: tuple/list -> pick first tensor element
-    if isinstance(out, (tuple, list)):
-        for z in out:
-            if torch.is_tensor(z):
-                return z
-        raise TypeError(f"visual() returned tuple/list but no tensor found. Types: {[type(z) for z in out]}")
-
-    # Case 3: dict -> try common keys
-    if isinstance(out, dict):
-        for k in ["last_hidden_state", "hidden_states", "vision_embeds", "embeds", "features", "x"]:
-            if k in out and torch.is_tensor(out[k]):
-                return out[k]
-        # fallback: first tensor value
-        for v in out.values():
-            if torch.is_tensor(v):
-                return v
-        raise TypeError(f"visual() returned dict but no tensor values found. Keys: {list(out.keys())}")
-
-    raise TypeError(f"Unrecognized visual() output type: {type(out)}")
-
-# -----------------------------
-# Sharding
-# -----------------------------
-def flush_shard(items: List[Dict[str, Any]], split_out: str, shard_idx: int, manifest_path: str) -> None:
+def flush_shard(items: List[Dict[str, Any]], split_out: str, shard_idx: int, manifest_path: str) -> str:
     os.makedirs(split_out, exist_ok=True)
     shard_file = os.path.join(split_out, f"shard_{shard_idx:05d}.pt")
     torch.save(items, shard_file)
     with open(manifest_path, "a", encoding="utf-8") as f:
         f.write(json.dumps({"shard": os.path.basename(shard_file), "n": len(items)}) + "\n")
+    return shard_file
+
+
+def _tensor_stats_line(name: str, t: Any) -> str:
+    if not torch.is_tensor(t):
+        return f"{name:22s}: {type(t)}"
+    if t.numel() == 0:
+        return f"{name:22s}: shape={tuple(t.shape)} dtype={t.dtype} device={t.device} numel=0"
+    x = t.detach()
+    # compute in float for stable stats
+    xf = x.float() if x.dtype not in (torch.float16, torch.bfloat16, torch.float32, torch.float64) else x.float()
+    mn = xf.min().item()
+    mx = xf.max().item()
+    mean = xf.mean().item()
+    std = xf.std(unbiased=False).item()
+    nonzero = (x != 0).float().mean().item() * 100.0
+    return (f"{name:22s}: shape={tuple(t.shape)} dtype={t.dtype} device={t.device} "
+            f"min={mn:.6g} max={mx:.6g} mean={mean:.6g} std={std:.6g} nonzero={nonzero:.2f}%")
+
+
+def verify_shard(shard_path: str, n_show: int = 1) -> None:
+    print(f"\n[verify] loading shard: {shard_path}")
+    items = torch.load(shard_path, map_location="cpu")
+    if not isinstance(items, (list, tuple)):
+        raise TypeError(f"Shard is not list/tuple: {type(items)}")
+    print(f"[verify] items: {len(items)}")
+
+    n_show = min(int(n_show), len(items))
+    for i in range(n_show):
+        ex = items[i]
+        print(f"\n[verify] example {i} id={ex.get('id', None)}")
+        keys = [
+            "input_ids",
+            "attention_mask",
+            "position_ids",
+            "input_embeds",
+            "visual_pos_masks",
+            "deepstack_visual_embeds",
+        ]
+        for k in keys:
+            print(_tensor_stats_line(k, ex.get(k, None)))
 
 
 # -----------------------------
@@ -513,30 +367,31 @@ def main():
     ap.add_argument("--model_name", required=True)
     ap.add_argument("--output_dir", required=True)
 
-    ap.add_argument("--split", type=str, default="train", choices=["train", "dev", "test", "validation"])
+    ap.add_argument("--split", type=str, default="validation", choices=["train", "dev", "test", "validation"])
     ap.add_argument("--source", type=str, default="evil", choices=["evil", "virginie"])
 
     ap.add_argument("--image_size", type=int, default=224)
     ap.add_argument("--max_samples", type=int, default=-1)
 
     ap.add_argument("--max_length", type=int, default=512)
+
     ap.add_argument("--batch_size", type=int, default=1)
-    ap.add_argument("--num_workers", type=int, default=4)
+    ap.add_argument("--num_workers", type=int, default=0)
+
     ap.add_argument("--shard_size", type=int, default=1000)
-
-    ap.add_argument("--label_options", type=str, default="entailment,neutral,contradiction")
-
-    ap.add_argument("--cache_vision_embeds", type=int, default=1)
     ap.add_argument("--device", type=str, default="cuda:0")
-    ap.add_argument("--fp16", type=int, default=0)
-    ap.add_argument("--bf16", type=int, default=0)
+    ap.add_argument("--dtype", type=str, default="float16", choices=["float32", "float16", "bfloat16"])
+
+    ap.add_argument("--verify_every_flush", type=int, default=1)   # verify right after each flush
+    ap.add_argument("--verify_n_show", type=int, default=1)        # print first N examples per shard
 
     args = ap.parse_args()
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
-    logger = logging.getLogger("ESNLI_Codebook_NoCLS_VIS_MASKS")
+    if int(args.batch_size) != 1:
+        raise ValueError("This debug script is batch_size=1 ONLY. Set --batch_size 1.")
 
-    label_options = [x.strip() for x in args.label_options.split(",") if x.strip()]
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
+    logger = logging.getLogger("ESNLI_Cache_Qwen3VL_B1_VERIFY")
 
     ds = ESNLIVE_Dataset(
         data_root=args.data_root,
@@ -546,15 +401,20 @@ def main():
         image_size=args.image_size,
         max_samples=None if args.max_samples < 0 else int(args.max_samples),
     )
-    dl = make_loader(ds, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=False)
+    dl = make_loader(ds, batch_size=1, num_workers=int(args.num_workers), shuffle=False)
 
     processor = AutoProcessor.from_pretrained(args.model_name, trust_remote_code=True)
 
-    dtype = torch.float32
+    if args.dtype == "float16":
+        model_dtype = torch.float16
+    elif args.dtype == "bfloat16":
+        model_dtype = torch.bfloat16
+    else:
+        model_dtype = torch.float32
 
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         args.model_name,
-        torch_dtype=dtype,
+        torch_dtype=model_dtype,
         device_map={"": args.device} if args.device.startswith("cuda") else None,
         trust_remote_code=True,
     )
@@ -570,231 +430,171 @@ def main():
     shard_idx = 0
 
     logger.info(f"Writing cache to: {split_out}")
-    logger.info(f"Model: {args.model_name} | dtype={dtype} | device={args.device}")
-    logger.info(f"cache_vision_embeds={args.cache_vision_embeds} | batch_size={args.batch_size} | shard_size={args.shard_size}")
+    logger.info(f"Model: {args.model_name} | dtype={model_dtype} | device={args.device}")
+    logger.info(f"batch_size=1 | shard_size={args.shard_size} | max_length={args.max_length}")
+    logger.info("This script saves exactly what you later feed to language_model (after attention keep).")
 
     from tqdm import tqdm
 
     for batch in tqdm(dl, desc=f"[cache] {args.split}"):
+        # enforce B=1
         hyp: List[str] = batch["text"]
-        images_t: torch.Tensor = batch["image"]  # [B,3,H,W]
-        labels: torch.Tensor = batch["label"]    # [B]
+        images_t: torch.Tensor = batch["image"]  # [1,3,H,W]
+        labels: torch.Tensor = batch["label"]    # [1]
         ids: List[str] = batch["id"]
-        batch_size = images_t.shape[0]
+        if images_t.shape[0] != 1:
+            raise RuntimeError(f"Expected batch size 1 but got {images_t.shape[0]}")
+        if len(hyp) != 1 or len(ids) != 1:
+            raise RuntimeError("Expected single element lists for text/id")
 
-        texts = build_prompt_cls(hypothesis=hyp)
+        text = build_prompt_cls(hypothesis=hyp)[0]
 
-        messages_batch = [
-            [{"role": "user", "content": [
-                {"type": "image"},
-                {"type": "text", "text": t},
-            ]}]
-            for t in texts
-        ]
-        prompts = [
-            processor.apply_chat_template( m, tokenize=False, add_generation_prompt=True
-            )
-            for m in messages_batch
-        ]
+        messages = [{"role": "user", "content": [{"type": "image"}, {"type": "text", "text": text}]}]
+        prompt = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
-        pil_images = [tensor_image_to_pil(images_t[i]) for i in range(images_t.size(0))]
+        pil_image = tensor_image_to_pil(images_t[0])
 
         enc = processor(
-            text=prompts,
-            images=pil_images,
+            text=[prompt],
+            images=[pil_image],
             return_tensors="pt",
             padding=True,
-            truncation=True
+            truncation=True,
+            max_length=int(args.max_length),
         )
 
-        input_ids_batch = enc["input_ids"].detach().cpu()
-        attention_batch = enc["attention_mask"].detach().cpu()
+        input_ids = enc["input_ids"]            # (1,T)
+        attention_mask = enc["attention_mask"]  # (1,T)
+        if not torch.is_tensor(input_ids) or not torch.is_tensor(attention_mask):
+            raise RuntimeError("processor did not return tensor input_ids/attention_mask")
 
-        enc_cpu_for_masks: Dict[str, torch.Tensor] = {
-            "input_ids": input_ids_batch,
-            "attention_mask": attention_batch,
-        }
-
-        masks_batch = build_image_text_token_masks(enc_cpu_for_masks, processor)
-        image_mask_batch = masks_batch["image"]  # bool [B,T]
-        text_mask_batch = masks_batch["text"]    # bool [B,T]
         pixel_values = enc.get("pixel_values", None)
         image_grid_thw = enc.get("image_grid_thw", None)
+        if pixel_values is None or image_grid_thw is None:
+            raise RuntimeError("Processor did not return pixel_values / image_grid_thw; check processor/model version.")
 
-        inputs_embeds = model.model.get_input_embeddings()(input_ids_batch.cuda())
+        # move ids/mask to CPU for trimming, but embeddings computed on model.device
+        input_ids_cpu = input_ids.detach().cpu()
+        attention_cpu = attention_mask.detach().cpu()
 
-        try:
-            with torch.no_grad():
-                pv = pixel_values.to(model.device, dtype=pixel_values.dtype, non_blocking=True)
-                gthw = image_grid_thw.to(model.device, non_blocking=True)
-                image_embeds, deep_stack_viz = model.get_image_features(pv, gthw)
-                image_embeds_keep = torch.cat([image_embeds[i].unsqueeze(dim=0) for i in range(len(image_embeds))], dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
-                image_embeds = torch.cat(image_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
-                image_mask, _ = model.model.get_placeholder_mask( input_ids_batch, inputs_embeds=inputs_embeds, image_features=image_embeds)
-                inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
-                image_mask = image_mask[...,0]
+        # build token embeddings then scatter image features
+        token_embeds = model.model.get_input_embeddings()(input_ids.to(model.device))  # (1,T,2048)
 
-                attention_mask_tensor = (
-                    attention_batch if not isinstance(attention_batch, dict) else attention_batch["full_attention"]
-                )
-                if attention_mask_tensor is not None and attention_mask_tensor.ndim == 4:
-                    attention_mask_tensor = torch.diagonal(attention_mask_tensor[:, 0], dim1=1, dim2=2)
-                    # Only apply conversion for floating point tensors (inverted masks)
-                    if attention_mask_tensor.dtype.is_floating_point:
-                        attention_mask_tensor = attention_mask_tensor / torch.finfo(attention_mask_tensor.dtype).min
-                        attention_mask_tensor = (1.0 - attention_mask_tensor).int()
-                position_ids, _ = model.model.get_rope_index(
-                    input_ids_batch,
-                    image_grid_thw,
-                    None,
-                    attention_mask=attention_mask_tensor,
-                )
+        with torch.no_grad():
+            pv = pixel_values.to(model.device, dtype=pixel_values.dtype, non_blocking=True)
+            gthw = image_grid_thw.to(model.device, non_blocking=True)
 
-            input_embeds_cpu = [inputs_embeds[i].detach().cpu() for i in range(inputs_embeds.size(0))]
-            vision_embeds_cpu = [image_embeds_keep[i].detach().cpu() for i in range(image_embeds_keep.size(0))]
-            vision_mask_cpu = [image_mask[i].detach().cpu() for i in range(image_mask.size(0))]
-            deep_stack_viz_cpu = einops.rearrange(torch.cat([i.unsqueeze(dim=0) for i in deep_stack_viz], dim=0), "a (b i) f -> b a i f", b=image_mask_batch.shape[0])
-            deep_stack_viz_cpu = [deep_stack_viz_cpu[i].detach().cpu() for i in range(deep_stack_viz_cpu.size(0))]
-            print(position_ids.shape)
-            position_ids = position_ids.permute(1,0,2)
-            position_ids_cpu = [position_ids[i].detach().cpu() for i in range(position_ids.size(0))]
+            image_embeds_list, deep_stack_viz_list = model.get_image_features(pv, gthw)
 
-        except Exception as e:
-            raise Exception(e)
+            image_embeds_cat = torch.cat(image_embeds_list, dim=0).to(token_embeds.device, token_embeds.dtype)
 
-        pixel_values = einops.rearrange(pixel_values, "(b i) c -> b i c", b=batch_size)
+            placeholder_mask, _ = model.model.get_placeholder_mask(
+                input_ids.to(model.device),
+                inputs_embeds=token_embeds,
+                image_features=image_embeds_cat,
+            )
+            placeholder_mask_2d = placeholder_mask[..., 0] if placeholder_mask.dim() == 3 else placeholder_mask  # (1,T)
 
-        B = len(ids)
-        for i in range(B):
-            # trim to real length (assumes attention_mask marks real tokens)
-            L = int(attention_batch[i].sum().item())
-            if L <= 0:
-                L = 1
+            # scatter
+            token_embeds = token_embeds.masked_scatter(placeholder_mask, image_embeds_cat)
 
-            input_ids_i = input_ids_batch[i].contiguous()
-            attention_i = attention_batch[i].contiguous()
-            position_ids_i = position_ids_cpu[i]
+            # force fp16 for caching (your requirement)
+            token_embeds = token_embeds.to(torch.float16)
 
-            deep_stack_viz_cpu_i = deep_stack_viz_cpu[i]
+            # rope indices
+            position_ids, _ = model.model.get_rope_index(
+                input_ids.to(model.device),
+                gthw,
+                None,
+                attention_mask=attention_mask.to(model.device),
+            )
+            position_ids_cpu = position_ids.detach().cpu()  # typically (1,3,1,T) or (3,1,T) depending impl
 
-            image_mask_i = image_mask_batch[i].to(torch.uint8).contiguous()
-            text_mask_i = text_mask_batch[i].to(torch.uint8).contiguous()
+        # normalize position_ids to (3,1,T) for this single sample
+        # Common case from your working print: (3,1,T)
+        # Some impls return leading batch: (1,3,1,T)
+        pos = position_ids_cpu
+        if pos.dim() == 4 and pos.shape[0] == 1:
+            pos = pos[0]  # -> (3,1,T)
+        if not (pos.dim() == 3 and int(pos.shape[0]) == 3 and int(pos.shape[1]) == 1):
+            raise RuntimeError(f"Unexpected position_ids shape after normalize: {tuple(pos.shape)}")
 
-            image_mask_hf_i = vision_mask_cpu[i].to(torch.uint8).contiguous()
+        # deepstack: keep all levels -> stack (K,64,2048)
+        deep_levels = []
+        if isinstance(deep_stack_viz_list, (list, tuple)):
+            for t in deep_stack_viz_list:
+                if torch.is_tensor(t):
+                    deep_levels.append(t.detach().cpu())
+        if len(deep_levels) > 0:
+            deepstack_visual_embeds = torch.cat([t.unsqueeze(0) for t in deep_levels], dim=0)  # (K,64,2048)
+        else:
+            deepstack_visual_embeds = torch.empty((0, 0, 0), dtype=torch.float32)
 
-            item: Dict[str, Any] = {
-                "id": ids[i],
-                "label": labels[i].detach().cpu(),
-                "prompt": prompts[i],
-                "input_ids": input_ids_i,
-                "deep_stack_viz": deep_stack_viz_cpu_i,
-                "attention_mask": attention_i,
-                "position_ids": position_ids_i,
-                "masks": {
-                    "image": image_mask_hf_i,
-                    "text": text_mask_i,
-                },
-            }
+        # attention keep (padding-proof): keep only tokens with attention==1
+        keep = attention_cpu[0].bool()  # (T,)
+        if keep.sum().item() <= 0:
+            raise RuntimeError("attention_mask had no True tokens?")
 
-            item["pixel_values"] = pixel_values[i].detach().cpu()
-            item["image_grid_thw"] = image_grid_thw[i].detach().cpu()
-            item["vision_embeds"] = vision_embeds_cpu[i].detach().cpu()
-            item["input_embeds"] = input_embeds_cpu[i].detach().cpu()
+        input_ids_keep = input_ids_cpu[0][keep].contiguous().unsqueeze(0)        # (1,L)
+        attention_keep = attention_cpu[0][keep].contiguous().unsqueeze(0)        # (1,L)
+        input_embeds_keep = token_embeds.detach().cpu()[0][keep].contiguous().unsqueeze(0)  # (1,L,2048) fp16
 
-            items.append(item)
+        # visual token positions in final embeds
+        visual_pos_masks = placeholder_mask_2d.detach().cpu()[0][keep].contiguous().unsqueeze(0).bool()  # (1,L)
 
-            if len(items) >= args.shard_size:
-                flush_shard(items, split_out, shard_idx, manifest_path)
-                items = []
-                shard_idx += 1
+        # position ids (3,1,T) -> (3,1,L)
+        pos_keep = pos[:, :, keep].contiguous()
 
+        # build item (THIS IS EXACTLY WHAT YOU FEED LATER)
+        item = {
+            "id": ids[0],
+            "label": labels[0].detach().cpu(),
+            "prompt": prompt,
+
+            "input_ids": input_ids_keep,                 # (1,L)
+            "attention_mask": attention_keep,            # (1,L)
+            "position_ids": pos_keep,                    # (3,1,L)
+            "input_embeds": input_embeds_keep,           # (1,L,2048) fp16
+            "visual_pos_masks": visual_pos_masks,        # (1,L) bool
+            "deepstack_visual_embeds": deepstack_visual_embeds,  # (K,64,2048)
+        }
+
+        items.append(item)
+
+        # flush
+        if len(items) >= int(args.shard_size):
+            shard_path = flush_shard(items, split_out, shard_idx, manifest_path)
+            if int(args.verify_every_flush) == 1:
+                verify_shard(shard_path, n_show=int(args.verify_n_show))
+            items = []
+            shard_idx += 1
+
+    # flush final
     if items:
-        flush_shard(items, split_out, shard_idx, manifest_path)
+        shard_path = flush_shard(items, split_out, shard_idx, manifest_path)
+        if int(args.verify_every_flush) == 1:
+            verify_shard(shard_path, n_show=int(args.verify_n_show))
 
+    # meta
     meta = {
         "model_name": args.model_name,
         "split": args.split,
-        "data_root": args.data_root,
-        "flickr_images_dir": args.flickr_images_dir,
-        "max_length": args.max_length,
-        "image_size": args.image_size,
-        "label_options": label_options,
-        "cache_vision_embeds": bool(args.cache_vision_embeds),
-        "dtype": str(dtype),
+        "max_length": int(args.max_length),
+        "image_size": int(args.image_size),
+        "dtype": str(model_dtype),
         "notes": [
-            "vision_embeds come from model.model.visual(pixel_values, grid_thw=image_grid_thw).",
-            "Token-level masks saved in item['masks']: {'image':..., 'text':...} aligned with input_ids.",
-            "Split mapping: validation -> dev",
+            "BATCH SIZE 1 ONLY debug writer.",
+            "Saved tensors are post-attention_keep (no padding).",
+            "input_embeds are after placeholder scatter and cast to float16.",
+            "position_ids normalized to (3,1,T) then trimmed to (3,1,L).",
+            "deepstack_visual_embeds stacks all deep levels to (K,64,2048).",
+            "After each shard write, script reloads shard and prints shapes/stats.",
         ],
     }
     with open(os.path.join(split_out, "meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
 
-    logger.info(f"[done] Wrote cache to: {split_out}")
-
-import math, textwrap
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use("Agg")
-
-def save_image_prompt_label_grid(
-    pil_images,
-    prompts,
-    labels,
-    ids=None,
-    label_options=None,
-    outpath="sanity_batch.png",
-    max_items=16,
-    ncols=4,
-    wrap=60,
-    dpi=200,
-    title="Sanity check: image + prompt + label",
-):
-    """
-    Save a grid showing PIL images with (id, label, optional label name) and prompt text.
-    """
-    B = min(len(pil_images), len(prompts), len(labels), max_items)
-    nrows = math.ceil(B / ncols)
-
-    fig = plt.figure(figsize=(ncols * 4.2, nrows * 4.8), dpi=dpi)
-    fig.suptitle(title, fontsize=14)
-
-    for i in range(B):
-        ax = fig.add_subplot(nrows, ncols, i + 1)
-        ax.imshow(pil_images[i])
-        ax.axis("off")
-
-        # label -> int
-        y = labels[i]
-        try:
-            y = int(y)  # works for torch scalar / numpy scalar / python int
-        except Exception:
-            pass
-
-        y_name = None
-        if label_options is not None:
-            try:
-                y_name = label_options[y]
-            except Exception:
-                y_name = None
-
-        header = []
-        if ids is not None and i < len(ids):
-            header.append(f"id: {ids[i]}")
-        header.append(f"y: {y}" + (f" ({y_name})" if y_name is not None else ""))
-
-        prompt_wrapped = "\n".join(textwrap.wrap(prompts[i], width=wrap))
-        ax.set_title("\n".join(header) + "\n" + prompt_wrapped, fontsize=8, loc="left")
-
-    # hide unused slots
-    for j in range(B + 1, nrows * ncols + 1):
-        ax = fig.add_subplot(nrows, ncols, j)
-        ax.axis("off")
-
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
-    fig.savefig(outpath, bbox_inches="tight")
-    plt.close(fig)
-    return outpath
+    logger.info(f"[done] wrote cache to: {split_out}")
 
 
 if __name__ == "__main__":

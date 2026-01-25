@@ -1,488 +1,432 @@
+# esnli_memmap_no_tokenizer_pad_from_cache.py
+# Supports ANY batch size. No tokenizer. Pads purely from cached tensors.
+#
+# Expected cached per-example keys:
+#   input_ids              : (1, L) int64
+#   attention_mask         : (1, L) int64
+#   position_ids           : (3, 1, L) int64
+#   input_embeds           : (1, L, 2048) float16
+#   visual_pos_masks       : (1, L) bool
+#   deepstack_visual_embeds: (K, 64, 2048) float16/float32
+#   label                  : scalar/tensor
+#
+# Output batch:
+#   batch = {
+#     "ids": [...], "prompts": [...], "label": (B,),
+#     "data": {
+#       "input_ids": (B,Lmax),
+#       "attention_mask": (B,Lmax),
+#       "position_ids": (B,3,1,Lmax),
+#       "input_embeds": (B,Lmax,2048),
+#       "visual_pos_masks": (B,Lmax),
+#       "deepstack_visual_embeds": (B,Kmax,64,2048),
+#     }
+#   }
+
 import os
 import json
-import random
-import multiprocessing
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 
 
-# =========================
-# Collate (unchanged)
-# =========================
-
-def _left_pad_1d(seqs: List[torch.Tensor], pad_val: int, dtype: torch.dtype) -> torch.Tensor:
-    max_len = max(int(s.numel()) for s in seqs) if len(seqs) > 0 else 0
-    out = torch.full((len(seqs), max_len), pad_val, dtype=dtype)
-    for i, s in enumerate(seqs):
-        L = int(s.numel())
-        if L > 0:
-            out[i, -L:] = s.to(dtype)
-    return out
-
-
-def _left_pad_bool(seqs: List[torch.Tensor]) -> torch.Tensor:
-    max_len = max(int(s.numel()) for s in seqs) if len(seqs) > 0 else 0
-    out = torch.zeros((len(seqs), max_len), dtype=torch.bool)
-    for i, s in enumerate(seqs):
-        L = int(s.numel())
-        if L > 0:
-            out[i, -L:] = s.bool()
-    return out
-
-
-def _pad_2d_by_rows(seqs: List[torch.Tensor], pad_val: float = 0.0):
-    B = len(seqs)
-    if B == 0:
-        return torch.empty((0, 0, 0)), torch.empty((0, 0), dtype=torch.bool)
-
-    D = 0
-    ref_dtype = torch.float32
-    for x in seqs:
-        if torch.is_tensor(x) and x.numel() > 0 and x.dim() == 2:
-            D = int(x.shape[1])
-            ref_dtype = x.dtype
-            break
-
-    Nmax = 0
-    for x in seqs:
-        if torch.is_tensor(x) and x.dim() == 2:
-            Nmax = max(Nmax, int(x.shape[0]))
-
-    padded = torch.full((B, Nmax, D), float(pad_val), dtype=ref_dtype)
-    mask = torch.zeros((B, Nmax), dtype=torch.bool)
-
-    for i, x in enumerate(seqs):
-        if (not torch.is_tensor(x)) or x.numel() == 0:
-            continue
-        if x.dim() == 1:
-            x = x.view(1, -1)
-        if x.dim() != 2:
-            x = x.view(1, -1)
-
-        if int(x.shape[1]) > D:
-            x = x[:, :D]
-        elif int(x.shape[1]) < D:
-            pad = torch.zeros((int(x.shape[0]), D - int(x.shape[1])), dtype=x.dtype)
-            x = torch.cat([x, pad], dim=1)
-
-        n = int(x.shape[0])
-        padded[i, :n, :] = x
-        mask[i, :n] = True
-
-    return padded, mask
-
-
-def _pad_deep_3d(seqs: List[torch.Tensor], deep_dim: int, pad_val: float = 0.0):
-    B = len(seqs)
-    if B == 0:
-        return (
-            torch.empty((0, 0, 0, deep_dim), dtype=torch.float32),
-            torch.empty((0, 0, 0), dtype=torch.bool),
-        )
-
-    Tmax = 0
-    Nmax = 0
-    ref_dtype = torch.float32
-
-    for x in seqs:
-        if torch.is_tensor(x) and x.numel() > 0:
-            if x.dim() == 4:
-                x = x[0]
-            if x.dim() == 3:
-                Tmax = max(Tmax, int(x.shape[0]))
-                Nmax = max(Nmax, int(x.shape[1]))
-                ref_dtype = x.dtype
-
-    padded = torch.full((B, Tmax, Nmax, deep_dim), float(pad_val), dtype=ref_dtype)
-    mask = torch.zeros((B, Tmax, Nmax), dtype=torch.bool)
-
-    for i, x in enumerate(seqs):
-        if (not torch.is_tensor(x)) or x.numel() == 0:
-            continue
-        if x.dim() == 4:
-            x = x[0]
-        if x.dim() != 3:
-            continue
-
-        T, N, D = int(x.shape[0]), int(x.shape[1]), int(x.shape[2])
-        if D > deep_dim:
-            x = x[..., :deep_dim]
-        elif D < deep_dim:
-            pad = torch.zeros((T, N, deep_dim - D), dtype=x.dtype)
-            x = torch.cat([x, pad], dim=-1)
-
-        padded[i, :T, :N, :] = x
-        mask[i, :T, :N] = True
-
-    return padded, mask
-
-
-def esnli_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0) -> Dict[str, Any]:
-    ids = [b.get("id", None) for b in batch]
-    prompts = [b.get("prompt", "") for b in batch]
-    labels = torch.stack([b["label"] for b in batch], dim=0)
-
-    input_ids = _left_pad_1d([b["input_ids"] for b in batch], pad_val=int(pad_token_id), dtype=torch.long)
-    attention_mask = _left_pad_1d([b["attention_mask"] for b in batch], pad_val=0, dtype=torch.long)
-    position_ids = _left_pad_1d([b["position_ids"] for b in batch], pad_val=0, dtype=torch.long)
-
-    image_mask = _left_pad_bool([b["image_mask"] for b in batch])
-    text_mask = _left_pad_bool([b["text_mask"] for b in batch])
-
-    data: Dict[str, Any] = {
-        "input_ids": input_ids,
-        "attention_mask": attention_mask,
-        "position_ids": position_ids,
-        "image_mask": image_mask,
-        "text_mask": text_mask,
-    }
-
-    if "image_grid_thw" in batch[0]:
-        try:
-            data["image_grid_thw"] = torch.stack(
-                [b.get("image_grid_thw", torch.zeros(3, dtype=torch.long)) for b in batch],
-                dim=0,
-            )
-        except Exception:
-            pass
-
-    if "pixel_values" in batch[0]:
-        try:
-            data["pixel_values"] = torch.stack([b["pixel_values"] for b in batch], dim=0)
-        except Exception:
-            pass
-
-    if "vision_embeds" in batch[0]:
-        vis_list = [b.get("vision_embeds", torch.empty((0, 0), dtype=torch.float32)) for b in batch]
-        vis_pad, vis_mask = _pad_2d_by_rows(vis_list, pad_val=0.0)
-        data["vision_embeds"] = vis_pad
-        data["vision_mask"] = vis_mask
-
-    if "input_embeds" in batch[0]:
-        vis_list = [b.get("input_embeds", torch.empty((0, 0), dtype=torch.float32)) for b in batch]
-        vis_pad, vis_mask = _pad_2d_by_rows(vis_list, pad_val=0.0)
-        data["input_embeds"] = vis_pad
-
-    if "deep_stack_viz" in batch[0]:
-        deep_list = [b.get("deep_stack_viz", torch.empty((0, 0, 2048), dtype=torch.float32)) for b in batch]
-        deep_dim = 2048
-        for x in deep_list:
-            if torch.is_tensor(x) and x.numel() > 0:
-                deep_dim = int(x.shape[-1])
-                break
-        deep_pad, deep_mask = _pad_deep_3d(deep_list, deep_dim=deep_dim, pad_val=0.0)
-        data["deep_stack_viz"] = deep_pad
-        data["deep_mask"] = deep_mask
-
-    return {"ids": ids, "prompts": prompts, "label": labels, "data": data}
-
-
-# =========================
-# Dataset (SINGLE-SHARD VERSION, same class name)
-# =========================
-
-def _as_1d_cpu_tensor(x, dtype: Optional[torch.dtype] = None) -> torch.Tensor:
-    if x is None:
-        return torch.empty((0,), dtype=dtype or torch.long)
-    if torch.is_tensor(x):
-        t = x.detach().cpu().reshape(-1)
-        return t.to(dtype) if dtype is not None else t
-    try:
-        t = torch.as_tensor(x).detach().cpu().reshape(-1)
-        return t.to(dtype) if dtype is not None else t
-    except Exception:
-        return torch.empty((0,), dtype=dtype or torch.long)
-
-
-def _as_bool_mask_1d(x, L: int) -> torch.Tensor:
-    if x is None:
-        return torch.zeros((L,), dtype=torch.bool)
-    t = _as_1d_cpu_tensor(x, dtype=torch.bool)
-    if t.numel() == L:
-        return t
+# -------------------------
+# stats helper (optional)
+# -------------------------
+def _stats(name: str, t: Any) -> str:
+    if not torch.is_tensor(t):
+        return f"{name:24s}: {type(t)}"
     if t.numel() == 0:
-        return torch.zeros((L,), dtype=torch.bool)
-    if t.numel() > L:
-        return t[:L]
-    out = torch.zeros((L,), dtype=torch.bool)
-    out[-t.numel():] = t
+        return f"{name:24s}: shape={tuple(t.shape)} dtype={t.dtype} device={t.device} numel=0"
+    x = t.detach()
+    xf = x.float()
+    mn = xf.min().item()
+    mx = xf.max().item()
+    mean = xf.mean().item()
+    std = xf.std(unbiased=False).item()
+    nonzero = (x != 0).float().mean().item() * 100.0
+    return (f"{name:24s}: shape={tuple(t.shape)} dtype={t.dtype} device={t.device} "
+            f"min={mn:.6g} max={mx:.6g} mean={mean:.6g} std={std:.6g} nonzero={nonzero:.2f}%")
+
+
+def _require_tensor(ex: dict, key: str) -> torch.Tensor:
+    if key not in ex:
+        raise KeyError(f"Missing key in shard item: {key}")
+    t = ex[key]
+    if not torch.is_tensor(t):
+        raise TypeError(f"Key {key} must be a torch.Tensor, got {type(t)}")
+    return t
+
+
+def _check_shapes(ex: dict) -> None:
+    input_ids = _require_tensor(ex, "input_ids")
+    attention_mask = _require_tensor(ex, "attention_mask")
+    position_ids = _require_tensor(ex, "position_ids")
+    input_embeds = _require_tensor(ex, "input_embeds")
+    visual_pos_masks = _require_tensor(ex, "visual_pos_masks")
+    deep = _require_tensor(ex, "deepstack_visual_embeds")
+
+    if input_ids.dim() != 2 or input_ids.shape[0] != 1:
+        raise ValueError(f"input_ids expected (1,L), got {tuple(input_ids.shape)}")
+    if attention_mask.shape != input_ids.shape:
+        raise ValueError(f"attention_mask expected {tuple(input_ids.shape)}, got {tuple(attention_mask.shape)}")
+    if input_embeds.dim() != 3 or input_embeds.shape[0] != 1 or input_embeds.shape[1] != input_ids.shape[1]:
+        raise ValueError(f"input_embeds expected (1,L,2048), got {tuple(input_embeds.shape)} vs L={input_ids.shape[1]}")
+    if input_embeds.shape[-1] != 2048:
+        raise ValueError(f"input_embeds last dim must be 2048, got {input_embeds.shape[-1]}")
+    if visual_pos_masks.shape != input_ids.shape:
+        raise ValueError(f"visual_pos_masks expected {tuple(input_ids.shape)}, got {tuple(visual_pos_masks.shape)}")
+    if position_ids.dim() != 3 or tuple(position_ids.shape[:2]) != (3, 1) or position_ids.shape[-1] != input_ids.shape[1]:
+        raise ValueError(f"position_ids expected (3,1,L), got {tuple(position_ids.shape)} vs L={input_ids.shape[1]}")
+    if deep.dim() != 3 or deep.shape[1:] != (64, 2048):
+        raise ValueError(f"deepstack_visual_embeds expected (K,64,2048), got {tuple(deep.shape)}")
+
+
+# -------------------------
+# padding helpers
+# -------------------------
+def _pad_1d(x: torch.Tensor, L: int, pad_value: int, padding_side: str) -> torch.Tensor:
+    x = x.reshape(-1)
+    n = int(x.numel())
+    if n == L:
+        return x
+    if n > L:
+        return x[-L:] if padding_side == "left" else x[:L]
+    out = torch.full((L,), pad_value, dtype=x.dtype)
+    if padding_side == "left":
+        out[-n:] = x
+    else:
+        out[:n] = x
     return out
 
 
-def _as_position_ids_1d(x, L: int) -> torch.Tensor:
-    if x is None:
-        return torch.arange(L, dtype=torch.long) if L > 0 else torch.empty((0,), dtype=torch.long)
-    t = _as_1d_cpu_tensor(x, dtype=torch.long)
-    if t.numel() == L:
-        return t
-    if t.numel() == 0:
-        return torch.arange(L, dtype=torch.long) if L > 0 else torch.empty((0,), dtype=torch.long)
-    if t.numel() > L:
-        return t[:L]
-    out = torch.zeros((L,), dtype=torch.long)
-    out[-t.numel():] = t
+def _pad_2d_time(x: torch.Tensor, L: int, pad_value: float, padding_side: str) -> torch.Tensor:
+    # x: (T,D)
+    if x.dim() != 2:
+        raise ValueError(f"_pad_2d_time expects 2D (T,D), got {tuple(x.shape)}")
+    T, D = int(x.shape[0]), int(x.shape[1])
+    if T == L:
+        return x
+    if T > L:
+        return x[-L:, :] if padding_side == "left" else x[:L, :]
+    out = torch.full((L, D), float(pad_value), dtype=x.dtype)
+    if padding_side == "left":
+        out[-T:, :] = x
+    else:
+        out[:T, :] = x
     return out
 
 
-def _as_deep_3d(ex_deep: Any, deep_dim: int = 2048) -> torch.Tensor:
-    if ex_deep is None:
-        return torch.empty((0, 0, deep_dim), dtype=torch.float32)
-    t = ex_deep.detach().cpu() if torch.is_tensor(ex_deep) else torch.as_tensor(ex_deep).detach().cpu()
-    if t.numel() == 0:
-        return torch.empty((0, 0, deep_dim), dtype=torch.float32)
-
-    if t.dim() == 3:
-        T, N, D = int(t.shape[0]), int(t.shape[1]), int(t.shape[2])
-        if D != deep_dim:
-            if D > deep_dim:
-                t = t[..., :deep_dim]
-            else:
-                pad = torch.zeros((T, N, deep_dim - D), dtype=t.dtype)
-                t = torch.cat([t, pad], dim=-1)
-        return t.to(torch.float32)
-
-    if t.dim() == 4:
-        return _as_deep_3d(t[0], deep_dim=deep_dim)
-
-    if t.dim() >= 2:
-        D = int(t.shape[-1])
-        flat = t.reshape(-1, D)
-        if D != deep_dim:
-            if D > deep_dim:
-                flat = flat[:, :deep_dim]
-            else:
-                pad = torch.zeros((int(flat.shape[0]), deep_dim - D), dtype=flat.dtype)
-                flat = torch.cat([flat, pad], dim=-1)
-        return flat.view(1, int(flat.shape[0]), deep_dim).to(torch.float32)
-
-    flat = t.reshape(-1)
-    if flat.numel() < deep_dim:
-        pad = torch.zeros((deep_dim - flat.numel(),), dtype=flat.dtype)
-        flat = torch.cat([flat, pad], dim=0)
-    flat = flat[:deep_dim]
-    return flat.view(1, 1, deep_dim).to(torch.float32)
+def _pad_pos_3_1_T(pos: torch.Tensor, L: int, padding_side: str) -> torch.Tensor:
+    # pos: (3,1,T)
+    if pos.dim() != 3 or int(pos.shape[0]) != 3 or int(pos.shape[1]) != 1:
+        raise ValueError(f"position_ids expected (3,1,T), got {tuple(pos.shape)}")
+    T = int(pos.shape[-1])
+    if T == L:
+        return pos
+    if T > L:
+        return pos[:, :, -L:] if padding_side == "left" else pos[:, :, :L]
+    out = torch.zeros((3, 1, L), dtype=pos.dtype)
+    if padding_side == "left":
+        out[:, :, -T:] = pos
+    else:
+        out[:, :, :T] = pos
+    return out
 
 
+def _pad_deepstack_K_64_2048(x: torch.Tensor, Kmax: int, padding_side: str) -> torch.Tensor:
+    # x: (K,64,2048) -> (Kmax,64,2048)
+    if Kmax == 0:
+        return torch.zeros((0, 64, 2048), dtype=x.dtype if torch.is_tensor(x) else torch.float16)
+
+    if (not torch.is_tensor(x)) or x.numel() == 0:
+        return torch.zeros((Kmax, 64, 2048), dtype=torch.float16)
+
+    if x.dim() != 3 or x.shape[1:] != (64, 2048):
+        raise ValueError(f"deepstack_visual_embeds expected (K,64,2048), got {tuple(x.shape)}")
+
+    K = int(x.shape[0])
+    if K == Kmax:
+        return x
+    if K > Kmax:
+        return x[-Kmax:] if padding_side == "left" else x[:Kmax]
+
+    out = torch.zeros((Kmax, 64, 2048), dtype=x.dtype)
+    if padding_side == "left":
+        out[-K:] = x
+    else:
+        out[:K] = x
+    return out
+
+def _pad_deepstack_stack64(x: torch.Tensor, Kmax: int, padding_side: str) -> torch.Tensor:
+    """
+    Stack the 64s across deepstack levels.
+
+    Input:
+      x: (K, 64, 2048)
+
+    Output (padded/truncated to Kmax levels):
+      (Kmax*64, 2048)
+
+    Padding:
+      - If x has fewer than Kmax levels -> pad with zeros (as extra 64-blocks)
+      - If x has more than Kmax levels -> truncate levels (from left/right depending on padding_side)
+    """
+    if padding_side not in ("left", "right"):
+        raise ValueError(f"padding_side must be 'left' or 'right', got {padding_side}")
+
+    # target rows after stacking 64s
+    target_rows = int(Kmax) * 64
+
+    # handle empty target
+    if target_rows == 0:
+        dtype = x.dtype if torch.is_tensor(x) else torch.float16
+        return torch.zeros((0, 2048), dtype=dtype)
+
+    # missing/empty deepstack -> zeros
+    if (not torch.is_tensor(x)) or x.numel() == 0:
+        return torch.zeros((target_rows, 2048), dtype=torch.float16)
+
+    if x.dim() != 3 or tuple(x.shape[1:]) != (64, 2048):
+        raise ValueError(f"deepstack_visual_embeds expected (K,64,2048), got {tuple(x.shape)}")
+
+    K = int(x.shape[0])
+
+    # truncate/pad in K first
+    if K == Kmax:
+        x2 = x
+    elif K > Kmax:
+        x2 = x[-Kmax:] if padding_side == "left" else x[:Kmax]
+    else:
+        pad_levels = torch.zeros((Kmax - K, 64, 2048), dtype=x.dtype)
+        x2 = torch.cat([pad_levels, x], dim=0) if padding_side == "left" else torch.cat([x, pad_levels], dim=0)
+
+    # now stack 64s: (Kmax,64,2048) -> (Kmax*64, 2048)
+    return x2.reshape(Kmax * 64, 2048).contiguous()
+
+
+# -------------------------
+# Dataset
+# -------------------------
 class ESNLI_MemmapDataset(Dataset):
-    """
-    SINGLE-SHARD dataset. Same name as your memmap dataset, but it reads ONE shard directly.
-
-    How it picks the shard:
-      - Reads {cache_root}/{split}/manifest.jsonl
-      - Picks shard_index (int) if provided; else picks the first record (0) by default.
-    """
-
     def __init__(
         self,
         cache_root: str,
         split: str,
-        shard_index: int = 0,          # <-- change this to inspect other shards
-        shard_path: Optional[str] = None,  # <-- or pass an explicit shard file path
-        deep_dim: int = 2048,
-        max_items: Optional[int] = None,   # <-- optionally truncate for faster iteration
+        shard_index: int = 0,
+        shard_path: Optional[str] = None,
+        max_items: Optional[int] = None,
     ):
         super().__init__()
-        self.split_dir = os.path.join(cache_root, split)
+        split_dir = os.path.join(cache_root, split)
 
         if shard_path is None:
-            manifest_path = os.path.join(self.split_dir, "manifest.jsonl")
+            manifest_path = os.path.join(split_dir, "manifest.jsonl")
             if not os.path.isfile(manifest_path):
                 raise FileNotFoundError(f"Missing manifest.jsonl at {manifest_path}")
-
             recs = [json.loads(l) for l in open(manifest_path, "r", encoding="utf-8")]
             if len(recs) == 0:
                 raise RuntimeError(f"Empty manifest: {manifest_path}")
-
             shard_index = int(shard_index)
             if shard_index < 0 or shard_index >= len(recs):
                 raise IndexError(f"shard_index {shard_index} out of range [0, {len(recs)-1}]")
-
-            shard_path = os.path.join(self.split_dir, recs[shard_index]["shard"])
+            shard_path = os.path.join(split_dir, recs[shard_index]["shard"])
 
         if not os.path.isfile(shard_path):
             raise FileNotFoundError(f"Shard not found: {shard_path}")
 
-        self.shard_path = shard_path
-        self.deep_dim = int(deep_dim)
-
-        # load the one shard into memory (simplest + best for debugging)
-        items = torch.load(self.shard_path, map_location="cpu")
+        items = torch.load(shard_path, map_location="cpu")
         if not isinstance(items, (list, tuple)):
-            raise TypeError(f"Expected shard to contain a list/tuple of examples, got {type(items)}")
+            raise TypeError(f"Expected shard to contain list/tuple, got {type(items)}")
 
         if max_items is not None:
             items = list(items)[: int(max_items)]
-        self.items = items
+        self.items = list(items)
 
     def __len__(self) -> int:
-        return 10
+        return len(self.items)
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         ex = self.items[idx]
         if not isinstance(ex, dict):
-            raise TypeError(f"Example[{idx}] is not a dict, got {type(ex)}")
-
-        inp = _as_1d_cpu_tensor(ex.get("input_ids", None), dtype=torch.long)
-        L = int(inp.numel())
-
-        att = _as_1d_cpu_tensor(ex.get("attention_mask", None), dtype=torch.long)
-        if att.numel() != L:
-            att = torch.ones((L,), dtype=torch.long) if L > 0 else torch.empty((0,), dtype=torch.long)
-
-        pos = _as_position_ids_1d(ex.get("position_ids", None), L)
-
-        masks = ex.get("masks", {}) if isinstance(ex.get("masks", {}), dict) else {}
-        imgm = _as_bool_mask_1d(masks.get("image", None), L)
-        txtm = _as_bool_mask_1d(masks.get("text", None), L)
+            raise TypeError(f"Example[{idx}] is not a dict: {type(ex)}")
 
         lab = ex.get("label", 0)
-        if isinstance(lab, torch.Tensor):
-            lab = int(lab.detach().cpu().reshape(-1)[0].item()) if lab.numel() > 0 else 0
+        if torch.is_tensor(lab):
+            lab = int(lab.detach().cpu().reshape(-1)[0].item()) if lab.numel() else 0
         try:
             lab = int(lab)
         except Exception:
             lab = 0
 
-        out: Dict[str, Any] = {
+        out = {
             "id": ex.get("id", idx),
-            "label": torch.tensor(lab, dtype=torch.long),
             "prompt": ex.get("prompt", ""),
-            "input_ids": inp.long(),
-            "attention_mask": att.long(),
-            "position_ids": pos.long(),
-            "image_mask": imgm.bool(),
-            "text_mask": txtm.bool(),
+            "label": torch.tensor(lab, dtype=torch.long),
+
+            "input_ids": _require_tensor(ex, "input_ids").to(torch.long),
+            "attention_mask": _require_tensor(ex, "attention_mask").to(torch.long),
+            "position_ids": _require_tensor(ex, "position_ids").to(torch.long),
+            "input_embeds": _require_tensor(ex, "input_embeds").to(torch.float16),
+            "visual_pos_masks": _require_tensor(ex, "visual_pos_masks").to(torch.bool),
+            "deepstack_visual_embeds": _require_tensor(ex, "deepstack_visual_embeds").to(torch.float16),
         }
 
-        # optional grid
-        if ex.get("image_grid_thw", None) is not None:
-            g = ex["image_grid_thw"]
-            if isinstance(g, torch.Tensor):
-                g = g.detach().cpu().reshape(-1)
-            else:
-                g = torch.as_tensor(g).detach().cpu().reshape(-1)
-            tmp = torch.zeros((3,), dtype=torch.long)
-            tmp[: min(3, int(g.numel()))] = g[: min(3, int(g.numel()))].long()
-            out["image_grid_thw"] = tmp
-
-        # optional vision
-        ve = ex.get("vision_embeds", None)
-        if ve is not None:
-            ve_t = ve.detach().cpu() if torch.is_tensor(ve) else torch.as_tensor(ve).detach().cpu()
-            if ve_t.numel() == 0:
-                out["vision_embeds"] = torch.empty((0, 0), dtype=torch.float32)
-            else:
-                if ve_t.dim() == 1:
-                    ve_t = ve_t.view(1, -1)
-                elif ve_t.dim() != 2:
-                    ve_t = ve_t.view(1, -1)
-                out["vision_embeds"] = ve_t.to(torch.float32 if ve_t.dtype != torch.float32 else torch.float32)
-
-        # optional vision
-        ve = ex.get("input_embeds", None)
-        if ve is not None:
-            ve_t = ve.detach().cpu() if torch.is_tensor(ve) else torch.as_tensor(ve).detach().cpu()
-            if ve_t.numel() == 0:
-                out["input_embeds"] = torch.empty((0, 0), dtype=torch.float32)
-            else:
-                if ve_t.dim() == 1:
-                    ve_t = ve_t.view(1, -1)
-                elif ve_t.dim() != 2:
-                    ve_t = ve_t.view(1, -1)
-                out["input_embeds"] = ve_t.to(torch.float32 if ve_t.dtype != torch.float32 else torch.float32)
-
-        out["deep_stack_viz"] = _as_deep_3d(ex.get("deep_stack_viz"), deep_dim=self.deep_dim)
-
+        _check_shapes(out)
         return out
 
 
-# =========================
-# Dataloader wrapper (SINGLE-SHARD VERSION, same class name)
-# =========================
+# -------------------------
+# Collate: pad from cache
+# -------------------------
+def make_collate_from_cache(
+    *,
+    padding_side: str = "right",
+    pad_token_id: int = 0,
+):
+    if padding_side not in ("left", "right"):
+        raise ValueError(f"padding_side must be 'left' or 'right', got {padding_side}")
 
+    def collate(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
+        B = len(batch)
+        ids_ = [b["id"] for b in batch]
+        prompts_ = [b.get("prompt", "") for b in batch]
+        labels = torch.stack([b["label"] for b in batch], dim=0)
+
+        # squeeze cached (1,L)->(L) etc; collect lengths and K
+        ids_list, attn_list, pos_list, emb_list, vmask_list, deep_list = [], [], [], [], [], []
+        lengths, Ks = [], []
+
+        for b in batch:
+            ids = b["input_ids"]
+            am = b["attention_mask"]
+            pos = b["position_ids"]
+            emb = b["input_embeds"]
+            vm = b["visual_pos_masks"]
+            ds = b["deepstack_visual_embeds"]
+
+            # squeeze sample batch dim
+            ids = ids[0] if (ids.dim() == 2 and ids.shape[0] == 1) else ids
+            am  = am[0]  if (am.dim() == 2 and am.shape[0] == 1) else am
+            emb = emb[0] if (emb.dim() == 3 and emb.shape[0] == 1) else emb  # (L,2048)
+            vm  = vm[0]  if (vm.dim() == 2 and vm.shape[0] == 1) else vm      # (L,)
+            # pos stays (3,1,L)
+
+            L = int(ids.numel())
+            K = int(ds.shape[0]) if (torch.is_tensor(ds) and ds.dim() == 3) else 0
+            lengths.append(L)
+            Ks.append(K)
+
+            ids_list.append(ids)
+            attn_list.append(am)
+            pos_list.append(pos)
+            emb_list.append(emb)
+            vmask_list.append(vm)
+            deep_list.append(ds)
+
+        Lmax = max(lengths) if lengths else 0
+        Kmax = max(Ks) if Ks else 0
+
+        input_ids = torch.stack([_pad_1d(x, Lmax, pad_value=pad_token_id, padding_side=padding_side) for x in ids_list], dim=0)
+        attention_mask = torch.stack([_pad_1d(x, Lmax, pad_value=0, padding_side=padding_side) for x in attn_list], dim=0)
+
+        # (B,3,1,Lmax)
+        position_ids = torch.stack([_pad_pos_3_1_T(p, Lmax, padding_side=padding_side) for p in pos_list], dim=0)
+
+        # (B,Lmax,2048)
+        input_embeds = torch.stack([_pad_2d_time(e, Lmax, pad_value=0.0, padding_side=padding_side) for e in emb_list], dim=0)
+
+        # (B,Lmax) bool
+        visual_pos_masks = torch.stack([_pad_1d(v.to(torch.bool), Lmax, pad_value=0, padding_side=padding_side).to(torch.bool) for v in vmask_list], dim=0)
+
+        # (B,Kmax,64,2048)
+        deepstack_visual_embeds = torch.stack(
+            [_pad_deepstack_stack64(d, Kmax, padding_side=padding_side) for d in deep_list],
+            dim=0,
+        )  # (B, Kmax*64, 2048)
+
+        return {
+            "ids": ids_,
+            "prompts": prompts_,
+            "label": labels,
+            "data": {
+                "input_ids": input_ids,
+                "attention_mask": attention_mask,
+                "position_ids": position_ids,
+                "input_embeds": input_embeds,
+                "visual_pos_masks": visual_pos_masks,
+                "deepstack_visual_embeds": deepstack_visual_embeds,
+            },
+        }
+
+    return collate
+
+
+# -------------------------
+# Dataloader wrapper
+# -------------------------
 class ESNLI_MemmapDataloader:
-    """
-    SINGLE-SHARD loader. Same name as your memmap wrapper, but it does NOT build memmaps.
-    It just loads one shard through ESNLI_MemmapDataset above.
-
-    Configure via:
-      config.dataset.cache_root
-      config.training_params.batch_size
-      optionally config.model.pad_token_id
-
-    You can pass shard_index to pick which shard in manifest.jsonl to inspect.
-    """
-
     def __init__(
         self,
         config,
         *,
+        split: str = "validation",
         shard_index: int = 0,
         shard_path: Optional[str] = None,
-        deep_dim: int = 2048,
         max_items: Optional[int] = None,
-        num_workers: Optional[int] = 0,   # <-- default 0 for clean debugging
-        prefetch_factor: int = 2,
-        persistent_workers: bool = False,
+        num_workers: int = 0,
         pin_memory: bool = False,
+        padding_side: str = "right",
+        pad_token_id: int = 0,
+        print_first_batch_stats: bool = True,
     ):
         cache_root = config.dataset.cache_root
         batch_size = int(config.training_params.batch_size)
-        pad_token_id = int(getattr(getattr(config, "model", None), "pad_token_id", 0))
 
-        g = torch.Generator()
-        g.manual_seed(0)
+        ds = ESNLI_MemmapDataset(
+            cache_root=cache_root,
+            split=split,
+            shard_index=shard_index,
+            shard_path=shard_path,
+            max_items=max_items,
+        )
 
-        def seed_worker(worker_id: int):
-            worker_seed = torch.initial_seed() % (2**32)
-            np.random.seed(worker_seed)
-            random.seed(worker_seed)
+        collate_fn = make_collate_from_cache(
+            padding_side=padding_side,
+            pad_token_id=pad_token_id,
+        )
 
-        if num_workers is None:
-            total_cpus = multiprocessing.cpu_count()
-            num_workers = max(1, min(4, total_cpus // 8 if total_cpus >= 16 else 2))
+        self.loader = DataLoader(
+            ds,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=int(num_workers),
+            pin_memory=bool(pin_memory),
+            collate_fn=collate_fn,
+        )
 
-        def collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
-            return esnli_memmap_collate(batch, pad_token_id=pad_token_id)
+        self.train_loader = self.loader
+        self.valid_loader = self.loader
+        self.test_loader = self.loader
 
-        self.collate_fn = collate_fn
-
-        def make_loader(split: str, shuffle: bool):
-            ds = ESNLI_MemmapDataset(
-                cache_root=cache_root,
-                split=split,
-                shard_index=shard_index,
-                shard_path=shard_path,
-                deep_dim=deep_dim,
-                max_items=max_items,
-            )
-            return DataLoader(
-                ds,
-                batch_size=batch_size,
-                shuffle=shuffle,
-                generator=g if shuffle else None,
-                worker_init_fn=seed_worker if int(num_workers) > 0 else None,
-                collate_fn=self.collate_fn,
-                num_workers=int(num_workers),
-                pin_memory=bool(pin_memory),
-                prefetch_factor=int(prefetch_factor) if int(num_workers) > 0 else None,
-                persistent_workers=bool(persistent_workers) if int(num_workers) > 0 else False,
-            )
-
-        # Keep the same attributes as your original wrapper
-        self.train_loader = make_loader("validation", shuffle=False) if os.path.isdir(os.path.join(cache_root, "validation")) else None
-        self.valid_loader = make_loader("validation", shuffle=False) if os.path.isdir(os.path.join(cache_root, "validation")) else None
-        self.test_loader = make_loader("test", shuffle=False) if os.path.isdir(os.path.join(cache_root, "test")) else None
+        if print_first_batch_stats:
+            batch = next(iter(self.loader))
+            ex = batch["data"]
+            print("\n[cache-reader] first batch loaded (padded from cache):")
+            for k in ["input_ids", "attention_mask", "position_ids", "input_embeds", "visual_pos_masks", "deepstack_visual_embeds"]:
+                print(_stats(k, ex[k]))
 
 
-# =========================
+# -------------------------
 # Example usage
-# =========================
-# loader = ESNLI_MemmapDataloader(cfg, shard_index=0, num_workers=0, max_items=128)
-# batch = next(iter(loader.valid_loader))
-# print(batch["data"]["input_ids"].shape, batch["label"].shape)
-# if "vision_embeds" in batch["data"]: print(batch["data"]["vision_embeds"].shape, batch["data"]["vision_mask"].shape)
-# if "deep_stack_viz" in batch["data"]: print(batch["data"]["deep_stack_viz"].shape, batch["data"]["deep_mask"].shape)
+# -------------------------
+# loader_wrap = ESNLI_MemmapDataloader(cfg, split="validation", shard_index=0, num_workers=0, padding_side="right", pad_token_id=0)
+# batch = next(iter(loader_wrap.valid_loader))
+# proc = batch["data"]
+# input_ids = proc["input_ids"].to(device)                       # (B,L)
+# attention_mask = proc["attention_mask"].to(device)             # (B,L)
+# position_ids = proc["position_ids"].to(device)                 # (B,3,1,L)
+# input_embeds = proc["input_embeds"].to(device)                 # (B,L,2048)
+# visual_pos_masks = proc["visual_pos_masks"].to(device)         # (B,L)
+# deepstack_visual_embeds = proc["deepstack_visual_embeds"].to(device) # (B,K,64,2048)

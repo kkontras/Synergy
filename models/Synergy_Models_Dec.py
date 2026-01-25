@@ -3921,6 +3921,54 @@ class QwenVL_ESNLI_Synergy_FrozenCLS_VisualEmb(nn.Module):
         #          252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265,
         #          266, 267, 268]], device='cuda:0')
 
+        def print_lm_input_stats(position_ids, inputs_embeds, attention_mask, image_mask, deep_stack_viz,
+                                 name="LM inputs"):
+            """
+            Short, readable printout of shape + basic stats for each input tensor.
+            """
+            import torch
+
+            def stats(t):
+                if t is None:
+                    return "None"
+                # handle non-tensors (just in case)
+                if not torch.is_tensor(t):
+                    return f"{type(t)}"
+                tt = t.detach()
+                shape = tuple(tt.shape)
+                dtype = str(tt.dtype).replace("torch.", "")
+                device = str(tt.device)
+                numel = tt.numel()
+
+                # min/max/mean only for numeric tensors
+                if numel == 0:
+                    return f"shape={shape} dtype={dtype} device={device} numel=0"
+
+                # Use float() for stable stats even in fp16/bf16
+                if tt.dtype in (torch.float16, torch.bfloat16, torch.float32, torch.float64):
+                    x = tt.float()
+                    return (f"shape={shape} dtype={dtype} device={device} "
+                            f"min={x.min().item():.5g} max={x.max().item():.5g} "
+                            f"mean={x.mean().item():.5g} std={x.std(unbiased=False).item():.5g}")
+                elif tt.dtype in (torch.int8, torch.int16, torch.int32, torch.int64, torch.uint8, torch.bool):
+                    # for masks / ids: show min/max + %nonzero
+                    x = tt
+                    nz = (x != 0).float().mean().item() * 100.0
+                    return (f"shape={shape} dtype={dtype} device={device} "
+                            f"min={x.min().item()} max={x.max().item()} nonzero={nz:.2f}%")
+                else:
+                    return f"shape={shape} dtype={dtype} device={device} numel={numel}"
+
+            print(f"\n=== {name} ===")
+            print(f"position_ids            : {stats(position_ids)}")
+            print(f"inputs_embeds           : {stats(inputs_embeds)}")
+            print(f"attention_mask          : {stats(attention_mask)}")
+            print(f"visual_pos_masks        : {stats(image_mask)}")
+            print(f"deepstack_visual_embeds : {stats(deep_stack_viz)}")
+
+        # call it right before language_model(...)
+        print_lm_input_stats(position_ids, inputs_embeds, attention_mask, image_mask, deep_stack_viz)
+
 
         out = self.backbone.model.language_model(
             input_ids=None,
@@ -3938,7 +3986,7 @@ class QwenVL_ESNLI_Synergy_FrozenCLS_VisualEmb(nn.Module):
 
         # masks_batch = self.build_image_text_token_masks(proc, self.processor)
         # image_mask_batch = masks_batch["image"]  # bool [B,T]
-        # 
+        #
         # inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask_batch, vis)
         # hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask, deep_stack_viz)
 
@@ -4217,16 +4265,16 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         proc = x
         device = self.backbone.device
         tok = self.processor.tokenizer
+        # print(proc.keys())
         input_ids = proc["input_ids"].to(device)
         attention_mask = proc["attention_mask"].to(device)
-        image_mask = proc["image_mask"].to(device)
-        vision_embeds = proc["vision_embeds"].to(device)
+        image_mask = proc["visual_pos_masks"].to(device)
+        # vision_embeds = proc["vision_embeds"].to(device)
         input_embeds = proc["input_embeds"].to(device)
         position_ids = proc["position_ids"].to(device)
-        deep_stack_viz = proc["deep_stack_viz"].to(device)
+        deep_stack_viz = proc["deepstack_visual_embeds"][0].to(device)
 
-        print(position_ids.shape)
-        position_ids = position_ids.permute(1, 0, 2)
+        # position_ids = position_ids.permute(1, 0, 2)
 
         # inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids.to(device))
         # print(vision_embeds.shape)
@@ -4234,8 +4282,11 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         # print(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]).shape)
 
         # inputs_embeds = inputs_embeds.masked_scatter(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]), vision_embeds)
-        deep_stack_viz = einops.rearrange(deep_stack_viz, "b c i j -> c (b i) j")
+        # position_ids = einops.rearrange(position_ids, "b c i -> c b i")
+        # deep_stack_viz = einops.rearrange(deep_stack_viz, "b c i j -> c (b i) j")
+        deep_stack_viz = [deep_stack_viz[i] for i in range(len(deep_stack_viz))]
         # print(deep_stack_viz.shape)
+        position_ids = position_ids.squeeze(dim=0)
 
         # inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
 
@@ -4243,13 +4294,63 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         # print(input_embeds.shape)
         # print(vision_embeds.shape)
         # print(deep_stack_viz.shape)
+
+        def print_lm_input_stats(position_ids, inputs_embeds, attention_mask, image_mask, deep_stack_viz,
+                                 name="LM inputs"):
+            """
+            Short, readable printout of shape + basic stats for each input tensor.
+            """
+            import torch
+
+            def stats(t):
+                if t is None:
+                    return "None"
+                # handle non-tensors (just in case)
+                if not torch.is_tensor(t):
+                    return f"{type(t)}"
+                tt = t.detach()
+                shape = tuple(tt.shape)
+                dtype = str(tt.dtype).replace("torch.", "")
+                device = str(tt.device)
+                numel = tt.numel()
+
+                # min/max/mean only for numeric tensors
+                if numel == 0:
+                    return f"shape={shape} dtype={dtype} device={device} numel=0"
+
+                # Use float() for stable stats even in fp16/bf16
+                if tt.dtype in (torch.float16, torch.bfloat16, torch.float32, torch.float64):
+                    x = tt.float()
+                    return (f"shape={shape} dtype={dtype} device={device} "
+                            f"min={x.min().item():.5g} max={x.max().item():.5g} "
+                            f"mean={x.mean().item():.5g} std={x.std(unbiased=False).item():.5g}")
+                elif tt.dtype in (torch.int8, torch.int16, torch.int32, torch.int64, torch.uint8, torch.bool):
+                    # for masks / ids: show min/max + %nonzero
+                    x = tt
+                    nz = (x != 0).float().mean().item() * 100.0
+                    return (f"shape={shape} dtype={dtype} device={device} "
+                            f"min={x.min().item()} max={x.max().item()} nonzero={nz:.2f}%")
+                else:
+                    return f"shape={shape} dtype={dtype} device={device} numel={numel}"
+
+            print(f"\n=== {name} ===")
+            print(f"position_ids            : {stats(position_ids)}")
+            print(f"inputs_embeds           : {stats(inputs_embeds)}")
+            print(f"attention_mask          : {stats(attention_mask)}")
+            print(f"visual_pos_masks        : {stats(image_mask)}")
+            print(f"deepstack_visual_embeds : {stats(deep_stack_viz)}")
+
+        # call it right before language_model(...)
+        # print_lm_input_stats(position_ids, input_embeds, attention_mask, image_mask, deep_stack_viz)
+
+
         out = self.backbone.model.language_model(
             input_ids=None,
             position_ids = position_ids,
             inputs_embeds=input_embeds,
             attention_mask=attention_mask,
             visual_pos_masks=image_mask,
-            # deepstack_visual_embeds=deep_stack_viz,
+            deepstack_visual_embeds=deep_stack_viz,
             output_hidden_states=True,
             return_dict=True,
             cache_position = None,
@@ -4742,7 +4843,7 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
         device = self.backbone.device
         input_ids = proc["input_ids"].to(device)
         attention_mask = proc["attention_mask"].to(device)
-        
+
         hint_mask = proc.get("hint_mask", None)
         if hint_mask is None:
             hint_mask = proc.get("text_mask", None)

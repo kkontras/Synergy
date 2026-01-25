@@ -616,10 +616,8 @@ def main():
         position_ids_cpu = position_ids.detach().cpu()
 
         # position_ids -> (B,3,1,T)
-        print(position_ids_cpu.shape)
         pos_b = _normalize_pos_to_B_3_1_T(position_ids_cpu, B)  # CPU
-        print(pos_b.shape)
-        # deepstack -> list length B of (K,64,2048)
+        # deepstack -> list length B of (K,64,2048) 
         deep_per_sample = _stack_deep_levels_per_sample(deep_stack_viz_list, B)
 
         # Save per-sample item

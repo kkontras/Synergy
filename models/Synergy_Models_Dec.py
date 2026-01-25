@@ -4341,7 +4341,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             print(f"deepstack_visual_embeds : {stats(deep_stack_viz)}")
 
         # call it right before language_model(...)
-        # print_lm_input_stats(position_ids, input_embeds, attention_mask, image_mask, deep_stack_viz)
+        print_lm_input_stats(position_ids, input_embeds, attention_mask, image_mask, deep_stack_viz)
 
 
         out = self.backbone.model.language_model(

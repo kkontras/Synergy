@@ -232,7 +232,7 @@ class ESNLIVE_Dataset(Dataset):
         self.logger.info(f"split={split} kept {len(self.keep)} / {len(self.rows)}")
 
     def __len__(self) -> int:
-        return 10
+        return len(self.keep)
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         ex = self.rows[self.keep[idx]]

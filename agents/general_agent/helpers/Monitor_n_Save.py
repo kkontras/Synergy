@@ -21,7 +21,7 @@ class Monitor_n_Save():
             model_save: bool = True,
             post_test_results: Optional[Dict[str, Any]] = None
     ) -> None:
-        return
+        # return
         # """Public method: save model, optimizer, encoders, logs, etc."""
         file_name = self._get_checkpoint_path()
         os.makedirs(os.path.dirname(file_name), exist_ok=True)

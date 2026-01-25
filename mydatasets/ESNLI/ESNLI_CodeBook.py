@@ -1,18 +1,26 @@
-# esnli_cache_qwen3vl_b1_proof_dump_and_verify.py
-# Batch-size=1 ONLY. "Proofed" against padding/collation mistakes by:
-#   (1) Saving EXACT tensors you will pass to language_model (no extra trimming beyond attention keep)
-#   (2) Immediately re-loading the just-written shard and printing shapes + stats
-#
-# Saves per item:
-#   input_ids            : (1, L) int64
-#   attention_mask       : (1, L) int64
-#   position_ids         : (3, 1, L) int64
-#   input_embeds         : (1, L, 2048) float16
-#   visual_pos_masks     : (1, L) bool
-#   deepstack_visual_embeds : (K, 64, 2048) float32 (K levels; e.g. 3)
-# plus id/label/prompt
-#
-# IMPORTANT: this script enforces batch_size=1 and will error otherwise.
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+esnli_cache_qwen3vl_multib_proof_dump_and_verify.py
+
+Multi-batch (B>=1) "proofed" cache builder that:
+  (1) Saves EXACT tensors you will pass to language_model (no padding kept)
+  (2) Immediately reloads each written shard and prints shapes + stats (first N items)
+
+Saves per item (per-sample):
+  input_ids              : (1, L) int64
+  attention_mask         : (1, L) int64
+  position_ids           : (3, 1, L) int64
+  input_embeds           : (1, L, 2048) float16
+  visual_pos_masks        : (1, L) bool
+  deepstack_visual_embeds : (K, 64, 2048) float16/float32 (K levels; e.g. 3)
+plus id/label/prompt
+
+Important:
+- This script is padding-proof by trimming with keep = attention_mask.bool() PER SAMPLE.
+- It supports batch_size > 1 and saves each sample as its own item (still with leading batch dim 1).
+"""
 
 import os
 import json
@@ -22,7 +30,7 @@ import random
 import argparse
 import logging
 import urllib.request
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -254,7 +262,6 @@ class ESNLIVE_Dataset(Dataset):
 
 
 def collate(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
-    # NOTE: this collate can support B>1 but we enforce B=1 later.
     return {
         "id": [b["id"] for b in batch],
         "text": [b["text"] for b in batch],
@@ -322,8 +329,7 @@ def _tensor_stats_line(name: str, t: Any) -> str:
     if t.numel() == 0:
         return f"{name:22s}: shape={tuple(t.shape)} dtype={t.dtype} device={t.device} numel=0"
     x = t.detach()
-    # compute in float for stable stats
-    xf = x.float() if x.dtype not in (torch.float16, torch.bfloat16, torch.float32, torch.float64) else x.float()
+    xf = x.float()
     mn = xf.min().item()
     mx = xf.max().item()
     mean = xf.mean().item()
@@ -357,6 +363,101 @@ def verify_shard(shard_path: str, n_show: int = 1) -> None:
 
 
 # -----------------------------
+# Careful extractors (batch-safe)
+# -----------------------------
+def _normalize_pos_to_B_3_1_T(position_ids: torch.Tensor, B: int) -> torch.Tensor:
+    """
+    Returns position_ids as (B,3,1,T) on CPU.
+
+    Accepts common variants seen in practice:
+      - (3,1,T)                  -> broadcast to (B,3,1,T) (only valid if B==1; else error)
+      - (B,3,1,T)
+      - (3,B,T) or (3,B,1,T)     -> permute to (B,3,1,T)
+      - (B,3,T)                  -> view to (B,3,1,T)
+    """
+    pos = position_ids
+
+    if pos.dim() == 3 and tuple(pos.shape[:2]) == (3, 1):
+        # (3,1,T)
+        if B != 1:
+            raise RuntimeError(f"Got position_ids (3,1,T) but B={B}. Expected batched position_ids.")
+        return pos.unsqueeze(0)  # (1,3,1,T)
+
+    if pos.dim() == 4 and int(pos.shape[0]) == B and tuple(pos.shape[1:3]) == (3, 1):
+        return pos  # (B,3,1,T)
+
+    if pos.dim() == 3 and int(pos.shape[0]) == B and int(pos.shape[1]) == 3:
+        # (B,3,T)
+        return pos.unsqueeze(2)  # (B,3,1,T)
+
+    if pos.dim() == 3 and int(pos.shape[0]) == 3 and int(pos.shape[1]) == B:
+        # (3,B,T)
+        return pos.permute(1, 0, 2).unsqueeze(2)  # (B,3,1,T)
+
+    if pos.dim() == 4 and int(pos.shape[0]) == 3 and int(pos.shape[1]) == B:
+        # (3,B,1,T)
+        return pos.permute(1, 0, 2, 3)  # (B,3,1,T)
+
+    raise RuntimeError(f"Unrecognized position_ids shape={tuple(pos.shape)} for B={B}")
+
+
+def _stack_deep_levels_per_sample(deep_stack_viz_list: Any, B: int) -> List[torch.Tensor]:
+    """
+    Returns list length B, each element (K,64,2048).
+
+    Supports deep level tensor shapes:
+      - (64*B, 2048)   <- your case (packed batch into token axis)
+      - (B, 64, 2048)
+      - (64, 2048)     (only if B==1)
+    """
+    # Default empty
+    if not isinstance(deep_stack_viz_list, (list, tuple)):
+        return [torch.empty((0, 64, 2048), dtype=torch.float16) for _ in range(B)]
+
+    levels = [t for t in deep_stack_viz_list if torch.is_tensor(t)]
+    if len(levels) == 0:
+        return [torch.empty((0, 64, 2048), dtype=torch.float16) for _ in range(B)]
+
+    per_sample_levels: List[List[torch.Tensor]] = [[] for _ in range(B)]
+
+    for lvl in levels:
+        t = lvl.detach().cpu()
+
+        # Case 1: packed: (64*B,2048)
+        if t.dim() == 2 and int(t.shape[1]) == 2048 and int(t.shape[0]) == 64 * B:
+            tb = t.view(B, 64, 2048)  # (B,64,2048)
+            for i in range(B):
+                per_sample_levels[i].append(tb[i])
+            continue
+
+        # Case 2: already batched: (B,64,2048)
+        if t.dim() == 3 and int(t.shape[0]) == B and tuple(t.shape[1:]) == (64, 2048):
+            for i in range(B):
+                per_sample_levels[i].append(t[i])
+            continue
+
+        # Case 3: single sample: (64,2048)
+        if t.dim() == 2 and tuple(t.shape) == (64, 2048):
+            if B != 1:
+                raise RuntimeError("deep_stack_viz level is (64,2048) but B>1; expected (64*B,2048) or (B,64,2048).")
+            per_sample_levels[0].append(t)
+            continue
+
+        raise RuntimeError(
+            f"Unexpected deep level shape {tuple(t.shape)}. "
+            f"Expected (64*B,2048) or (B,64,2048) or (64,2048 for B==1). B={B}"
+        )
+
+    out: List[torch.Tensor] = []
+    for i in range(B):
+        if len(per_sample_levels[i]) == 0:
+            out.append(torch.empty((0, 64, 2048), dtype=torch.float16))
+        else:
+            out.append(torch.cat([x.unsqueeze(0) for x in per_sample_levels[i]], dim=0))  # (K,64,2048)
+    return out
+
+
+# -----------------------------
 # Main
 # -----------------------------
 def main():
@@ -375,23 +476,20 @@ def main():
 
     ap.add_argument("--max_length", type=int, default=512)
 
-    ap.add_argument("--batch_size", type=int, default=1)
+    ap.add_argument("--batch_size", type=int, default=4)
     ap.add_argument("--num_workers", type=int, default=0)
 
     ap.add_argument("--shard_size", type=int, default=1000)
     ap.add_argument("--device", type=str, default="cuda:0")
     ap.add_argument("--dtype", type=str, default="float16", choices=["float32", "float16", "bfloat16"])
 
-    ap.add_argument("--verify_every_flush", type=int, default=1)   # verify right after each flush
-    ap.add_argument("--verify_n_show", type=int, default=1)        # print first N examples per shard
+    ap.add_argument("--verify_every_flush", type=int, default=1)
+    ap.add_argument("--verify_n_show", type=int, default=1)
 
     args = ap.parse_args()
 
-    if int(args.batch_size) != 1:
-        raise ValueError("This debug script is batch_size=1 ONLY. Set --batch_size 1.")
-
     logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
-    logger = logging.getLogger("ESNLI_Cache_Qwen3VL_B1_VERIFY")
+    logger = logging.getLogger("ESNLI_Cache_Qwen3VL_MULTI_B_VERIFY")
 
     ds = ESNLIVE_Dataset(
         data_root=args.data_root,
@@ -401,7 +499,7 @@ def main():
         image_size=args.image_size,
         max_samples=None if args.max_samples < 0 else int(args.max_samples),
     )
-    dl = make_loader(ds, batch_size=1, num_workers=int(args.num_workers), shuffle=False)
+    dl = make_loader(ds, batch_size=int(args.batch_size), num_workers=int(args.num_workers), shuffle=False)
 
     processor = AutoProcessor.from_pretrained(args.model_name, trust_remote_code=True)
 
@@ -431,54 +529,59 @@ def main():
 
     logger.info(f"Writing cache to: {split_out}")
     logger.info(f"Model: {args.model_name} | dtype={model_dtype} | device={args.device}")
-    logger.info(f"batch_size=1 | shard_size={args.shard_size} | max_length={args.max_length}")
+    logger.info(f"batch_size={args.batch_size} | shard_size={args.shard_size} | max_length={args.max_length}")
     logger.info("This script saves exactly what you later feed to language_model (after attention keep).")
 
     from tqdm import tqdm
 
     for batch in tqdm(dl, desc=f"[cache] {args.split}"):
-        # enforce B=1
-        hyp: List[str] = batch["text"]
-        images_t: torch.Tensor = batch["image"]  # [1,3,H,W]
-        labels: torch.Tensor = batch["label"]    # [1]
+        hyp_list: List[str] = batch["text"]
+        images_t: torch.Tensor = batch["image"]    # (B,3,H,W)
+        labels: torch.Tensor = batch["label"]      # (B,)
         ids: List[str] = batch["id"]
-        if images_t.shape[0] != 1:
-            raise RuntimeError(f"Expected batch size 1 but got {images_t.shape[0]}")
-        if len(hyp) != 1 or len(ids) != 1:
-            raise RuntimeError("Expected single element lists for text/id")
+        B = int(images_t.shape[0])
+        if len(hyp_list) != B or len(ids) != B or labels.shape[0] != B:
+            raise RuntimeError("Batch field sizes mismatch.")
 
-        text = build_prompt_cls(hypothesis=hyp)[0]
+        texts = build_prompt_cls(hypothesis=hyp_list)
 
-        messages = [{"role": "user", "content": [{"type": "image"}, {"type": "text", "text": text}]}]
-        prompt = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        # Per-sample chat template (keeps content exact)
+        messages_batch = [
+            [{"role": "user", "content": [{"type": "image"}, {"type": "text", "text": texts[i]}]}]
+            for i in range(B)
+        ]
+        prompts = [
+            processor.apply_chat_template(messages_batch[i], tokenize=False, add_generation_prompt=True)
+            for i in range(B)
+        ]
 
-        pil_image = tensor_image_to_pil(images_t[0])
+        pil_images = [tensor_image_to_pil(images_t[i]) for i in range(B)]
 
         enc = processor(
-            text=[prompt],
-            images=[pil_image],
+            text=prompts,
+            images=pil_images,
             return_tensors="pt",
             padding=True,
             truncation=True,
             max_length=int(args.max_length),
         )
 
-        input_ids = enc["input_ids"]            # (1,T)
-        attention_mask = enc["attention_mask"]  # (1,T)
+        input_ids = enc["input_ids"]            # (B,T)
+        attention_mask = enc["attention_mask"]  # (B,T)
         if not torch.is_tensor(input_ids) or not torch.is_tensor(attention_mask):
             raise RuntimeError("processor did not return tensor input_ids/attention_mask")
 
         pixel_values = enc.get("pixel_values", None)
         image_grid_thw = enc.get("image_grid_thw", None)
         if pixel_values is None or image_grid_thw is None:
-            raise RuntimeError("Processor did not return pixel_values / image_grid_thw; check processor/model version.")
+            raise RuntimeError("Processor did not return pixel_values / image_grid_thw.")
 
-        # move ids/mask to CPU for trimming, but embeddings computed on model.device
+        # CPU copies for trimming
         input_ids_cpu = input_ids.detach().cpu()
         attention_cpu = attention_mask.detach().cpu()
 
-        # build token embeddings then scatter image features
-        token_embeds = model.model.get_input_embeddings()(input_ids.to(model.device))  # (1,T,2048)
+        # Build token embeddings then scatter image features
+        token_embeds = model.model.get_input_embeddings()(input_ids.to(model.device))  # (B,T,2048)
 
         with torch.no_grad():
             pv = pixel_values.to(model.device, dtype=pixel_values.dtype, non_blocking=True)
@@ -493,81 +596,70 @@ def main():
                 inputs_embeds=token_embeds,
                 image_features=image_embeds_cat,
             )
-            placeholder_mask_2d = placeholder_mask[..., 0] if placeholder_mask.dim() == 3 else placeholder_mask  # (1,T)
+            placeholder_mask_2d = placeholder_mask[..., 0] if placeholder_mask.dim() == 3 else placeholder_mask  # (B,T)
 
-            # scatter
             token_embeds = token_embeds.masked_scatter(placeholder_mask, image_embeds_cat)
 
-            # force fp16 for caching (your requirement)
+            # Force fp16 for caching (your requirement)
             token_embeds = token_embeds.to(torch.float16)
 
-            # rope indices
             position_ids, _ = model.model.get_rope_index(
                 input_ids.to(model.device),
                 gthw,
                 None,
                 attention_mask=attention_mask.to(model.device),
             )
-            position_ids_cpu = position_ids.detach().cpu()  # typically (1,3,1,T) or (3,1,T) depending impl
 
-        # normalize position_ids to (3,1,T) for this single sample
-        # Common case from your working print: (3,1,T)
-        # Some impls return leading batch: (1,3,1,T)
-        pos = position_ids_cpu
-        if pos.dim() == 4 and pos.shape[0] == 1:
-            pos = pos[0]  # -> (3,1,T)
-        if not (pos.dim() == 3 and int(pos.shape[0]) == 3 and int(pos.shape[1]) == 1):
-            raise RuntimeError(f"Unexpected position_ids shape after normalize: {tuple(pos.shape)}")
+        # Normalize + CPU
+        placeholder_mask_2d_cpu = placeholder_mask_2d.detach().cpu()  # (B,T) bool
+        token_embeds_cpu = token_embeds.detach().cpu()                # (B,T,2048) fp16
+        position_ids_cpu = position_ids.detach().cpu()
 
-        # deepstack: keep all levels -> stack (K,64,2048)
-        deep_levels = []
-        if isinstance(deep_stack_viz_list, (list, tuple)):
-            for t in deep_stack_viz_list:
-                if torch.is_tensor(t):
-                    deep_levels.append(t.detach().cpu())
-        if len(deep_levels) > 0:
-            deepstack_visual_embeds = torch.cat([t.unsqueeze(0) for t in deep_levels], dim=0)  # (K,64,2048)
-        else:
-            deepstack_visual_embeds = torch.empty((0, 0, 0), dtype=torch.float32)
+        # position_ids -> (B,3,1,T)
+        print(position_ids_cpu.shape)
+        pos_b = _normalize_pos_to_B_3_1_T(position_ids_cpu, B)  # CPU
+        print(pos_b.shape)
+        # deepstack -> list length B of (K,64,2048)
+        deep_per_sample = _stack_deep_levels_per_sample(deep_stack_viz_list, B)
 
-        # attention keep (padding-proof): keep only tokens with attention==1
-        keep = attention_cpu[0].bool()  # (T,)
-        if keep.sum().item() <= 0:
-            raise RuntimeError("attention_mask had no True tokens?")
+        # Save per-sample item
+        for i in range(B):
+            keep = attention_cpu[i].bool()  # (T,)
+            if keep.sum().item() <= 0:
+                raise RuntimeError(f"attention_mask had no True tokens for sample {i}")
 
-        input_ids_keep = input_ids_cpu[0][keep].contiguous().unsqueeze(0)        # (1,L)
-        attention_keep = attention_cpu[0][keep].contiguous().unsqueeze(0)        # (1,L)
-        input_embeds_keep = token_embeds.detach().cpu()[0][keep].contiguous().unsqueeze(0)  # (1,L,2048) fp16
+            # trim & add leading batch dim 1
+            input_ids_keep = input_ids_cpu[i][keep].contiguous().unsqueeze(0)                 # (1,L)
+            attention_keep = attention_cpu[i][keep].contiguous().unsqueeze(0)                 # (1,L)
+            input_embeds_keep = token_embeds_cpu[i][keep].contiguous().unsqueeze(0)           # (1,L,2048)
+            visual_pos_masks = placeholder_mask_2d_cpu[i][keep].contiguous().unsqueeze(0).bool()  # (1,L)
+            pos_keep = pos_b[i][:, :, keep].contiguous()                                      # (3,1,L)
 
-        # visual token positions in final embeds
-        visual_pos_masks = placeholder_mask_2d.detach().cpu()[0][keep].contiguous().unsqueeze(0).bool()  # (1,L)
+            deepstack_visual_embeds = deep_per_sample[i]
+            # keep dtype as-is; but you can force fp16 if you want consistency:
+            # deepstack_visual_embeds = deepstack_visual_embeds.to(torch.float16)
 
-        # position ids (3,1,T) -> (3,1,L)
-        pos_keep = pos[:, :, keep].contiguous()
+            item = {
+                "id": ids[i],
+                "label": labels[i].detach().cpu(),
+                "prompt": prompts[i],
 
-        # build item (THIS IS EXACTLY WHAT YOU FEED LATER)
-        item = {
-            "id": ids[0],
-            "label": labels[0].detach().cpu(),
-            "prompt": prompt,
+                "input_ids": input_ids_keep,                 # (1,L)
+                "attention_mask": attention_keep,            # (1,L)
+                "position_ids": pos_keep,                    # (3,1,L)
+                "input_embeds": input_embeds_keep,           # (1,L,2048) fp16
+                "visual_pos_masks": visual_pos_masks,        # (1,L) bool
+                "deepstack_visual_embeds": deepstack_visual_embeds,  # (K,64,2048)
+            }
 
-            "input_ids": input_ids_keep,                 # (1,L)
-            "attention_mask": attention_keep,            # (1,L)
-            "position_ids": pos_keep,                    # (3,1,L)
-            "input_embeds": input_embeds_keep,           # (1,L,2048) fp16
-            "visual_pos_masks": visual_pos_masks,        # (1,L) bool
-            "deepstack_visual_embeds": deepstack_visual_embeds,  # (K,64,2048)
-        }
+            items.append(item)
 
-        items.append(item)
-
-        # flush
-        if len(items) >= int(args.shard_size):
-            shard_path = flush_shard(items, split_out, shard_idx, manifest_path)
-            if int(args.verify_every_flush) == 1:
-                verify_shard(shard_path, n_show=int(args.verify_n_show))
-            items = []
-            shard_idx += 1
+            if len(items) >= int(args.shard_size):
+                shard_path = flush_shard(items, split_out, shard_idx, manifest_path)
+                if int(args.verify_every_flush) == 1:
+                    verify_shard(shard_path, n_show=int(args.verify_n_show))
+                items = []
+                shard_idx += 1
 
     # flush final
     if items:
@@ -575,7 +667,6 @@ def main():
         if int(args.verify_every_flush) == 1:
             verify_shard(shard_path, n_show=int(args.verify_n_show))
 
-    # meta
     meta = {
         "model_name": args.model_name,
         "split": args.split,
@@ -583,11 +674,11 @@ def main():
         "image_size": int(args.image_size),
         "dtype": str(model_dtype),
         "notes": [
-            "BATCH SIZE 1 ONLY debug writer.",
+            "Multi-batch debug writer.",
             "Saved tensors are post-attention_keep (no padding).",
             "input_embeds are after placeholder scatter and cast to float16.",
-            "position_ids normalized to (3,1,T) then trimmed to (3,1,L).",
-            "deepstack_visual_embeds stacks all deep levels to (K,64,2048).",
+            "position_ids normalized to (B,3,1,T) then trimmed to (3,1,L) per sample.",
+            "deepstack_visual_embeds stacks all deep levels to (K,64,2048) per sample when available.",
             "After each shard write, script reloads shard and prints shapes/stats.",
         ],
     }

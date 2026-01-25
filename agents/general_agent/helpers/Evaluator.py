@@ -370,11 +370,11 @@ class General_Evaluator:
         else:
             is_best_dict["accuracy"] = False
 
-        # if "combined" in metrics["pg_acc"]:
-        #     prev = best_logs["best_vsyn_accuracy"]["pg_acc"]["combined"]["group_metrics"]["synergy"]["internal_acc"]
-        #     is_best_dict["syn_accuracy"] = metrics["pg_acc"]["combined"]["group_metrics"]["synergy"]["internal_acc"] > prev
-        # else:
-        is_best_dict["syn_accuracy"] = False
+        if "combined" in metrics["pg_acc"]:
+            prev = best_logs["best_vsyn_accuracy"]["pg_acc"]["combined"]["group_metrics"]["synergy"]["internal_acc"]
+            is_best_dict["syn_accuracy"] = metrics["pg_acc"]["combined"]["group_metrics"]["synergy"]["internal_acc"] > prev
+        else:
+            is_best_dict["syn_accuracy"] = False
 
         message = ""
         for key, value in is_best_dict.items():

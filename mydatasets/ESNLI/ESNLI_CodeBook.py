@@ -362,9 +362,6 @@ def verify_shard(shard_path: str, n_show: int = 1) -> None:
             print(_tensor_stats_line(k, ex.get(k, None)))
 
 
-# -----------------------------
-# Careful extractors (batch-safe)
-# -----------------------------
 def _normalize_pos_to_B_3_1_T(position_ids: torch.Tensor, B: int) -> torch.Tensor:
     """
     Returns position_ids as (B,3,1,T) on CPU.
@@ -457,9 +454,6 @@ def _stack_deep_levels_per_sample(deep_stack_viz_list: Any, B: int) -> List[torc
     return out
 
 
-# -----------------------------
-# Main
-# -----------------------------
 def main():
     ap = argparse.ArgumentParser()
 
@@ -477,7 +471,7 @@ def main():
     ap.add_argument("--max_length", type=int, default=512)
 
     ap.add_argument("--batch_size", type=int, default=4)
-    ap.add_argument("--num_workers", type=int, default=0)
+    ap.add_argument("--num_workers", type=int, default=16)
 
     ap.add_argument("--shard_size", type=int, default=1000)
     ap.add_argument("--device", type=str, default="cuda:0")
@@ -537,16 +531,12 @@ def main():
 
     for batch in tqdm(dl, desc=f"[cache] {args.split}"):
         hyp_list: List[str] = batch["text"]
-        images_t: torch.Tensor = batch["image"]    # (B,3,H,W)
+        images_t: torch.Tensor = batch["image"].to(model.device)    # (B,3,H,W)
         labels: torch.Tensor = batch["label"]      # (B,)
         ids: List[str] = batch["id"]
+
         B = int(images_t.shape[0])
-        if len(hyp_list) != B or len(ids) != B or labels.shape[0] != B:
-            raise RuntimeError("Batch field sizes mismatch.")
-
         texts = build_prompt_cls(hypothesis=hyp_list)
-
-        # Per-sample chat template (keeps content exact)
         messages_batch = [
             [{"role": "user", "content": [{"type": "image"}, {"type": "text", "text": texts[i]}]}]
             for i in range(B)
@@ -556,54 +546,34 @@ def main():
             for i in range(B)
         ]
 
-        pil_images = [tensor_image_to_pil(images_t[i]) for i in range(B)]
+        # pil_images = [tensor_image_to_pil(images_t[i]) for i in range(B)]
 
         enc = processor(
             text=prompts,
-            images=pil_images,
+            images=images_t,
             return_tensors="pt",
             padding=True,
             truncation=True,
             max_length=int(args.max_length),
         )
 
-        input_ids = enc["input_ids"]            # (B,T)
-        attention_mask = enc["attention_mask"]  # (B,T)
-        if not torch.is_tensor(input_ids) or not torch.is_tensor(attention_mask):
-            raise RuntimeError("processor did not return tensor input_ids/attention_mask")
+        input_ids = enc["input_ids"].to(model.device)            # (B,T)
+        attention_mask = enc["attention_mask"].to(model.device)      # (B,T)
+        pixel_values = enc["pixel_values"].to(model.device)
+        image_grid_thw = enc["image_grid_thw"].to(model.device)
 
-        pixel_values = enc.get("pixel_values", None)
-        image_grid_thw = enc.get("image_grid_thw", None)
-        if pixel_values is None or image_grid_thw is None:
-            raise RuntimeError("Processor did not return pixel_values / image_grid_thw.")
-
-        # CPU copies for trimming
-        input_ids_cpu = input_ids.detach().cpu()
-        attention_cpu = attention_mask.detach().cpu()
-
-
-        # Build token embeddings then scatter image features
         with torch.no_grad():
-            input_ids_d = input_ids.to(model.device, non_blocking=True)
-            attn_d = attention_mask.to(model.device, non_blocking=True)
+            # input_ids_d = input_ids.to(model.device, non_blocking=True)
+            # attn_d = attention_mask.to(model.device, non_blocking=True)
 
-            token_embeds = model.model.get_input_embeddings()(input_ids_d)  # (B,T,2048)
+            token_embeds = model.model.get_input_embeddings()(input_ids)  # (B,T,2048)
 
-            pv = pixel_values.to(model.device, dtype=pixel_values.dtype, non_blocking=True)
-            gthw = image_grid_thw.to(model.device, non_blocking=True)
-
-
-            print("model device example:", next(model.parameters()).device)
-            print("token_embeds device:", token_embeds.device)
-            print("pixel_values device after .to:", pv.shape)
-            print("pixel_values device after .to:", gthw.device)
-
-            image_embeds_list, deep_stack_viz_list = model.get_image_features(pv, gthw)
+            image_embeds_list, deep_stack_viz_list = model.get_image_features(pixel_values, image_grid_thw)
 
             image_embeds_cat = torch.cat(image_embeds_list, dim=0).to(token_embeds.device, token_embeds.dtype)
 
             placeholder_mask, _ = model.model.get_placeholder_mask(
-                input_ids.to(model.device),
+                input_ids,
                 inputs_embeds=token_embeds,
                 image_features=image_embeds_cat,
             )
@@ -614,14 +584,24 @@ def main():
             # Force fp16 for caching (your requirement)
             # token_embeds = token_embeds.to(torch.float16)
 
+            attention_mask_tensor = (
+                attention_mask if not isinstance(attention_mask, dict) else attention_mask["full_attention"]
+            )
+            if attention_mask_tensor is not None and attention_mask_tensor.ndim == 4:
+                attention_mask_tensor = torch.diagonal(attention_mask_tensor[:, 0], dim1=1, dim2=2)
+                # Only apply conversion for floating point tensors (inverted masks)
+                if attention_mask_tensor.dtype.is_floating_point:
+                    attention_mask_tensor = attention_mask_tensor / torch.finfo(attention_mask_tensor.dtype).min
+                    attention_mask_tensor = (1.0 - attention_mask_tensor).int()
             position_ids, _ = model.model.get_rope_index(
-                input_ids_d,
-                gthw,
+                input_ids,
+                image_grid_thw,
                 None,
-                attention_mask=attn_d,
+                attention_mask=attention_mask_tensor,
             )
 
-        # Normalize + CPU
+        input_ids_cpu = input_ids.detach().cpu()
+        attention_cpu = attention_mask.detach().cpu()
         placeholder_mask_2d_cpu = placeholder_mask_2d.detach().cpu()  # (B,T) bool
         token_embeds_cpu = token_embeds.detach().cpu()                # (B,T,2048) fp16
         position_ids_cpu = position_ids.detach().cpu()
@@ -665,16 +645,16 @@ def main():
 
             if len(items) >= int(args.shard_size):
                 shard_path = flush_shard(items, split_out, shard_idx, manifest_path)
-                if int(args.verify_every_flush) == 1:
-                    verify_shard(shard_path, n_show=int(args.verify_n_show))
+                # if int(args.verify_every_flush) == 1:
+                #     verify_shard(shard_path, n_show=int(args.verify_n_show))
                 items = []
                 shard_idx += 1
 
     # flush final
-    if items:
-        shard_path = flush_shard(items, split_out, shard_idx, manifest_path)
-        if int(args.verify_every_flush) == 1:
-            verify_shard(shard_path, n_show=int(args.verify_n_show))
+    # if items:
+    #     shard_path = flush_shard(items, split_out, shard_idx, manifest_path)
+        # if int(args.verify_every_flush) == 1:
+        #     verify_shard(shard_path, n_show=int(args.verify_n_show))
 
     meta = {
         "model_name": args.model_name,

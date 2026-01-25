@@ -205,6 +205,97 @@ def _tokenize_no_special(tok, s: str) -> List[int]:
         return []
     return tok(s, add_special_tokens=False).input_ids
 
+def _normalize_pos_to_B_3_1_T(position_ids: torch.Tensor, B: int) -> torch.Tensor:
+    """
+    Returns position_ids as (B,3,1,T) on CPU.
+
+    Accepts common variants seen in practice:
+      - (3,1,T)                  -> broadcast to (B,3,1,T) (only valid if B==1; else error)
+      - (B,3,1,T)
+      - (3,B,T) or (3,B,1,T)     -> permute to (B,3,1,T)
+      - (B,3,T)                  -> view to (B,3,1,T)
+    """
+    pos = position_ids
+
+    if pos.dim() == 3 and tuple(pos.shape[:2]) == (3, 1):
+        # (3,1,T)
+        if B != 1:
+            raise RuntimeError(f"Got position_ids (3,1,T) but B={B}. Expected batched position_ids.")
+        return pos.unsqueeze(0)  # (1,3,1,T)
+
+    if pos.dim() == 4 and int(pos.shape[0]) == B and tuple(pos.shape[1:3]) == (3, 1):
+        return pos  # (B,3,1,T)
+
+    if pos.dim() == 3 and int(pos.shape[0]) == B and int(pos.shape[1]) == 3:
+        # (B,3,T)
+        return pos.unsqueeze(2)  # (B,3,1,T)
+
+    if pos.dim() == 3 and int(pos.shape[0]) == 3 and int(pos.shape[1]) == B:
+        # (3,B,T)
+        return pos.permute(1, 0, 2).unsqueeze(2)  # (B,3,1,T)
+
+    if pos.dim() == 4 and int(pos.shape[0]) == 3 and int(pos.shape[1]) == B:
+        # (3,B,1,T)
+        return pos.permute(1, 0, 2, 3)  # (B,3,1,T)
+
+    raise RuntimeError(f"Unrecognized position_ids shape={tuple(pos.shape)} for B={B}")
+
+
+def _stack_deep_levels_per_sample(deep_stack_viz_list: Any, B: int) -> List[torch.Tensor]:
+    """
+    Returns list length B, each element (K,64,2048).
+
+    Supports deep level tensor shapes:
+      - (64*B, 2048)   <- your case (packed batch into token axis)
+      - (B, 64, 2048)
+      - (64, 2048)     (only if B==1)
+    """
+    # Default empty
+    if not isinstance(deep_stack_viz_list, (list, tuple)):
+        return [torch.empty((0, 64, 2048), dtype=torch.float16) for _ in range(B)]
+
+    levels = [t for t in deep_stack_viz_list if torch.is_tensor(t)]
+    if len(levels) == 0:
+        return [torch.empty((0, 64, 2048), dtype=torch.float16) for _ in range(B)]
+
+    per_sample_levels: List[List[torch.Tensor]] = [[] for _ in range(B)]
+
+    for lvl in levels:
+        t = lvl.detach().cpu()
+
+        # Case 1: packed: (64*B,2048)
+        if t.dim() == 2 and int(t.shape[1]) == 2048 and int(t.shape[0]) == 64 * B:
+            tb = t.view(B, 64, 2048)  # (B,64,2048)
+            for i in range(B):
+                per_sample_levels[i].append(tb[i])
+            continue
+
+        # Case 2: already batched: (B,64,2048)
+        if t.dim() == 3 and int(t.shape[0]) == B and tuple(t.shape[1:]) == (64, 2048):
+            for i in range(B):
+                per_sample_levels[i].append(t[i])
+            continue
+
+        # Case 3: single sample: (64,2048)
+        if t.dim() == 2 and tuple(t.shape) == (64, 2048):
+            if B != 1:
+                raise RuntimeError("deep_stack_viz level is (64,2048) but B>1; expected (64*B,2048) or (B,64,2048).")
+            per_sample_levels[0].append(t)
+            continue
+
+        raise RuntimeError(
+            f"Unexpected deep level shape {tuple(t.shape)}. "
+            f"Expected (64*B,2048) or (B,64,2048) or (64,2048 for B==1). B={B}"
+        )
+
+    out: List[torch.Tensor] = []
+    for i in range(B):
+        if len(per_sample_levels[i]) == 0:
+            out.append(torch.empty((0, 64, 2048), dtype=torch.float16))
+        else:
+            out.append(torch.cat([x.unsqueeze(0) for x in per_sample_levels[i]], dim=0))  # (K,64,2048)
+    return out
+
 
 def build_token_type_ids_best_effort(
     *,
@@ -579,23 +670,33 @@ def build_and_save_cache(
             return_tensors="pt",
         )
 
-        input_ids = proc["input_ids"]               # (B, T)
-        attention_mask = proc["attention_mask"]     # (B, T)
-        pixel_values = proc["pixel_values"]         # (B, C, H, W)
-        image_grid_thw = proc.get("image_grid_thw", None)  # (B, 3) typically
+        input_ids = proc["input_ids"].to(device)           # (B, T)
+        attention_mask = proc["attention_mask"].to(device)     # (B, T)
+        pixel_values = proc["pixel_values"].to(device)         # (B, C, H, W)
+        image_grid_thw = proc["image_grid_thw"].to(device)  # (B, 3) typically
 
-        inputs_embeds = model.model.get_input_embeddings()(input_ids.cuda())
 
         try:
             with torch.no_grad():
-                pv = pixel_values.to(model.device, dtype=pixel_values.dtype, non_blocking=True)
-                gthw = image_grid_thw.to(model.device, non_blocking=True)
-                image_embeds, deep_stack_viz = model.get_image_features(pv, gthw)
-                image_embeds_keep = torch.cat([image_embeds[i].unsqueeze(dim=0) for i in range(len(image_embeds))], dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
-                image_embeds = torch.cat(image_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
-                image_mask, _ = model.model.get_placeholder_mask( input_ids, inputs_embeds=inputs_embeds, image_features=image_embeds)
-                inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
-                image_mask = image_mask[...,0]
+
+                token_embeds = model.model.get_input_embeddings()(input_ids)  # (B,T,2048)
+
+                image_embeds_list, deep_stack_viz_list = model.get_image_features(pixel_values, image_grid_thw)
+
+                image_embeds_cat = torch.cat(image_embeds_list, dim=0).to(token_embeds.device, token_embeds.dtype)
+
+                placeholder_mask, _ = model.model.get_placeholder_mask(
+                    input_ids,
+                    inputs_embeds=token_embeds,
+                    image_features=image_embeds_cat,
+                )
+                placeholder_mask_2d = placeholder_mask[
+                    ..., 0] if placeholder_mask.dim() == 3 else placeholder_mask  # (B,T)
+
+                token_embeds = token_embeds.masked_scatter(placeholder_mask, image_embeds_cat)
+
+                # Force fp16 for caching (your requirement)
+                # token_embeds = token_embeds.to(torch.float16)
 
                 attention_mask_tensor = (
                     attention_mask if not isinstance(attention_mask, dict) else attention_mask["full_attention"]
@@ -613,41 +714,43 @@ def build_and_save_cache(
                     attention_mask=attention_mask_tensor,
                 )
 
-            vision_embeds_cpu = [image_embeds_keep[i].detach().cpu() for i in range(image_embeds_keep.size(0))]
-            vision_mask_cpu = [image_mask[i].detach().cpu() for i in range(image_mask.size(0))]
-            deep_stack_viz_cpu = einops.rearrange(torch.cat([i.unsqueeze(dim=0) for i in deep_stack_viz], dim=0), "a (b i) f -> b a i f", b=image_mask.shape[0])
-            deep_stack_viz_cpu = [deep_stack_viz_cpu[i].detach().cpu() for i in range(deep_stack_viz_cpu.size(0))]
-            position_ids = position_ids.permute(1,0,2)
-            position_ids_cpu = [position_ids[i].detach().cpu() for i in range(position_ids.size(0))]
+            input_ids_cpu = input_ids.detach().cpu()
+            attention_cpu = attention_mask.detach().cpu()
+            placeholder_mask_2d_cpu = placeholder_mask_2d.detach().cpu()  # (B,T) bool
+            token_embeds_cpu = token_embeds.detach().cpu()  # (B,T,2048) fp16
+            position_ids_cpu = position_ids.detach().cpu()
+            pos_b = _normalize_pos_to_B_3_1_T(position_ids_cpu, len(labels))  # CPU
+            deep_per_sample = _stack_deep_levels_per_sample(deep_stack_viz_list, len(labels))
+
 
         except Exception as e:
             raise Exception(e)
 
-        pixel_values = einops.rearrange(pixel_values, "(b i) c -> b i c", b=batch_size)
-
 
         B = input_ids.size(0)
-        for b in range(B):
-            true_len = int(attention_mask[b].sum().item())
-            # left padding => keep the last true_len tokens
-            ids_1d = input_ids[b, -true_len:].contiguous()
-            attn_1d = attention_mask[b, -true_len:].contiguous()
+        for i in range(B):
 
-            position_ids_i = position_ids_cpu[b]
-            deep_stack_viz_cpu_i = deep_stack_viz_cpu[b]
-            image_mask_hf_i = vision_mask_cpu[b].to(torch.uint8).contiguous()
-            vision_embeds_cpu_i = vision_embeds_cpu[b]
+            keep = attention_cpu[i].bool()  # (T,)
+            if keep.sum().item() <= 0:
+                raise RuntimeError(f"attention_mask had no True tokens for sample {i}")
+
+            input_ids_keep = input_ids_cpu[i][keep].contiguous().unsqueeze(0)                 # (1,L)
+            attention_keep = attention_cpu[i][keep].contiguous().unsqueeze(0)                 # (1,L)
+            input_embeds_keep = token_embeds_cpu[i][keep].contiguous().unsqueeze(0)           # (1,L,2048)
+            visual_pos_masks = placeholder_mask_2d_cpu[i][keep].contiguous().unsqueeze(0).bool()  # (1,L)
+            pos_keep = pos_b[i][:, :, keep].contiguous()                                      # (3,1,L)
+            deepstack_visual_embeds = deep_per_sample[i]
 
             ttid = build_token_type_ids_best_effort(
                 tok=tok,
-                input_ids_1d=ids_1d,
-                attention_mask_1d=attn_1d,
+                input_ids_1d=input_ids_keep,
+                attention_mask_1d=keep,
                 image_token_id=image_token_id,
                 cls_token_id=cls_token_id,
-                hint_text=hint_texts[b],
-                question_text=question_texts[b],
-                choices_text=choices_texts[b],
-                instr_text=instr_texts[b]
+                hint_text=hint_texts[i],
+                question_text=question_texts[i],
+                choices_text=choices_texts[i],
+                instr_text=instr_texts[i]
             )
 
             masks = {
@@ -661,17 +764,18 @@ def build_and_save_cache(
             }
 
             item: Dict[str, Any] = {
-                "id": ids[b],
-                "label": labels[b].clone(),
-                "input_ids": ids_1d.cpu(),
-                "attention_mask": attn_1d.cpu(),
+                "id": ids[i],
+                "label": labels[i].clone(),
                 "token_type_ids": ttid.cpu(),
                 "masks": {k: v.cpu() for k, v in masks.items()},
-                "pixel_values": pixel_values[b].cpu().contiguous(),
-                "deep_stack_viz": deep_stack_viz_cpu_i,
-                "position_ids": position_ids_i,
-                "vision_embeds": vision_embeds_cpu_i,
-                "image_grid_thw": image_grid_thw[b].cpu().contiguous(),
+
+                "input_ids": input_ids_keep,  # (1,L)
+                "attention_mask": attention_keep,  # (1,L)
+                "position_ids": pos_keep,  # (3,1,L)
+                "input_embeds": input_embeds_keep,  # (1,L,2048) fp16
+                "visual_pos_masks": visual_pos_masks,  # (1,L) bool
+                "deepstack_visual_embeds": deepstack_visual_embeds,  # (K,64,2048)
+
             }
 
             shard_items.append(item)

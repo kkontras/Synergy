@@ -1,27 +1,3 @@
-# esnli_memmap_no_tokenizer_pad_from_cache.py
-# Supports ANY batch size. No tokenizer. Pads purely from cached tensors.
-#
-# Expected cached per-example keys:
-#   input_ids              : (1, L) int64
-#   attention_mask         : (1, L) int64
-#   position_ids           : (3, 1, L) int64
-#   input_embeds           : (1, L, 2048) float16
-#   visual_pos_masks       : (1, L) bool
-#   deepstack_visual_embeds: (K, 64, 2048) float16/float32
-#   label                  : scalar/tensor
-#
-# Output batch:
-#   batch = {
-#     "ids": [...], "prompts": [...], "label": (B,),
-#     "data": {
-#       "input_ids": (B,Lmax),
-#       "attention_mask": (B,Lmax),
-#       "position_ids": (B,3,1,Lmax),
-#       "input_embeds": (B,Lmax,2048),
-#       "visual_pos_masks": (B,Lmax),
-#       "deepstack_visual_embeds": (B,Kmax,64,2048),
-#     }
-#   }
 
 import os
 import json
@@ -31,9 +7,6 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 
-# -------------------------
-# stats helper (optional)
-# -------------------------
 def _stats(name: str, t: Any) -> str:
     if not torch.is_tensor(t):
         return f"{name:24s}: {type(t)}"
@@ -48,8 +21,6 @@ def _stats(name: str, t: Any) -> str:
     nonzero = (x != 0).float().mean().item() * 100.0
     return (f"{name:24s}: shape={tuple(t.shape)} dtype={t.dtype} device={t.device} "
             f"min={mn:.6g} max={mx:.6g} mean={mean:.6g} std={std:.6g} nonzero={nonzero:.2f}%")
-
-
 def _require_tensor(ex: dict, key: str) -> torch.Tensor:
     if key not in ex:
         raise KeyError(f"Missing key in shard item: {key}")
@@ -57,8 +28,6 @@ def _require_tensor(ex: dict, key: str) -> torch.Tensor:
     if not torch.is_tensor(t):
         raise TypeError(f"Key {key} must be a torch.Tensor, got {type(t)}")
     return t
-
-
 def _check_shapes(ex: dict) -> None:
     input_ids = _require_tensor(ex, "input_ids")
     attention_mask = _require_tensor(ex, "attention_mask")
@@ -82,10 +51,6 @@ def _check_shapes(ex: dict) -> None:
     if deep.dim() != 3 or deep.shape[1:] != (64, 2048):
         raise ValueError(f"deepstack_visual_embeds expected (K,64,2048), got {tuple(deep.shape)}")
 
-
-# -------------------------
-# padding helpers
-# -------------------------
 def _pad_1d(x: torch.Tensor, L: int, pad_value: int, padding_side: str) -> torch.Tensor:
     x = x.reshape(-1)
     n = int(x.numel())
@@ -99,8 +64,6 @@ def _pad_1d(x: torch.Tensor, L: int, pad_value: int, padding_side: str) -> torch
     else:
         out[:n] = x
     return out
-
-
 def _pad_2d_time(x: torch.Tensor, L: int, pad_value: float, padding_side: str) -> torch.Tensor:
     # x: (T,D)
     if x.dim() != 2:
@@ -116,8 +79,6 @@ def _pad_2d_time(x: torch.Tensor, L: int, pad_value: float, padding_side: str) -
     else:
         out[:T, :] = x
     return out
-
-
 def _pad_pos_3_1_T(pos: torch.Tensor, L: int, padding_side: str) -> torch.Tensor:
     # pos: (3,1,T)
     if pos.dim() != 3 or int(pos.shape[0]) != 3 or int(pos.shape[1]) != 1:
@@ -133,8 +94,6 @@ def _pad_pos_3_1_T(pos: torch.Tensor, L: int, padding_side: str) -> torch.Tensor
     else:
         out[:, :, :T] = pos
     return out
-
-
 def _pad_deepstack_K_64_2048(x: torch.Tensor, Kmax: int, padding_side: str) -> torch.Tensor:
     # x: (K,64,2048) -> (Kmax,64,2048)
     if Kmax == 0:
@@ -158,7 +117,6 @@ def _pad_deepstack_K_64_2048(x: torch.Tensor, Kmax: int, padding_side: str) -> t
     else:
         out[:K] = x
     return out
-
 def _pad_deepstack_stack64(x: torch.Tensor, Kmax: int, padding_side: str) -> torch.Tensor:
     """
     Stack the 64s across deepstack levels.
@@ -206,9 +164,6 @@ def _pad_deepstack_stack64(x: torch.Tensor, Kmax: int, padding_side: str) -> tor
     return x2.reshape(Kmax * 64, 2048).contiguous()
 
 
-# -------------------------
-# Dataset
-# -------------------------
 class ESNLI_MemmapDataset(Dataset):
     def __init__(
         self,
@@ -276,15 +231,7 @@ class ESNLI_MemmapDataset(Dataset):
         _check_shapes(out)
         return out
 
-
-# -------------------------
-# Collate: pad from cache
-# -------------------------
-def make_collate_from_cache(
-    *,
-    padding_side: str = "right",
-    pad_token_id: int = 0,
-):
+def make_collate_from_cache( *, padding_side: str = "right", pad_token_id: int = 0,):
     if padding_side not in ("left", "right"):
         raise ValueError(f"padding_side must be 'left' or 'right', got {padding_side}")
 
@@ -362,10 +309,6 @@ def make_collate_from_cache(
 
     return collate
 
-
-# -------------------------
-# Dataloader wrapper
-# -------------------------
 class ESNLI_MemmapDataloader:
     def __init__(
         self,
@@ -417,16 +360,3 @@ class ESNLI_MemmapDataloader:
             for k in ["input_ids", "attention_mask", "position_ids", "input_embeds", "visual_pos_masks", "deepstack_visual_embeds"]:
                 print(_stats(k, ex[k]))
 
-
-# -------------------------
-# Example usage
-# -------------------------
-# loader_wrap = ESNLI_MemmapDataloader(cfg, split="validation", shard_index=0, num_workers=0, padding_side="right", pad_token_id=0)
-# batch = next(iter(loader_wrap.valid_loader))
-# proc = batch["data"]
-# input_ids = proc["input_ids"].to(device)                       # (B,L)
-# attention_mask = proc["attention_mask"].to(device)             # (B,L)
-# position_ids = proc["position_ids"].to(device)                 # (B,3,1,L)
-# input_embeds = proc["input_embeds"].to(device)                 # (B,L,2048)
-# visual_pos_masks = proc["visual_pos_masks"].to(device)         # (B,L)
-# deepstack_visual_embeds = proc["deepstack_visual_embeds"].to(device) # (B,K,64,2048)

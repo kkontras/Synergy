@@ -50,6 +50,13 @@ accelerate launch train.py --config ./configs/ScienceQA/synprom_lora_synibfaster
 python mydatasets/ScienceQA/ScienceQA_Codebook.py --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA" --out_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_tokens2B" --model_name "Qwen/Qwen3-VL-2B-Instruct" --split train --batch_size 64  --num_workers 24 --cache_image_embeds
 
 
+python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split train --data_root "/scratch/kkontras/ScienceQA" --out_dir "/scratch/kkontras/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 16 --batch_size 64
+python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split test --data_root "/scratch/kkontras/ScienceQA" --out_dir "/scratch/kkontras/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 16 --batch_size 64
+python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split validation --data_root "/scratch/kkontras/ScienceQA" --out_dir "/scratch/kkontras/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 16 --batch_size 64
+
+python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py  --split train --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA" --out_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 24 --batch_size 4
+python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py  --split test --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA" --out_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 24 --batch_size 4
+python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py  --split validation --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA" --out_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 24 --batch_size 4
 
 CUDA_VISIBLE_DEVICES=0 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split train --data_root "/scratch/kkontras/ScienceQA" --out_dir "/scratch/kkontras/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 16 --batch_size 64
 CUDA_VISIBLE_DEVICES=1 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split test --data_root "/scratch/kkontras/ScienceQA" --out_dir "/scratch/kkontras/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 16 --batch_size 64

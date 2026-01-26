@@ -132,8 +132,11 @@
 #done; done
 
 
-for ir in 0.1 0.5 1.0 2.0; do for a in 0.5 1.0 1.5 2.0 3.0 5.0; do
-  python train.py --config ./configs/CREMA_D/synergy/jan/MMPareto.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --alpha $a  --ironic_rate $ir; done; done
+#for ir in 0.1 0.5 1.0 2.0; do for a in 0.5 1.0 1.5 2.0 3.0 5.0; do
+#  python train.py --config ./configs/CREMA_D/synergy/jan/MMPareto.json --default_config ./configs/CREMA_D/default_config_cremadplus_res_syn.json --fold 0 --lr 0.0001 --wd 0.0001 --alpha $a  --ironic_rate $ir; done; done
+
+python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py  --split train --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA" --out_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 24 --batch_size 4
+python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py  --split test --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA" --out_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 24 --batch_size 4
 
 
 #python train.py --config ./configs/CREMA_D/synergy/dec/synprom_RMask.json --default_config ./configs/CREMA_D/default_config_cremad_res_syn.json --fold 0 --l 1 --lr 0.0001 --wd 0.0001 --cls mlp --batch_size 64 --perturb diff --perturb_pmin 0.5 --perturb_pmin 0.8 --num_samples 10

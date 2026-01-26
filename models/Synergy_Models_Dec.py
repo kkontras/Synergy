@@ -6169,6 +6169,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
         self._load_cls_embedding()
         self._setup_trainables()
 
+        self.synergy_weight = float(self.args.get("bias_infusion", {}).get("l", 0.0))
         self.synib = SynIB_QwenFaster(args, [], self)
 
     def _setup_trainables(self):

@@ -149,11 +149,13 @@ def _build_prompts_with_choices(hint_texts, qa_texts, choises_text, instruction_
         parts = []
         if hint is not None and hint.strip():
             parts.append(hint.strip())
+        parts.append("\n")
         if qa is not None and qa.strip():
             parts.append(qa.strip())
-
+        parts.append("\n")
         if ch is not None and ch.strip():
             parts.append(ch.strip())
+        parts.append("\n")
         if instr is not None and instr.strip():
             parts.append(instr.strip())
         # Put CLS token at the END so it can attend to all previous tokens (causal LM)
@@ -303,105 +305,102 @@ def _stack_deep_levels_per_sample(deep_stack_viz_list: Any, B: int) -> List[torc
             out.append(torch.cat([x.unsqueeze(0) for x in per_sample_levels[i]], dim=0))  # (K,64,2048)
     return out
 
+def _tokenize_no_special(tok, text: str):
+    # must return a list[int]
+    return tok.encode(text, add_special_tokens=False)
 
-def build_token_type_ids_best_effort(
+def _find_subseq(haystack, needle, start=0, end=None):
+    """
+    Return first index i such that haystack[i:i+len(needle)] == needle, else -1.
+    """
+    if end is None:
+        end = len(haystack)
+    n = len(needle)
+    if n == 0:
+        return -1
+    last = end - n
+    for i in range(start, last + 1):
+        if haystack[i:i+n] == needle:
+            return i
+    return -1
+
+def build_token_type_ids(
     *,
     tok,
     input_ids_1d: torch.Tensor,
-    attention_mask_1d: torch.Tensor,
     image_token_id: int,
     cls_token_id: int,
     hint_text: str,
     question_text: str,
     choices_text: str,
     instr_text: str,
+    search_after_images: bool = True,
+    verbose: bool = False,
 ) -> torch.Tensor:
     """
-    Best-effort span alignment:
-      - hard marks image tokens by ID
-      - hard marks CLS token by ID
-      - attempts to lay out tokenized text blocks starting at first non-image token
-        in the unpadded region.
+    Debuggable span alignment:
+      - mark image/CLS tokens by ID (hard rules)
+      - locate each text block by subsequence search in input_ids
+      - label matched spans
 
-    Works well for this kind of deterministic concatenation prompt.
+    Much easier to debug than 'pos += len(tokenize(text))' logic.
     """
-    # Keep only the unpadded region (since we slice inputs to true_len before calling this)
-    ids = input_ids_1d.tolist()
+    ids = input_ids_1d.tolist()[0]
     L = len(ids)
 
     ttid = torch.full((L,), TT_OTHER, dtype=torch.uint8)
 
-    # mark image tokens robustly
+    # 1) hard-mark image tokens
+    img_id = int(image_token_id)
     for i, tid in enumerate(ids):
-        if tid == int(image_token_id):
+        if tid == img_id:
             ttid[i] = TT_IMAGE
 
-    # find first index after initial image tokens (common in Qwen-VL prompts)
-    j = 0
-    while j < L and ids[j] == int(image_token_id):
-        j += 1
-    # after image tokens, there is typically a "\n" then text; we start best-effort at j
-    pos = j
+    # define search window start
+    start = 0
+    if search_after_images:
+        while start < L and ids[start] == img_id:
+            start += 1
 
-    sep = "\n\n"
-    hint_text_s = (hint_text or "").strip()
-    q_s = (question_text or "").strip()
-    c_s = (choices_text or "").strip()
-    instr_s = (instr_text or "").strip()
+    # helper: label a found block
+    def label_block(start, tt, text, name):
+        text = (text or "").strip()
+        if not text:
+            return
 
-    def place_block(tt: int, text: str):
-        nonlocal pos
-        toks = _tokenize_no_special(tok, text)
-        for _ in toks:
-            if pos >= L:
-                break
-            if ttid[pos] != TT_IMAGE:
-                ttid[pos] = tt
-            pos += 1
+        needle = _tokenize_no_special(tok, text+"\n")
+        i = _find_subseq(ids, needle[:-1], start=start, end=L)
+        if i < 0:
+            if verbose:
+                print(f"[MISS] {name}: couldn't find tokens for text={text[:80]!r}")
+                print(f"  needle_len={len(needle)} start={start} L={L}")
+            return
 
-    def place_sep():
-        nonlocal pos
-        toks = _tokenize_no_special(tok, sep)
-        for _ in toks:
-            if pos >= L:
-                break
-            if ttid[pos] != TT_IMAGE:
-                ttid[pos] = TT_OTHER
-            pos += 1
+        # label span, but don't overwrite images/cls
+        for k in range(i, min(i + len(needle)-1, L)):
+            if ttid[k] not in (TT_IMAGE, TT_CLS):
+                ttid[k] = tt
 
-    # Major blocks: hint, (question+choices), instr, cls
-    any_prior = False
-    if hint_text_s:
-        place_block(TT_HINT, hint_text_s)
-        any_prior = True
+        if verbose:
+            print(f"[HIT] {name}: span=({i}, {i+len(needle)}) len={len(needle)}")
+        # move start forward so later blocks tend to match after this one
+        start = i + len(needle)
+        return start
 
-    if q_s or c_s:
-        if any_prior:
-            place_sep()
-        if q_s:
-            place_block(TT_QUESTION, q_s)
-        if q_s and c_s:
-            place_sep()
-        if c_s:
-            place_block(TT_CHOICES, c_s)
-        any_prior = True
+    # 2) label blocks by searching real ids
+    start = label_block(start, TT_HINT, hint_text, "hint")
+    start = label_block(start, TT_QUESTION, question_text, "question")
+    start = label_block(start, TT_CHOICES, choices_text, "choices")
+    start = label_block(start, TT_INSTR, instr_text, "instr")
 
-    if instr_s:
-        if any_prior:
-            place_sep()
-        place_block(TT_INSTR, instr_s)
-        any_prior = True
-
-    # sep before CLS if any previous text existed (your join adds \n\n between parts)
-    if any_prior:
-        place_sep()
-
-    # CLS token is in the ids; we mark by ID below (more robust than tokenizing "<CLS>")
+    # 3) hard-mark CLS tokens last (wins)
+    cls_id = int(cls_token_id)
     for i, tid in enumerate(ids):
-        if tid == int(cls_token_id):
+        if tid == cls_id:
             ttid[i] = TT_CLS
 
     return ttid
+
 
 import einops
 # =========================
@@ -767,7 +766,6 @@ def build_and_save_cache(
         instr_texts = batch["instr_texts"]
         labels = batch["labels"]
 
-        print(batch.keys())
         imgs255 = (images.clamp(0, 1) * 255.0).round().to(torch.uint8)
 
         full_texts = build_full_prompt(
@@ -876,10 +874,9 @@ def build_and_save_cache(
             pos_keep = pos_b[i][:, :, keep].contiguous()                                      # (3,1,L)
             deepstack_visual_embeds = deep_per_sample[i]
 
-            ttid = build_token_type_ids_best_effort(
+            ttid = build_token_type_ids(
                 tok=tok,
                 input_ids_1d=input_ids_keep,
-                attention_mask_1d=keep,
                 image_token_id=image_token_id,
                 cls_token_id=cls_token_id,
                 hint_text=hint_texts[i],

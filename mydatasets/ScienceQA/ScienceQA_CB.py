@@ -458,7 +458,7 @@ class ScienceQA_MemmapDataloader:
         )
 
         self.collate_fn = lambda batch: scienceqa_memmap_collate(batch, pad_token_id=pad_token_id)
-        num_workers = 16
+        num_workers = 0
         self.train_loader = DataLoader(
             train_ds,
             batch_size=batch_size,

@@ -44,7 +44,6 @@
           }
       }
     },
-    "ceu": {"val": "./mydatasets/CREMAD/ceus/cremadplus_ceu_val_res_{}.pkl", "test": "./mydatasets/CREMAD/ceus/cremadplus_ceu_test_res_{}.pkl"},
     "load_ongoing": false,
     "save_dir": "MCR_{}.pth.tar",
     "encoders": [

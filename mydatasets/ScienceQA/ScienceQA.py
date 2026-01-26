@@ -306,7 +306,8 @@ class ScienceQA_Dataset(Dataset):
             self.weights = stats["weights"].clone().detach()
 
     def __len__(self):
-        return len(self.keep_indices)
+        # return len(self.keep_indices)
+        return 10
 
     def _load_image(self, pil_img: Image.Image):
         pil_img = pil_img.convert("RGB")
@@ -314,6 +315,7 @@ class ScienceQA_Dataset(Dataset):
             return self.train_tf(pil_img)
         else:
             return self.eval_tf(pil_img)
+
 
     def __getitem__(self, idx: int):
         real_idx = self.keep_indices[idx]

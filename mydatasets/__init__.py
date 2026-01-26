@@ -11,8 +11,9 @@ from .SthSth.SthSth_Dataloader import *
 # from .MSCOCO.MSCOCOLoader import *
 # from .CUB200.CUB200Loader import *
 from .MMIMDB.MMIMDBLoader import *
-# from .ScienceQA.ScienceQA import *
+from .ScienceQA.ScienceQA import *
 from .ScienceQA.ScienceQA_CB import *
+from .ScienceQA.ScienceQA_CB_mem import *
 # from .ESNLI.ESNLI_CB import *
 from .ESNLI.ESNLI_CB_MEM import *
 from .ESNLI.ESNLIDataset import *

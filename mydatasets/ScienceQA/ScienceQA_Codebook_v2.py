@@ -141,11 +141,30 @@ def build_instruction_text(letters: List[str]) -> str:
     if not letters:
         return ""
     letters_str = ", ".join(f"({L})" for L in letters)
-    return f"Answer with only one of: {letters_str}."
+    return f"Answer with one of: {letters_str}. Describe the image and give an explanation."
+
+def _build_prompts_with_choices(hint_texts, qa_texts, choises_text, instruction_text):
+    prompts = []
+    for hint, qa, ch, instr in zip(hint_texts, qa_texts, choises_text, instruction_text):
+        parts = []
+        if hint is not None and hint.strip():
+            parts.append(hint.strip())
+        if qa is not None and qa.strip():
+            parts.append(qa.strip())
+
+        if ch is not None and ch.strip():
+            parts.append(ch.strip())
+        if instr is not None and instr.strip():
+            parts.append(instr.strip())
+        # Put CLS token at the END so it can attend to all previous tokens (causal LM)
+        parts.append("<CLS>")
+        prompts.append("\n\n".join(parts))
+    return prompts
 
 
 def build_full_prompt(
     *,
+    processor,
     image_token_str: str,
     hint_text: str,
     question_text: str,
@@ -160,31 +179,20 @@ def build_full_prompt(
       prompts_with_image = image_token_str + "\n" + prompts
     Where qa is question + "\n\n" + choices (if both exist).
     """
-    hint_text = (hint_text or "").strip()
-    question_text = (question_text or "").strip()
-    choices_text = (choices_text or "").strip()
-    instr_text = (instr_text or "").strip()
+    texts = _build_prompts_with_choices(hint_text, question_text, choices_text, instr_text)
 
-    qa_parts = []
-    if question_text:
-        qa_parts.append(question_text)
-    if choices_text:
-        if qa_parts:
-            qa_parts.append("")  # produces the \n\n between q and choices
-        qa_parts.append(choices_text)
-    qa_block = "\n\n".join([p for p in qa_parts if p != ""])
-
-    parts = []
-    if hint_text:
-        parts.append(hint_text)
-    if qa_block:
-        parts.append(qa_block)
-    if instr_text:
-        parts.append(instr_text)
-    parts.append(cls_text)
-
-    prompt = "\n\n".join(parts)
-    return image_token_str + "\n" + prompt
+    messages_batch = [
+        [{"role": "user", "content": [
+            {"type": "image"},
+            {"type": "text", "text": t},
+        ]}]
+        for t in texts
+    ]
+    prompts = [
+        processor.apply_chat_template(m, tokenize=False, add_generation_prompt=True)
+        for m in messages_batch
+    ]
+    return prompts
 
 
 # =========================
@@ -239,7 +247,6 @@ def _normalize_pos_to_B_3_1_T(position_ids: torch.Tensor, B: int) -> torch.Tenso
         return pos.permute(1, 0, 2, 3)  # (B,3,1,T)
 
     raise RuntimeError(f"Unrecognized position_ids shape={tuple(pos.shape)} for B={B}")
-
 
 def _stack_deep_levels_per_sample(deep_stack_viz_list: Any, B: int) -> List[torch.Tensor]:
     """
@@ -475,9 +482,12 @@ class ScienceQA_Raw(Dataset):
 
 
 def raw_collate(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
+
+    image_batch = torch.stack([b["image"] for b in batch], dim=0)
+
     return {
         "ids": [b["id"] for b in batch],
-        "images": [b["image"] for b in batch],
+        "images": image_batch,
         "hint_texts": [b["hint_text"] for b in batch],
         "question_texts": [b["question_text"] for b in batch],
         "choices_texts": [b["choices_text"] for b in batch],
@@ -500,6 +510,44 @@ def _to_cpu_serializable(obj: Any) -> Any:
     if isinstance(obj, (list, tuple)):
         return [_to_cpu_serializable(v) for v in obj]
     return obj
+
+def _tensor_stats_line(name: str, t: Any) -> str:
+    if not torch.is_tensor(t):
+        return f"{name:22s}: {type(t)}"
+    if t.numel() == 0:
+        return f"{name:22s}: shape={tuple(t.shape)} dtype={t.dtype} device={t.device} numel=0"
+    x = t.detach()
+    xf = x.float()
+    mn = xf.min().item()
+    mx = xf.max().item()
+    mean = xf.mean().item()
+    std = xf.std(unbiased=False).item()
+    nonzero = (x != 0).float().mean().item() * 100.0
+    return (f"{name:22s}: shape={tuple(t.shape)} dtype={t.dtype} device={t.device} "
+            f"min={mn:.6g} max={mx:.6g} mean={mean:.6g} std={std:.6g} nonzero={nonzero:.2f}%")
+
+
+def verify_shard(shard_path: str, n_show: int = 1) -> None:
+    print(f"\n[verify] loading shard: {shard_path}")
+    items = torch.load(shard_path, map_location="cpu")
+    if not isinstance(items, (list, tuple)):
+        raise TypeError(f"Shard is not list/tuple: {type(items)}")
+    print(f"[verify] items: {len(items)}")
+
+    n_show = min(int(n_show), len(items))
+    for i in range(n_show):
+        ex = items[i]
+        print(f"\n[verify] example {i} id={ex.get('id', None)}")
+        keys = [
+            "input_ids",
+            "attention_mask",
+            "position_ids",
+            "input_embeds",
+            "visual_pos_masks",
+            "deepstack_visual_embeds",
+        ]
+        for k in keys:
+            print(_tensor_stats_line(k, ex.get(k, None)))
 
 
 @torch.no_grad()
@@ -546,6 +594,76 @@ def compute_qwen3vl_visual_outputs(
     except TypeError as e:
         raise RuntimeError(f"Could not call model.model.visual with known signatures: {e}")
 
+@torch.no_grad()
+def generate_answer(
+        backbone,
+        processor,
+        proc,  # dict from self.processor(...), already includes images tensors if provided
+        max_new_tokens=256,
+        temperature=0.7,
+        top_p=0.9,
+        do_sample=True,
+        min_new_tokens=20,
+        strip_prompt=True,
+        debug=False,
+):
+    backbone.eval()
+
+    device = backbone.device
+
+    # Move ONLY tensor entries to model device (keeps lists/strings untouched)
+    gen_kwargs = {k: v.to(device) for k, v in proc.items() if torch.is_tensor(v)}
+
+    if "input_ids" not in gen_kwargs or "attention_mask" not in gen_kwargs:
+        raise ValueError("proc must contain at least input_ids and attention_mask")
+
+    input_ids = gen_kwargs["input_ids"]
+    attention_mask = gen_kwargs["attention_mask"]
+
+    tok = processor.tokenizer
+    eos_token_id = tok.eos_token_id
+    pad_token_id = tok.pad_token_id
+
+    # Avoid immediate stop if prompt ends with EOS (common with some chat templates)
+    if eos_token_id is not None and input_ids.shape[1] > 1:
+        if (input_ids[:, -1] == eos_token_id).all():
+            input_ids = input_ids[:, :-1]
+            attention_mask = attention_mask[:, :-1]
+            gen_kwargs["input_ids"] = input_ids
+            gen_kwargs["attention_mask"] = attention_mask
+
+    gen_ids = backbone.generate(
+        **gen_kwargs,
+        max_new_tokens=max_new_tokens,
+        min_new_tokens=min_new_tokens,
+        do_sample=do_sample,
+        temperature=temperature if do_sample else None,
+        top_p=top_p if do_sample else None,
+        pad_token_id=pad_token_id,
+        eos_token_id=eos_token_id,
+        return_dict_in_generate=False,
+    )
+
+    # # Debug shapes
+    # if debug:
+    #     print("input_ids:", input_ids.shape)
+    #     print("gen_ids:", gen_ids.shape)
+    #     print("new tokens:", gen_ids.shape[1] - input_ids.shape[1])
+
+    # Decode only generated continuation (recommended)
+    if strip_prompt:
+        prompt_len = input_ids.shape[1]
+        gen_part = gen_ids[:, prompt_len:]
+    else:
+        gen_part = gen_ids
+
+    texts = tok.batch_decode(
+        gen_part,
+        skip_special_tokens=True,
+        clean_up_tokenization_spaces=False,
+    )
+
+    return texts
 
 # =========================
 # Cache builder
@@ -635,6 +753,7 @@ def build_and_save_cache(
             f.write(json.dumps({"shard": os.path.basename(shard_file), "num_items": len(shard_items)}) + "\n")
         shard_items = []
         shard_idx += 1
+        return shard_file
 
     pbar = tqdm(dl, desc=f"[cache] {split}", total=len(dl))
 
@@ -644,27 +763,27 @@ def build_and_save_cache(
         hint_texts = batch["hint_texts"]
         question_texts = batch["question_texts"]
         choices_texts = batch["choices_texts"]
+        letters_texts = batch["letters"]
         instr_texts = batch["instr_texts"]
         labels = batch["labels"]
 
-        # Build full prompts
-        full_texts: List[str] = []
-        for ht, qt, ct, it in zip(hint_texts, question_texts, choices_texts, instr_texts):
-            full_texts.append(
-                build_full_prompt(
-                    image_token_str=image_token_str,
-                    hint_text=ht,
-                    question_text=qt,
-                    choices_text=ct,
-                    instr_text=it,
-                    cls_text="<CLS>",
-                )
-            )
+        print(batch.keys())
+        imgs255 = (images.clamp(0, 1) * 255.0).round().to(torch.uint8)
+
+        full_texts = build_full_prompt(
+            processor=processor,
+            image_token_str=image_token_str,
+            hint_text=hint_texts,
+            question_text=question_texts,
+            choices_text=choices_texts,
+            instr_text=instr_texts,
+            cls_text="<CLS>",
+        )
 
         # Processor outputs (language tokens + image inputs)
         proc = processor(
             text=full_texts,
-            images=images,
+            images=imgs255,
             padding=True,      # pad for batching; we will store trimmed per-sample
             truncation=True,
             return_tensors="pt",
@@ -690,8 +809,7 @@ def build_and_save_cache(
                     inputs_embeds=token_embeds,
                     image_features=image_embeds_cat,
                 )
-                placeholder_mask_2d = placeholder_mask[
-                    ..., 0] if placeholder_mask.dim() == 3 else placeholder_mask  # (B,T)
+                placeholder_mask_2d = placeholder_mask[..., 0] if placeholder_mask.dim() == 3 else placeholder_mask  # (B,T)
 
                 token_embeds = token_embeds.masked_scatter(placeholder_mask, image_embeds_cat)
 
@@ -726,6 +844,23 @@ def build_and_save_cache(
         except Exception as e:
             raise Exception(e)
 
+        # gen_texts = generate_answer(
+        #     backbone=model,
+        #     processor=processor,
+        #     proc=proc,
+        #     max_new_tokens=500,  # labels are short; keep tiny for debugging
+        #     do_sample=False,  # deterministic label output
+        #     temperature=0.0,
+        #     top_p=1.0,
+        #     min_new_tokens=1,
+        #     strip_prompt=False,
+        #     debug=True,
+        # )
+        #
+        # print("###NEW ONE####")
+        # for t in gen_texts:
+        #     print("-----")
+        #     print(t)
 
         B = input_ids.size(0)
         for i in range(B):
@@ -781,9 +916,12 @@ def build_and_save_cache(
             shard_items.append(item)
 
             if len(shard_items) >= shard_size:
-                flush_shard()
+                shard_path = flush_shard()
+                # shard_path = flush_shard(items, split_out, shard_idx, manifest_path)
+                verify_shard(shard_path, n_show=1)
 
-    flush_shard()
+    shard_path = flush_shard()
+    verify_shard(shard_path, n_show=1)
 
     meta = {
         "model_name": model_name,

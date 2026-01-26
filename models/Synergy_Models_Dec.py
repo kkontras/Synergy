@@ -6348,6 +6348,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             use_cache= False
         )
         hidden = out.hidden_states[-1]
+        return hidden
 
     def _compute_logits_from_proc(self, x, *, label=None, return_features=False, **kwargs):
 
@@ -6450,15 +6451,6 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
         )
         hidden = out.hidden_states[-1]
 
-
-
-
-
-
-
-
-
-        # hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)
         h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
         logits = self.enc_0(h_cls)
 

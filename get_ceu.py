@@ -59,10 +59,11 @@ CHECKPOINT_TEMPLATE = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/Uni_Te
 fold_position_offset=0
 
 # CONFIG_PATH = "configs/ScienceQA/cache_image_lora.json"
-# CHECKPOINT_TEMPLATE = "/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/SynIBCache_Image_LoRa_fold0_lr0.0001_wd0.01_bs5.pth.tar"
+# CHECKPOINT_TEMPLATE = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/SynIBCache_Image_LoRa_fold0_lr0.0001_wd0.01_bs8.pth.tar"
 # fold_position_offset=3
 
-OUTPUT_JSON = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/scienceqa_ceu_val.pkl"
+# OUTPUT_JSON = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/scienceqa_ceu_val.pkl"
+OUTPUT_JSON = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/scienceqa_ceu_test.pkl"
 
 # OUTPUT_JSON = "cremad_ceu_test_res.pkl"
 # OUTPUT_JSON = "cremad_ceu_val_res.pkl"
@@ -74,8 +75,8 @@ OUTPUT_JSON = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/scienceqa_ceu_
 # OUTPUT_JSON = "cremadplus_ceu_test_res.pkl"
 # OUTPUT_JSON = "cremad_ceu_val_res.pkl"
 # OUTPUT_JSON = "ave_ceu_val_res.pkl"
-# DATASET_SPLIT = "Test"  # "Validation" or "test"
-DATASET_SPLIT = "Validation"  # "Validation" or "test"
+DATASET_SPLIT = "Test"  # "Validation" or "test"
+# DATASET_SPLIT = "Validation"  # "Validation" or "test"
 
 FOLDS = [0]
 

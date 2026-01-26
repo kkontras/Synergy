@@ -366,7 +366,7 @@ def build_token_type_ids(
     def label_block(start, tt, text, name):
         text = (text or "").strip()
         if not text:
-            return
+            return start
 
         needle = _tokenize_no_special(tok, text+"\n")
         i = _find_subseq(ids, needle[:-1], start=start, end=L)
@@ -374,7 +374,7 @@ def build_token_type_ids(
             if verbose:
                 print(f"[MISS] {name}: couldn't find tokens for text={text[:80]!r}")
                 print(f"  needle_len={len(needle)} start={start} L={L}")
-            return
+            return start
 
         # label span, but don't overwrite images/cls
         for k in range(i, min(i + len(needle)-1, L)):

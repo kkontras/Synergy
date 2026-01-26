@@ -19,7 +19,7 @@ device = "cuda:0"
 # -------------------------
 # USER-PROVIDED CONFIGS
 # -------------------------
-DEFAULT_CONFIG_PATH = "configs/ScienceQA/default_config_scienceqa_cache_tier2.json"
+DEFAULT_CONFIG_PATH = "configs/ScienceQA/default_config_scienceqa_cache_mib.json"
 # DEFAULT_CONFIG_PATH = "configs/CREMA_D/default_config_cremadplus_res_syn.json"
 # DEFAULT_CONFIG_PATH = "configs/CREMA_D/default_config_cremad_res_syn.json"
 # DEFAULT_CONFIG_PATH = "configs/AVE/default_config_ave_res_syn.json"
@@ -54,15 +54,20 @@ DEFAULT_CONFIG_PATH = "configs/ScienceQA/default_config_scienceqa_cache_tier2.js
 # CONFIG_PATH = "configs/AVE/release/res/unimodal_video.json"
 # CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Rmask/AVE/unimodal_video_fold{}.pth.tar"
 
-CONFIG_PATH = "configs/ScienceQA/cache_image_lora.json"
-CHECKPOINT_TEMPLATE = "/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/SynIBCache_Image_LoRa_fold0_lr0.0001_wd0.01_bs5.pth.tar"
-#
-fold_position_offset=3
+CONFIG_PATH = "configs/ScienceQA/cache_text_lora.json"
+CHECKPOINT_TEMPLATE = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/Uni_Text_LoRa_fold0_lr0.0001_wd0.01_bs8.pth.tar"
+fold_position_offset=0
+
+# CONFIG_PATH = "configs/ScienceQA/cache_image_lora.json"
+# CHECKPOINT_TEMPLATE = "/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/SynIBCache_Image_LoRa_fold0_lr0.0001_wd0.01_bs5.pth.tar"
+# fold_position_offset=3
+
+OUTPUT_JSON = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/scienceqa_ceu_val.pkl"
 
 # OUTPUT_JSON = "cremad_ceu_test_res.pkl"
 # OUTPUT_JSON = "cremad_ceu_val_res.pkl"
 # OUTPUT_JSON = "./mydatasets/ScienceQA/ceus/scienceqa_ceu_test.pkl"
-OUTPUT_JSON = "./mydatasets/ScienceQA/ceus/scienceqa_ceu_val.pkl"
+# OUTPUT_JSON = "./mydatasets/ScienceQA/ceus/scienceqa_ceu_val.pkl"
 
 # OUTPUT_JSON = "./mydatasets/CREMAD/ceus/cremadplus_ceu_val_res_ir0.1.pkl"
 # OUTPUT_JSON = "./mydatasets/CREMAD/ceus/cremadplus_ceu_test_res_ir0.1.pkl"

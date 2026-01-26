@@ -6642,6 +6642,8 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             hidden_all = self._encode_from_inputs_embeds(position_ids_expanded, input_embeds_expanded, image_masks, deep_stack_viz_expanded, masks)
 
         ids_all = input_ids.repeat(k,1)
+        print(hidden_all.shape)
+        print(ids_all.shape)
         h_cls_all = self._get_cls_token_repr(hidden_all, ids_all)
         logits_all = self.enc_0(h_cls_all)
 

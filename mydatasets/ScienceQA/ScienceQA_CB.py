@@ -184,6 +184,27 @@ def _left_pad_bool(seqs: List[torch.Tensor]) -> torch.Tensor:
             out[i, -L:] = s.bool()
     return out
 
+def _right_pad_1d(seqs: List[torch.Tensor], pad_val: int, dtype: torch.dtype) -> torch.Tensor:
+    max_len = max(int(s.numel()) for s in seqs) if len(seqs) > 0 else 0
+    out = torch.full((len(seqs), max_len), pad_val, dtype=dtype)
+    for i, s in enumerate(seqs):
+        s = s.reshape(-1)
+        L = int(s.numel())
+        if L > 0:
+            out[i, :L] = s.to(dtype)
+    return out
+
+
+def _right_pad_bool(seqs: List[torch.Tensor]) -> torch.Tensor:
+    max_len = max(int(s.numel()) for s in seqs) if len(seqs) > 0 else 0
+    out = torch.zeros((len(seqs), max_len), dtype=torch.bool)
+    for i, s in enumerate(seqs):
+        s = s.reshape(-1)
+        L = int(s.numel())
+        if L > 0:
+            out[i, :L] = s.bool()
+    return out
+
 
 def _pad_2d_by_rows(seqs: List[torch.Tensor], pad_val: float = 0.0) -> Tuple[torch.Tensor, torch.Tensor]:
     """
@@ -310,32 +331,51 @@ def _pad_deep_3d(seqs: List[torch.Tensor], deep_dim: int, pad_val: float = 0.0) 
     return padded, mask
 
 
-def scienceqa_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0) -> Dict[str, Any]:
+def scienceqa_memmap_collate(
+    batch: List[Dict[str, Any]],
+    pad_token_id: int = 0,
+    padding_side: str = "right",   # <-- important
+) -> Dict[str, Any]:
     ids = [b.get("id", None) for b in batch]
     prompts = [b.get("prompt", "") for b in batch]
     labels = torch.stack([b["label"] for b in batch], dim=0)
 
-    input_ids = _left_pad_1d([b["input_ids"] for b in batch], pad_val=int(pad_token_id), dtype=torch.long)
-    attention_mask = _left_pad_1d([b["attention_mask"] for b in batch], pad_val=0, dtype=torch.long)
+    if padding_side not in ("left", "right"):
+        raise ValueError(f"padding_side must be 'left' or 'right', got {padding_side}")
 
-    # position_ids: we accept (L,) OR (3,1,L) per item; collate to the max length accordingly
+    pad_1d  = _left_pad_1d  if padding_side == "left"  else _right_pad_1d
+    pad_bool = _left_pad_bool if padding_side == "left" else _right_pad_bool
+
+    input_ids = pad_1d([b["input_ids"] for b in batch], pad_val=int(pad_token_id), dtype=torch.long)
+    attention_mask = pad_1d([b["attention_mask"] for b in batch], pad_val=0, dtype=torch.long)
+
+    # position_ids
     pos_list = [b["position_ids"] for b in batch]
+    Lmax = int(input_ids.shape[1])
+
     if torch.is_tensor(pos_list[0]) and pos_list[0].dim() == 3:
-        # (3,1,L) -> pad last dim
-        Lmax = int(input_ids.shape[1])
+        # expect (3, 1, L)
         pos_out = torch.zeros((len(batch), 3, 1, Lmax), dtype=torch.long)
         for i, p in enumerate(pos_list):
             if p.dim() != 3 or p.shape[0] != 3 or p.shape[1] != 1:
                 raise ValueError(f"position_ids mix: expected (3,1,L), got {tuple(p.shape)}")
             Li = int(p.shape[-1])
-            pos_out[i, :, :, -Li:] = p.to(torch.long)
+            if padding_side == "left":
+                pos_out[i, :, :, -Li:] = p.to(torch.long)
+            else:
+                pos_out[i, :, :, :Li] = p.to(torch.long)
         position_ids = pos_out
     else:
-        position_ids = _left_pad_1d([p.reshape(-1) for p in pos_list], pad_val=0, dtype=torch.long)
-    position_ids = einops.rearrange(position_ids, "b c i j-> c b (i j)", i=1)
+        # (L,) per example
+        # NOTE: if you ever want to LEFT pad while keeping processor-style absolute positions,
+        # you may need to offset position_ids by pad_len. See note below.
+        position_ids = pad_1d([p.reshape(-1) for p in pos_list], pad_val=0, dtype=torch.long)
 
-    image_mask = _left_pad_bool([b["visual_pos_masks"] for b in batch])
-    hint_mask = _left_pad_bool([b["hint_mask"] for b in batch])
+    # keep your model-expected layout
+    position_ids = einops.rearrange(position_ids, "b c i j -> c b (i j)", i=1) if position_ids.dim() == 4 else position_ids
+
+    image_mask = pad_bool([b["visual_pos_masks"] for b in batch])
+    hint_mask  = pad_bool([b["hint_mask"] for b in batch])
 
     data: Dict[str, Any] = {
         "input_ids": input_ids,
@@ -347,7 +387,7 @@ def scienceqa_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0)
 
     if "input_embeds" in batch[0]:
         vis_list = [b.get("input_embeds") for b in batch]
-        vis_pad, vis_mask = _pad_2d_by_rows(vis_list, pad_val=0.0)
+        vis_pad, _ = _pad_2d_by_rows(vis_list, pad_val=0.0)
         data["input_embeds"] = vis_pad
 
     if "deepstack_visual_embeds" in batch[0]:
@@ -356,7 +396,6 @@ def scienceqa_memmap_collate(batch: List[Dict[str, Any]], pad_token_id: int = 0)
         deep_pad, deep_mask = _pad_deep_3d(deep_list, deep_dim=deep_dim, pad_val=0.0)
         deep_pad = einops.rearrange(deep_pad, "a b c d -> b (a c) d")
         data["deepstack_visual_embeds"] = deep_pad
-
         data["deep_mask"] = deep_mask
 
     return {"ids": ids, "prompts": prompts, "label": labels, "data": data}

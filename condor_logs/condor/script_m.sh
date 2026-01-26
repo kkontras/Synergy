@@ -6,7 +6,7 @@ echo $args
 
 export PATH="/users/sista/kkontras/anaconda3/bin:$PATH"
 source ~/anaconda3/etc/profile.d/conda.sh
-conda activate /esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new
+conda activate /esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy
 
 which python
 python -V

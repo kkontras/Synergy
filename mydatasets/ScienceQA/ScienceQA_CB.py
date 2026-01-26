@@ -394,9 +394,25 @@ class ScienceQA_MemmapDataloader:
         # if config has pad_token_id, prefer it
         pad_token_id = int(getattr(getattr(config, "model", None), "pad_token_id", pad_token_id))
 
-        ds = ScienceQA_MemmapDataset(
+        train_ds = ScienceQA_MemmapDataset(
             cache_root=cache_root,
-            split=split,
+            split="train",
+            shard_index=shard_index,
+            shard_path=shard_path,
+            max_items=max_items,
+            deep_dim=deep_dim,
+        )
+        val_ds = ScienceQA_MemmapDataset(
+            cache_root=cache_root,
+            split="validation",
+            shard_index=shard_index,
+            shard_path=shard_path,
+            max_items=max_items,
+            deep_dim=deep_dim,
+        )
+        test_ds = ScienceQA_MemmapDataset(
+            cache_root=cache_root,
+            split="test",
             shard_index=shard_index,
             shard_path=shard_path,
             max_items=max_items,
@@ -405,8 +421,28 @@ class ScienceQA_MemmapDataloader:
 
         self.collate_fn = lambda batch: scienceqa_memmap_collate(batch, pad_token_id=pad_token_id)
 
-        loader = DataLoader(
-            ds,
+        self.train_loader = DataLoader(
+            train_ds,
+            batch_size=batch_size,
+            shuffle=bool(shuffle),
+            # num_workers=int(num_workers),
+            pin_memory=bool(pin_memory),
+            collate_fn=self.collate_fn,
+            prefetch_factor=int(prefetch_factor) if int(num_workers) > 0 else None,
+            persistent_workers=bool(persistent_workers) if int(num_workers) > 0 else False,
+        )
+        self.valid_loader = DataLoader(
+            val_ds,
+            batch_size=batch_size,
+            shuffle=bool(shuffle),
+            # num_workers=int(num_workers),
+            pin_memory=bool(pin_memory),
+            collate_fn=self.collate_fn,
+            prefetch_factor=int(prefetch_factor) if int(num_workers) > 0 else None,
+            persistent_workers=bool(persistent_workers) if int(num_workers) > 0 else False,
+        )
+        self.test_loader = DataLoader(
+            test_ds,
             batch_size=batch_size,
             shuffle=bool(shuffle),
             # num_workers=int(num_workers),
@@ -416,14 +452,9 @@ class ScienceQA_MemmapDataloader:
             persistent_workers=bool(persistent_workers) if int(num_workers) > 0 else False,
         )
 
-        # keep the same attributes you used
-        self.loader = loader
-        self.train_loader = loader
-        self.valid_loader = loader
-        self.test_loader = loader
 
         if print_first_batch_stats:
-            batch = next(iter(loader))
+            batch = next(iter(self.train_loader))
             ex = batch["data"]
             print("\n[scienceqa-cache-reader] first batch loaded (padded from cache):")
             for k in ex.keys():

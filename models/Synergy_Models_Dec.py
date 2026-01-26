@@ -5221,7 +5221,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         # vision_embeds = proc["vision_embeds"].to(device)
         input_embeds = proc["input_embeds"].to(device)
         position_ids = proc["position_ids"].to(device)
-        deep_stack_viz = proc["deepstack_visual_embeds"][0].to(device)
+        deep_stack_viz = proc["deepstack_visual_embeds"].to(device)
 
         # position_ids = position_ids.permute(1, 0, 2)
 
@@ -5597,7 +5597,7 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
         # vision_embeds = proc["vision_embeds"].to(device)
         input_embeds = proc["input_embeds"].to(device)
         position_ids = proc["position_ids"].to(device)
-        deep_stack_viz = proc["deepstack_visual_embeds"][0].to(device)
+        deep_stack_viz = proc["deepstack_visual_embeds"].to(device)
 
         # position_ids = position_ids.permute(1, 0, 2)
 
@@ -5976,7 +5976,7 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
         # vision_embeds = proc["vision_embeds"].to(device)
         input_embeds = proc["input_embeds"].to(device)
         position_ids = proc["position_ids"].to(device)
-        deep_stack_viz = proc["deepstack_visual_embeds"][0].to(device)
+        deep_stack_viz = proc["deepstack_visual_embeds"].to(device)
 
         # position_ids = position_ids.permute(1, 0, 2)
 
@@ -6625,7 +6625,6 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             raise ValueError(f"Unknown perturb.type: {self.args.get('perturb', {})}")
 
         att_mask_0, att_mask_1 = self.apply_custom_masks(attention_mask, m1, m2, m1t, m2t)
-
 
         if getattr(self.args, "run_multiple_forwards", False):
             masks = torch.stack([attention_mask, attention_mask, attention_mask], dim=0)

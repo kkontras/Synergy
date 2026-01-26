@@ -55,9 +55,10 @@ CUDA_VISIBLE_DEVICES=0 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --sp
 CUDA_VISIBLE_DEVICES=1 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split test --data_root "/scratch/kkontras/ScienceQA" --out_dir "/scratch/kkontras/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 16 --batch_size 64
 CUDA_VISIBLE_DEVICES=2 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split validation --data_root "/scratch/kkontras/ScienceQA" --out_dir "/scratch/kkontras/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 16 --batch_size 64
 
-CUDA_VISIBLE_DEVICES=0 python train.py  --config ./configs/ScienceQA/cache_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 16
+CUDA_VISIBLE_DEVICES=0 python train.py  --config ./configs/ScienceQA/cache_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 32 --start_over
+CUDA_VISIBLE_DEVICES=1 python train.py  --config ./configs/ScienceQA/cache_text_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 32 --start_over
+
 CUDA_VISIBLE_DEVICES=0 python train.py  --config ./configs/ScienceQA/cache_image_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 16
-CUDA_VISIBLE_DEVICES=0 python train.py  --config ./configs/ScienceQA/cache_text_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 16
 
 
 

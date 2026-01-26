@@ -419,7 +419,6 @@ class ScienceQA_MemmapDataloader:
         shard_path: Optional[str] = None,
         max_items: Optional[int] = None,
         deep_dim: int = 2048,
-        num_workers: int = 0,
         pin_memory: bool = False,
         prefetch_factor: int = 2,
         persistent_workers: bool = False,
@@ -459,12 +458,12 @@ class ScienceQA_MemmapDataloader:
         )
 
         self.collate_fn = lambda batch: scienceqa_memmap_collate(batch, pad_token_id=pad_token_id)
-
+        num_workers = 16
         self.train_loader = DataLoader(
             train_ds,
             batch_size=batch_size,
             shuffle=bool(shuffle),
-            # num_workers=int(num_workers),
+            num_workers=int(num_workers),
             pin_memory=bool(pin_memory),
             collate_fn=self.collate_fn,
             prefetch_factor=int(prefetch_factor) if int(num_workers) > 0 else None,
@@ -474,7 +473,7 @@ class ScienceQA_MemmapDataloader:
             val_ds,
             batch_size=batch_size,
             shuffle=bool(shuffle),
-            # num_workers=int(num_workers),
+            num_workers=int(num_workers),
             pin_memory=bool(pin_memory),
             collate_fn=self.collate_fn,
             prefetch_factor=int(prefetch_factor) if int(num_workers) > 0 else None,
@@ -484,7 +483,7 @@ class ScienceQA_MemmapDataloader:
             test_ds,
             batch_size=batch_size,
             shuffle=bool(shuffle),
-            # num_workers=int(num_workers),
+            num_workers=int(num_workers),
             pin_memory=bool(pin_memory),
             collate_fn=self.collate_fn,
             prefetch_factor=int(prefetch_factor) if int(num_workers) > 0 else None,

@@ -6047,6 +6047,7 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
         # call it right before language_model(...)
         # print_lm_input_stats(position_ids, input_embeds, attention_mask, image_mask, deep_stack_viz)
         hint_mask = proc["hint_mask"]
+        print(hint_mask)
         hint_mask = hint_mask.to(device).bool()
         keep = (~hint_mask)
         attention_mask = attention_mask * keep.to(attention_mask.dtype)

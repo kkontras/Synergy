@@ -2814,14 +2814,10 @@ class SynIB_QwenFaster(nn.Module):
         m1_t, m2_t = None, None
         if px1:
             # keep mask: 1=kept, 0=masked, applied only where m1 is True
-            mask_1 = (torch.rand_like(m1[m1].float()) > p).to(dtype=m1.dtype)
-            m1_t = m1.clone()
-            m1_t[m1] = mask_1
+            m1_t = (torch.rand_like(m1.float()) > p).to(dtype=m1.dtype)
 
         if px2:
-            mask_2 = (torch.rand_like(m2[m2].float()) > p).to(dtype=m2.dtype)
-            m2_t = m2.clone()
-            m2_t[m2] = mask_2
+            m2_t = (torch.rand_like(m2[m2].float()) > p).to(dtype=m2.dtype)
 
         return m1_t, m2_t
 

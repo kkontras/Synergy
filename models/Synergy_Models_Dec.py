@@ -7399,7 +7399,7 @@ class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
         # hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)
         h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
         logits = self.enc_0(h_cls)
-        lossses = {}
+        losses = {}
         if label is not None:
             losses["ce_loss_combined"] = self._mc_ce_loss(logits, label)
 

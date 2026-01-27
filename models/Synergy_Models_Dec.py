@@ -6625,6 +6625,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             print(position_ids.shape)
             print(input_embeds.shape)
             print(image_mask.shape)
+            print(image_mask.sum(dim=1))
             print(deep_stack_viz[0].shape)
             print("End Initialss---")
             masks = torch.cat([attention_mask, att_mask_0, att_mask_1], dim=0)
@@ -6634,11 +6635,20 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             input_embeds_expanded = input_embeds.repeat(k, 1, 1)
             # filter_deep_stack = torch.cat([image_mask[image_mask].reshape(), image_mask[image_mask], m2t[image_mask]], dim=0)
             # filter_deep_stack_norm = torch.cat([image_mask[image_mask], image_mask[image_mask], image_mask[image_mask]], dim=0)
-            filter_deep_stack = torch.cat([image_mask[image_mask].reshape(), image_mask[image_mask], m2t[image_mask]],dim=0)
+            filter_deep_stack = torch.cat([image_mask[image_mask], image_mask[image_mask], m2t[image_mask]],dim=0)
             filter_deep_stack_norm = torch.cat([image_mask[image_mask], image_mask[image_mask], image_mask[image_mask]],
                                                dim=0)
             deep_stack_viz_expanded = [deep_stack_viz[i].repeat(k, 1)[filter_deep_stack_norm] for i in
                                        range(len(deep_stack_viz))]
+
+            print("Thens ---")
+            print(position_ids.shape)
+            print(input_embeds.shape)
+            print(filter_deep_stack.shape)
+            print(filter_deep_stack.sum(dim=1))
+            print(deep_stack_viz_expanded[0].shape)
+            print("End thens---")
+
             print(position_ids_expanded.shape)
             print(input_embeds_expanded.shape)
             print(filter_deep_stack.shape)

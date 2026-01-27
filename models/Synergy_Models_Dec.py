@@ -2748,7 +2748,7 @@ class SynIB_QwenFaster(nn.Module):
         print(pcfg)
         steps = int(pcfg.get("steps", 10))
         lr = float(pcfg.get("lr", 1e-1))
-        tau = float(pcfg.get("tau", 0.1))
+        tau = float(pcfg.get("tau", 0.5))
         lsparse = float(pcfg.get("lsparse", 1.0))
         hard = bool(pcfg.get("hard", True))
         hard_thresh = float(pcfg.get("hard_thresh", 0.5))
@@ -2855,7 +2855,6 @@ class SynIB_QwenFaster(nn.Module):
 
                     if debug and (i == 0 or i == steps - 1 or (debug_every > 0 and (i + 1) % debug_every == 0)):
                         with torch.no_grad():
-                            print(g)
                             keep_frac = g.sum()/len(g)
                             mask_frac = 1.0 - keep_frac
                             ce_val = float(ce.item())

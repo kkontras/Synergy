@@ -2796,6 +2796,35 @@ class SynIB_QwenFaster(nn.Module):
 
         return m1_t, m2_t
 
+    def _random_masks_randomp(
+            self, m1, m2, px1, px2,
+            p_min=0.1, p_max=0.5,
+            p_do=0.2,  # prob that we perform masking at all
+            **kwargs
+    ):
+        # If we decide not to mask this time, return originals
+        if torch.rand((), device=m1.device).item() > p_do:
+            return (m1.clone() if px1 else None), (m2.clone() if px2 else None)
+
+        # Sample mask probability p ~ U[p_min, p_max]
+        if p_max < p_min:
+            p_min, p_max = p_max, p_min
+        p = p_min + (p_max - p_min) * torch.rand((), device=m1.device).item()
+
+        m1_t, m2_t = None, None
+        if px1:
+            # keep mask: 1=kept, 0=masked, applied only where m1 is True
+            mask_1 = (torch.rand_like(m1[m1].float()) > p).to(dtype=m1.dtype)
+            m1_t = m1.clone()
+            m1_t[m1] = mask_1
+
+        if px2:
+            mask_2 = (torch.rand_like(m2[m2].float()) > p).to(dtype=m2.dtype)
+            m2_t = m2.clone()
+            m2_t[m2] = mask_2
+
+        return m1_t, m2_t
+
     def _learned_masks(self, m1, m2, px1, px2, **kwargs):
         """
         Learn per-token keep/mask gates on the subset indicated by m1/m2.
@@ -3027,654 +3056,654 @@ class SynIB_QwenFaster(nn.Module):
         losses = {"sl_1": kl1 * self.synergy_weight, "sl_2": kl2 * self.synergy_weight}
         # losses["sl_diff"] = kl_diff_mse * self.synergy_weight
         return losses
-class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
-    """
-    Multimodal (image+text) ScienceQA as 5-way classification.
-    Backbone is frozen EXCEPT:
-      - classifier head enc_0 (always trainable)
-      - (optional) learnable <CLS> embedding row ONLY (via gradient masking hook)
-      - (optional) final LM norm (cheap, sometimes helps)
-
-    Readout is the hidden state at the appended <CLS> token (placed at end of prompt).
-    """
-
-    def __init__(self, args, encs=None, **kwargs):
-        super().__init__()
-        encs = encs or []
-
-        self.args = args
-        self.device = torch.device("cuda:0")
-
-        self.synergy_weight = float(self.args.get("bias_infusion", {}).get("l", 0.0))
-        self.max_new_tokens = getattr(args, "max_new_tokens", 32)
-        self.num_classes = getattr(args, "num_classes")
-
-        model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        HF_CACHE = getattr(self.args, "save_base_dir", None)
-
-        # -----------------------------
-        # Processor / Tokenizer
-        # -----------------------------
-        self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=HF_CACHE)
-        tok = self.processor.tokenizer
-        tok.padding_side = "left"
-        if tok.pad_token is None:
-            tok.pad_token = tok.eos_token
-
-        # Add <CLS> token to tokenizer
-        added = tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
-        self.cls_token_id = tok.convert_tokens_to_ids("<CLS>")
-
-        self.backbone = Qwen3VLForConditionalGeneration.from_pretrained(
-            model_name,
-            # dtype=torch.bfloat16 if getattr(args, "bf16", False) else torch.float16,
-            device_map="cuda:0",
-            cache_dir=HF_CACHE,
-        )
-        self.backbone.config.use_cache = False
-
-        if added > 0:
-            self.backbone.resize_token_embeddings(len(tok))
-
-        cfg = self.backbone.config
-        self.image_token_id = cfg.image_token_id
-        self.image_token_str = tok.convert_ids_to_tokens(self.image_token_id)
-
-        if hasattr(cfg, "text_config") and hasattr(cfg.text_config, "hidden_size"):
-            self.d_model = cfg.text_config.hidden_size
-        else:
-            self.d_model = cfg.hidden_size
-
-        if len(encs) < 1:
-            raise ValueError("encs[0] must be provided as the 5-way classifier head.")
-        self.enc_0 = encs[0]
-
-        self._apply_lora()
-
-        self._load_cls_embedding()
-        self._setup_trainables()
-
-        self.synib = SynIB_QwenFaster(args, [], self)
-
-        self._precompute_mask_token_ids()
-
-    def _precompute_mask_token_ids(self):
-        tok = self.processor.tokenizer
-
-        # tokens that indicate vision placeholders
-        vision_candidates = [
-            "<|vision_start|>", "<|vision_end|>", "<|image_pad|>", "<|video_pad|>",
-            "<image>", "<img>", "<|image|>"
-        ]
-        vision_ids = set()
-        for s in vision_candidates:
-            tid = tok.convert_tokens_to_ids(s)
-            if tid is not None and tid != tok.unk_token_id:
-                vision_ids.add(int(tid))
-
-        # also include the model's configured image token string (might be multi-token)
-        for tid in tok(self.image_token_str, add_special_tokens=False).input_ids:
-            vision_ids.add(int(tid))
-
-        self._vision_ids = torch.tensor(sorted(vision_ids), dtype=torch.long)  # keep on CPU; move later
-
-        # tokenize separators used by your prompt builder
-        self._nl_id = tok("\n", add_special_tokens=False).input_ids
-        self._nlnl_id = tok("\n\n", add_special_tokens=False).input_ids
-
-        # tokenize "<image>\n" prefix in token space (whatever your image_token_str is)
-        self._image_prefix_ids = tok(self.image_token_str + "\n", add_special_tokens=False).input_ids
-
-    def _setup_trainables(self):
-        # Freeze everything
-        for p in self.backbone.parameters():
-            p.requires_grad = False
-
-        if getattr(self.args, "lora_config", None) and self.args.lora_config.get("use_lora", False):
-            for n, p in self.backbone.named_parameters():
-                if "lora_" in n:
-                    p.requires_grad = True
-
-        for p in self.enc_0.parameters():
-            p.requires_grad = True
-
-        lm = self.backbone.model.language_model
-
-        # Optionally train final norm (cheap and often stabilizes)
-        # if getattr(self.args, "train_lm_norm", False) and lm is not None and hasattr(lm, "norm"):
-        #     for p in lm.norm.parameters():
-        #         p.requires_grad = True
-
-        # Make <CLS> embedding learnable WITHOUT unfreezing whole embedding table
-        # (default True; set args.train_cls_row=False to disable)
-        if self.args.cls_finetune:
-            if getattr(self.args, "train_cls_row", True) and lm is not None and hasattr(lm, "embed_tokens"):
-                emb = lm.embed_tokens
-                # ensure grads flow to emb.weight (we'll mask them)
-                emb.weight.requires_grad = True
-
-                cls_id = int(self.cls_token_id)
-                # build a (vocab, hidden) mask with 1s only for cls row
-                mask = torch.zeros_like(emb.weight, dtype=torch.float32)
-                mask[cls_id].fill_(1.0)
-
-                def grad_mask_hook(grad):
-                    return grad * mask.to(grad.device, grad.dtype)
-
-                # register once
-                if not hasattr(self, "_cls_grad_hooked"):
-                    emb.weight.register_hook(grad_mask_hook)
-                    self._cls_grad_hooked = True
-
-        # NOTE: if you enabled synergy modules, mark them trainable here.
-
-    def _load_cls_embedding(self):
-
-        cls_path = getattr(self.args, "cls_emb_path", None)
-        save_base_dir = getattr(self.args, "save_base_dir", None)
-        if save_base_dir is None or cls_path is None:
-            return
-        cls_path = os.path.join(save_base_dir, cls_path)
-
-        self.load_cls_embedding(cls_path)
-
-    def load_cls_embedding(self, path, strict_dim=True):
-
-        assert os.path.isfile(path), f"CLS embedding file not found: {path}"
-
-        ckpt = torch.load(path, map_location="cpu")
-
-        if "cls_row" not in ckpt:
-            raise KeyError("CLS checkpoint must contain 'cls_row'")
-
-        cls_row = ckpt["cls_row"]
-        saved_cls_id = ckpt.get("cls_token_id", self.cls_token_id)
-
-        lm = self.backbone.model.language_model
-        if lm is None or not hasattr(lm, "embed_tokens"):
-            raise RuntimeError("Language model embedding table not found")
-
-        emb = lm.embed_tokens
-        current_cls_id = int(self.cls_token_id)
-
-        if strict_dim and cls_row.numel() != emb.weight.shape[1]:
-            raise ValueError(
-                f"CLS dim mismatch: saved {cls_row.numel()} vs model {emb.weight.shape[1]}"
-            )
-
-        if saved_cls_id != current_cls_id:
-            print(
-                f"[WARN] saved cls_token_id={saved_cls_id} "
-                f"!= current cls_token_id={current_cls_id} — copying to current index"
-            )
-
-        with torch.no_grad():
-            emb.weight[current_cls_id].copy_(
-                cls_row.to(emb.weight.device, emb.weight.dtype)
-            )
-
-        print(f"[OK] Loaded CLS embedding from {path}")
-
-    def _apply_lora(self):
-        cfg = getattr(self.args, "lora_config", None)
-        if not cfg or not cfg.get("use_lora", False):
-            return
-
-        lora_cfg = LoraConfig(
-            r=int(cfg.get("lora_r", 8)),
-            lora_alpha=int(cfg.get("lora_alpha", 8)),
-            lora_dropout=float(cfg.get("lora_dropout", 0.0)),
-            target_modules=list(cfg.get("lora_target_modules", ["q_proj", "v_proj"])),
-            bias=str(cfg.get("lora_bias", "none")),
-            task_type="CAUSAL_LM",
-        )
-
-        self.backbone = get_peft_model(self.backbone, lora_cfg)
-
-    def _encode(self, input_ids, attention_mask, pixel_values, image_grid_thw=None):
-        outputs = self.backbone(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            pixel_values=pixel_values,
-            image_grid_thw=image_grid_thw,
-            output_hidden_states=True,
-            use_cache=False,
-        )
-        return outputs.hidden_states[-1]  # (B, T, d)
-
-    def _get_cls_token_repr(self, hidden, input_ids):
-        B = input_ids.size(0)
-        device = input_ids.device
-
-        # position of <CLS> (assumes exactly once per sample)
-        cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)  # (B,)
-        h = hidden[torch.arange(B, device=device), cls_pos]             # (B,d)
-        h = F.layer_norm(h, (h.shape[-1],))
-        return h
-
-    def _find_subsequence(self, haystack, needle):
-        """
-        Return (start, end) indices of needle in haystack (both python lists of ints),
-        or None if not found.
-        """
-        n = len(needle)
-        if n == 0:
-            return None
-        # simple O(T*n) is fine for debug
-        for i in range(len(haystack) - n + 1):
-            if haystack[i:i + n] == needle:
-                return (i, i + n)
-        return None
-
-    def _build_prompts_with_choices(self, hint_texts, qa_texts, letters_list):
-        prompts = []
-        for hint, qa, letters in zip(hint_texts, qa_texts, letters_list):
-            parts = []
-            if hint is not None and hint.strip():
-                parts.append(hint.strip())
-            if qa is not None and qa.strip():
-                parts.append(qa.strip())
-
-            if letters:
-                letters_str = ", ".join(f"({L})" for L in letters)
-                parts.append(f"Answer with only one of: {letters_str}.")
-
-            # Put CLS token at the END so it can attend to all previous tokens (causal LM)
-            parts.append("<CLS>")
-
-            prompts.append("\n\n".join(parts))
-        return prompts
-
-    def _generate_raw_answers(self, proc, input_ids, *, letters_list):
-        gen_inputs = {
-            k: v for k, v in proc.items()
-            if k in ("input_ids", "attention_mask", "pixel_values", "image_grid_thw")
-        }
-        gen_inputs = {k: v.to(self.backbone.device) for k, v in gen_inputs.items()}
-
-        with torch.no_grad():
-            gen_ids = self.backbone.generate(
-                **gen_inputs,
-                max_new_tokens=self.max_new_tokens,
-                do_sample=False,
-            )
-
-        gen_ids_trimmed = [out_ids[len(in_ids):] for in_ids, out_ids in zip(input_ids, gen_ids)]
-        raw_answers = self.processor.batch_decode(
-            gen_ids_trimmed,
-            skip_special_tokens=True,
-            clean_up_tokenization_spaces=True,
-        )
-
-        import re
-
-        def clean_answer(ans: str):
-            lines = [l.strip() for l in ans.splitlines() if l.strip()]
-            if not lines:
-                return ans.strip()
-            first = lines[0]
-            m = re.search(r"\(([A-Za-z])\)", first)
-            if m:
-                return f"({m.group(1).upper()})"
-            m2 = re.search(r"\b([A-Za-z])\b", first)
-            if m2:
-                return f"({m2.group(1).upper()})"
-            return first
-
-        cleaned = [clean_answer(ans) for ans in raw_answers]
-
-        pred_indices = []
-        for ans, letters in zip(cleaned, letters_list):
-            if not letters:
-                pred_indices.append(-1)
-                continue
-            letters_upper = [L.upper() for L in letters]
-            m = re.search(r"\(([A-Za-z])\)", ans)
-            if not m:
-                pred_indices.append(-1)
-                continue
-            letter = m.group(1).upper()
-            pred_indices.append(letters_upper.index(letter) if letter in letters_upper else -1)
-
-        pred_indices = torch.tensor(pred_indices, device=input_ids.device, dtype=torch.long)
-        return cleaned, pred_indices
-
-    def _mc_ce_loss(self, logits, labels):
-        if hasattr(self.args, "class_weights") and self.args.class_weights is not None:
-            class_weights = self.args.class_weights.to(logits.device)
-            return F.cross_entropy(logits, labels, weight=class_weights)
-        return F.cross_entropy(logits, labels)
-
-    def apply_custom_masks(self, base_att_mask, m1, m2, m1_t, m2_t):
-
-        combined_hint = base_att_mask.clone()
-        combined_hint[m1.bool()] = m1_t[m1.bool()].long()
-
-        combined_img = base_att_mask.clone()
-        combined_img[m2.bool()] = m2_t[m2.bool()].long()
-
-        return combined_hint, combined_img
-
-    def get_masks_only_B0( self, processor, proc, prompts_with_image, hint_texts, image_token_str):
-        """
-        Returns (B0, T) boolean masks:
-          hint_mask:  True where token overlaps the hint substring in the prompt text
-          image_mask: True where token is a vision-related placeholder token
-
-        Uses:
-          - offsets mapping from tokenizer for hint mask (fast, no subsequence search)
-          - torch.isin for image mask (vectorized)
-        """
-
-        tok = processor.tokenizer
-
-        input_ids = proc["input_ids"][:]
-        device = input_ids.device
-        B_total, T = input_ids.shape
-        B0 = len(prompts_with_image)
-        assert B0 <= B_total, f"B0={B0} > proc batch={B_total}"
-
-
-        # --- 1) Compute offsets for B0 prompts only (CPU is fine) ---
-        # Make sure tokenizer is "fast" (offset_mapping is supported); most HF tokenizers are.
-        enc = tok(
-            prompts_with_image,
-            padding=True,
-            truncation=True,
-            add_special_tokens=False,
-            return_offsets_mapping=True,
-            return_tensors="pt",
-        )
-
-        # Offsets come back padded to the tokenizer's max length for this batch.
-        # We will slice to match proc's T (they should match if prompts match).
-        offsets = enc["offset_mapping"]  # (B0, T_enc, 2) on CPU
-        T_enc = offsets.shape[1]
-        if T_enc != T:
-            # If they differ, you likely used different padding/truncation settings
-            # between this call and the original processor(...) call.
-            # We can still align by slicing to the min length.
-            T_use = min(T_enc, T)
-        else:
-            T_use = T
-
-        off_s = offsets[:, :T_use, 0]  # (B0, T_use)
-        off_e = offsets[:, :T_use, 1]  # (B0, T_use)
-
-        # --- 2) Vectorized hint span computation (no for-loop over B0) ---
-        # Assumption: when hint exists, it starts right after prefix: image_token_str + "\n"
-        prefix_len = len(image_token_str) + 1  # newline
-
-        # Build tensor of hint lengths (0 for empty/None)
-        # (This is “vectorized enough”: one Python pass over B0 strings; no tensor copies per token.)
-        hint_clean = [("" if h is None else str(h).strip()) for h in hint_texts]
-        hint_len_t = torch.tensor([len(h) for h in hint_clean], dtype=torch.long)  # (B0,) on CPU
-
-        has_hint = hint_len_t > 0
-        hint_start = torch.full((B0,), prefix_len, dtype=torch.long)  # (B0,)
-        hint_end = hint_start + hint_len_t  # (B0,)
-        # Mark absent hints with -1 so they produce all-False masks
-        hint_start = torch.where(has_hint, hint_start, torch.full_like(hint_start, -1))
-        hint_end = torch.where(has_hint, hint_end, torch.full_like(hint_end, -1))
-
-        hs = hint_start[:, None]  # (B0, 1)
-        he = hint_end[:, None]  # (B0, 1)
-
-        # pad tokens typically have offsets (0,0)
-        not_pad = ~((off_s == 0) & (off_e == 0))
-
-        # overlap: token span intersects [hs, he)
-        valid_hint = (hs >= 0)
-        hint_mask_cpu = valid_hint & not_pad & (off_e > hs) & (off_s < he)  # (B0, T_use)
-
-        # Move to device and expand to full T if needed
-        hint_mask = torch.zeros((B0, T), dtype=torch.bool, device=device)
-        hint_mask[:, :T_use] = hint_mask_cpu.to(device)
-
-        # --- 3) Vectorized image mask on GPU using proc's input_ids (B0 slice) ---
-        vision_candidates = [
-            "<|vision_start|>", "<|vision_end|>", "<|image_pad|>", "<|video_pad|>",
-            "<image>", "<img>", "<|image|>"
-        ]
-        vision_ids = set()
-        for s in vision_candidates:
-            tid = tok.convert_tokens_to_ids(s)
-            if tid is not None and tid != tok.unk_token_id:
-                vision_ids.add(int(tid))
-        for tid in tok(image_token_str, add_special_tokens=False).input_ids:
-            vision_ids.add(int(tid))
-
-        if len(vision_ids) == 0:
-            image_mask = torch.zeros((B0, T), dtype=torch.bool, device=device)
-        else:
-            vision_ids_t = torch.tensor(sorted(vision_ids), device=device, dtype=input_ids.dtype)
-            image_mask = torch.isin(input_ids[:B0], vision_ids_t)  # (B0, T)
-
-        return hint_mask, image_mask
-
-    def get_masks_from_input_ids_only(self, proc, hint_texts):
-        """
-        Returns:
-          hint_mask:  (B,T) tokens belonging to hint span
-          image_mask: (B,T) tokens belonging to vision placeholders
-        No extra tokenization.
-        """
-        input_ids = proc["input_ids"]
-        device = input_ids.device
-        B, T = input_ids.shape
-
-        # --- image mask: vectorized ---
-        if getattr(self, "_vision_ids", None) is None:
-            self._precompute_mask_token_ids()
-
-        vision_ids_t = self._vision_ids.to(device=device, dtype=input_ids.dtype)
-        image_mask = torch.isin(input_ids, vision_ids_t)
-
-        # --- hint mask ---
-        # If hint is empty -> all false for that row
-        hint_clean = [("" if h is None else str(h).strip()) for h in hint_texts]
-        has_hint = torch.tensor([len(h) > 0 for h in hint_clean], device=device)  # (B,)
-
-        hint_mask = torch.zeros((B, T), dtype=torch.bool, device=device)
-
-        # We assume: prefix is "<image_token>\n" then hint tokens until the first "\n\n".
-        prefix_ids = torch.tensor(self._image_prefix_ids, device=device, dtype=input_ids.dtype)
-        sep_ids = torch.tensor(self._nlnl_id, device=device, dtype=input_ids.dtype)
-
-        # Helper: find first occurrence of a short pattern in each row (small, cheap loop over B)
-        # B is small vs T, and pattern lengths are tiny; this is *way* cheaper than tokenizing strings again.
-        for b in range(B):
-            if not has_hint[b]:
-                continue
-
-            row = input_ids[b]
-
-            # find where the prefix ends (we expect it at the beginning, but be robust)
-            # match prefix_ids at some position; usually 0
-            start = 0
-            # (optional robustness: verify prefix match)
-            if len(prefix_ids) > 0 and not torch.equal(row[: len(prefix_ids)], prefix_ids):
-                # if not found at beginning, try to find it once
-                found = False
-                for i in range(0, T - len(prefix_ids) + 1):
-                    if torch.equal(row[i:i + len(prefix_ids)], prefix_ids):
-                        start = i + len(prefix_ids)
-                        found = True
-                        break
-                if not found:
-                    continue
-            else:
-                start = len(prefix_ids)
-
-            # find first separator "\n\n" after start
-            end = None
-            for i in range(start, T - len(sep_ids) + 1):
-                if torch.equal(row[i:i + len(sep_ids)], sep_ids):
-                    end = i
-                    break
-
-            # if no separator found, fall back: mark until padding (attention_mask==0) if exists
-            if end is None:
-                attn = proc.get("attention_mask", None)
-                if attn is not None:
-                    end = int(attn[b].sum().item())
-                else:
-                    end = T
-
-            if end > start:
-                hint_mask[b, start:end] = True
-
-        return hint_mask, image_mask
-
-    def _forward_from_embeds(self, inputs_embeds, attention_mask):
-        outputs = self.backbone(
-            inputs_embeds=inputs_embeds,
-            attention_mask=attention_mask,
-            output_hidden_states=True,
-        )
-        hidden = outputs.hidden_states[-1]
-        return hidden
-
-    def _compute_logits_synib_from_proc(self, x, **kwargs ):
-        hint_texts = x[0]
-        qa_texts = x[1]
-        images = x[2]
-        letters_list = x[4]
-
-        device = images.device
-
-        def expand_batch(x, k=3):
-            return x.unsqueeze(dim=0).expand(k,*x.shape).reshape(k * x.shape[0], *x.shape[1:])
-
-        prompts = self._build_prompts_with_choices(hint_texts, qa_texts, letters_list)
-        prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
-        image_list = [img for img in images]
-
-        proc = self.processor(
-            text=prompts_with_image,
-            images=image_list,
-            padding=True,
-            truncation=True,
-            return_tensors="pt",
-        )
-
-        proc = {k: v.to(device) for k, v in proc.items()}
-
-
-        m1, m2 = self.get_masks_only_B0(processor=self.processor, proc=proc, prompts_with_image=prompts_with_image, hint_texts=hint_texts, image_token_str=self.image_token_str)
-        self.z1_stats.ema_update(proc["input_embeds"][m1])
-        self.z2_stats.ema_update(proc["input_embeds"][m2])
-        for i in range(len(proc["deep_stack_viz"])):
-            self.z2_deepstack_stats[i].ema_update(proc["deep_stack_viz"][i])
-
-        if self.args.get("perturb", {}).get("type", "rand") == "rand":
-            m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)
-        elif self.args.get("perturb", {}).get("type", "rand") == "learned":
-            m1t, m2t = self.synib._learned_masks(m1, m2, True, True, proc=proc, **kwargs)
-        else:
-            raise ValueError("Unknown or missing perturb.type {}".format(self.args.get("perturb", {})))
-        att_mask_0, att_mask_1 = self.apply_custom_masks(proc["attention_mask"], m1, m2, m1t, m2t)
-
-        if self.args.get("run_multiple_forwards", False):
-            combined_mask = torch.cat(
-                [proc["attention_mask"].unsqueeze(dim=0), att_mask_0.unsqueeze(dim=0), att_mask_1.unsqueeze(dim=0)],
-                dim=0)
-
-            combined_hidden = torch.cat([self._encode(
-                input_ids=proc["input_ids"],
-                attention_mask=combined_mask[i],
-                pixel_values=proc["pixel_values"],
-                image_grid_thw=proc["image_grid_thw"],
-            )
-             for i in range(3)], dim=0)
-        else:
-            combined_mask = torch.cat(
-                [proc["attention_mask"], att_mask_0, att_mask_1],
-                dim=0)
-
-            combined_hidden = self._encode(
-                input_ids=expand_batch(proc["input_ids"]),
-                attention_mask=combined_mask,
-                pixel_values=expand_batch(proc["pixel_values"]),
-                image_grid_thw=expand_batch(proc["image_grid_thw"]),
-            )
-
-
-        h_cls_combined = self._get_cls_token_repr(combined_hidden, expand_batch(proc["input_ids"]))
-        head_logits_combined = self.enc_0(h_cls_combined)
-
-        head_logits, head_logits_0, head_logits_1 = torch.chunk(head_logits_combined, chunks=3, dim=0)
-        h_cls, featcls_0, featcls_1 = torch.chunk(h_cls_combined, chunks=3, dim=0)
-
-        losses = {}
-        if "label" in kwargs and kwargs["label"] is not None:
-            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, kwargs["label"])
-
-        preds = {"combined": head_logits, "mask0":head_logits_0, "mask1":head_logits_1}
-        features = {"h_cls": h_cls, "mask0":featcls_0, "mask1":featcls_1}
-
-        # # If you want zero-shot text parsing at eval:
-        # if (not self.training) and getattr(self.args, "do_zeroshot_parse", False):
-        #     raw_text_answers, mc_from_text = self._generate_raw_answers(
-        #         proc, input_ids, letters_list=letters_list
-        #     )
-        #     preds["raw_text"] = raw_text_answers
-        #     preds["mc_from_text"] = mc_from_text
-
-        return {"preds": preds, "features": features, "losses": losses}
-
-    def _compute_logits_from_proc( self, x, *, label=None, **kwargs,):
-        hint_texts = x[0]
-        qa_texts = x[1]
-        images = x[2]
-        letters_list = x[4]
-
-        device = images.device
-
-        prompts = self._build_prompts_with_choices(hint_texts, qa_texts, letters_list)
-        prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
-        image_list = [img for img in images]
-
-        proc = self.processor(
-            text=prompts_with_image,
-            images=image_list,
-            padding=True,
-            truncation=True,
-            return_tensors="pt",
-        )
-
-        proc = {k: v.to(device) for k, v in proc.items()}
-
-        hidden = self._encode(
-            input_ids=proc["input_ids"],
-            attention_mask=proc["attention_mask"],
-            pixel_values=proc["pixel_values"],
-            image_grid_thw=proc.get("image_grid_thw"),
-        )
-
-        h_cls = self._get_cls_token_repr(hidden, proc["input_ids"]).to(self.enc_0.linear.weight.dtype)
-        head_logits = self.enc_0(h_cls)
-
-        losses = {}
-        if label is not None:
-            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, label)
-
-        preds = {"combined": head_logits}
-        features = {"h_cls": h_cls}
-
-        return {"preds": preds, "features": features, "losses": losses}
-
-    def forward(self, x, **kwargs):
-
-        if self.training:
-            out = self._compute_logits_synib_from_proc(x, **kwargs)
-        else:
-            out =  self._compute_logits_from_proc(x, **kwargs)
-
-        if self.training and self.synergy_weight > 0:
-            synergy_losses = self.synib.compute_training_losses( out, **kwargs)
-            out["losses"].update(synergy_losses)
-        return out
+# class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
+#     """
+#     Multimodal (image+text) ScienceQA as 5-way classification.
+#     Backbone is frozen EXCEPT:
+#       - classifier head enc_0 (always trainable)
+#       - (optional) learnable <CLS> embedding row ONLY (via gradient masking hook)
+#       - (optional) final LM norm (cheap, sometimes helps)
+#
+#     Readout is the hidden state at the appended <CLS> token (placed at end of prompt).
+#     """
+#
+#     def __init__(self, args, encs=None, **kwargs):
+#         super().__init__()
+#         encs = encs or []
+#
+#         self.args = args
+#         self.device = torch.device("cuda:0")
+#
+#         self.synergy_weight = float(self.args.get("bias_infusion", {}).get("l", 0.0))
+#         self.max_new_tokens = getattr(args, "max_new_tokens", 32)
+#         self.num_classes = getattr(args, "num_classes")
+#
+#         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
+#         HF_CACHE = getattr(self.args, "save_base_dir", None)
+#
+#         # -----------------------------
+#         # Processor / Tokenizer
+#         # -----------------------------
+#         self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=HF_CACHE)
+#         tok = self.processor.tokenizer
+#         tok.padding_side = "left"
+#         if tok.pad_token is None:
+#             tok.pad_token = tok.eos_token
+#
+#         # Add <CLS> token to tokenizer
+#         added = tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
+#         self.cls_token_id = tok.convert_tokens_to_ids("<CLS>")
+#
+#         self.backbone = Qwen3VLForConditionalGeneration.from_pretrained(
+#             model_name,
+#             # dtype=torch.bfloat16 if getattr(args, "bf16", False) else torch.float16,
+#             device_map="cuda:0",
+#             cache_dir=HF_CACHE,
+#         )
+#         self.backbone.config.use_cache = False
+#
+#         if added > 0:
+#             self.backbone.resize_token_embeddings(len(tok))
+#
+#         cfg = self.backbone.config
+#         self.image_token_id = cfg.image_token_id
+#         self.image_token_str = tok.convert_ids_to_tokens(self.image_token_id)
+#
+#         if hasattr(cfg, "text_config") and hasattr(cfg.text_config, "hidden_size"):
+#             self.d_model = cfg.text_config.hidden_size
+#         else:
+#             self.d_model = cfg.hidden_size
+#
+#         if len(encs) < 1:
+#             raise ValueError("encs[0] must be provided as the 5-way classifier head.")
+#         self.enc_0 = encs[0]
+#
+#         self._apply_lora()
+#
+#         self._load_cls_embedding()
+#         self._setup_trainables()
+#
+#         self.synib = SynIB_QwenFaster(args, [], self)
+#
+#         self._precompute_mask_token_ids()
+#
+#     def _precompute_mask_token_ids(self):
+#         tok = self.processor.tokenizer
+#
+#         # tokens that indicate vision placeholders
+#         vision_candidates = [
+#             "<|vision_start|>", "<|vision_end|>", "<|image_pad|>", "<|video_pad|>",
+#             "<image>", "<img>", "<|image|>"
+#         ]
+#         vision_ids = set()
+#         for s in vision_candidates:
+#             tid = tok.convert_tokens_to_ids(s)
+#             if tid is not None and tid != tok.unk_token_id:
+#                 vision_ids.add(int(tid))
+#
+#         # also include the model's configured image token string (might be multi-token)
+#         for tid in tok(self.image_token_str, add_special_tokens=False).input_ids:
+#             vision_ids.add(int(tid))
+#
+#         self._vision_ids = torch.tensor(sorted(vision_ids), dtype=torch.long)  # keep on CPU; move later
+#
+#         # tokenize separators used by your prompt builder
+#         self._nl_id = tok("\n", add_special_tokens=False).input_ids
+#         self._nlnl_id = tok("\n\n", add_special_tokens=False).input_ids
+#
+#         # tokenize "<image>\n" prefix in token space (whatever your image_token_str is)
+#         self._image_prefix_ids = tok(self.image_token_str + "\n", add_special_tokens=False).input_ids
+#
+#     def _setup_trainables(self):
+#         # Freeze everything
+#         for p in self.backbone.parameters():
+#             p.requires_grad = False
+#
+#         if getattr(self.args, "lora_config", None) and self.args.lora_config.get("use_lora", False):
+#             for n, p in self.backbone.named_parameters():
+#                 if "lora_" in n:
+#                     p.requires_grad = True
+#
+#         for p in self.enc_0.parameters():
+#             p.requires_grad = True
+#
+#         lm = self.backbone.model.language_model
+#
+#         # Optionally train final norm (cheap and often stabilizes)
+#         # if getattr(self.args, "train_lm_norm", False) and lm is not None and hasattr(lm, "norm"):
+#         #     for p in lm.norm.parameters():
+#         #         p.requires_grad = True
+#
+#         # Make <CLS> embedding learnable WITHOUT unfreezing whole embedding table
+#         # (default True; set args.train_cls_row=False to disable)
+#         if self.args.cls_finetune:
+#             if getattr(self.args, "train_cls_row", True) and lm is not None and hasattr(lm, "embed_tokens"):
+#                 emb = lm.embed_tokens
+#                 # ensure grads flow to emb.weight (we'll mask them)
+#                 emb.weight.requires_grad = True
+#
+#                 cls_id = int(self.cls_token_id)
+#                 # build a (vocab, hidden) mask with 1s only for cls row
+#                 mask = torch.zeros_like(emb.weight, dtype=torch.float32)
+#                 mask[cls_id].fill_(1.0)
+#
+#                 def grad_mask_hook(grad):
+#                     return grad * mask.to(grad.device, grad.dtype)
+#
+#                 # register once
+#                 if not hasattr(self, "_cls_grad_hooked"):
+#                     emb.weight.register_hook(grad_mask_hook)
+#                     self._cls_grad_hooked = True
+#
+#         # NOTE: if you enabled synergy modules, mark them trainable here.
+#
+#     def _load_cls_embedding(self):
+#
+#         cls_path = getattr(self.args, "cls_emb_path", None)
+#         save_base_dir = getattr(self.args, "save_base_dir", None)
+#         if save_base_dir is None or cls_path is None:
+#             return
+#         cls_path = os.path.join(save_base_dir, cls_path)
+#
+#         self.load_cls_embedding(cls_path)
+#
+#     def load_cls_embedding(self, path, strict_dim=True):
+#
+#         assert os.path.isfile(path), f"CLS embedding file not found: {path}"
+#
+#         ckpt = torch.load(path, map_location="cpu")
+#
+#         if "cls_row" not in ckpt:
+#             raise KeyError("CLS checkpoint must contain 'cls_row'")
+#
+#         cls_row = ckpt["cls_row"]
+#         saved_cls_id = ckpt.get("cls_token_id", self.cls_token_id)
+#
+#         lm = self.backbone.model.language_model
+#         if lm is None or not hasattr(lm, "embed_tokens"):
+#             raise RuntimeError("Language model embedding table not found")
+#
+#         emb = lm.embed_tokens
+#         current_cls_id = int(self.cls_token_id)
+#
+#         if strict_dim and cls_row.numel() != emb.weight.shape[1]:
+#             raise ValueError(
+#                 f"CLS dim mismatch: saved {cls_row.numel()} vs model {emb.weight.shape[1]}"
+#             )
+#
+#         if saved_cls_id != current_cls_id:
+#             print(
+#                 f"[WARN] saved cls_token_id={saved_cls_id} "
+#                 f"!= current cls_token_id={current_cls_id} — copying to current index"
+#             )
+#
+#         with torch.no_grad():
+#             emb.weight[current_cls_id].copy_(
+#                 cls_row.to(emb.weight.device, emb.weight.dtype)
+#             )
+#
+#         print(f"[OK] Loaded CLS embedding from {path}")
+#
+#     def _apply_lora(self):
+#         cfg = getattr(self.args, "lora_config", None)
+#         if not cfg or not cfg.get("use_lora", False):
+#             return
+#
+#         lora_cfg = LoraConfig(
+#             r=int(cfg.get("lora_r", 8)),
+#             lora_alpha=int(cfg.get("lora_alpha", 8)),
+#             lora_dropout=float(cfg.get("lora_dropout", 0.0)),
+#             target_modules=list(cfg.get("lora_target_modules", ["q_proj", "v_proj"])),
+#             bias=str(cfg.get("lora_bias", "none")),
+#             task_type="CAUSAL_LM",
+#         )
+#
+#         self.backbone = get_peft_model(self.backbone, lora_cfg)
+#
+#     def _encode(self, input_ids, attention_mask, pixel_values, image_grid_thw=None):
+#         outputs = self.backbone(
+#             input_ids=input_ids,
+#             attention_mask=attention_mask,
+#             pixel_values=pixel_values,
+#             image_grid_thw=image_grid_thw,
+#             output_hidden_states=True,
+#             use_cache=False,
+#         )
+#         return outputs.hidden_states[-1]  # (B, T, d)
+#
+#     def _get_cls_token_repr(self, hidden, input_ids):
+#         B = input_ids.size(0)
+#         device = input_ids.device
+#
+#         # position of <CLS> (assumes exactly once per sample)
+#         cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)  # (B,)
+#         h = hidden[torch.arange(B, device=device), cls_pos]             # (B,d)
+#         h = F.layer_norm(h, (h.shape[-1],))
+#         return h
+#
+#     def _find_subsequence(self, haystack, needle):
+#         """
+#         Return (start, end) indices of needle in haystack (both python lists of ints),
+#         or None if not found.
+#         """
+#         n = len(needle)
+#         if n == 0:
+#             return None
+#         # simple O(T*n) is fine for debug
+#         for i in range(len(haystack) - n + 1):
+#             if haystack[i:i + n] == needle:
+#                 return (i, i + n)
+#         return None
+#
+#     def _build_prompts_with_choices(self, hint_texts, qa_texts, letters_list):
+#         prompts = []
+#         for hint, qa, letters in zip(hint_texts, qa_texts, letters_list):
+#             parts = []
+#             if hint is not None and hint.strip():
+#                 parts.append(hint.strip())
+#             if qa is not None and qa.strip():
+#                 parts.append(qa.strip())
+#
+#             if letters:
+#                 letters_str = ", ".join(f"({L})" for L in letters)
+#                 parts.append(f"Answer with only one of: {letters_str}.")
+#
+#             # Put CLS token at the END so it can attend to all previous tokens (causal LM)
+#             parts.append("<CLS>")
+#
+#             prompts.append("\n\n".join(parts))
+#         return prompts
+#
+#     def _generate_raw_answers(self, proc, input_ids, *, letters_list):
+#         gen_inputs = {
+#             k: v for k, v in proc.items()
+#             if k in ("input_ids", "attention_mask", "pixel_values", "image_grid_thw")
+#         }
+#         gen_inputs = {k: v.to(self.backbone.device) for k, v in gen_inputs.items()}
+#
+#         with torch.no_grad():
+#             gen_ids = self.backbone.generate(
+#                 **gen_inputs,
+#                 max_new_tokens=self.max_new_tokens,
+#                 do_sample=False,
+#             )
+#
+#         gen_ids_trimmed = [out_ids[len(in_ids):] for in_ids, out_ids in zip(input_ids, gen_ids)]
+#         raw_answers = self.processor.batch_decode(
+#             gen_ids_trimmed,
+#             skip_special_tokens=True,
+#             clean_up_tokenization_spaces=True,
+#         )
+#
+#         import re
+#
+#         def clean_answer(ans: str):
+#             lines = [l.strip() for l in ans.splitlines() if l.strip()]
+#             if not lines:
+#                 return ans.strip()
+#             first = lines[0]
+#             m = re.search(r"\(([A-Za-z])\)", first)
+#             if m:
+#                 return f"({m.group(1).upper()})"
+#             m2 = re.search(r"\b([A-Za-z])\b", first)
+#             if m2:
+#                 return f"({m2.group(1).upper()})"
+#             return first
+#
+#         cleaned = [clean_answer(ans) for ans in raw_answers]
+#
+#         pred_indices = []
+#         for ans, letters in zip(cleaned, letters_list):
+#             if not letters:
+#                 pred_indices.append(-1)
+#                 continue
+#             letters_upper = [L.upper() for L in letters]
+#             m = re.search(r"\(([A-Za-z])\)", ans)
+#             if not m:
+#                 pred_indices.append(-1)
+#                 continue
+#             letter = m.group(1).upper()
+#             pred_indices.append(letters_upper.index(letter) if letter in letters_upper else -1)
+#
+#         pred_indices = torch.tensor(pred_indices, device=input_ids.device, dtype=torch.long)
+#         return cleaned, pred_indices
+#
+#     def _mc_ce_loss(self, logits, labels):
+#         if hasattr(self.args, "class_weights") and self.args.class_weights is not None:
+#             class_weights = self.args.class_weights.to(logits.device)
+#             return F.cross_entropy(logits, labels, weight=class_weights)
+#         return F.cross_entropy(logits, labels)
+#
+#     def apply_custom_masks(self, base_att_mask, m1, m2, m1_t, m2_t):
+#
+#         combined_hint = base_att_mask.clone()
+#         combined_hint[m1.bool()] = m1_t[m1.bool()].long()
+#
+#         combined_img = base_att_mask.clone()
+#         combined_img[m2.bool()] = m2_t[m2.bool()].long()
+#
+#         return combined_hint, combined_img
+#
+#     def get_masks_only_B0( self, processor, proc, prompts_with_image, hint_texts, image_token_str):
+#         """
+#         Returns (B0, T) boolean masks:
+#           hint_mask:  True where token overlaps the hint substring in the prompt text
+#           image_mask: True where token is a vision-related placeholder token
+#
+#         Uses:
+#           - offsets mapping from tokenizer for hint mask (fast, no subsequence search)
+#           - torch.isin for image mask (vectorized)
+#         """
+#
+#         tok = processor.tokenizer
+#
+#         input_ids = proc["input_ids"][:]
+#         device = input_ids.device
+#         B_total, T = input_ids.shape
+#         B0 = len(prompts_with_image)
+#         assert B0 <= B_total, f"B0={B0} > proc batch={B_total}"
+#
+#
+#         # --- 1) Compute offsets for B0 prompts only (CPU is fine) ---
+#         # Make sure tokenizer is "fast" (offset_mapping is supported); most HF tokenizers are.
+#         enc = tok(
+#             prompts_with_image,
+#             padding=True,
+#             truncation=True,
+#             add_special_tokens=False,
+#             return_offsets_mapping=True,
+#             return_tensors="pt",
+#         )
+#
+#         # Offsets come back padded to the tokenizer's max length for this batch.
+#         # We will slice to match proc's T (they should match if prompts match).
+#         offsets = enc["offset_mapping"]  # (B0, T_enc, 2) on CPU
+#         T_enc = offsets.shape[1]
+#         if T_enc != T:
+#             # If they differ, you likely used different padding/truncation settings
+#             # between this call and the original processor(...) call.
+#             # We can still align by slicing to the min length.
+#             T_use = min(T_enc, T)
+#         else:
+#             T_use = T
+#
+#         off_s = offsets[:, :T_use, 0]  # (B0, T_use)
+#         off_e = offsets[:, :T_use, 1]  # (B0, T_use)
+#
+#         # --- 2) Vectorized hint span computation (no for-loop over B0) ---
+#         # Assumption: when hint exists, it starts right after prefix: image_token_str + "\n"
+#         prefix_len = len(image_token_str) + 1  # newline
+#
+#         # Build tensor of hint lengths (0 for empty/None)
+#         # (This is “vectorized enough”: one Python pass over B0 strings; no tensor copies per token.)
+#         hint_clean = [("" if h is None else str(h).strip()) for h in hint_texts]
+#         hint_len_t = torch.tensor([len(h) for h in hint_clean], dtype=torch.long)  # (B0,) on CPU
+#
+#         has_hint = hint_len_t > 0
+#         hint_start = torch.full((B0,), prefix_len, dtype=torch.long)  # (B0,)
+#         hint_end = hint_start + hint_len_t  # (B0,)
+#         # Mark absent hints with -1 so they produce all-False masks
+#         hint_start = torch.where(has_hint, hint_start, torch.full_like(hint_start, -1))
+#         hint_end = torch.where(has_hint, hint_end, torch.full_like(hint_end, -1))
+#
+#         hs = hint_start[:, None]  # (B0, 1)
+#         he = hint_end[:, None]  # (B0, 1)
+#
+#         # pad tokens typically have offsets (0,0)
+#         not_pad = ~((off_s == 0) & (off_e == 0))
+#
+#         # overlap: token span intersects [hs, he)
+#         valid_hint = (hs >= 0)
+#         hint_mask_cpu = valid_hint & not_pad & (off_e > hs) & (off_s < he)  # (B0, T_use)
+#
+#         # Move to device and expand to full T if needed
+#         hint_mask = torch.zeros((B0, T), dtype=torch.bool, device=device)
+#         hint_mask[:, :T_use] = hint_mask_cpu.to(device)
+#
+#         # --- 3) Vectorized image mask on GPU using proc's input_ids (B0 slice) ---
+#         vision_candidates = [
+#             "<|vision_start|>", "<|vision_end|>", "<|image_pad|>", "<|video_pad|>",
+#             "<image>", "<img>", "<|image|>"
+#         ]
+#         vision_ids = set()
+#         for s in vision_candidates:
+#             tid = tok.convert_tokens_to_ids(s)
+#             if tid is not None and tid != tok.unk_token_id:
+#                 vision_ids.add(int(tid))
+#         for tid in tok(image_token_str, add_special_tokens=False).input_ids:
+#             vision_ids.add(int(tid))
+#
+#         if len(vision_ids) == 0:
+#             image_mask = torch.zeros((B0, T), dtype=torch.bool, device=device)
+#         else:
+#             vision_ids_t = torch.tensor(sorted(vision_ids), device=device, dtype=input_ids.dtype)
+#             image_mask = torch.isin(input_ids[:B0], vision_ids_t)  # (B0, T)
+#
+#         return hint_mask, image_mask
+#
+#     def get_masks_from_input_ids_only(self, proc, hint_texts):
+#         """
+#         Returns:
+#           hint_mask:  (B,T) tokens belonging to hint span
+#           image_mask: (B,T) tokens belonging to vision placeholders
+#         No extra tokenization.
+#         """
+#         input_ids = proc["input_ids"]
+#         device = input_ids.device
+#         B, T = input_ids.shape
+#
+#         # --- image mask: vectorized ---
+#         if getattr(self, "_vision_ids", None) is None:
+#             self._precompute_mask_token_ids()
+#
+#         vision_ids_t = self._vision_ids.to(device=device, dtype=input_ids.dtype)
+#         image_mask = torch.isin(input_ids, vision_ids_t)
+#
+#         # --- hint mask ---
+#         # If hint is empty -> all false for that row
+#         hint_clean = [("" if h is None else str(h).strip()) for h in hint_texts]
+#         has_hint = torch.tensor([len(h) > 0 for h in hint_clean], device=device)  # (B,)
+#
+#         hint_mask = torch.zeros((B, T), dtype=torch.bool, device=device)
+#
+#         # We assume: prefix is "<image_token>\n" then hint tokens until the first "\n\n".
+#         prefix_ids = torch.tensor(self._image_prefix_ids, device=device, dtype=input_ids.dtype)
+#         sep_ids = torch.tensor(self._nlnl_id, device=device, dtype=input_ids.dtype)
+#
+#         # Helper: find first occurrence of a short pattern in each row (small, cheap loop over B)
+#         # B is small vs T, and pattern lengths are tiny; this is *way* cheaper than tokenizing strings again.
+#         for b in range(B):
+#             if not has_hint[b]:
+#                 continue
+#
+#             row = input_ids[b]
+#
+#             # find where the prefix ends (we expect it at the beginning, but be robust)
+#             # match prefix_ids at some position; usually 0
+#             start = 0
+#             # (optional robustness: verify prefix match)
+#             if len(prefix_ids) > 0 and not torch.equal(row[: len(prefix_ids)], prefix_ids):
+#                 # if not found at beginning, try to find it once
+#                 found = False
+#                 for i in range(0, T - len(prefix_ids) + 1):
+#                     if torch.equal(row[i:i + len(prefix_ids)], prefix_ids):
+#                         start = i + len(prefix_ids)
+#                         found = True
+#                         break
+#                 if not found:
+#                     continue
+#             else:
+#                 start = len(prefix_ids)
+#
+#             # find first separator "\n\n" after start
+#             end = None
+#             for i in range(start, T - len(sep_ids) + 1):
+#                 if torch.equal(row[i:i + len(sep_ids)], sep_ids):
+#                     end = i
+#                     break
+#
+#             # if no separator found, fall back: mark until padding (attention_mask==0) if exists
+#             if end is None:
+#                 attn = proc.get("attention_mask", None)
+#                 if attn is not None:
+#                     end = int(attn[b].sum().item())
+#                 else:
+#                     end = T
+#
+#             if end > start:
+#                 hint_mask[b, start:end] = True
+#
+#         return hint_mask, image_mask
+#
+#     def _forward_from_embeds(self, inputs_embeds, attention_mask):
+#         outputs = self.backbone(
+#             inputs_embeds=inputs_embeds,
+#             attention_mask=attention_mask,
+#             output_hidden_states=True,
+#         )
+#         hidden = outputs.hidden_states[-1]
+#         return hidden
+#
+#     def _compute_logits_synib_from_proc(self, x, **kwargs ):
+#         hint_texts = x[0]
+#         qa_texts = x[1]
+#         images = x[2]
+#         letters_list = x[4]
+#
+#         device = images.device
+#
+#         def expand_batch(x, k=3):
+#             return x.unsqueeze(dim=0).expand(k,*x.shape).reshape(k * x.shape[0], *x.shape[1:])
+#
+#         prompts = self._build_prompts_with_choices(hint_texts, qa_texts, letters_list)
+#         prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
+#         image_list = [img for img in images]
+#
+#         proc = self.processor(
+#             text=prompts_with_image,
+#             images=image_list,
+#             padding=True,
+#             truncation=True,
+#             return_tensors="pt",
+#         )
+#
+#         proc = {k: v.to(device) for k, v in proc.items()}
+#
+#
+#         m1, m2 = self.get_masks_only_B0(processor=self.processor, proc=proc, prompts_with_image=prompts_with_image, hint_texts=hint_texts, image_token_str=self.image_token_str)
+#         self.z1_stats.ema_update(proc["input_embeds"][m1])
+#         self.z2_stats.ema_update(proc["input_embeds"][m2])
+#         for i in range(len(proc["deep_stack_viz"])):
+#             self.z2_deepstack_stats[i].ema_update(proc["deep_stack_viz"][i])
+#
+#         if self.args.get("perturb", {}).get("type", "rand") == "rand":
+#             m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)
+#         elif self.args.get("perturb", {}).get("type", "rand") == "learned":
+#             m1t, m2t = self.synib._learned_masks(m1, m2, True, True, proc=proc, **kwargs)
+#         else:
+#             raise ValueError("Unknown or missing perturb.type {}".format(self.args.get("perturb", {})))
+#         att_mask_0, att_mask_1 = self.apply_custom_masks(proc["attention_mask"], m1, m2, m1t, m2t)
+#
+#         if self.args.get("run_multiple_forwards", False):
+#             combined_mask = torch.cat(
+#                 [proc["attention_mask"].unsqueeze(dim=0), att_mask_0.unsqueeze(dim=0), att_mask_1.unsqueeze(dim=0)],
+#                 dim=0)
+#
+#             combined_hidden = torch.cat([self._encode(
+#                 input_ids=proc["input_ids"],
+#                 attention_mask=combined_mask[i],
+#                 pixel_values=proc["pixel_values"],
+#                 image_grid_thw=proc["image_grid_thw"],
+#             )
+#              for i in range(3)], dim=0)
+#         else:
+#             combined_mask = torch.cat(
+#                 [proc["attention_mask"], att_mask_0, att_mask_1],
+#                 dim=0)
+#
+#             combined_hidden = self._encode(
+#                 input_ids=expand_batch(proc["input_ids"]),
+#                 attention_mask=combined_mask,
+#                 pixel_values=expand_batch(proc["pixel_values"]),
+#                 image_grid_thw=expand_batch(proc["image_grid_thw"]),
+#             )
+#
+#
+#         h_cls_combined = self._get_cls_token_repr(combined_hidden, expand_batch(proc["input_ids"]))
+#         head_logits_combined = self.enc_0(h_cls_combined)
+#
+#         head_logits, head_logits_0, head_logits_1 = torch.chunk(head_logits_combined, chunks=3, dim=0)
+#         h_cls, featcls_0, featcls_1 = torch.chunk(h_cls_combined, chunks=3, dim=0)
+#
+#         losses = {}
+#         if "label" in kwargs and kwargs["label"] is not None:
+#             losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, kwargs["label"])
+#
+#         preds = {"combined": head_logits, "mask0":head_logits_0, "mask1":head_logits_1}
+#         features = {"h_cls": h_cls, "mask0":featcls_0, "mask1":featcls_1}
+#
+#         # # If you want zero-shot text parsing at eval:
+#         # if (not self.training) and getattr(self.args, "do_zeroshot_parse", False):
+#         #     raw_text_answers, mc_from_text = self._generate_raw_answers(
+#         #         proc, input_ids, letters_list=letters_list
+#         #     )
+#         #     preds["raw_text"] = raw_text_answers
+#         #     preds["mc_from_text"] = mc_from_text
+#
+#         return {"preds": preds, "features": features, "losses": losses}
+#
+#     def _compute_logits_from_proc( self, x, *, label=None, **kwargs,):
+#         hint_texts = x[0]
+#         qa_texts = x[1]
+#         images = x[2]
+#         letters_list = x[4]
+#
+#         device = images.device
+#
+#         prompts = self._build_prompts_with_choices(hint_texts, qa_texts, letters_list)
+#         prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
+#         image_list = [img for img in images]
+#
+#         proc = self.processor(
+#             text=prompts_with_image,
+#             images=image_list,
+#             padding=True,
+#             truncation=True,
+#             return_tensors="pt",
+#         )
+#
+#         proc = {k: v.to(device) for k, v in proc.items()}
+#
+#         hidden = self._encode(
+#             input_ids=proc["input_ids"],
+#             attention_mask=proc["attention_mask"],
+#             pixel_values=proc["pixel_values"],
+#             image_grid_thw=proc.get("image_grid_thw"),
+#         )
+#
+#         h_cls = self._get_cls_token_repr(hidden, proc["input_ids"]).to(self.enc_0.linear.weight.dtype)
+#         head_logits = self.enc_0(h_cls)
+#
+#         losses = {}
+#         if label is not None:
+#             losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, label)
+#
+#         preds = {"combined": head_logits}
+#         features = {"h_cls": h_cls}
+#
+#         return {"preds": preds, "features": features, "losses": losses}
+#
+#     def forward(self, x, **kwargs):
+#
+#         if self.training:
+#             out = self._compute_logits_synib_from_proc(x, **kwargs)
+#         else:
+#             out =  self._compute_logits_from_proc(x, **kwargs)
+#
+#         if self.training and self.synergy_weight > 0:
+#             synergy_losses = self.synib.compute_training_losses( out, **kwargs)
+#             out["losses"].update(synergy_losses)
+#         return out
 
 def save_vl_debug_plots(
     images,
@@ -6703,11 +6732,10 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)
         elif self.args.get("perturb", {}).get("type", "rand") == "learned":
             m1t, m2t = self.synib._learned_masks(m1, m2, True, True, proc={"input_ids":input_ids, "position_ids":position_ids, "input_embeds":input_embeds, "image_mask":image_mask, "deep_stack_viz":deep_stack_viz, "attention_mask":attention_mask}, **kwargs)
-            # m1t, m2t = ~m1t, ~m2t
         else:
             raise ValueError(f"Unknown perturb.type: {self.args.get('perturb', {})}")
 
-        # att_mask_0, att_mask_1 = self.apply_custom_masks(attention_mask, m1, m2, m1t, m2t)
+        m1forw, m2forw = self.synib._random_masks_randomp(m1, m2, True, True)
 
         if getattr(self.args, "run_multiple_forwards", False):
             masks = torch.stack([attention_mask, attention_mask, attention_mask], dim=0)
@@ -6718,6 +6746,13 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             masks = torch.cat([attention_mask, attention_mask, attention_mask], dim=0)
             k=3
             position_ids_expanded = position_ids.repeat(1, k, 1)
+
+            this_embed_0 = input_embeds.clone()
+            this_embed_0[m1] = this_embed_0[m1] * m1forw.unsqueeze(dim=1) + (
+                        1 - m1forw.unsqueeze(dim=1)) * self.synib.z1_stats.noise_like(this_embed_0[m1], 1.0)
+            this_embed_0[m2] = this_embed_0[m2] * m2forw.unsqueeze(dim=1) + (
+                        1 - m2forw.unsqueeze(dim=1)) * self.synib.z2_stats.noise_like(this_embed_0[m2], 1.0)
+
             this_embed_1 = input_embeds.clone()
             this_embed_1[m1]=this_embed_1[m1]*m1t.unsqueeze(dim=1) + (1-m1t.unsqueeze(dim=1))*self.synib.z1_stats.noise_like(this_embed_1[m1], 1.0)
             this_embed_2 = input_embeds.clone()

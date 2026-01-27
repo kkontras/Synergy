@@ -133,8 +133,8 @@ class Agent():
         self.accelerator.wait_for_everyone()
         if self.accelerator.is_main_process:
             self.validator_tester.validate(test_set=False)
-            # best_val_metrics = self.evaluators.val_evaluator.evaluate()
-            # self.monitor_n_saver.print_valid_results(best_val_metrics, -1)
+            best_val_metrics = self.evaluators.val_evaluator.evaluate()
+            self.monitor_n_saver.print_valid_results(best_val_metrics, -1)
 
             if hasattr(self.data_loader, "test_loader"):
                 self.validator_tester.validate(test_set=True)

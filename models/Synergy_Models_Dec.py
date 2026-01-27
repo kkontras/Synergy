@@ -2747,7 +2747,7 @@ class SynIB_QwenFaster(nn.Module):
         pcfg = getattr(self, "perturb", {}) if hasattr(self, "perturb") else getattr(self.main.args, "perturb", {})
         print(pcfg)
         steps = int(pcfg.get("steps", 10))
-        lr = float(pcfg.get("lr", 1e-1))
+        lr = float(pcfg.get("lr", 5e-1))
         tau = float(pcfg.get("tau", 0.5))
         lsparse = float(pcfg.get("lsparse", 1.0))
         hard = bool(pcfg.get("hard", True))

@@ -1969,6 +1969,64 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS_VisualEmb(nn.Module):
         return {"preds": preds, "features": features, "losses": losses}
 
 
+class FeatureStatsMasker(nn.Module):
+    def __init__(self, d1, ema_beta=0.99, eps=1e-6, device=None, dtype=None):
+        super().__init__()
+        factory_kwargs = dict(device=device, dtype=dtype)
+        self.d1 = int(d1)
+        self.ema_beta = float(ema_beta)
+        self.eps = float(eps)
+
+        # EMA of E[x] and E[x^2]
+        self.register_buffer("ex",  torch.zeros(self.d1, **factory_kwargs))
+        self.register_buffer("ex2", torch.zeros(self.d1, **factory_kwargs))
+        self.register_buffer("n",   torch.zeros((), **factory_kwargs))  # number of updates
+
+    @torch.no_grad()
+    def ema_update(self, z: torch.Tensor):
+        """
+        z1: (..., F) where ... can be (B,) or (B,T) or (B,T,...) etc.
+        Keeps EMA per feature over all leading dims.
+        """
+        x = z.detach()
+        if x.numel() == 0:
+            return
+
+        # collapse all dims except feature dim
+        if x.dim() == 1:
+            x = x[None, :]  # (1, F)
+        else:
+            x = x.reshape(-1, x.shape[-1])  # (N, F)
+
+        if x.shape[-1] != self.d1:
+            raise ValueError(f"Expected feature dim {self.d1}, got {x.shape[-1]}")
+
+        batch_ex  = x.mean(0)               # E[x]
+        batch_ex2 = (x * x).mean(0)         # E[x^2]
+
+        # standard EMA; first update copies batch stats (no lag)
+        b = self.ema_beta if self.n.item() > 0 else 0.0
+        a = 1.0 - b
+        self.ex.lerp_(batch_ex,  a)
+        self.ex2.lerp_(batch_ex2, a)
+        self.n.add_(1)
+
+    def feature_stats(self):
+        """
+        Returns (mean, var) per feature.
+        """
+        mu = self.ex
+        var = (self.ex2 - mu * mu).clamp_min(self.eps)
+        return mu, var
+
+    def noise_like(self, z: torch.Tensor, noise_scale=1.0):
+        mu, var = self.feature_stats()
+        # broadcast to z1 shape
+        shape = [1] * (z.dim() - 1) + [-1]
+        mu = mu.view(*shape)
+        std = (var.sqrt() * float(noise_scale)).view(*shape)
+        return mu + torch.randn_like(z) * std
+
 class QwenVL_ScienceQA_Unimodal_Image(nn.Module):
     """
     Multimodal (image+text) ScienceQA as 5-way classification.
@@ -2672,6 +2730,12 @@ class SynIB_QwenFaster(nn.Module):
         else:
             raise ValueError(f"Unknown synergy_type: {self.synergy_type}")
 
+        self.z1_stats = FeatureStatsMasker(d1=2048, device="cuda:0", dtype=torch.float16)
+        self.z2_stats = FeatureStatsMasker(d1=2048, device="cuda:0",dtype=torch.float16)
+        self.z2_deepstack_stats = [FeatureStatsMasker(d1=2048, device="cuda:0",dtype=torch.float16),
+                                   FeatureStatsMasker(d1=2048, device="cuda:0",dtype=torch.float16),
+                                   FeatureStatsMasker(d1=2048, device="cuda:0",dtype=torch.float16)]
+
     @staticmethod
     def _gaussian_kl(mu, logvar):
         return 0.5 * torch.sum(
@@ -2747,7 +2811,7 @@ class SynIB_QwenFaster(nn.Module):
         pcfg = getattr(self, "perturb", {}) if hasattr(self, "perturb") else getattr(self.main.args, "perturb", {})
         print(pcfg)
         steps = int(pcfg.get("steps", 10))
-        lr = float(pcfg.get("lr", 3e+1))
+        lr = float(pcfg.get("lr", 1e+1))
         tau = float(pcfg.get("tau", 0.3))
         lsparse = float(pcfg.get("lsparse", 1.0))
         hard = bool(pcfg.get("hard", True))
@@ -2808,7 +2872,7 @@ class SynIB_QwenFaster(nn.Module):
                     ce_clean = float(F.cross_entropy(logits_clean, label).item())
                     print(f"[learned_masks] clean CE: {ce_clean:.4f}")
 
-            def optimize_for(proc, mask_eligible, name="m?"):
+            def optimize_for(proc, mask_eligible, ema_stats, ema_stat_deep=None, name="m?"):
                 if mask_eligible is None or mask_eligible.sum() == 0:
                     if debug:
                         print(f"[learned_masks:{name}] no eligible tokens -> skip")
@@ -2822,25 +2886,25 @@ class SynIB_QwenFaster(nn.Module):
                     dtype=torch.float32,
                     requires_grad=True,
                 )
+
                 # ell = torch.ones((eligible), device=device, dtype=torch.float32, requires_grad=True)
                 opt = torch.optim.Adam([ell], lr=lr)
 
                 for i in range(steps):
-                    g = torch.sigmoid(ell / tau)  # (B,T) keep-prob
+                    g = torch.sigmoid(ell / tau).clamp(0, 1)  # (B,T) keep-prob
 
-                    this_input_embs = proc["input_embeds"]
+                    this_input_embs = proc["input_embeds"].clone()
                     g_emb = g.to(this_input_embs.dtype)
-                    this_input_embs[mask_eligible] *= g_emb.unsqueeze(-1)
-                    this_mask_vision = proc["image_mask"]
-                    this_deep_stack_viz = proc["deep_stack_viz"]
+                    this_input_embs[mask_eligible] = this_input_embs[mask_eligible]*g_emb.unsqueeze(-1) + (1-g_emb.unsqueeze(dim=-1))*ema_stats.noise_like(this_input_embs[mask_eligible], noise_std)
 
+                    this_deep_stack_viz = [proc["deep_stack_viz"][i].clone() for i in range(len(proc["deep_stack_viz"]))]
                     if name=="m2":
-                        this_deep_stack_viz = [i * g.unsqueeze(dim=-1) for i in proc["deep_stack_viz"]]
+                        this_deep_stack_viz = [this_deep_stack_viz[i] * g_emb.unsqueeze(dim=-1) + (1-g_emb.unsqueeze(dim=-1))*ema_stat_deep[i].noise_like(this_deep_stack_viz[i], noise_std) for i in range(len(this_deep_stack_viz))]
 
                     logits_t = run_logits_from_embeds(input_ids,
                                                       proc["position_ids"],
                                                       this_input_embs,
-                                                      this_mask_vision,
+                                                      proc["image_mask"],
                                                       this_deep_stack_viz,
                                                       proc["attention_mask"])
 
@@ -2849,8 +2913,26 @@ class SynIB_QwenFaster(nn.Module):
                     obj = (-ce) + lsparse * sparsity
 
                     opt.zero_grad(set_to_none=True)
-                    obj.backward(retain_graph=True)
-                    # torch.nn.utils.clip_grad_norm_([ell], 1.0)
+                    obj.backward(retain_graph=False)
+                    torch.nn.utils.clip_grad_norm_([ell], 1.0)
+                    # eg = ell.grad
+                    # print(
+                    #     f"step {i} | "
+                    #     f"ell: min={ell.min().item():.3g} max={ell.max().item():.3g} "
+                    #     f"| grad: min={eg.min().item():.3g} max={eg.max().item():.3g} "
+                    #     f"norm={eg.norm().item():.3g} "
+                    #     f"| nan_grad={torch.isnan(eg).any().item()} inf_grad={torch.isinf(eg).any().item()}"
+                    # )
+
+                    # # Adam internal buffers
+                    # st = opt.state[ell]
+                    # if "exp_avg" in st:
+                    #     m = st["exp_avg"]
+                    #     v = st["exp_avg_sq"]
+                    #     print(
+                    #         f"adam m: max={m.abs().max().item():.3g} nan={torch.isnan(m).any().item()} "
+                    #         f"| v: max={v.max().item():.3g} nan={torch.isnan(v).any().item()}"
+                    #     )
                     opt.step()
 
                     if debug and (i == 0 or i == steps - 1 or (debug_every > 0 and (i + 1) % debug_every == 0)):
@@ -2890,8 +2972,13 @@ class SynIB_QwenFaster(nn.Module):
 
                 return g_final
 
-            m1_t = optimize_for(proc, m1, name="m1") if px1 else None
-            m2_t = optimize_for(proc, m2, name="m2") if px2 else None
+            self.z1_stats.ema_update(proc["input_embeds"][m1])
+            self.z2_stats.ema_update(proc["input_embeds"][m2])
+            for i in range(len(proc["deep_stack_viz"])):
+                self.z2_deepstack_stats[i].ema_update(proc["deep_stack_viz"][i])
+
+            m1_t = optimize_for(proc, m1, self.z1_stats, name="m1") if px1 else None
+            m2_t = optimize_for(proc, m2, self.z2_stats, self.z2_deepstack_stats, name="m2") if px2 else None
 
             if m1_t is None:
                 m1_t = torch.ones_like(m1, dtype=torch.bool)
@@ -6608,6 +6695,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
 
         m1 = m1.to(input_ids.device).bool()
         m2 = m2.to(input_ids.device).bool()
+
 
         if self.args.get("perturb", {}).get("type", "rand") == "rand":
             m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)

@@ -59,6 +59,8 @@ class General_Evaluator:
         if set in ceu and ceu[set] is not None:
             with open(ceu[set], 'rb') as f:
                 self.multi_fold_results_test = pickle.load(f)["folds"]
+        else:
+            logging.info("There is no CEU for {}".format(set))
 
 
     def set_best(self, best_acc, best_loss):

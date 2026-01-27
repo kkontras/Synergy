@@ -62,7 +62,6 @@ class General_Evaluator:
         else:
             logging.info("There is no CEU for {}".format(set))
 
-
     def set_best(self, best_acc, best_loss):
         self.best_acc = best_acc
         self.best_loss = best_loss
@@ -177,7 +176,7 @@ class General_Evaluator:
                     )(preds, targets).item()
 
             # CEU (only for combined head)
-            if pred_key == "combined" and self.set == "val" or self.set == "test":
+            if pred_key == "combined" and (self.set == "val" or self.set == "test"):
                 ceu_val = self.ceu(preds, targets)
                 per_group_acc = self.get_per_group_accuracy(preds, targets)
                 if ceu_val is not None:

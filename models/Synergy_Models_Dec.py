@@ -7405,11 +7405,6 @@ class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
 
         ###Unimodal text
 
-        image_mask = x.get("image_mask", None)
-        if image_mask is None:
-            raise KeyError("image_mask is required for QwenVL_ScienceQA_Cached_Text")
-
-
         image_mask = image_mask.to(device).bool()
         keep = ~image_mask
         attention_mask_text = attention_mask * keep.to(attention_mask.dtype)
@@ -7417,7 +7412,7 @@ class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
             input_ids=None,
             position_ids=position_ids,
             inputs_embeds=input_embeds,
-            attention_mask=attention_mask,
+            attention_mask=attention_mask_text,
             visual_pos_masks=image_mask,
             deepstack_visual_embeds=deep_stack_viz,
             output_hidden_states=True,
@@ -7436,13 +7431,13 @@ class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
         hint_mask = proc["hint_mask"]
         hint_mask = hint_mask.to(device).bool()
         keep = (~hint_mask)
-        attention_mask = attention_mask * keep.to(attention_mask.dtype)
+        attention_mask_image = attention_mask * keep.to(attention_mask.dtype)
 
         out = self.backbone.model.language_model(
             input_ids=None,
             position_ids=position_ids,
             inputs_embeds=input_embeds,
-            attention_mask=attention_mask,
+            attention_mask=attention_mask_image,
             visual_pos_masks=image_mask,
             deepstack_visual_embeds=deep_stack_viz,
             output_hidden_states=True,

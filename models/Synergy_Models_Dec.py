@@ -636,8 +636,6 @@ class SynIB(nn.Module):
 
         return z1, z2, losses
 
-    # ------------------ KL passes ------------------
-
     def _kl_pass(self, x, z1, z2, px1, px2, **kwargs):
         a, v, losses = self._encode_and_perturb(x, z1, z2, px1, px2, **kwargs)
         mu, feat = self.main._compute_logits({"features":{"combined":a}}, {"features":{"combined":v}})
@@ -649,7 +647,6 @@ class SynIB(nn.Module):
             alpha = evidence + 1.0
             kl = self._dirichlet_kl(alpha, prior_conc=self.dirichlet_prior_conc)
         return kl, losses
-
 
     def compute_training_losses(self, x, base_output, **kwargs):
         z1, z2 = base_output["features"]["z1"], base_output["features"]["z2"]
@@ -670,6 +667,7 @@ class SynIB(nn.Module):
         # losses["sl_diff"] = kl_diff_mse * self.synergy_weight
         losses["infonce"] = infonce * self.contrastive_weight
         return losses
+
 class LinearHead_Qwen(nn.Module):
     def __init__(self, args, encs=[], **kwargs):
         super().__init__()
@@ -2743,11 +2741,12 @@ class SynIB_QwenFaster(nn.Module):
         """
         label = kwargs["label"]  # [B]
         proc = kwargs["proc"]  # dict with input_ids, attention_mask
-        debug = bool(kwargs.get("debug", False))
-        debug_every = int(kwargs.get("debug_every", 5))
+        debug = bool(kwargs.get("debug", True))
+        debug_every = int(kwargs.get("debug_every", 1))
 
         pcfg = getattr(self, "perturb", {}) if hasattr(self, "perturb") else getattr(self.main.args, "perturb", {})
-        steps = int(pcfg.get("steps", 1))
+        print(pcfg)
+        steps = int(pcfg.get("steps", 10))
         lr = float(pcfg.get("lr", 1e-1))
         tau = float(pcfg.get("tau", 1.0))
         lsparse = float(pcfg.get("lsparse", 1.0))
@@ -2781,21 +2780,18 @@ class SynIB_QwenFaster(nn.Module):
             p.requires_grad_(False)
 
         try:
-            with torch.no_grad():
-                lm = self.main.backbone.model.language_model
-                emb = lm.embed_tokens(input_ids)  # (B,T,D)
-
             def make_eps_like(x):
                 if fill_mode == "zeros":
                     return torch.zeros_like(x)
                 return torch.randn_like(x) * noise_std
 
-            def apply_gate(emb0, g_keep):
+            def apply_gate(input_ids, position_ids, input_embeds, hint_mask, image_mask, deep_stack_viz, attn, g_keep):
+
                 eps = make_eps_like(emb0)
                 return g_keep * emb0 + (1.0 - g_keep) * eps
 
-            def run_logits_from_embeds(emb_t):
-                hidden = self.main._forward_from_embeds(emb_t, attn)
+            def run_logits_from_embeds(input_ids, position_ids, input_embeds, image_mask, deep_stack_viz, attn):
+                hidden = self.main._encode_from_inputs_embeds(position_ids, input_embeds, image_mask, deep_stack_viz, attn)
                 h_cls = self.main._get_cls_token_repr(hidden, input_ids).to(self.main.enc_0.linear.weight.dtype)
                 logits = self.main.enc_0(h_cls)
                 return logits
@@ -2803,46 +2799,58 @@ class SynIB_QwenFaster(nn.Module):
             # Optional: baseline CE on clean embeddings (for comparison)
             if debug:
                 with torch.no_grad():
-                    logits_clean = run_logits_from_embeds(emb)
+                    logits_clean = run_logits_from_embeds(input_ids,
+                                                          proc["position_ids"],
+                                                          proc["input_embeds"],
+                                                          proc["image_mask"],
+                                                          proc["deep_stack_viz"],
+                                                          attn)
                     ce_clean = float(F.cross_entropy(logits_clean, label).item())
                     print(f"[learned_masks] clean CE: {ce_clean:.4f}")
 
-            def optimize_for(mask_eligible, name="m?"):
+            def optimize_for(proc, mask_eligible, name="m?"):
                 if mask_eligible is None or mask_eligible.sum() == 0:
                     if debug:
                         print(f"[learned_masks:{name}] no eligible tokens -> skip")
                     return None
 
                 eligible = int(mask_eligible.sum().item())
-                grad_mask = mask_eligible.float()  # (B,T)
 
-                ell = torch.zeros((B, T), device=device, dtype=torch.float32, requires_grad=True)
+                ell = torch.ones((eligible), device=device, dtype=torch.float32, requires_grad=True)
                 opt = torch.optim.Adam([ell], lr=lr)
 
                 for i in range(steps):
                     g = torch.sigmoid(ell / tau)  # (B,T) keep-prob
-                    g3 = g.unsqueeze(-1)  # (B,T,1)
 
-                    emb_t = apply_gate(emb, g3)
-                    logits_t = run_logits_from_embeds(emb_t)
+                    this_input_embs = proc["input_embeds"]
+                    g_emb = g.to(this_input_embs.dtype)  # fp16 if embeds are fp16
+                    this_input_embs[mask_eligible] *= g_emb.unsqueeze(-1)
+                    # this_input_embs[mask_eligible] = this_input_embs[mask_eligible] * g.unsqueeze(-1)
+                    this_mask_vision = proc["image_mask"]
+                    this_deep_stack_viz = proc["deep_stack_viz"]
+
+                    if name=="m2":
+                        this_deep_stack_viz = [i * g.unsqueeze(dim=-1) for i in proc["deep_stack_viz"]]
+
+                    logits_t = run_logits_from_embeds(input_ids,
+                                                      proc["position_ids"],
+                                                      this_input_embs,
+                                                      this_mask_vision,
+                                                      this_deep_stack_viz,
+                                                      proc["attention_mask"])
 
                     ce = F.cross_entropy(logits_t, label)
-                    sparsity = ((1.0 - g) * grad_mask).sum() / (grad_mask.sum() + 1e-6)  # mean mask rate over eligible
+                    sparsity = (1.0 - g).mean()
                     obj = (-ce) + lsparse * sparsity
 
                     opt.zero_grad(set_to_none=True)
-                    obj.backward()
-
-                    if ell.grad is not None:
-                        ell.grad.mul_(grad_mask)
-
-                    torch.nn.utils.clip_grad_norm_([ell], 1.0)
+                    obj.backward(retain_graph=True)
+                    torch.nn.utils.clip_grad_norm_([ell], 0.5)
                     opt.step()
 
                     if debug and (i == 0 or i == steps - 1 or (debug_every > 0 and (i + 1) % debug_every == 0)):
                         with torch.no_grad():
-                            # how many eligible tokens are currently being "kept" vs "masked"
-                            keep_frac = (g * grad_mask).sum() / (grad_mask.sum() + 1e-6)
+                            keep_frac = g.sum()/len(g)
                             mask_frac = 1.0 - keep_frac
                             ce_val = float(ce.item())
                             obj_val = float(obj.item())
@@ -2857,12 +2865,14 @@ class SynIB_QwenFaster(nn.Module):
 
                 g_final = torch.sigmoid(ell / tau).detach()  # (B,T)
                 if hard:
-                    keep = (g_final >= hard_thresh)
+                    keep = (g_final >= g_final.mean())
                 else:
                     keep = (g_final > 0.5)
 
                 keep_full = torch.ones((B, T), device=device, dtype=torch.bool)
-                keep_full[mask_eligible] = keep[mask_eligible]
+                eligible_idx = mask_eligible.nonzero(as_tuple=True)  # tuple of (b_idx, t_idx)
+                keep_full[eligible_idx[0][keep], eligible_idx[1][keep]] = True
+                keep_full[eligible_idx[0][~keep], eligible_idx[1][~keep]] = False
 
                 if debug:
                     with torch.no_grad():
@@ -2875,8 +2885,8 @@ class SynIB_QwenFaster(nn.Module):
 
                 return keep_full
 
-            m1_t = optimize_for(m1, name="m1") if px1 else None
-            m2_t = optimize_for(m2, name="m2") if px2 else None
+            m1_t = optimize_for(proc, m1, name="m1") if px1 else None
+            m2_t = optimize_for(proc, m2, name="m2") if px2 else None
 
             if m1_t is None:
                 m1_t = torch.ones_like(m1, dtype=torch.bool)
@@ -5028,8 +5038,6 @@ class QwenVL_ScienceQA_Cached(nn.Module):
 
         self.enc_0 = encs[0]
 
-        print(self.enc_0)
-
         self._apply_lora()
         self._load_cls_embedding()
         self._setup_trainables()
@@ -5403,8 +5411,6 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
             self.d_model = int(cfg.hidden_size)
 
         self.enc_0 = encs[0]
-
-        print(self.enc_0)
 
         self._apply_lora()
         self._load_cls_embedding()
@@ -5782,8 +5788,6 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
             self.d_model = int(cfg.hidden_size)
 
         self.enc_0 = encs[0]
-
-        print(self.enc_0)
 
         self._apply_lora()
         self._load_cls_embedding()
@@ -6163,8 +6167,6 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
 
         self.enc_0 = encs[0]
 
-        print(self.enc_0)
-
         self._apply_lora()
         self._load_cls_embedding()
         self._setup_trainables()
@@ -6254,14 +6256,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             return F.cross_entropy(logits, labels, weight=self.args.class_weights.to(logits.device))
         return F.cross_entropy(logits, labels)
 
-    def _build_inputs_embeds_from_cache(
-            self,
-            input_ids: torch.Tensor,  # (B, T)
-            image_mask: torch.Tensor,  # (B, T) bool
-            vision_embeds: torch.Tensor,  # (B, N, d) or (N, d)
-            *,
-            strict: bool = True,  # if True, require N == num_image_positions
-    ):
+    def _build_inputs_embeds_from_cache( self, input_ids: torch.Tensor, image_mask: torch.Tensor, vision_embeds: torch.Tensor,  *, strict: bool = True):
         """
         Build inputs_embeds (B, T, d_model) where positions indicated by image_mask are
         replaced by cached vision_embeds. Does NOT require vision_len.
@@ -6515,7 +6510,6 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
         combined_img[m2.bool()] = m2_t[m2.bool()].long()
         return combined_hint, combined_img
 
-
     def _compute_logits_synib_from_proc(self, x, **kwargs):
 
         proc = x
@@ -6611,9 +6605,10 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
         m2 = m2.to(input_ids.device).bool()
 
         if self.args.get("perturb", {}).get("type", "rand") == "rand":
-            m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)
+            m1t_r, m2t_r = self.synib._random_masks(m1, m2, True, True, **kwargs)
         elif self.args.get("perturb", {}).get("type", "rand") == "learned":
-            m1t, m2t = self.synib._learned_masks(m1, m2, True, True, proc={"input_ids": input_ids, "attention_mask": attention_mask}, **kwargs)
+            m1t, m2t = self.synib._learned_masks(m1, m2, True, True, proc={"input_ids":input_ids, "position_ids":position_ids, "input_embeds":input_embeds, "image_mask":image_mask, "deep_stack_viz":deep_stack_viz, "attention_mask":attention_mask}, **kwargs)
+            m1t, m2t = ~m1t, ~m2t
         else:
             raise ValueError(f"Unknown perturb.type: {self.args.get('perturb', {})}")
 
@@ -6631,7 +6626,8 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             position_ids_expanded = position_ids.repeat(1, k, 1)
             input_embeds_expanded = input_embeds.repeat(k, 1, 1)
             filter_deep_stack = torch.cat([image_mask[image_mask], image_mask[image_mask], m2t[image_mask]], dim=0)
-            deep_stack_viz_expanded = [deep_stack_viz[i].repeat(k, 1)[filter_deep_stack] for i in range(len(deep_stack_viz))]
+            filter_deep_stack_norm = torch.cat([image_mask[image_mask], image_mask[image_mask], image_mask[image_mask]], dim=0)
+            deep_stack_viz_expanded = [deep_stack_viz[i].repeat(k, 1)[filter_deep_stack_norm] for i in range(len(deep_stack_viz))]
             hidden_all = self._encode_from_inputs_embeds(position_ids_expanded, input_embeds_expanded, image_masks, deep_stack_viz_expanded, masks)
 
         ids_all = input_ids.repeat(k,1)
@@ -7207,8 +7203,6 @@ class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
             self.d_model = int(cfg.hidden_size)
 
         self.enc_0 = encs[0]
-
-        print(self.enc_0)
 
         self._apply_lora()
         self._load_cls_embedding()

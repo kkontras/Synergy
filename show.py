@@ -255,20 +255,20 @@ def print_mean(m: dict, val=True):
                 std_value = np.std(agg[metric])
                 message += Fore.WHITE + "{}: ".format(metric)
                 message += Fore.LIGHTGREEN_EX + "{:.1f} + {:.1f} ".format(100 * mean_value, 100 * std_value)
-        if "acc_7" == metric:
-            if isinstance(agg[metric], defaultdict):
-                for pred in agg[metric]:
-                    mean_value = np.mean(agg[metric][pred])
-                    std_value = np.std(agg[metric][pred])
-                    message += Fore.GREEN + "{}_{}: ".format(metric, pred)
-                    message += Fore.LIGHTGREEN_EX + "{:.4f} + {:.4f} ".format(mean_value, std_value)
-        # elif "f1" == metric:
+        # if "acc_7" == metric:
         #     if isinstance(agg[metric], defaultdict):
         #         for pred in agg[metric]:
         #             mean_value = np.mean(agg[metric][pred])
         #             std_value = np.std(agg[metric][pred])
         #             message += Fore.GREEN + "{}_{}: ".format(metric, pred)
         #             message += Fore.LIGHTGREEN_EX + "{:.4f} + {:.4f} ".format(mean_value, std_value)
+        elif "f1" == metric:
+            if isinstance(agg[metric], defaultdict):
+                for pred in agg[metric]:
+                    mean_value = np.mean(agg[metric][pred])
+                    std_value = np.std(agg[metric][pred])
+                    message += Fore.GREEN + "{}_{}: ".format(metric, pred)
+                    message += Fore.LIGHTGREEN_EX + "{:.4f} + {:.4f} ".format(mean_value, std_value)
         # elif "ece" == metric:
         #     if isinstance(agg[metric], defaultdict):
         #         for pred in agg[metric]:
@@ -289,8 +289,8 @@ def print_mean(m: dict, val=True):
     if args.printing is True:
         print(message)
 
-    mean_acc_combined = np.mean(agg["acc"]["combined"])
-    std_acc_combined = np.std(agg["acc"]["combined"])
+    mean_acc_combined = np.mean(agg["f1"]["combined"])
+    std_acc_combined = np.std(agg["f1"]["combined"])
     return mean_acc_combined, std_acc_combined
 
 
@@ -389,17 +389,15 @@ if __name__ == "__main__":
             val[i] = val_metric
             test[i] = test_metric
 
-
-    # sys.exit()
-    # try:
-    #     mean_val, std_val = print_mean(val, val=True)
-    #     mean_test, std_test = print_mean(test, val=False)
-    #     # print(round(mean_val*100,1), round(std_val*100,1), round(mean_test*100,1), round(std_test*100,1))
-    #     print(round(mean_test*100,1), round(std_test*100,1), "--")
-    #     import sys
-    #     sys.exit(mean_test, std_test)
-    # except:
-    #     print("")
-    #     # if args.printing is True:
-    #     #     print("There was an error in the print_mean function")
-    #     pass
+    try:
+        mean_val, std_val = print_mean(val, val=True)
+        mean_test, std_test = print_mean(test, val=False)
+        # print(round(mean_val*100,1), round(std_val*100,1), round(mean_test*100,1), round(std_test*100,1))
+        print(round(mean_test*100,1), round(std_test*100,1), "--")
+        import sys
+        sys.exit(mean_test, std_test)
+    except:
+        print("")
+        # if args.printing is True:
+        #     print("There was an error in the print_mean function")
+        pass

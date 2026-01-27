@@ -245,6 +245,7 @@ def main(config_path, default_config_path, args):
         m += "_commonlayers{}".format(args.commonlayers)
 
     importer.config.model.save_dir = importer.config.model.save_dir.format(m)
+    print("Loading from {}".format(importer.config.model.save_dir))
     # if enc_m != "":
     if hasattr(importer.config.model, "encoders"):
         for i in range(len(importer.config.model.encoders)):
@@ -319,12 +320,11 @@ def main(config_path, default_config_path, args):
         "folds": {},
     }
 
-    # OUTPUT_JSON_val = "./mydatasets/CREMAD/ceus/cremadplus_ceu_val_res_ir{}.pkl".format(importer.config.dataset.ironic_rate)
-    # OUTPUT_JSON_test = "./mydatasets/CREMAD/ceus/cremadplus_ceu_test_res_ir{}.pkl".format(importer.config.dataset.ironic_rate)
+    OUTPUT_JSON_val = "./mydatasets/CREMAD/ceus/cremadplus_ceu_val_res_ir{}.pkl".format(importer.config.dataset.ironic_rate)
+    OUTPUT_JSON_test = "./mydatasets/CREMAD/ceus/cremadplus_ceu_test_res_ir{}.pkl".format(importer.config.dataset.ironic_rate)
 
-    OUTPUT_JSON_val = "./mydatasets/ScienceQA/ceus/scienceqa_ceu_val.pkl"
-
-    OUTPUT_JSON_test = "./mydatasets/ScienceQA/ceus/scienceqa_ceu_test.pkl"
+    # OUTPUT_JSON_val = "./mydatasets/ScienceQA/ceus/scienceqa_ceu_val.pkl"
+    # OUTPUT_JSON_test = "./mydatasets/ScienceQA/ceus/scienceqa_ceu_test.pkl"
 
     if "audio" in args.config or "Text" in args.config:
         offset = 0

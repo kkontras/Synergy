@@ -48,4 +48,5 @@ for var_name in "${variables[@]}"; do
     fi
 done
 
+
 accelerate launch /scratch/leuven/350/vsc35057/projects/Synergy/train.py --config $config --default_config $default_config --fold $fold --lr $lr --wd $wd --l $l --batch_size $bs --perturb $ptype --perturb_pmin $pmin --perturb_lsparse $lsparse

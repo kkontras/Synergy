@@ -224,7 +224,6 @@ class Monitor_n_Save():
 
     def print_valid_results(self, val_metrics, current_step=None, test=False):
 
-        print(val_metrics.keys())
         if self.agent.config.training_params.verbose:
             if current_step is not None:
                 step = int(current_step / self.agent.config.early_stopping.validate_every)

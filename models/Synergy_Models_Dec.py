@@ -2746,7 +2746,7 @@ class SynIB_QwenFaster(nn.Module):
 
         pcfg = getattr(self, "perturb", {}) if hasattr(self, "perturb") else getattr(self.main.args, "perturb", {})
         print(pcfg)
-        steps = int(pcfg.get("steps", 10))
+        steps = int(pcfg.get("steps", 1))
         lr = float(pcfg.get("lr", 1e-1))
         tau = float(pcfg.get("tau", 1.0))
         lsparse = float(pcfg.get("lsparse", 1.0))
@@ -6620,16 +6620,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             filter_deep_stack = [image_mask[image_mask], image_mask[image_mask], m2t[image_mask]]
             hidden_all = torch.cat([self._encode_from_inputs_embeds(position_ids, input_embeds, image_masks[i], [deep_stack_viz[j][filter_deep_stack[i]] for j in range(len(deep_stack_viz))], masks[i]) for i in range(3)],dim=0)
         else:
-
-            print("Initials ---")
-            print(position_ids.shape)
-            print(input_embeds.shape)
-            print(image_mask.shape)
-            print(image_mask.sum(dim=1))
-            print(deep_stack_viz[0].shape)
-            print("End Initialss---")
             masks = torch.cat([attention_mask, att_mask_0, att_mask_1], dim=0)
-            image_masks = torch.cat([image_mask, image_mask, m2t], dim=0)
             k=3
             position_ids_expanded = position_ids.repeat(1, k, 1)
             input_embeds_expanded = input_embeds.repeat(k, 1, 1)
@@ -6641,19 +6632,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             deep_stack_viz_expanded = [deep_stack_viz[i].repeat(k, 1)[filter_deep_stack_norm] for i in
                                        range(len(deep_stack_viz))]
 
-            print("Thens ---")
-            print(position_ids_expanded.shape)
-            print(input_embeds_expanded.shape)
-            print(filter_deep_stack.shape)
-            print(filter_deep_stack.sum(dim=1))
-            print(deep_stack_viz_expanded[0].shape)
-            print("End thens---")
 
-            print(position_ids_expanded.shape)
-            print(input_embeds_expanded.shape)
-            print(filter_deep_stack.shape)
-            print(masks.shape)
-            print(deep_stack_viz_expanded[0].shape)
             hidden_all = self._encode_from_inputs_embeds(position_ids_expanded, input_embeds_expanded, filter_deep_stack, deep_stack_viz_expanded, masks)
 
         ids_all = input_ids.repeat(k,1)

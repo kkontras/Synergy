@@ -268,7 +268,7 @@ class General_Evaluator:
             coexistence = cm[3, 1] / (cm[3].sum())
             return {"cue_audio": cue_audio, "cue_video": cue_video, "synergy":synergy, "coexistence":coexistence}
         else:
-            logging.info(f"We got targets_tens: {targets_tens.shape} video_targets: {video_targets.shape} audio_targets: {audio_targets.shape} and they are equal by pairs T-V:{(targets_tens.numpy() == video_targets).all()} V-A:{(video_targets == audio_targets).all()}")
+            logging.info(f"We got targets_tens: {targets_tens.shape} video_targets: {video_targets.shape} audio_targets: {audio_targets.shape}")
             raise ValueError(f"We got targets_tens: {targets_tens.shape} video_targets: {video_targets.shape} audio_targets: {audio_targets.shape} and they are equal by pairs T-V:{(targets_tens.numpy() == video_targets).all()} V-A:{(video_targets == audio_targets).all()}")
     def get_per_group_accuracy(self, total_preds, targets_tens):
         def calculate_stats(preds_correct, targets, m_preds):

@@ -6628,6 +6628,9 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             filter_deep_stack = torch.cat([image_mask[image_mask], image_mask[image_mask], m2t[image_mask]], dim=0)
             filter_deep_stack_norm = torch.cat([image_mask[image_mask], image_mask[image_mask], image_mask[image_mask]], dim=0)
             deep_stack_viz_expanded = [deep_stack_viz[i].repeat(k, 1)[filter_deep_stack_norm] for i in range(len(deep_stack_viz))]
+            print(filter_deep_stack.shape)
+            print(filter_deep_stack_norm.shape)
+            print(deep_stack_viz_expanded[0].shape)
             hidden_all = self._encode_from_inputs_embeds(position_ids_expanded, input_embeds_expanded, filter_deep_stack, deep_stack_viz_expanded, masks)
 
         ids_all = input_ids.repeat(k,1)

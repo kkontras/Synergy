@@ -222,6 +222,7 @@ def run_fold(fold: int) -> dict:
     except Exception:
         pass
 
+    print("Pred shape", preds.shape, "Targets Shape", targets.shape)
     out = {
         "fold": fold,
         "checkpoint": ckpt_path,

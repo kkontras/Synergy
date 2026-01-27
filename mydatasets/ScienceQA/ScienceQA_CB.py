@@ -428,6 +428,7 @@ class ScienceQA_MemmapDataloader:
     ):
         cache_root = config.dataset.cache_root
         batch_size = int(config.training_params.batch_size)
+        test_batch_size = int(config.training_params.test_batch_size)
 
         # if config has pad_token_id, prefer it
         pad_token_id = int(getattr(getattr(config, "model", None), "pad_token_id", pad_token_id))
@@ -457,6 +458,7 @@ class ScienceQA_MemmapDataloader:
             deep_dim=deep_dim,
         )
 
+
         self.collate_fn = lambda batch: scienceqa_memmap_collate(batch, pad_token_id=pad_token_id)
         num_workers = 0
         self.train_loader = DataLoader(
@@ -471,7 +473,7 @@ class ScienceQA_MemmapDataloader:
         )
         self.valid_loader = DataLoader(
             val_ds,
-            batch_size=batch_size,
+            batch_size=test_batch_size,
             shuffle=bool(shuffle),
             num_workers=int(num_workers),
             pin_memory=bool(pin_memory),
@@ -481,7 +483,7 @@ class ScienceQA_MemmapDataloader:
         )
         self.test_loader = DataLoader(
             test_ds,
-            batch_size=batch_size,
+            batch_size=test_batch_size,
             shuffle=bool(shuffle),
             num_workers=int(num_workers),
             pin_memory=bool(pin_memory),

@@ -2845,7 +2845,7 @@ class SynIB_QwenFaster(nn.Module):
 
                     opt.zero_grad(set_to_none=True)
                     obj.backward(retain_graph=True)
-                    torch.nn.utils.clip_grad_norm_([ell], 0.5)
+                    torch.nn.utils.clip_grad_norm_([ell], 1.0)
                     opt.step()
 
                     if debug and (i == 0 or i == steps - 1 or (debug_every > 0 and (i + 1) % debug_every == 0)):

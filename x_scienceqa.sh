@@ -82,7 +82,7 @@ CUDA_VISIBLE_DEVICES=1 python train.py  --config ./configs/ScienceQA/cache_synib
 
 CUDA_VISIBLE_DEVICES=2 python train.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --start_over --l 0.01 --perturb learned --perturb_lsparse 0.01
 CUDA_VISIBLE_DEVICES=1 python train.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --start_over --l 0.01 --perturb learned --perturb_lsparse 0.001
-
+CUDA_VISIBLE_DEVICES=1 python show.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --alpha 1.5
 
 
 CUDA_VISIBLE_DEVICES=0 python train.py  --config ./configs/ScienceQA/cache_image_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 16
@@ -118,7 +118,7 @@ python show.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_co
 python show.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --l 1.0 --perturb learned --perturb_lsparse 5
 
 
-python show.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 0.5
+python show.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 0.5
 python show.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 1.0
 python show.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 1.5
 python show.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_tier2.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 5 --alpha 3.0

@@ -2951,7 +2951,6 @@ class SynIB_QwenFaster(nn.Module):
                                 print(f"[learned_masks:{name}] WARNING: NaNs detected (g or ell)")
 
                 g_final = torch.sigmoid(ell / tau).detach()  # (B,T)
-                print(g_final.shape)
                 # if hard:
                 #     keep = (g_final >= g_final.mean())
                 # else:
@@ -2971,11 +2970,6 @@ class SynIB_QwenFaster(nn.Module):
                               f"overall_masked={_pct(masked_eligible, B * T):.2f}% of all tokens")
 
                 return g_final
-
-            self.z1_stats.ema_update(proc["input_embeds"][m1])
-            self.z2_stats.ema_update(proc["input_embeds"][m2])
-            for i in range(len(proc["deep_stack_viz"])):
-                self.z2_deepstack_stats[i].ema_update(proc["deep_stack_viz"][i])
 
             m1_t = optimize_for(proc, m1, self.z1_stats, name="m1") if px1 else None
             m2_t = optimize_for(proc, m2, self.z2_stats, self.z2_deepstack_stats, name="m2") if px2 else None
@@ -3568,6 +3562,10 @@ class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
 
 
         m1, m2 = self.get_masks_only_B0(processor=self.processor, proc=proc, prompts_with_image=prompts_with_image, hint_texts=hint_texts, image_token_str=self.image_token_str)
+        self.z1_stats.ema_update(proc["input_embeds"][m1])
+        self.z2_stats.ema_update(proc["input_embeds"][m2])
+        for i in range(len(proc["deep_stack_viz"])):
+            self.z2_deepstack_stats[i].ema_update(proc["deep_stack_viz"][i])
 
         if self.args.get("perturb", {}).get("type", "rand") == "rand":
             m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)
@@ -6696,6 +6694,10 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
         m1 = m1.to(input_ids.device).bool()
         m2 = m2.to(input_ids.device).bool()
 
+        self.synib.z1_stats.ema_update(proc["input_embeds"][m1])
+        self.synib.z2_stats.ema_update(proc["input_embeds"][m2])
+        for i in range(len(proc["deep_stack_viz"])):
+            self.synib.z2_deepstack_stats[i].ema_update(proc["deep_stack_viz"][i])
 
         if self.args.get("perturb", {}).get("type", "rand") == "rand":
             m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)
@@ -6717,16 +6719,16 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             k=3
             position_ids_expanded = position_ids.repeat(1, k, 1)
             this_embed_1 = input_embeds.clone()
-            this_embed_1[m1]*=m1t.unsqueeze(dim=1)
+            this_embed_1[m1]=this_embed_1[m1]*m1t.unsqueeze(dim=1) + (1-m1t.unsqueeze(dim=1))*self.synib.z1_stats.noise_like(this_embed_1[m1], 1.0)
             this_embed_2 = input_embeds.clone()
-            this_embed_2[m2]*=m2t.unsqueeze(dim=1)
+            this_embed_2[m2]= this_embed_2[m2]* m2t.unsqueeze(dim=1) + (1-m2t.unsqueeze(dim=1))*self.synib.z2_stats.noise_like(this_embed_2[m2], 1.0)
             input_embeds_expanded = torch.cat([input_embeds, this_embed_1, this_embed_2], dim=0)
             filter_deep_stack = torch.cat([image_mask, image_mask, image_mask],dim=0)
 
             deep_stack_viz_extended=[]
             for i in range(len(deep_stack_viz)):
                 this_embed_2 = deep_stack_viz[i].clone()
-                this_embed_2 *= m2t.unsqueeze(dim=1)
+                this_embed_2 = this_embed_2*m2t.unsqueeze(dim=1)  + (1-m2t.unsqueeze(dim=1))*self.synib.z2_deepstack_stats[i].noise_like(this_embed_2, 1.0)
                 deep_stack_viz_extended.append(torch.cat([deep_stack_viz[i], deep_stack_viz[i], this_embed_2], dim=0))
 
             hidden_all = self._encode_from_inputs_embeds(position_ids_expanded, input_embeds_expanded, filter_deep_stack, deep_stack_viz_extended, masks)

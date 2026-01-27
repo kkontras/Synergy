@@ -6725,8 +6725,8 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
 
         self.synib.z1_stats.ema_update(proc["input_embeds"][m1])
         self.synib.z2_stats.ema_update(proc["input_embeds"][m2])
-        for i in range(len(proc["deep_stack_viz"])):
-            self.synib.z2_deepstack_stats[i].ema_update(proc["deep_stack_viz"][i])
+        for i in range(len(proc["deepstack_visual_embeds"])):
+            self.synib.z2_deepstack_stats[i].ema_update(proc["deepstack_visual_embeds"][i])
 
         if self.args.get("perturb", {}).get("type", "rand") == "rand":
             m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)

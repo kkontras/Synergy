@@ -267,7 +267,8 @@ class General_Evaluator:
             synergy = cm[0, 1] / (cm[0].sum())
             coexistence = cm[3, 1] / (cm[3].sum())
             return {"cue_audio": cue_audio, "cue_video": cue_video, "synergy":synergy, "coexistence":coexistence}
-
+        else:
+            raise ValueError("We got targets_tens: {} video_targets: {} audio_targets: {} and they are equal by pairs T-V:{} V-A:{}".format(targets_tens.shape,video_targets.shape,audio_targets.shape, (targets_tens.numpy() == video_targets).all(), (video_targets == audio_targets).all()))
     def get_per_group_accuracy(self, total_preds, targets_tens):
         def calculate_stats(preds_correct, targets, m_preds):
             preds_correct = np.array(preds_correct)

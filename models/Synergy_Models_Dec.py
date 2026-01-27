@@ -6623,7 +6623,6 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             masks = torch.cat([attention_mask, att_mask_0, att_mask_1], dim=0)
             image_masks = torch.cat([image_mask, image_mask, m2t], dim=0)
             k=3
-            batch_size = input_embeds_expanded.shape[0]
             position_ids_expanded = position_ids.repeat(1, k, 1)
             input_embeds_expanded = input_embeds.repeat(k, 1, 1)
             # filter_deep_stack = torch.cat([image_mask[image_mask].reshape(), image_mask[image_mask], m2t[image_mask]], dim=0)

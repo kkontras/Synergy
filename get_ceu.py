@@ -54,13 +54,13 @@ DEFAULT_CONFIG_PATH = "configs/ScienceQA/default_config_scienceqa_cache_mib.json
 # CONFIG_PATH = "configs/AVE/release/res/unimodal_video.json"
 # CHECKPOINT_TEMPLATE = "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Rmask/AVE/unimodal_video_fold{}.pth.tar"
 
-CONFIG_PATH = "configs/ScienceQA/cache_text_lora.json"
-CHECKPOINT_TEMPLATE = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/Uni_Text_LoRa_fold0_lr0.0001_wd0.01_bs8.pth.tar"
-fold_position_offset=0
+# CONFIG_PATH = "configs/ScienceQA/cache_text_lora.json"
+# CHECKPOINT_TEMPLATE = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/Uni_Text_LoRa_fold0_lr0.0001_wd0.01_bs8.pth.tar"
+# fold_position_offset=0
 
-# CONFIG_PATH = "configs/ScienceQA/cache_image_lora.json"
-# CHECKPOINT_TEMPLATE = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/SynIBCache_Image_LoRa_fold0_lr0.0001_wd0.01_bs8.pth.tar"
-# fold_position_offset=3
+CONFIG_PATH = "configs/ScienceQA/cache_image_lora.json"
+CHECKPOINT_TEMPLATE = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/SynIBCache_Image_LoRa_fold0_lr0.0001_wd0.01_bs8.pth.tar"
+fold_position_offset=3
 
 # OUTPUT_JSON = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/scienceqa_ceu_val.pkl"
 OUTPUT_JSON = "/scratch/kkontras/checkpoints/synergy/ScienceQA/v2/scienceqa_ceu_test.pkl"

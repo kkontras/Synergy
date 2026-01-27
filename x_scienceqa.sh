@@ -50,6 +50,7 @@ accelerate launch train.py --config ./configs/ScienceQA/synprom_lora_synibfaster
 python mydatasets/ScienceQA/ScienceQA_Codebook.py --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA" --out_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_tokens2B" --model_name "Qwen/Qwen3-VL-2B-Instruct" --split train --batch_size 64  --num_workers 24 --cache_image_embeds
 
 
+
 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split train --data_root "/scratch/kkontras/ScienceQA" --out_dir "/scratch/kkontras/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 16 --batch_size 64
 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split test --data_root "/scratch/kkontras/ScienceQA" --out_dir "/scratch/kkontras/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 16 --batch_size 64
 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split validation --data_root "/scratch/kkontras/ScienceQA" --out_dir "/scratch/kkontras/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 16 --batch_size 64
@@ -57,6 +58,11 @@ python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split validation --data_r
 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py  --split train --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA" --out_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 24 --batch_size 4
 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py  --split test --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA" --out_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 24 --batch_size 4
 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py  --split validation --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA" --out_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 24 --batch_size 4
+
+python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py  --split train --data_root "/home/kkontras/orcd/scratch/data/ScienceQA" --out_dir "/home/kkontras/orcd/scratch/data/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 24 --batch_size 64
+python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py  --split test --data_root "/home/kkontras/orcd/scratch/data/ScienceQA" --out_dir "/home/kkontras/orcd/scratch/data/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 24 --batch_size 64
+python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py  --split validation --data_root "/home/kkontras/orcd/scratch/data/ScienceQA" --out_dir "/home/kkontras/orcd/scratch/data/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 24 --batch_size 64
+
 
 CUDA_VISIBLE_DEVICES=0 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split train --data_root "/scratch/kkontras/ScienceQA" --out_dir "/scratch/kkontras/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 16 --batch_size 64
 CUDA_VISIBLE_DEVICES=1 python mydatasets/ScienceQA/ScienceQA_Codebook_v2.py --split test --data_root "/scratch/kkontras/ScienceQA" --out_dir "/scratch/kkontras/ScienceQA/cache_qwen3_vl_2b_nocls_vis" --num_workers 16 --batch_size 64
@@ -69,6 +75,11 @@ CUDA_VISIBLE_DEVICES=2 python train.py  --config ./configs/ScienceQA/cache_image
 CUDA_VISIBLE_DEVICES=2 python train.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 16 --start_over --l 1 --perturb rand --perturb_pmin 0.3
 CUDA_VISIBLE_DEVICES=3 python train.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --start_over --l 1 --perturb rand --perturb_pmin 0.5
 CUDA_VISIBLE_DEVICES=1 python train.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 16 --start_over --l 1 --perturb rand --perturb_pmin 0.7
+
+
+CUDA_VISIBLE_DEVICES=1 python train.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_orcd.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --start_over --l 1 --perturb learned --perturb_lsparse 0.1
+CUDA_VISIBLE_DEVICES=1 python train.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_orcd.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --start_over --l 0.1 --perturb learned --perturb_lsparse 0.1
+
 
 
 CUDA_VISIBLE_DEVICES=0 python train.py  --config ./configs/ScienceQA/cache_image_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 16

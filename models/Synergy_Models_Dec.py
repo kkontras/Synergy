@@ -6623,11 +6623,21 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             masks = torch.cat([attention_mask, att_mask_0, att_mask_1], dim=0)
             image_masks = torch.cat([image_mask, image_mask, m2t], dim=0)
             k=3
+            batch_size = input_embeds_expanded.shape[0]
             position_ids_expanded = position_ids.repeat(1, k, 1)
             input_embeds_expanded = input_embeds.repeat(k, 1, 1)
-            filter_deep_stack = torch.cat([image_mask[image_mask], image_mask[image_mask], m2t[image_mask]], dim=0)
-            filter_deep_stack_norm = torch.cat([image_mask[image_mask], image_mask[image_mask], image_mask[image_mask]], dim=0)
-            deep_stack_viz_expanded = [deep_stack_viz[i].repeat(k, 1)[filter_deep_stack_norm] for i in range(len(deep_stack_viz))]
+            # filter_deep_stack = torch.cat([image_mask[image_mask].reshape(), image_mask[image_mask], m2t[image_mask]], dim=0)
+            # filter_deep_stack_norm = torch.cat([image_mask[image_mask], image_mask[image_mask], image_mask[image_mask]], dim=0)
+            a = torch.where(image_mask, image_mask, torch.zeros_like(image_mask))
+            b = torch.where(image_mask, image_mask, torch.zeros_like(image_mask))
+            c = torch.where(image_mask, m2t, torch.zeros_like(m2t))
+            filter_deep_stack = torch.cat([a, b, c], dim=0)  # cat along your chosen dim
+            filter_deep_stack_norm = torch.cat([image_mask.to(image_mask.dtype)] * 3, dim=0)
+            deep_stack_viz_expanded = []
+            for i in range(len(deep_stack_viz)):
+                x = deep_stack_viz[i].repeat(k, 1)
+                x_masked = x.masked_fill(~image_mask, 0)  # or torch.where(mask, x, 0)
+                deep_stack_viz_expanded.append(x_masked)
             print(position_ids_expanded.shape)
             print(input_embeds_expanded.shape)
             print(filter_deep_stack.shape)

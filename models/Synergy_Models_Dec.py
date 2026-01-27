@@ -6635,15 +6635,15 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             input_embeds_expanded = input_embeds.repeat(k, 1, 1)
             # filter_deep_stack = torch.cat([image_mask[image_mask].reshape(), image_mask[image_mask], m2t[image_mask]], dim=0)
             # filter_deep_stack_norm = torch.cat([image_mask[image_mask], image_mask[image_mask], image_mask[image_mask]], dim=0)
-            filter_deep_stack = torch.cat([image_mask[image_mask], image_mask[image_mask], m2t[image_mask]],dim=0)
+            filter_deep_stack = torch.cat([image_mask, image_mask, m2t],dim=0)
             filter_deep_stack_norm = torch.cat([image_mask[image_mask], image_mask[image_mask], image_mask[image_mask]],
                                                dim=0)
             deep_stack_viz_expanded = [deep_stack_viz[i].repeat(k, 1)[filter_deep_stack_norm] for i in
                                        range(len(deep_stack_viz))]
 
             print("Thens ---")
-            print(position_ids.shape)
-            print(input_embeds.shape)
+            print(position_ids_expanded.shape)
+            print(input_embeds_expanded.shape)
             print(filter_deep_stack.shape)
             print(filter_deep_stack.sum(dim=1))
             print(deep_stack_viz_expanded[0].shape)

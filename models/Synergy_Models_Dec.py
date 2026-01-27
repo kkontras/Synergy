@@ -2748,7 +2748,7 @@ class SynIB_QwenFaster(nn.Module):
         print(pcfg)
         steps = int(pcfg.get("steps", 10))
         lr = float(pcfg.get("lr", 1e-1))
-        tau = float(pcfg.get("tau", 1.0))
+        tau = float(pcfg.get("tau", 0.1))
         lsparse = float(pcfg.get("lsparse", 1.0))
         hard = bool(pcfg.get("hard", True))
         hard_thresh = float(pcfg.get("hard_thresh", 0.5))
@@ -2815,17 +2815,22 @@ class SynIB_QwenFaster(nn.Module):
                     return None
 
                 eligible = int(mask_eligible.sum().item())
-
-                ell = torch.ones((eligible), device=device, dtype=torch.float32, requires_grad=True)
+                ell = torch.full(
+                    (eligible,),
+                    1.0,
+                    device=device,
+                    dtype=torch.float32,
+                    requires_grad=True,
+                )
+                # ell = torch.ones((eligible), device=device, dtype=torch.float32, requires_grad=True)
                 opt = torch.optim.Adam([ell], lr=lr)
 
                 for i in range(steps):
                     g = torch.sigmoid(ell / tau)  # (B,T) keep-prob
 
                     this_input_embs = proc["input_embeds"]
-                    g_emb = g.to(this_input_embs.dtype)  # fp16 if embeds are fp16
+                    g_emb = g.to(this_input_embs.dtype)
                     this_input_embs[mask_eligible] *= g_emb.unsqueeze(-1)
-                    # this_input_embs[mask_eligible] = this_input_embs[mask_eligible] * g.unsqueeze(-1)
                     this_mask_vision = proc["image_mask"]
                     this_deep_stack_viz = proc["deep_stack_viz"]
 
@@ -2850,6 +2855,7 @@ class SynIB_QwenFaster(nn.Module):
 
                     if debug and (i == 0 or i == steps - 1 or (debug_every > 0 and (i + 1) % debug_every == 0)):
                         with torch.no_grad():
+                            print(g)
                             keep_frac = g.sum()/len(g)
                             mask_frac = 1.0 - keep_frac
                             ce_val = float(ce.item())
@@ -2864,15 +2870,15 @@ class SynIB_QwenFaster(nn.Module):
                                 print(f"[learned_masks:{name}] WARNING: NaNs detected (g or ell)")
 
                 g_final = torch.sigmoid(ell / tau).detach()  # (B,T)
-                if hard:
-                    keep = (g_final >= g_final.mean())
-                else:
-                    keep = (g_final > 0.5)
+                print(g_final.shape)
+                # if hard:
+                #     keep = (g_final >= g_final.mean())
+                # else:
+                #     keep = (g_final > 0.5)
 
-                keep_full = torch.ones((B, T), device=device, dtype=torch.bool)
+                keep_full = torch.ones((B, T), device=device)
                 eligible_idx = mask_eligible.nonzero(as_tuple=True)  # tuple of (b_idx, t_idx)
-                keep_full[eligible_idx[0][keep], eligible_idx[1][keep]] = True
-                keep_full[eligible_idx[0][~keep], eligible_idx[1][~keep]] = False
+                keep_full[mask_eligible] = g_final
 
                 if debug:
                     with torch.no_grad():
@@ -2883,7 +2889,7 @@ class SynIB_QwenFaster(nn.Module):
                               f"masked={masked_eligible} ({_pct(masked_eligible, eligible):.2f}%) "
                               f"overall_masked={_pct(masked_eligible, B * T):.2f}% of all tokens")
 
-                return keep_full
+                return g_final
 
             m1_t = optimize_for(proc, m1, name="m1") if px1 else None
             m2_t = optimize_for(proc, m2, name="m2") if px2 else None
@@ -6608,11 +6614,11 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)
         elif self.args.get("perturb", {}).get("type", "rand") == "learned":
             m1t, m2t = self.synib._learned_masks(m1, m2, True, True, proc={"input_ids":input_ids, "position_ids":position_ids, "input_embeds":input_embeds, "image_mask":image_mask, "deep_stack_viz":deep_stack_viz, "attention_mask":attention_mask}, **kwargs)
-            m1t, m2t = ~m1t, ~m2t
+            # m1t, m2t = ~m1t, ~m2t
         else:
             raise ValueError(f"Unknown perturb.type: {self.args.get('perturb', {})}")
 
-        att_mask_0, att_mask_1 = self.apply_custom_masks(attention_mask, m1, m2, m1t, m2t)
+        # att_mask_0, att_mask_1 = self.apply_custom_masks(attention_mask, m1, m2, m1t, m2t)
 
         if getattr(self.args, "run_multiple_forwards", False):
             masks = torch.stack([attention_mask, attention_mask, attention_mask], dim=0)
@@ -6620,20 +6626,23 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             filter_deep_stack = [image_mask[image_mask], image_mask[image_mask], m2t[image_mask]]
             hidden_all = torch.cat([self._encode_from_inputs_embeds(position_ids, input_embeds, image_masks[i], [deep_stack_viz[j][filter_deep_stack[i]] for j in range(len(deep_stack_viz))], masks[i]) for i in range(3)],dim=0)
         else:
-            masks = torch.cat([attention_mask, att_mask_0, att_mask_1], dim=0)
+            masks = torch.cat([attention_mask, attention_mask, attention_mask], dim=0)
             k=3
             position_ids_expanded = position_ids.repeat(1, k, 1)
-            input_embeds_expanded = input_embeds.repeat(k, 1, 1)
-            # filter_deep_stack = torch.cat([image_mask[image_mask].reshape(), image_mask[image_mask], m2t[image_mask]], dim=0)
-            # filter_deep_stack_norm = torch.cat([image_mask[image_mask], image_mask[image_mask], image_mask[image_mask]], dim=0)
-            filter_deep_stack = torch.cat([image_mask, image_mask, m2t],dim=0)
-            filter_deep_stack_norm = torch.cat([image_mask[image_mask], image_mask[image_mask], m2t[image_mask]],
-                                               dim=0)
-            deep_stack_viz_expanded = [deep_stack_viz[i].repeat(k, 1)[filter_deep_stack_norm] for i in
-                                       range(len(deep_stack_viz))]
+            this_embed_1 = input_embeds.clone()
+            this_embed_1[m1]*=m1t.unsqueeze(dim=1)
+            this_embed_2 = input_embeds.clone()
+            this_embed_2[m2]*=m2t.unsqueeze(dim=1)
+            input_embeds_expanded = torch.cat([input_embeds, this_embed_1, this_embed_2], dim=0)
+            filter_deep_stack = torch.cat([image_mask, image_mask, image_mask],dim=0)
 
+            deep_stack_viz_extended=[]
+            for i in range(len(deep_stack_viz)):
+                this_embed_2 = deep_stack_viz[i].clone()
+                this_embed_2 *= m2t.unsqueeze(dim=1)
+                deep_stack_viz_extended.append(torch.cat([deep_stack_viz[i], deep_stack_viz[i], this_embed_2], dim=0))
 
-            hidden_all = self._encode_from_inputs_embeds(position_ids_expanded, input_embeds_expanded, filter_deep_stack, deep_stack_viz_expanded, masks)
+            hidden_all = self._encode_from_inputs_embeds(position_ids_expanded, input_embeds_expanded, filter_deep_stack, deep_stack_viz_extended, masks)
 
         ids_all = input_ids.repeat(k,1)
         h_cls_all = self._get_cls_token_repr(hidden_all, ids_all)

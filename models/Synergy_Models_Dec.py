@@ -2914,7 +2914,7 @@ class SynIB_QwenFaster(nn.Module):
 
                     opt.zero_grad(set_to_none=True)
                     obj.backward(retain_graph=False)
-                    torch.nn.utils.clip_grad_norm_([ell], 1.0)
+                    # torch.nn.utils.clip_grad_norm_([ell], 1.0)
                     # eg = ell.grad
                     # print(
                     #     f"step {i} | "

@@ -267,8 +267,8 @@ class Monitor_n_Save():
             #     for i, v in val_metrics["mae"].items(): message += Fore.LIGHTBLUE_EX + "MAE_{}: {:.4f} ".format(i,v)
             # if "corr" in val_metrics:
             #     for i, v in val_metrics["corr"].items(): message += Fore.LIGHTWHITE_EX + "Corr_{}: {:.4f} ".format(i,v)
-            # if "ceu" in val_metrics:
-            #     for i, v in val_metrics["ceu"]["combined"].items(): message += Fore.LIGHTMAGENTA_EX + "CEU_{}: {:.4f} ".format(i,v)
+            if "ceu" in val_metrics:
+                for i, v in val_metrics["ceu"]["combined"].items(): message += Fore.LIGHTMAGENTA_EX + "CEU_{}: {:.4f} ".format(i,v)
             if "pg_acc" in val_metrics and "combined" in val_metrics["pg_acc"]:
                 pg = val_metrics["pg_acc"]["combined"]
                 # Assuming pg = pg_acc from your example
@@ -305,7 +305,6 @@ class Monitor_n_Save():
 
             if self.agent.accelerator.is_main_process:
                 self.agent.logger.info(message+ Fore.RESET)
-
 
     def _print_epoch_metrics(self):
         if self.agent.config.training_params.verbose:

@@ -82,7 +82,7 @@ CUDA_VISIBLE_DEVICES=1 python train.py  --config ./configs/ScienceQA/cache_synib
 
 CUDA_VISIBLE_DEVICES=2 python train.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --start_over --l 0.01 --perturb learned --perturb_lsparse 0.01
 CUDA_VISIBLE_DEVICES=1 python train.py  --config ./configs/ScienceQA/cache_synib_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --start_over --l 0.01 --perturb learned --perturb_lsparse 0.001
-CUDA_VISIBLE_DEVICES=1 python show.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --alpha 1.5
+CUDA_VISIBLE_DEVICES=1 python train.py  --config ./configs/ScienceQA/cache_lora_MMPareto.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --alpha 1.5
 
 
 CUDA_VISIBLE_DEVICES=0 python train.py  --config ./configs/ScienceQA/cache_image_lora.json  --default_config ./configs/ScienceQA/default_config_scienceqa_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 16

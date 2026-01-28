@@ -2841,11 +2841,11 @@ class SynIB_QwenFaster(nn.Module):
         """
         label = kwargs["label"]  # [B]
         proc = kwargs["proc"]  # dict with input_ids, attention_mask
-        debug = bool(kwargs.get("debug", True))
+        debug = bool(kwargs.get("debug", False))
         debug_every = int(kwargs.get("debug_every", 1))
 
         pcfg = getattr(self, "perturb", {}) if hasattr(self, "perturb") else getattr(self.main.args, "perturb", {})
-        print(pcfg)
+
         steps = int(pcfg.get("steps", 5))
         lr = float(pcfg.get("lr", 1e-1))
         tau = float(pcfg.get("tau", 0.3))

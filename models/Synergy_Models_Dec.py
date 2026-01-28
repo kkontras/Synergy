@@ -6765,8 +6765,10 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
                             1 - m2forw[m2].unsqueeze(dim=1)) * self.synib.z2_stats.noise_like(this_embed_0[m2], 1.0).to(this_embed_0.dtype)
 
             this_embed_1 = input_embeds.clone()
+            m1t = m1t.float()
             this_embed_1[m1]=this_embed_1[m1]*m1t[m1].unsqueeze(dim=1) + (1-m1t[m1].unsqueeze(dim=1))*self.synib.z1_stats.noise_like(this_embed_1[m1], 1.0).to(this_embed_1.dtype)
             this_embed_2 = input_embeds.clone()
+            m2t = m2t.float()
             this_embed_2[m2]= this_embed_2[m2]* m2t[m2].unsqueeze(dim=1) + (1-m2t[m2].unsqueeze(dim=1))*self.synib.z2_stats.noise_like(this_embed_2[m2], 1.0).to(this_embed_2.dtype)
             input_embeds_expanded = torch.cat([this_embed_0, this_embed_1, this_embed_2], dim=0)
             filter_deep_stack = torch.cat([image_mask, image_mask, image_mask],dim=0)

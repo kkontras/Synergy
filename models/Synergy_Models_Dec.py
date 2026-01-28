@@ -2803,10 +2803,10 @@ class SynIB_QwenFaster(nn.Module):
             **kwargs
     ):
         # If we decide not to mask this time, return originals
-        # if torch.rand((), device=m1.device).item() > p_do:
-        #     px1 = False
-        # if torch.rand((), device=m1.device).item() > p_do:
-        #     px2 = False
+        if torch.rand((), device=m1.device).item() > p_do:
+            px1 = False
+        if torch.rand((), device=m1.device).item() > p_do:
+            px2 = False
 
         # Sample mask probability p ~ U[p_min, p_max]
         if p_max < p_min:

@@ -2786,13 +2786,13 @@ class SynIB_QwenFaster(nn.Module):
         p = float(self.perturb.get("p_min", 0.5))  # mask probability
         m1_t, m2_t = None, None
         if px1:
-            mask_1 = (torch.rand_like(m1[m1==True].float()) > p).to(dtype=m1.dtype)  # [K*B, T, F] in {0,1}
-            m1_t = m1.clone()
-            m1_t[m1] = mask_1
+            m1_t = (torch.rand_like(m1[m1==True].float()) > p).to(dtype=m1.dtype)  # [K*B, T, F] in {0,1}
+            # m1_t = m1.clone()
+            # m1_t[m1] = mask_1
         if px2:
-            mask_2 = (torch.rand_like(m2[m2==True].float()) > p).to(dtype=m2.dtype)  # [K*B, T, F] in {0,1}
-            m2_t = m2.clone()
-            m2_t[m2] = mask_2
+            m2_t = (torch.rand_like(m2[m2==True].float()) > p).to(dtype=m2.dtype)  # [K*B, T, F] in {0,1}
+            # m2_t = m2.clone()
+            # m2_t[m2] = mask_2
 
         return m1_t, m2_t
 
@@ -6739,6 +6739,8 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)
         elif self.args.get("perturb", {}).get("type", "rand") == "learned":
             m1t, m2t = self.synib._learned_masks(m1, m2, True, True, proc={"input_ids":input_ids, "position_ids":position_ids, "input_embeds":input_embeds, "image_mask":image_mask, "deep_stack_viz":deep_stack_viz, "attention_mask":attention_mask}, **kwargs)
+            m1t = 1-m1t
+            m2t = 1-m2t
         else:
             raise ValueError(f"Unknown perturb.type: {self.args.get('perturb', {})}")
 

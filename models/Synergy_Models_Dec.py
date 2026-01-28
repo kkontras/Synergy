@@ -2803,22 +2803,33 @@ class SynIB_QwenFaster(nn.Module):
             **kwargs
     ):
         # If we decide not to mask this time, return originals
-        if torch.rand((), device=m1.device).item() > p_do:
-            return (m1.clone() if px1 else None), (m2.clone() if px2 else None)
+        # if torch.rand((), device=m1.device).item() > p_do:
+        #     px1 = False
+        # if torch.rand((), device=m1.device).item() > p_do:
+        #     px2 = False
 
         # Sample mask probability p ~ U[p_min, p_max]
         if p_max < p_min:
             p_min, p_max = p_max, p_min
         p = p_min + (p_max - p_min) * torch.rand((), device=m1.device).item()
 
-        m1_t, m2_t = None, None
+        m1_t, m2_t = m1.clone(), m1.clone()
         if px1:
             # keep mask: 1=kept, 0=masked, applied only where m1 is True
-            m1_t = (torch.rand_like(m1.float()) > p).to(dtype=m1.dtype)
+            mask_1 = (torch.rand_like(m1[m1==True].float()) > p).to(dtype=m1.dtype)  # [K*B, T, F] in {0,1}
+            mask_11 = torch.rand_like(m1[m1==True].float())  # [K*B, T, F] in {0,1}
+            m1_t = m1.clone().float()
+            vals = m1_t[m1]
+            vals[mask_1] = mask_11[mask_1]
+            m1_t[m1] = vals
 
         if px2:
-            m2_t = (torch.rand_like(m2[m2].float()) > p).to(dtype=m2.dtype)
-
+            mask_2 = (torch.rand_like(m2[m2==True].float()) > p).to(dtype=m2.dtype)  # [K*B, T, F] in {0,1}
+            mask_22 = (torch.rand_like(m2[m2==True].float()))# [K*B, T, F] in {0,1}
+            m2_t = m2.clone().float()
+            vals = m2_t[m2]
+            vals[mask_2] = mask_22[mask_2]
+            m2_t[m2] = vals
         return m1_t, m2_t
 
     def _learned_masks(self, m1, m2, px1, px2, **kwargs):
@@ -6744,10 +6755,14 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             position_ids_expanded = position_ids.repeat(1, k, 1)
 
             this_embed_0 = input_embeds.clone()
-            this_embed_0[m1] = this_embed_0[m1] * m1forw.unsqueeze(dim=1) + (
-                        1 - m1forw.unsqueeze(dim=1)) * self.synib.z1_stats.noise_like(this_embed_0[m1], 1.0)
-            this_embed_0[m2] = this_embed_0[m2] * m2forw.unsqueeze(dim=1) + (
-                        1 - m2forw.unsqueeze(dim=1)) * self.synib.z2_stats.noise_like(this_embed_0[m2], 1.0)
+            if (m1!=m1forw).any():
+                m1forw = m1forw.to(this_embed_0.dtype)
+                this_embed_0[m1] = this_embed_0[m1] * m1forw[m1].unsqueeze(dim=1) + (
+                            1 - m1forw[m1].unsqueeze(dim=1)) * self.synib.z1_stats.noise_like(this_embed_0[m1], 1.0).to(this_embed_0.dtype)
+            if (m2!=m2forw).any():
+                m2forw = m2forw.to(this_embed_0.dtype)
+                this_embed_0[m2] = this_embed_0[m2] * m2forw[m2].unsqueeze(dim=1) + (
+                            1 - m2forw[m2].unsqueeze(dim=1)) * self.synib.z2_stats.noise_like(this_embed_0[m2], 1.0).to(this_embed_0.dtype)
 
             this_embed_1 = input_embeds.clone()
             this_embed_1[m1]=this_embed_1[m1]*m1t.unsqueeze(dim=1) + (1-m1t.unsqueeze(dim=1))*self.synib.z1_stats.noise_like(this_embed_1[m1], 1.0)

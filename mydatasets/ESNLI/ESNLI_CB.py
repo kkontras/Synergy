@@ -514,6 +514,7 @@ class ESNLI_MemmapDataset(Dataset):
         attention_mask = _require_tensor(ex, "attention_mask").to(torch.long).reshape(-1)
         position_ids = _require_tensor(ex, "position_ids")
         visual_pos_masks = _require_tensor(ex, "visual_pos_masks")
+        print(ex["masks"].keys())
         hint_mask = _require_tensor(ex["masks"], "hint")
         lab = _as_scalar_int(ex.get("label", 0), default=0)
 

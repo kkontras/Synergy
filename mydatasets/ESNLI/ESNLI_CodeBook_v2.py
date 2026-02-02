@@ -947,7 +947,7 @@ def build_and_save_cache(
 
             masks = {
                 "image": (ttid == TT_IMAGE),
-                "text": (ttid == TT_TEXT),
+                "hint": (ttid == TT_TEXT),
                 "cls": (ttid == TT_CLS),
                 "other": (ttid == TT_OTHER),
             }
@@ -956,14 +956,12 @@ def build_and_save_cache(
                 "label": labels[i].clone(),
                 "token_type_ids": ttid.cpu(),
                 "masks": {k: v.cpu() for k, v in masks.items()},
-
                 "input_ids": input_ids_keep,  # (1,L)
                 "attention_mask": attention_keep,  # (1,L)
                 "position_ids": pos_keep,  # (3,1,L)
                 "input_embeds": input_embeds_keep,  # (1,L,2048) fp16
                 "visual_pos_masks": visual_pos_masks,  # (1,L) bool
                 "deepstack_visual_embeds": deepstack_visual_embeds,  # (K,64,2048)
-
             }
 
             shard_items.append(item)

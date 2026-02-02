@@ -971,7 +971,7 @@ def build_and_save_cache(
             if len(shard_items) >= shard_size:
                 shard_path = flush_shard()
                 # shard_path = flush_shard(items, split_out, shard_idx, manifest_path)
-                verify_shard(shard_path, n_show=1)
+                # verify_shard(shard_path, n_show=1)
 
     shard_path = flush_shard()
     verify_shard(shard_path, n_show=1)

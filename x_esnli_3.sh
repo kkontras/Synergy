@@ -27,3 +27,6 @@ CUDA_VISIBLE_DEVICES=0 python train.py  --config ./configs/ESNLI/cache_lora.json
 
 
 python mydatasets/ESNLI/ESNLI_CodeBook.py --split train --data_root "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI" --flickr_images_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI/flickr30k-images/" --model_name "Qwen/Qwen3-VL-2B-Instruct" --out_dir "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 1
+
+CUDA_VISIBLE_DEVICES=4 python mydatasets/ESNLI/ESNLI_CodeBook_v2.py --split train --data_root "/scratch/kkontras/ESNLI" --model_name "Qwen/Qwen3-VL-2B-Instruct" --out_dir "/scratch/kkontras/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 128
+CUDA_VISIBLE_DEVICES=5 python mydatasets/ESNLI/ESNLI_CodeBook_v2.py --split test --data_root "/scratch/kkontras/ESNLI" --model_name "Qwen/Qwen3-VL-2B-Instruct" --out_dir "/scratch/kkontras/ESNLI/cache_qwen3_vl_2b_nocls_vis" --batch_size 16

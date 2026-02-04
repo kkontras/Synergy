@@ -432,6 +432,7 @@ class ESNLI_ShardedLazyDataset(Dataset):
         max_items: Optional[int] = None,
         deep_dim: int = 2048,
         shard_cache_size: int = 2,   # keep only 1–4 shards in RAM
+        **kwargs
     ):
         super().__init__()
         self.split_dir = os.path.join(cache_root, split)

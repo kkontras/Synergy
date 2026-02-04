@@ -791,7 +791,6 @@ class ESNLI_MemmapDataloader:
         train_ds = ESNLI_ShardedLazyDataset(
             cache_root=cache_root,
             split="train",
-            shard_index=shard_index,
             shard_path=shard_path,
             max_items=max_items,
             deep_dim=deep_dim,
@@ -799,7 +798,6 @@ class ESNLI_MemmapDataloader:
         val_ds = ESNLI_ShardedLazyDataset(
             cache_root=cache_root,
             split="validation",
-            shard_index=shard_index,
             shard_path=shard_path,
             max_items=max_items,
             deep_dim=deep_dim,
@@ -807,7 +805,6 @@ class ESNLI_MemmapDataloader:
         test_ds = ESNLI_ShardedLazyDataset(
             cache_root=cache_root,
             split="test",
-            shard_index=shard_index,
             shard_path=shard_path,
             max_items=max_items,
             deep_dim=deep_dim,

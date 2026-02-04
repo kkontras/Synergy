@@ -812,7 +812,7 @@ class ESNLI_MemmapDataloader:
 
         train_ds = ESNLI_MemmapDataset(
             cache_root=cache_root,
-            split="validation",
+            split="train",
             shard_index=shard_index,
             shard_path=shard_path,
             max_items=max_items,

@@ -409,104 +409,89 @@ def _as_scalar_int(x: Any, default: int = 0) -> int:
     except Exception:
         return int(default)
 
+import os, json
+from bisect import bisect_right
+from collections import OrderedDict
+from typing import Any, Dict, List, Optional, Tuple
 
-def _load_manifest_shards(split_dir: str) -> List[str]:
-    manifest_path = os.path.join(split_dir, "manifest.jsonl")
-    if not os.path.isfile(manifest_path):
-        return []
-    recs = [json.loads(l) for l in open(manifest_path, "r", encoding="utf-8")]
-    shard_paths = [os.path.join(split_dir, r["shard"]) for r in recs]
-    return shard_paths
+import torch
+from torch.utils.data import Dataset
 
+def _load_manifest(split_dir: str) -> List[Dict[str, Any]]:
+    mp = os.path.join(split_dir, "manifest.jsonl")
+    if not os.path.isfile(mp):
+        raise FileNotFoundError(f"Missing manifest.jsonl in {split_dir}")
+    return [json.loads(l) for l in open(mp, "r", encoding="utf-8")]
 
-def _load_split_items(
-    split_dir: str,
-    *,
-    shard_index: Optional[int] = None,
-    shard_path: Optional[str] = None,
-    max_items: Optional[int] = None,
-) -> List[Dict[str, Any]]:
-    # Option A: explicit shard_path
-    if shard_path is not None:
-        if not os.path.isfile(shard_path):
-            raise FileNotFoundError(f"Shard not found: {shard_path}")
-        items = torch.load(shard_path, map_location="cpu")
-        items = list(items)
-        return items[: int(max_items)] if max_items is not None else items
-
-    # Option B: manifest shards
-    shard_paths = _load_manifest_shards(split_dir)
-    if shard_paths:
-        if shard_index is not None:
-            si = int(shard_index)
-            if si < 0 or si >= len(shard_paths):
-                raise IndexError(f"shard_index {si} out of range [0, {len(shard_paths)-1}]")
-            items = torch.load(shard_paths[si], map_location="cpu")
-            items = list(items)
-            return items[: int(max_items)] if max_items is not None else items
-
-        # load all shards
-        out: List[Dict[str, Any]] = []
-        for sp in shard_paths:
-            items = torch.load(sp, map_location="cpu")
-            out.extend(list(items))
-            if max_items is not None and len(out) >= int(max_items):
-                out = out[: int(max_items)]
-                break
-        return out
-
-    # Option C: single data.pt
-    data_pt = os.path.join(split_dir, "data.pt")
-    if os.path.isfile(data_pt):
-        items = torch.load(data_pt, map_location="cpu")
-        items = list(items)
-        return items[: int(max_items)] if max_items is not None else items
-
-    raise FileNotFoundError(f"Need manifest.jsonl shards or data.pt in {split_dir}")
-
-
-# =========================
-# Dataset (no memmap)
-# =========================
-
-class ESNLI_MemmapDataset(Dataset):
-    """
-    Name kept as ScienceQA_MemmapDataset for drop-in compatibility, but this version
-    is a SIMPLE torch.load cache reader (no memmap).
-    """
+class ESNLI_ShardedLazyDataset(Dataset):
     def __init__(
         self,
         cache_root: str,
         split: str,
-        shard_index: Optional[int] = None,
-        shard_path: Optional[str] = None,
+        *,
         max_items: Optional[int] = None,
         deep_dim: int = 2048,
+        shard_cache_size: int = 2,   # keep only 1–4 shards in RAM
     ):
         super().__init__()
         self.split_dir = os.path.join(cache_root, split)
-        self.items = _load_split_items(
-            self.split_dir,
-            shard_index=shard_index,
-            shard_path=shard_path,
-            max_items=max_items,
-        )
-        if not isinstance(self.items, (list, tuple)):
-            raise TypeError(f"Split cache must contain list/tuple, got {type(self.items)}")
-        self.items = list(self.items)
+        self.recs = _load_manifest(self.split_dir)
+
+        # absolute shard paths + counts
+        self.shard_paths: List[str] = [os.path.join(self.split_dir, r["shard"]) for r in self.recs]
+        self.shard_counts: List[int] = [int(r["num_items"]) for r in self.recs]
+
+        # prefix sums to map global idx -> shard/local
+        self.cum: List[int] = []
+        s = 0
+        for n in self.shard_counts:
+            s += n
+            self.cum.append(s)
+
+        self.N = self.cum[-1] if self.cum else 0
+        if max_items is not None:
+            self.N = min(self.N, int(max_items))
+
         self.deep_dim = int(deep_dim)
+        self.shard_cache_size = int(shard_cache_size)
+        self._shard_cache: "OrderedDict[int, List[Dict[str, Any]]]" = OrderedDict()
 
-        # detect optional fields
-        self.has_vision = any(("vision_embeds" in ex and ex["vision_embeds"] is not None) for ex in self.items[: min(len(self.items), 256)])
-        self.has_deep = any(("deepstack_visual_embeds" in ex and ex["deepstack_visual_embeds"] is not None) for ex in self.items[: min(len(self.items), 256)])
-
-        print(f"[ScienceQA SimpleDataset] split={split} N={len(self.items)} dir={self.split_dir} vision={self.has_vision} deep={self.has_deep}")
+        print(f"[LazyShardDataset] split={split} N={self.N} shards={len(self.shard_paths)} cache_shards={self.shard_cache_size}")
 
     def __len__(self) -> int:
-        return len(self.items)
+        return self.N
+
+    def _locate(self, idx: int) -> Tuple[int, int]:
+        # shard_id = first cum > idx
+        shard_id = bisect_right(self.cum, idx)
+        prev = 0 if shard_id == 0 else self.cum[shard_id - 1]
+        local = idx - prev
+        return shard_id, local
+
+    def _get_shard(self, shard_id: int) -> List[Dict[str, Any]]:
+        # LRU cache
+        if shard_id in self._shard_cache:
+            self._shard_cache.move_to_end(shard_id)
+            return self._shard_cache[shard_id]
+
+        sp = self.shard_paths[shard_id]
+        items = torch.load(sp, map_location="cpu")
+        items = list(items)
+
+        self._shard_cache[shard_id] = items
+        self._shard_cache.move_to_end(shard_id)
+
+        while len(self._shard_cache) > self.shard_cache_size:
+            self._shard_cache.popitem(last=False)  # evict LRU
+
+        return items
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
-        ex = self.items[idx]
+        shard_id, local = self._locate(int(idx))
+        shard = self._get_shard(shard_id)
+        ex = shard[local]
+
+        # ---- your existing per-example logic (unchanged) ----
         if not isinstance(ex, dict):
             raise TypeError(f"Example[{idx}] is not a dict: {type(ex)}")
 
@@ -516,7 +501,6 @@ class ESNLI_MemmapDataset(Dataset):
         visual_pos_masks = _require_tensor(ex, "visual_pos_masks")
         hint_mask = _require_tensor(ex["masks"], "text")
         lab = _as_scalar_int(ex.get("label", 0), default=0)
-
 
         out: Dict[str, Any] = {
             "id": ex.get("id", idx),
@@ -531,14 +515,8 @@ class ESNLI_MemmapDataset(Dataset):
             "input_embeds": _require_tensor(ex, "input_embeds").to(torch.float16),
             "deepstack_visual_embeds": _require_tensor(ex, "deepstack_visual_embeds").to(torch.float16),
         }
-
-
         return out
 
-
-# =========================
-# Collate (keep SAME name)
-# =========================
 
 def _left_pad_1d(seqs: List[torch.Tensor], pad_val: int, dtype: torch.dtype) -> torch.Tensor:
     max_len = max(int(s.numel()) for s in seqs) if len(seqs) > 0 else 0
@@ -810,7 +788,7 @@ class ESNLI_MemmapDataloader:
         # if config has pad_token_id, prefer it
         pad_token_id = int(getattr(getattr(config, "model", None), "pad_token_id", pad_token_id))
 
-        train_ds = ESNLI_MemmapDataset(
+        train_ds = ESNLI_ShardedLazyDataset(
             cache_root=cache_root,
             split="train",
             shard_index=shard_index,
@@ -818,7 +796,7 @@ class ESNLI_MemmapDataloader:
             max_items=max_items,
             deep_dim=deep_dim,
         )
-        val_ds = ESNLI_MemmapDataset(
+        val_ds = ESNLI_ShardedLazyDataset(
             cache_root=cache_root,
             split="validation",
             shard_index=shard_index,
@@ -826,7 +804,7 @@ class ESNLI_MemmapDataloader:
             max_items=max_items,
             deep_dim=deep_dim,
         )
-        test_ds = ESNLI_MemmapDataset(
+        test_ds = ESNLI_ShardedLazyDataset(
             cache_root=cache_root,
             split="test",
             shard_index=shard_index,

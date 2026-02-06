@@ -5809,11 +5809,9 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
         print(new_positions)
         print(position_ids)
 
-        test_embeds = torch.zeros_like(input_embeds)
-
         out = self.backbone.model.language_model(
             input_ids=None,
-            position_ids = position_ids,
+            position_ids = input_embeds,
             inputs_embeds=test_embeds,
             attention_mask=attention_mask,
             # visual_pos_masks=image_mask,

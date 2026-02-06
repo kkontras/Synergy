@@ -5800,7 +5800,7 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
         mask_to_null = attention_mask.bool() & image_mask.bool()
         mask_3d = mask_to_null.unsqueeze(-1)
         input_embeds = torch.where(mask_3d, torch.tensor(1e-5, device=device, dtype=input_embeds.dtype), input_embeds)
-        # attention_mask = (attention_mask.bool() & ~image_mask.bool()).to(input_embeds.dtype)
+        attention_mask = (attention_mask.bool() & ~image_mask.bool()).to(input_embeds.dtype)
 
         is_text = (position_ids > 0) & (~image_mask.bool())
         new_pos = torch.cumsum(is_text.long(), dim=-1) - 1

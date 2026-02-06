@@ -6739,8 +6739,8 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             m1t, m2t = self.synib._random_masks(m1, m2, True, True, **kwargs)
         elif self.args.get("perturb", {}).get("type", "rand") == "learned":
             m1t, m2t = self.synib._learned_masks(m1, m2, True, True, proc={"input_ids":input_ids, "position_ids":position_ids, "input_embeds":input_embeds, "image_mask":image_mask, "deep_stack_viz":deep_stack_viz, "attention_mask":attention_mask}, **kwargs)
-            m1t = 1-m1t
-            m2t = 1-m2t
+            m1t = 1-m1t.float()
+            m2t = 1-m2t.float()
         else:
             raise ValueError(f"Unknown perturb.type: {self.args.get('perturb', {})}")
 

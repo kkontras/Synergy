@@ -5806,6 +5806,9 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
         new_positions = torch.cumsum(keep, dim=-1) - 1
         new_positions = new_positions.masked_fill(~keep, 0)
 
+        print(new_positions)
+        print(position_ids)
+
         test_embeds = torch.zeros_like(input_embeds)
 
         out = self.backbone.model.language_model(

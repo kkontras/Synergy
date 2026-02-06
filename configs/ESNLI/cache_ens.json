@@ -116,7 +116,7 @@
         },
         "load_ongoing": false,
         "save_dir": "SynIBCache_LoRa_{}.pth.tar",
-        "encoders": [ 
+        "encoders": [
           {
             "model": "LinearHead_Qwen",
             "args": {

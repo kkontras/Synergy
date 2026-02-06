@@ -5801,14 +5801,11 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
         keep = ~image_mask
 
         attention_mask = attention_mask * keep.to(attention_mask.dtype)
-        # input_embeds[~attention_mask] = 0.0
+        input_embeds[~attention_mask] = 1e-5
 
         is_text = (position_ids > 0) & (~image_mask.bool())
         new_pos = torch.cumsum(is_text.long(), dim=-1) - 1
         new_pos = torch.where(is_text, new_pos, torch.zeros_like(new_pos))
-
-        print(new_pos[0][0])
-        print(position_ids[0][0])
 
         out = self.backbone.model.language_model(
             input_ids=None,

@@ -5691,9 +5691,6 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
             return_dict_in_generate=False,
         )
 
-        print("input_ids:", input_ids.shape)
-        print("gen_ids:", gen_ids.shape)
-        print("new tokens:", gen_ids.shape[1] - input_ids.shape[1])
         prompt_len = input_ids.shape[1]
         new_token_ids = gen_ids[:, prompt_len:]
 
@@ -5809,8 +5806,8 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
             position_ids = position_ids,
             inputs_embeds=input_embeds,
             attention_mask=attention_mask,
-            visual_pos_masks=image_mask,
-            deepstack_visual_embeds=deep_stack_viz,
+            # visual_pos_masks=image_mask,
+            # deepstack_visual_embeds=deep_stack_viz,
             output_hidden_states=True,
             return_dict=True,
             cache_position = None,

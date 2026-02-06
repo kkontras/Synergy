@@ -5802,6 +5802,8 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
 
         attention_mask = attention_mask * keep.to(attention_mask.dtype)
         input_embeds[~attention_mask] = 1e-5
+        attention_mask = attention_mask.to(input_embeds.dtype)
+        attention_mask = attention_mask.to(input_embeds.device)
 
         is_text = (position_ids > 0) & (~image_mask.bool())
         new_pos = torch.cumsum(is_text.long(), dim=-1) - 1

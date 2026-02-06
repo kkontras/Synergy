@@ -5797,11 +5797,10 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
         # call it right before language_model(...)
         # print_lm_input_stats(position_ids, input_embeds, attention_mask, image_mask, deep_stack_viz)
 
-        mask_to_null = attention_mask & image_mask
-        # input_embeds[mask_to_null] = 1e-5
-        # attention_mask = (attention_mask & ~image_mask).to(input_embeds.dtype)
+        mask_to_null = attention_mask.bool() & image_mask.bool()
         mask_3d = mask_to_null.unsqueeze(-1)
         input_embeds = torch.where(mask_3d, torch.tensor(1e-5, device=device, dtype=input_embeds.dtype), input_embeds)
+        # attention_mask = (attention_mask.bool() & ~image_mask.bool()).to(input_embeds.dtype)
 
         is_text = (position_ids > 0) & (~image_mask.bool())
         new_pos = torch.cumsum(is_text.long(), dim=-1) - 1

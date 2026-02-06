@@ -5806,10 +5806,12 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
         new_positions = torch.cumsum(keep, dim=-1) - 1
         new_positions = new_positions.masked_fill(~keep, 0)
 
+        test_embeds = torch.zeros_like(input_embeds)
+
         out = self.backbone.model.language_model(
             input_ids=None,
-            position_ids = new_positions,
-            inputs_embeds=input_embeds,
+            position_ids = position_ids,
+            inputs_embeds=test_embeds,
             attention_mask=attention_mask,
             # visual_pos_masks=image_mask,
             # deepstack_visual_embeds=deep_stack_viz,

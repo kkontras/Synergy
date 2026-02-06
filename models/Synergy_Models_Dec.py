@@ -5799,7 +5799,10 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
 
         image_mask = image_mask.to(device).bool()
         keep = ~image_mask
+        print("---")
+        print(attention_mask.sum())
         attention_mask = attention_mask * keep.to(attention_mask.dtype)
+        print(attention_mask.sum())
 
         out = self.backbone.model.language_model(
             input_ids=None,

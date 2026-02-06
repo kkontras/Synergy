@@ -68,7 +68,7 @@
             },
             "pretrainedEncoder": {
               "use": true,
-              "dir": "Qwen3VL2B_LHead_fold0.pth.tar"
+              "dir": "Qwen3VL2B_LHead_fold0.pth.tar" 
             }
           }
         ],
@@ -78,7 +78,7 @@
             }
       },
       {
-        "model_name": "Qwen/Qwen3-VL-2B-Instruct", 
+        "model_name": "Qwen/Qwen3-VL-2B-Instruct",
         "model": "QwenVL_ScienceQA_Cached",
         "args": {
           "d_model": 512,

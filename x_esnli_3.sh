@@ -27,8 +27,8 @@ ulimit -v 400000000; CUDA_VISIBLE_DEVICES=0 python show.py  --config ./configs/E
 ulimit -v 400000000; CUDA_VISIBLE_DEVICES=1 python show.py  --config ./configs/ESNLI/cache_image_lora.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 ulimit -v 400000000; CUDA_VISIBLE_DEVICES=2 python show.py  --config ./configs/ESNLI/cache_text_lora.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 
-ulimit -v 400000000; CUDA_VISIBLE_DEVICES=1 python show.py  --config ./configs/ESNLI/cache_zero_image.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
-ulimit -v 400000000; CUDA_VISIBLE_DEVICES=4 python show.py  --config ./configs/ESNLI/cache_zero_text.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
+ulimit -v 400000000; CUDA_VISIBLE_DEVICES=1 python train.py  --config ./configs/ESNLI/cache_zero_image.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
+ulimit -v 400000000; CUDA_VISIBLE_DEVICES=4 python train.py  --config ./configs/ESNLI/cache_zero_text.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 
 
 CUDA_VISIBLE_DEVICES=0 python train.py  --config ./configs/ESNLI/cache_synib_lora.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --l 1.0 --perturb rand --perturb_pmin 0.5

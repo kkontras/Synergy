@@ -5805,8 +5805,11 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
         print(attention_mask.sum())
         print(input_embeds.shape)
         print(attention_mask.shape)
+        print(keep.shape)
         null_embeds = torch.zeros_like(input_embeds)
-        input_embeds[~attention_mask] = null_embeds
+        rev_att = ~attention_mask
+        for i in range(len(rev_att)):
+            input_embeds[i, rev_att[i],:] = null_embeds[i, rev_att[i],:]
 
         out = self.backbone.model.language_model(
             input_ids=None,

@@ -2371,7 +2371,7 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
         image_list = [img for img in images]
 
         proc = self.processor(
-            text=prompts_with_image,
+            text=prompts,
             images=image_list,
             padding=True,
             truncation=True,

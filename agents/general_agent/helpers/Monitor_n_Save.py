@@ -255,8 +255,8 @@ class Monitor_n_Save():
             #     for i, v in val_metrics["top5_acc"].items(): message += Fore.LIGHTBLUE_EX + "Top5_Acc_{}: {:.2f} ".format(i, v * 100)
             # if "acc_exzero" in val_metrics:
             #     for i, v in val_metrics["acc_exzero"].items(): message += Fore.LIGHTBLUE_EX + "Acc_ExZ_{}: {:.2f} ".format(i, v * 100)
-            # if "f1" in val_metrics:
-            #     for i, v in val_metrics["f1"].items(): message += Fore.LIGHTGREEN_EX + "F1_{}: {:.2f} ".format(i,v*100)
+            if "f1" in val_metrics:
+                for i, v in val_metrics["f1"].items(): message += Fore.LIGHTGREEN_EX + "F1_{}: {:.2f} ".format(i,v*100)
             # if "k" in val_metrics:
             #     for i, v in val_metrics["k"].items(): message += Fore.LIGHTGREEN_EX + "K_{}: {:.4f} ".format(i,v)
             # if "acc_7" in val_metrics:

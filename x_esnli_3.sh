@@ -30,6 +30,10 @@ CUDA_VISIBLE_DEVICES=4 python train.py  --config ./configs/ESNLI/cache_text_lora
 CUDA_VISIBLE_DEVICES=1 python train.py  --config ./configs/ESNLI/cache_zero_image.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 CUDA_VISIBLE_DEVICES=4 python train.py  --config ./configs/ESNLI/cache_zero_text.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8
 
+CUDA_VISIBLE_DEVICES=3 python train.py  --config ./configs/ESNLI/cache_image_lora.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 16
+
+CUDA_VISIBLE_DEVICES=3 python train.py  --config ./configs/ESNLI/image_lora.json  --default_config ./configs/ESNLI/default_config_esnli_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 16
+
 
 CUDA_VISIBLE_DEVICES=0 python train.py  --config ./configs/ESNLI/cache_synib_lora.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --l 1.0 --perturb rand --perturb_pmin 0.5
 CUDA_VISIBLE_DEVICES=2 python train.py  --config ./configs/ESNLI/cache_synib_lora.json  --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.01 --batch_size 8 --l 0.1 --perturb rand --perturb_pmin 0.5

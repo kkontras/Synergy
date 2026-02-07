@@ -300,8 +300,8 @@ class ESNLI_VE_ClassificationDataset(Dataset):
         self.logger.info(f" split={split} kept {len(self.keep_indices)} / {len(self.ds)}")
 
     def __len__(self):
-        # return len(self.keep_indices)
-        return 8
+        return len(self.keep_indices)
+        # return 8
 
     def __getitem__(self, idx: int):
         real_idx = self.keep_indices[idx]

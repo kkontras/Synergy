@@ -2050,11 +2050,13 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
         HF_CACHE = getattr(self.args, "save_base_dir", None)
 
+
         # -----------------------------
         # Processor / Tokenizer
         # -----------------------------
         self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=HF_CACHE)
         tok = self.processor.tokenizer
+        self.tok=tok
         tok.padding_side = "left"
         if tok.pad_token is None:
             tok.pad_token = tok.eos_token
@@ -2237,7 +2239,6 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
 
     def build_full_prompt(
             self,
-            processor,
             hint_text: str
     ) -> str:
         """
@@ -2257,7 +2258,7 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
             for t in texts
         ]
         prompts = [
-            processor.apply_chat_template(m, tokenize=False, add_generation_prompt=True)
+            self.tok.apply_chat_template(m, tokenize=False, add_generation_prompt=True)
             for m in messages_batch
         ]
         return prompts

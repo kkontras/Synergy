@@ -2311,17 +2311,9 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
     ):
         qa_texts = x[1]
         images = x[2]
-        choices_list = x[3] if len(x) > 3 else kwargs.get("choices", None)
-        letters_list = x[4] if len(x) > 4 else kwargs.get("letters", None)
-
-        if choices_list is None:
-            raise ValueError("choices_list (x[3] or kwargs['choices']) is required for MC setup.")
-        if letters_list is None:
-            raise ValueError("letters_list (x[4] or kwargs['letters']) is required for zero-shot parsing.")
-
         device = images.device
 
-        prompts = self._build_prompts_with_choices(qa_texts, letters_list)
+        prompts = self._build_prompts_with_choices(qa_texts)
         prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
         image_list = [img for img in images]
 

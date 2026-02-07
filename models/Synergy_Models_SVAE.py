@@ -2931,7 +2931,7 @@ class FeatureStatsMasker(nn.Module):
         mu = mu.view(*shape)
         std = (var.sqrt() * float(noise_scale)).view(*shape)
         return mu + torch.randn_like(z) * std
-class SynIB_RandomMask(nn.Module):
+class SynIB(nn.Module):
     """
     Same interface as SynIB, but uses pretrained VAEs as skew samplers.
     IMPORTANT: VAEs are used under torch.no_grad(); no VAE losses are returned.
@@ -3488,7 +3488,7 @@ class FusionIBModel_Mask(nn.Module):
             self.enc_5 = MLPHead(args)
 
 
-        self.synib = SynIB_RandomMask(args, [], main=self)
+        self.synib = SynIB(args, [], main=self)
 
     # -------------------------
     # original interfaces kept

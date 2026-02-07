@@ -2191,23 +2191,76 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
 
         self.backbone = get_peft_model(self.backbone, lora_cfg)
 
-    def _build_prompts_with_choices(self, qa_texts, letters_list):
+    def _build_prompts_with_choices(self, hint_texts):
         prompts = []
-        for qa, letters in zip(qa_texts, letters_list):
+
+        instr_text = """
+        You are given an image and a hypothesis about the image.
+        Decide whether the hypothesis is supported by the image.
+
+        Choose EXACTLY ONE label: entailment, neutral, or contradiction.
+
+        Definitions:
+        - entailment:
+          The hypothesis is clearly true given what is visible in the image.
+
+        - contradiction:
+          The hypothesis is clearly false given the image.
+          This includes cases where the hypothesis describes an action, state, or situation
+          that is incompatible with what is visible in the image.
+
+        - neutral:
+          The image does not provide enough information to decide.
+          The hypothesis could be true or false, and nothing visible contradicts it.
+
+        Important rules:
+        - "The image does not show the hypothesis" is NOT enough to choose neutral.
+        - If the hypothesis claims something that is NOT happening in the image
+          (e.g., walking vs sitting, outdoors vs clearly indoors), choose contradiction.
+        - Use neutral ONLY when the image neither supports NOR contradicts the hypothesis.
+
+        Answer format:
+        Label: one word only (entailment / neutral / contradiction)
+        Explanation: free text
+        """
+
+        for hint in hint_texts:
             parts = []
-            if qa is not None and qa.strip():
-                parts.append(qa.strip())
-
-            if letters:
-                letters_str = ", ".join(f"({L})" for L in letters)
-                parts.append(f"Answer one of: {letters_str} and an explanation.")
-
-            # Put CLS token at the END so it can attend to all previous tokens (causal LM)
+            if hint is not None and hint.strip():
+                parts.append("Hypothesis:{}".format(hint.strip()))
+            parts.append("\n")
+            parts.append(instr_text)
+            parts.append("\n")
             parts.append("<CLS>")
-
             prompts.append("\n\n".join(parts))
         return prompts
 
+    def build_full_prompt(
+            self,
+            processor,
+            hint_text: str
+    ) -> str:
+        """
+        Mirrors your model logic:
+          parts = [hint?, qa?, instr?, "<CLS>"]
+          prompts = "\n\n".join(parts)
+          prompts_with_image = image_token_str + "\n" + prompts
+        Where qa is question + "\n\n" + choices (if both exist).
+        """
+        texts = self._build_prompts_with_choices(hint_text)
+
+        messages_batch = [
+            [{"role": "user", "content": [
+                {"type": "image"},
+                {"type": "text", "text": t},
+            ]}]
+            for t in texts
+        ]
+        prompts = [
+            processor.apply_chat_template(m, tokenize=False, add_generation_prompt=True)
+            for m in messages_batch
+        ]
+        return prompts
     # ============================================================
     #  Encoding / readout
     # ============================================================
@@ -2309,12 +2362,12 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
         text_token_mask=None,   # unused here (CLS readout); keep for compatibility
         **kwargs,
     ):
-        qa_texts = x[1]
-        images = x[2]
+        qa_texts = x[0]
+        images = x[1]
         device = images.device
 
-        prompts = self._build_prompts_with_choices(qa_texts)
-        prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
+        prompts = self.build_full_prompt(qa_texts)
+        # prompts_with_image = [self.image_token_str + "\n" + p for p in prompts]
         image_list = [img for img in images]
 
         proc = self.processor(
@@ -2352,15 +2405,9 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
         if return_features:
             features["hidden"] = hidden
 
-        # If you want zero-shot text parsing at eval:
-        if (not self.training) and getattr(self.args, "do_zeroshot_parse", False):
-            raw_text_answers, mc_from_text = self._generate_raw_answers(
-                proc, input_ids, letters_list=letters_list
-            )
-            preds["raw_text"] = raw_text_answers
-            preds["mc_from_text"] = mc_from_text
-
         return {"preds": preds, "features": features, "losses": losses}
+
+
 class QwenVL_ScienceQA_Unimodal_Image(nn.Module):
     """
     Multimodal (image+text) ScienceQA as 5-way classification.

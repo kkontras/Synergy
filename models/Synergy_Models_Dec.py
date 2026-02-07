@@ -6190,8 +6190,6 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
         new_pos = torch.cumsum(is_text.long(), dim=-1) - 1
         new_pos = torch.where(is_text, new_pos, torch.zeros_like(new_pos))
 
-
-
         out = self.backbone.model.language_model(
             input_ids=None,
             position_ids = new_pos,

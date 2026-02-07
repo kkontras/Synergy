@@ -6,10 +6,10 @@
     "test_batch_size": 4
   },
   "early_stopping": {
-    "end_of_epoch_check": true,
+    "end_of_epoch_check": false,
     "n_steps_stop": 20,
     "save_every_valstep": 10,
-    "validate_every": 25
+    "validate_every": 400
   },
   "optimizer": {
     "type": "Adaw",

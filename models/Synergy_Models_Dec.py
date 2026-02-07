@@ -6194,7 +6194,7 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
 
         out = self.backbone.model.language_model(
             input_ids=None,
-            position_ids = position_ids,
+            position_ids = new_pos,
             inputs_embeds=input_embeds,
             attention_mask=attention_mask,
             visual_pos_masks=image_mask,

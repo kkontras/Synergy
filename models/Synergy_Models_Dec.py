@@ -6180,8 +6180,16 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
         # print_lm_input_stats(position_ids, input_embeds, attention_mask, image_mask, deep_stack_viz)
         hint_mask = proc["hint_mask"]
         hint_mask = hint_mask.to(device).bool()
-        keep = (~hint_mask)
-        attention_mask = attention_mask * keep.to(attention_mask.dtype)
+
+        mask_to_null = attention_mask.bool() & hint_mask.bool()
+        mask_3d = mask_to_null.unsqueeze(-1)
+        input_embeds = torch.where(mask_3d, torch.tensor(1e-5, device=device, dtype=input_embeds.dtype), input_embeds)
+        attention_mask = (attention_mask.bool() & ~hint_mask.bool()).to(input_embeds.dtype)
+
+        is_text = (position_ids > 0) & (~hint_mask.bool())
+        new_pos = torch.cumsum(is_text.long(), dim=-1) - 1
+        new_pos = torch.where(is_text, new_pos, torch.zeros_like(new_pos))
+
 
 
         out = self.backbone.model.language_model(

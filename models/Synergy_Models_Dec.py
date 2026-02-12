@@ -2226,7 +2226,7 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
         Explanation: free text
         """
 
-        for i in range(len(B)):
+        for i in range(B):
             parts = []
             parts.append(instr_text)
             parts.append("\n")

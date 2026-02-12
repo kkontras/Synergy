@@ -2193,7 +2193,7 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
 
         self.backbone = get_peft_model(self.backbone, lora_cfg)
 
-    def _build_prompts_with_choices(self, hint_texts):
+    def _build_prompts_with_choices(self, B):
         prompts = []
 
         instr_text = """
@@ -2226,11 +2226,8 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
         Explanation: free text
         """
 
-        for hint in hint_texts:
+        for i in range(len(B)):
             parts = []
-            if hint is not None and hint.strip():
-                parts.append("Hypothesis:{}".format(hint.strip()))
-            parts.append("\n")
             parts.append(instr_text)
             parts.append("\n")
             parts.append("<CLS>")
@@ -2248,7 +2245,7 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
           prompts_with_image = image_token_str + "\n" + prompts
         Where qa is question + "\n\n" + choices (if both exist).
         """
-        texts = self._build_prompts_with_choices(hint_text)
+        texts = self._build_prompts_with_choices(B=len(hint_text))
 
         messages_batch = [
             [{"role": "user", "content": [
@@ -7615,7 +7612,6 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
             out["generated_text"] = gen_texts
 
         return out
-
 class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
@@ -7993,9 +7989,6 @@ class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
         features = {"combined": h_cls, "c": h_cls_text, "g": h_cls_image}
 
         return {"preds": {"combined": logits,"c": logits_text,"g": logits_image}, "features":  features, "losses": losses}
-
-
-
 class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()

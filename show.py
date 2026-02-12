@@ -8,6 +8,8 @@ import argparse
 import logging
 from posthoc.Helpers.Helper_Importer import Importer
 import numpy as np
+import torch
+
 
 def print_search(config_path, default_config_path, args):
     setup_logger()
@@ -225,7 +227,7 @@ def print_mean(m: dict, val=True):
                 if metric not in agg:
                     agg[metric] = defaultdict(list)
                 if metric == "f1_perclass":
-                    continue
+                    agg[metric][pred].append(m[fold][metric][pred])
                 for pred in m[fold][metric]:
                     # if pred == "combined":
                         agg[metric][pred].append(m[fold][metric][pred])
@@ -285,13 +287,26 @@ def print_mean(m: dict, val=True):
             for each_ceu in agg[metric][pred][0]:
                 mean_value = np.concatenate([np.array([i[each_ceu]]) for i in agg[metric][pred]]).mean()
                 message += Fore.LIGHTBLUE_EX + "{}_{}: {:.2f} ".format(metric, each_ceu, mean_value)
+        elif "f1_perclass" == metric:
+            mean_f1_irony_combined = torch.cat([i.unsqueeze(dim=0) for i in agg["f1_perclass"]["combined"]], dim=0).mean(dim=0)
+            std_f1_irony_combined = torch.cat([i.unsqueeze(dim=0) for i in agg["f1_perclass"]["combined"]], dim=0).std(dim=0)
+            message += Fore.LIGHTBLUE_EX + "{} ".format(metric)
+            for i in range(len(mean_f1_irony_combined)):
+                message += "{:.2f} ".format(mean_f1_irony_combined[i])
+
+
+
 
     if args.printing is True:
         print(message)
 
     mean_acc_combined = np.mean(agg["f1"]["combined"])
     std_acc_combined = np.std(agg["f1"]["combined"])
-    return mean_acc_combined, std_acc_combined
+
+    mean_f1_irony_combined = mean_f1_irony_combined[-1]
+    std_f1_irony_combined = std_f1_irony_combined[-1]
+
+    return mean_acc_combined, std_acc_combined, mean_f1_irony_combined.item(), std_f1_irony_combined.item()
 
 
 if __name__ == "__main__":
@@ -390,10 +405,10 @@ if __name__ == "__main__":
             test[i] = test_metric
 
     try:
-        mean_val, std_val = print_mean(val, val=True)
-        mean_test, std_test = print_mean(test, val=False)
+        mean_val, std_val, f1_irony_mean_val, f1_irony_std_val  = print_mean(val, val=True)
+        mean_test, std_test, f1_irony_mean_test, f1_irony_std_test  = print_mean(test, val=False)
         # print(round(mean_val*100,1), round(std_val*100,1), round(mean_test*100,1), round(std_test*100,1))
-        print(round(mean_test*100,1), round(std_test*100,1), "--")
+        print(round(f1_irony_mean_test*100,1), round(f1_irony_std_test*100,1), "--", round(mean_test*100,1), round(std_test*100,1), "--")
         import sys
         sys.exit(mean_test, std_test)
     except:

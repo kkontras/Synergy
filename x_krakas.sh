@@ -181,7 +181,7 @@ python train.py --config ./configs/AVE/synergy/synprom_RMask.json --default_conf
 scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/ScienceQA kkontras@mib.media.mit.edu:/scratch/kkontras/data
 scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Qwen3VL_LHead_fold0.pth.tar kkontras@mib.media.mit.edu:/scratch/kkontras/checkpoints/synergy/ScienceQA/
 scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_LoRaFT_fold0_lr0.0001_wd0.01.pth.tar kkontras@mib.media.mit.edu:/scratch/kkontras/checkpoints/synergy/ScienceQA/
-scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_IBInput2_fold0_lr0.0001_wd0.0001_cls_embedding.pt kkontras@mib.media.mit.edu:/scratch/kkontras/checkpoints/synergy/ScienceQA/
+scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Synprom_IBInput2_fold0_lr0.0001_wd0.0001_cls_embedding.pt kkontras@mib.media.mit.edu:/scratch/kkontras/checkpoints/synergy/ScienceQA/v2
 
 
 scp -r /esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ScienceQA/Qwen3VL_LHead_fold0.pth.tar vsc35057@login-genius.hpc.kuleuven.be:/scratch/leuven/350/vsc35057/models/Synergy/ScienceQA/

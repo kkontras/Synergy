@@ -7,9 +7,8 @@ from utils.schedulers.warmup_scheduler import WarmupScheduler
 import wandb
 import torch._dynamo
 import os
-from utils.optim import *
-
-from models import *
+from utils.optim import NormalizedAdamW
+import models
 
 import logging
 
@@ -19,7 +18,10 @@ TORCH_LOGS = "+dynamo"
 torch._dynamo.config.cache_size_limit = 64
 torch._dynamo.config.suppress_errors = True
 torch._dynamo.config.verbose=False
-torch._logging.set_logs(graph_breaks=True)
+try:
+    torch._logging.set_logs(graph_breaks=True)
+except Exception:
+    pass
 
 logger = logging.getLogger('torch._dynamo.symbolic_convert:')
 logger.setLevel(logging.WARNING)
@@ -32,12 +34,43 @@ class Loader():
     def __init__(self, agent):
         self.agent = agent
 
+    @staticmethod
+    def _resolve_model_class(model_name):
+        model_name = str(model_name).strip()
+        model_cls = getattr(models, model_name, None)
+        if model_cls is None:
+            available = sorted(
+                name for name, value in vars(models).items() if isinstance(value, type)
+            )
+            raise KeyError(
+                "Unknown model class '{}'. Available model classes include: {}".format(
+                    model_name, ", ".join(available[:60])
+                )
+            )
+        return model_cls
+
+    def _resolve_checkpoint_path(self, file_path):
+        if not file_path:
+            return file_path
+        if os.path.isabs(file_path):
+            return file_path
+        if "save_base_dir" in self.agent.config.model:
+            return os.path.join(self.agent.config.model.save_base_dir, file_path)
+        return file_path
+
+    @staticmethod
+    def _safe_torch_load(file_path, map_location=None):
+        if not os.path.exists(file_path):
+            raise FileNotFoundError("Checkpoint not found: {}".format(file_path))
+        return torch.load(file_path, map_location=map_location, weights_only=False)
+
     def load_pretrained_models(self):
         if "pretrained_model" in self.agent.config.model:
             if self.agent.config.model.pretrained_model["use"] and not self.agent.config.model.load_ongoing:
-                if self.agent.accelerator.ismainprocess:
+                if self.agent.accelerator.is_main_process:
                     self.agent.logger.info("Loading pretrained model from file {}".format(self.agent.config.model.pretrained_model["dir"]))
-                checkpoint = torch.load(self.agent.config.model.pretrained_model["dir"], weights_only=False)
+                checkpoint_path = self._resolve_checkpoint_path(self.agent.config.model.pretrained_model["dir"])
+                checkpoint = self._safe_torch_load(checkpoint_path, map_location="cpu")
                 self.agent.model.load_state_dict(checkpoint["model_state_dict"])
                 # self.agent.best_model.load_state_dict(checkpoint["best_model_state_dict"])
 
@@ -73,7 +106,7 @@ class Loader():
     def load_models_n_optimizer(self):
 
         enc = self.load_encoder(enc_args=self.agent.config.model.get("encoders", []))
-        model_class = globals()[self.agent.config.model.model_class]
+        model_class = self._resolve_model_class(self.agent.config.model.model_class)
 
         if "save_base_dir" in self.agent.config.model and "swin_backbone" in self.agent.config.model.args:
             self.agent.config.model.args.swin_backbone = os.path.join(self.agent.config.model.save_base_dir, self.agent.config.model.args.swin_backbone)
@@ -304,7 +337,7 @@ class Loader():
     def load_encoder(self, enc_args):
         encs = []
         for num_enc in range(len(enc_args)):
-            enc_class = globals()[enc_args[num_enc]["model"]]
+            enc_class = self._resolve_model_class(enc_args[num_enc]["model"])
             args = enc_args[num_enc]["args"]
 
             if "encoders" in enc_args[num_enc]:
@@ -316,11 +349,9 @@ class Loader():
             pretrained_encoder_args =  enc_args[num_enc].get("pretrainedEncoder", {"use":False})
             if pretrained_encoder_args["use"]:
 
-                file_path = pretrained_encoder_args.get("dir","")
+                file_path = self._resolve_checkpoint_path(pretrained_encoder_args.get("dir",""))
                 val_with = self.agent.config.early_stopping.get("validate_with", "accuracy")
-                if "save_base_dir" in self.agent.config.model:
-                    file_path = os.path.join(self.agent.config.model.save_base_dir, file_path)
-                checkpoint = torch.load(file_path, weights_only=False)
+                checkpoint = self._safe_torch_load(file_path, map_location="cpu")
                 if "encoder_state_dict" in checkpoint:
                     missing_keys, unexpected_keys =  enc.load_state_dict(checkpoint["encoder_state_dict"], strict=False)
                     if missing_keys or unexpected_keys:

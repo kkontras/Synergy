@@ -19,7 +19,7 @@ if [[ ! -x "${PYTHON_BIN}" ]]; then
 fi
 
 GPU="${1:-0}"
-MODE="${2:-show}"   # all | train | show
+MODE="${2:-train}"    # all | train | show
 
 DEFAULT_CONFIG="./configs/FactorCL/URFunny/default_config_ur_funny_VT.json"
 
@@ -52,7 +52,7 @@ for fold in "${FOLDS[@]}"; do
         run_show --config ./configs/FactorCL/URFunny/release/VT/unimodal_video.json --default_config "${DEFAULT_CONFIG}" --fold 0 --lr "${lr}" --wd "${wd}" --validate_with accuracy
       fi
 
-      if do_train; then
+      if do_train; then 
         run_train --config ./configs/FactorCL/URFunny/release/VT/unimodal_text.json --default_config "${DEFAULT_CONFIG}" --fold 0 --lr "${lr}" --wd "${wd}" --validate_with accuracy
       fi
       if do_show && [[ "${fold}" == "0" ]]; then

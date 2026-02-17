@@ -50,7 +50,7 @@
       },
       "synergy_type": "gaussian"
     },
-    "ceu": {"val": "./ave_ceu_val_res.pkl", "test": "./ave_ceu_test_res.pkl"},
+    "ceu": {"val": "./artifacts/root_data/ave_ceu_val_res.pkl", "test": "./artifacts/root_data/ave_ceu_test_res.pkl"},
     "load_ongoing": false,
     "save_dir": "SynIB_RMask_fold{}.pth.tar",
     "save_base_dir": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Rmask/AVE",

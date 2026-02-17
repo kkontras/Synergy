@@ -1,19 +1,58 @@
-cat << 'EOF' > .gitignore
-# =====================
 # Python
-# =====================
 __pycache__/
 *.py[cod]
 *.so
 *.egg-info/
-dist/
+.pytest_cache/
+.mypy_cache/
+
+# Build/package
 build/
+dist/
+*.whl
+
+# IDE/editor
+.idea/
+.vscode/
+
+# Logs/runtime outputs
 wandb/
+lightning_logs/
+condor_logs/
+lm_call_dump/
+debug_viz/
+debug_input_images/
+pid_synthetic_tuning/
+
+# Local experiments/checkpoints/artifacts
+checkpoints/
 experiments/
-symile*
+artifacts/root_data/
+*.ckpt
+*.pth
+*.pth.tar
+*.pt
+
+# Dataset/model caches and local data dumps
 mydatasets/Factor_CL_Datasets/MultiBench/
 mydatasets/CREMAD/ceus/
 mydatasets/Xor/
-mydatasets/ESNLI/hf_cache
-condor_logs/logs
-condor_logs/logs_vsc
+mydatasets/ESNLI/hf_cache/
+
+# Large binary/data files
+*.pkl
+*.jsonl
+*.png
+*.jpg
+*.jpeg
+*.npy
+*.npz
+
+# Keep repo assets/code/docs tracked
+!configs/**/*
+!scripts/**/*
+!docs/**/*
+!env/environment.yml
+!env/old_env.yml
+!env/requirements.txt
+!env/requirement_neurips.txt

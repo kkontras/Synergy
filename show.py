@@ -11,6 +11,12 @@ import numpy as np
 import torch
 
 
+def _to_1d_tensor(x):
+    if isinstance(x, torch.Tensor):
+        return x.detach().flatten().cpu()
+    return torch.as_tensor(x).flatten().cpu()
+
+
 def print_search(config_path, default_config_path, args):
     setup_logger()
 
@@ -188,7 +194,8 @@ def print_search(config_path, default_config_path, args):
         # for i, v in test_metric["ceu"]["combined"].items(): message += Fore.LIGHTGREEN_EX + "T_CEU_{}: {:.2f} ".format(i, v)
 
     if test_metric and "f1_perclass" in test_metric:
-        rounded_v = ["{:.1f}".format(v * 100) for v in test_metric["f1_perclass"]["combined"]]
+        f1_vals = _to_1d_tensor(test_metric["f1_perclass"]["combined"]).tolist()
+        rounded_v = ["{:.1f}".format(v * 100) for v in f1_vals]
         message += Fore.BLUE + "F1_perclass: {} ".format("-".join(rounded_v)) + Fore.RESET
 
     # if "top5_acc" in val_metrics:
@@ -288,8 +295,9 @@ def print_mean(m: dict, val=True):
                 mean_value = np.concatenate([np.array([i[each_ceu]]) for i in agg[metric][pred]]).mean()
                 message += Fore.LIGHTBLUE_EX + "{}_{}: {:.2f} ".format(metric, each_ceu, mean_value)
         elif "f1_perclass" == metric:
-            mean_f1_irony_combined = torch.cat([i.unsqueeze(dim=0) for i in agg["f1_perclass"]["combined"]], dim=0).mean(dim=0)
-            std_f1_irony_combined = torch.cat([i.unsqueeze(dim=0) for i in agg["f1_perclass"]["combined"]], dim=0).std(dim=0)
+            f1_perclass_vals = [_to_1d_tensor(i).unsqueeze(dim=0) for i in agg["f1_perclass"]["combined"]]
+            mean_f1_irony_combined = torch.cat(f1_perclass_vals, dim=0).mean(dim=0)
+            std_f1_irony_combined = torch.cat(f1_perclass_vals, dim=0).std(dim=0)
             message += Fore.LIGHTBLUE_EX + "{} ".format(metric)
             for i in range(len(mean_f1_irony_combined)):
                 message += "{:.2f} ".format(mean_f1_irony_combined[i])
@@ -303,8 +311,8 @@ def print_mean(m: dict, val=True):
     mean_acc_combined = np.mean(agg["f1"]["combined"])
     std_acc_combined = np.std(agg["f1"]["combined"])
 
-    mean_f1_irony_combined = mean_f1_irony_combined[-1]
-    std_f1_irony_combined = std_f1_irony_combined[-1]
+    mean_f1_irony_combined = _to_1d_tensor(mean_f1_irony_combined)[-1]
+    std_f1_irony_combined = _to_1d_tensor(std_f1_irony_combined)[-1]
 
     return mean_acc_combined, std_acc_combined, mean_f1_irony_combined.item(), std_f1_irony_combined.item()
 

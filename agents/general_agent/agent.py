@@ -1,5 +1,6 @@
 import warnings
 import os
+import mydatasets
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning, module="pkg_resources")
@@ -23,6 +24,27 @@ import logging
 from accelerate import Accelerator, DistributedDataParallelKwargs
 
 class Agent():
+    @staticmethod
+    def _resolve_dataloader_class(dataloader_name):
+        # Be permissive with config strings that may include accidental whitespace.
+        dataloader_name = str(dataloader_name).strip()
+
+        dataloader_cls = globals().get(dataloader_name, None)
+        if dataloader_cls is None:
+            dataloader_cls = getattr(mydatasets, dataloader_name, None)
+
+        if dataloader_cls is None:
+            available = sorted(
+                name for name, value in vars(mydatasets).items() if isinstance(value, type)
+            )
+            raise KeyError(
+                "Unknown dataloader class '{}'. Available dataloaders include: {}".format(
+                    dataloader_name, ", ".join(available[:40])
+                )
+            )
+
+        return dataloader_cls
+
     def __init__(self, config):
         self.config = config
 
@@ -35,7 +57,7 @@ class Agent():
 
         if self.accelerator.is_main_process: print_cuda_statistics()
 
-        dataloader = globals()[self.config.dataset.dataloader_class]
+        dataloader = self._resolve_dataloader_class(self.config.dataset.dataloader_class)
         self.data_loader = dataloader(config=config)
 
         self.initialize_logs()

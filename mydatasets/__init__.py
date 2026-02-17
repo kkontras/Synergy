@@ -17,3 +17,4 @@ from .ScienceQA.ScienceQA_CB_mem import *
 from .ESNLI.ESNLI_CB import *
 # from .ESNLI.ESNLI_CB_MEM import *
 from .ESNLI.ESNLIDataset import *
+from .Factor_CL_Datasets.FactorCL_Datasets import *

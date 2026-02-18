@@ -13,7 +13,7 @@ from sklearn.metrics import ConfusionMatrixDisplay
 from posthoc.Helpers.Helper_Importer import Importer
 from posthoc.Helpers.Helper_Validator import Validator
 
-from utils.deterministic_pytorch import deterministic
+from utils.system.deterministic import deterministic
 device = "cuda:0"
 def main(config_path, default_config_path, args):
 

@@ -1,5 +1,5 @@
 from colorama import Fore
-from utils.config import process_config, setup_logger, process_config_default
+from utils.configuration.config import process_config, setup_logger, process_config_default
 from agents.general_agent import *
 
 # xrandr --output DP-4 --scale 0.8x0.8

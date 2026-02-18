@@ -1,8 +1,8 @@
 import torch
 from tqdm import tqdm
 from collections import defaultdict
-from utils.flattendict import flatten_loss_dict
-from utils.to_device import to_device, to_float
+from utils.data.flattendict import flatten_loss_dict
+from utils.data.to_device import to_device, to_float
 
 class Validator_Tester():
     def __init__(self, agent):

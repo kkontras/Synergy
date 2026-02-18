@@ -1,4 +1,4 @@
-from utils.config import process_config, process_config_default
+from utils.configuration.config import process_config, process_config_default
 from colorama import Fore, Style
 
 

@@ -3,7 +3,7 @@ import sys
 import json
 import numpy as np
 import pickle
-from utils.deterministic_pytorch import deterministic
+from utils.system.deterministic import deterministic
 
 # If your project relies on relative imports, you may need to set the working directory.
 # The original script did:

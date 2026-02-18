@@ -6,7 +6,7 @@ _REPO_ROOT = os.path.abspath(os.path.join(_THIS_DIR, "..", ".."))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
-from utils.config import process_config, setup_logger, process_config_default
+from utils.configuration.config import process_config, setup_logger, process_config_default
 from agents.general_agent import *
 
 # xrandr --output DP-4 --scale 0.8x0.8

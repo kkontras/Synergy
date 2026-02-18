@@ -22,7 +22,7 @@ from scipy.spatial import procrustes
 # -------------------------------------------------------
 # Project imports
 # -------------------------------------------------------
-from utils.config import setup_logger
+from utils.configuration.config import setup_logger
 from posthoc.Helpers.Helper_Importer import Importer
 from posthoc.Helpers.Helper_Validator import Validator
 

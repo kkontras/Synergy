@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 import argparse
-from utils.deterministic_pytorch import deterministic
+from utils.system.deterministic import deterministic
 
 # class NoisyBinaryXORDataset(Dataset):
 #

@@ -7,7 +7,7 @@ if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
 from colorama import Fore
-from utils.config import setup_logger
+from utils.configuration.config import setup_logger
 from posthoc.Helpers.Helper_Importer import Importer
 import numpy as np
 import argparse

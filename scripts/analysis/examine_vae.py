@@ -1,4 +1,4 @@
-from utils.config import setup_logger
+from utils.configuration.config import setup_logger
 from posthoc.Helpers.Helper_Importer import Importer
 import argparse
 import numpy as np

@@ -84,7 +84,7 @@ def _import_project_symbols():
     Import project-specific utilities lazily so the script can be copied around.
     Edit these imports if your project uses different module paths.
     """
-    from utils.config import setup_logger  # type: ignore
+    from utils.configuration.config import setup_logger  # type: ignore
     from posthoc.Helpers.Helper_Validator import Validator      # type: ignore
     from posthoc.Helpers.Helper_Importer import Importer      # type: ignore
     return setup_logger, Importer, Validator

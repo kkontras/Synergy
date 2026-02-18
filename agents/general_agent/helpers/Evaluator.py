@@ -9,7 +9,7 @@ import pickle
 import torch.nn.functional as F
 from typing import Dict, List, Optional, Any
 
-from utils.corr_metrics import (
+from utils.metrics.corr_metrics import (
     compare_feature_spaces,
     print_feature_comparisons,
     tsne_plot

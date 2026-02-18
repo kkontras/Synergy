@@ -7,7 +7,7 @@ from utils.schedulers.warmup_scheduler import WarmupScheduler
 import wandb
 import torch._dynamo
 import os
-from utils.optim import NormalizedAdamW
+from utils.optimization.normalized_adamw import NormalizedAdamW
 import models
 
 import logging

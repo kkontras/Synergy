@@ -8,8 +8,8 @@ import copy
 import math
 import wandb
 from pytorch_metric_learning.losses import NTXentLoss
-from utils.MinNormSolver import MinNormSolver
-from utils.GS_Plugin import GSPlugin
+from utils.optimization.min_norm_solver import MinNormSolver
+from utils.optimization.gs_plugin import GSPlugin
 from tqdm import tqdm
 from sklearn import preprocessing
 from sklearn.cluster import KMeans

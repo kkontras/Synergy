@@ -19,7 +19,7 @@ if [[ ! -x "${PYTHON_BIN}" ]]; then
 fi
 
 GPU="${1:-0}"
-MODE="${2:-train}"    # all | train | show
+MODE="${2:-train}"    # all | train | show | ceu
 
 DEFAULT_CONFIG="./configs/FactorCL/URFunny/default_config_ur_funny_VT.json"
 
@@ -38,8 +38,13 @@ run_show() {
   CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/show.py "$@"
 }
 
+run_ceu() {
+  CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/get_ceu_cli.py "$@"
+}
+
 do_train() { [[ "${MODE}" == "all" || "${MODE}" == "train" ]]; }
 do_show()  { [[ "${MODE}" == "all" || "${MODE}" == "show"  ]]; }
+do_ceu()   { [[ "${MODE}" == "all" || "${MODE}" == "ceu"   ]]; }
 
 # Baselines (unimodal)
 for fold in "${FOLDS[@]}"; do
@@ -95,3 +100,18 @@ done
 #    done
 #  done
 #done
+
+#if do_ceu; then
+#  CEU_LR="${CEU_LR:-0.0001}"
+#  CEU_WD="${CEU_WD:-0.0001}"
+#  run_ceu \
+#    --dataset ur_funny \
+#    --default_config "${DEFAULT_CONFIG}" \
+#    --unimodal_configs \
+#      ./configs/FactorCL/URFunny/release/VT/unimodal_video.json \
+#      ./configs/FactorCL/URFunny/release/VT/unimodal_text.json \
+#    --folds 0 1 2 \
+#    --lr "${CEU_LR}" \
+#    --wd "${CEU_WD}" \
+#    --validate_with accuracy
+#fi

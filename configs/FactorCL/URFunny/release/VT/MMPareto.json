@@ -25,6 +25,10 @@
       }
     },
     "load_ongoing": false,
+    "ceu": {
+      "val": "./artifacts/ceus/ur_funny/ur_funny_ceu_val.pkl",
+      "test": "./artifacts/ceus/ur_funny/ur_funny_ceu_test.pkl"
+    },
     "save_dir": "MMPareto_{}.pth.tar",
     "encoders": [
       {

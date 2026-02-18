@@ -12,7 +12,10 @@ from .system.misc import print_cuda_statistics, timeit
 from .data.to_device import to_device, to_float
 from .optimization.gs_plugin import GSPlugin
 from .optimization.min_norm_solver import MinNormSolver
-from .optimization.normalized_adamw import NormalizedAdamW
+try:
+    from .optimization.normalized_adamw import NormalizedAdamW
+except Exception:
+    NormalizedAdamW = None
 
 __all__ = [
     "GSPlugin",

@@ -57,7 +57,7 @@
           }
       }
     },
-    "ceu": {"val": "/home/kkontras/orcd/scratch/checkpoints/Synergy/ScienceQA/scienceqa_ceu_val.pkl", "test": "/home/kkontras/orcd/scratch/checkpoints/Synergy/ScienceQA/scienceqa_ceu_test.pkl"},
+    "ceu": {"val": "./artifacts/ceus/scienceqa/scienceqa_ceu_val.pkl", "test": "./artifacts/ceus/scienceqa/scienceqa_ceu_test.pkl"},
     "load_ongoing": false,
     "save_dir": "Cache_LoRaSynIBFaster_{}.pth.tar",
     "encoders": [

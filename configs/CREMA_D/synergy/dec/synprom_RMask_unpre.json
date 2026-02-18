@@ -51,7 +51,7 @@
       },
       "synergy_type": "gaussian"
     },
-    "ceu": {"val": "./artifacts/root_data/cremad_ceu_val_res.pkl", "test": "./artifacts/root_data/cremad_ceu_test_res.pkl"},
+    "ceu": {"val": "./artifacts/ceus/cremad/cremad_ceu_val_res.pkl", "test": "./artifacts/ceus/cremad/cremad_ceu_test_res.pkl"},
     "load_ongoing": false,
     "save_dir": "SynIB_RMaskUnpre_fold{}.pth.tar",
     "save_base_dir": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/Lmask",

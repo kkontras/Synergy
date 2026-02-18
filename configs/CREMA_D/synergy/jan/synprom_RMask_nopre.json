@@ -51,7 +51,7 @@
       },
       "synergy_type": "gaussian"
     },
-    "ceu": {"val": "./artifacts/root_data/cremadplus_ceu_val_res.pkl", "test": "./artifacts/root_data/cremadplus_ceu_test_res.pkl"},
+    "ceu": {"val": "./artifacts/ceus/cremad/cremadplus_ceu_val_res.pkl", "test": "./artifacts/ceus/cremad/cremadplus_ceu_test_res.pkl"},
     "load_ongoing": false,
     "save_dir": "SynIB_RMask_nopre_{}.pth.tar",
     "encoders": [

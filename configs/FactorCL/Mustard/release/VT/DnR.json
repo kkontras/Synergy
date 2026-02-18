@@ -29,6 +29,10 @@
       }
     },
     "load_ongoing": false,
+    "ceu": {
+      "val": "./artifacts/ceus/mustard/mustard_ceu_val.pkl",
+      "test": "./artifacts/ceus/mustard/mustard_ceu_test.pkl"
+    },
     "save_dir": "DnR_{}.pth.tar",
     "encoders": [
       {

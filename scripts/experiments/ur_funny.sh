@@ -45,7 +45,7 @@ run_ceu() {
 do_train() { [[ "${MODE}" == "all" || "${MODE}" == "train" ]]; }
 do_show()  { [[ "${MODE}" == "all" || "${MODE}" == "show"  ]]; }
 do_ceu()   { [[ "${MODE}" == "all" || "${MODE}" == "ceu"   ]]; }
-
+  
 for fold in "${FOLDS[@]}"; do
   echo ""
 #  pass

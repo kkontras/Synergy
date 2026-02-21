@@ -17,4 +17,8 @@ from .ScienceQA.ScienceQA_CB_mem import *
 from .ESNLI.ESNLI_CB import *
 # from .ESNLI.ESNLI_CB_MEM import *
 from .ESNLI.ESNLIDataset import *
-from .Factor_CL_Datasets.FactorCL_Datasets import *
+try:
+    from .Factor_CL_Datasets.FactorCL_Datasets import *
+except ModuleNotFoundError as e:
+    # FactorCL/MultiBench is optional for tasks like ESNLI smoke tests.
+    print(f"[mydatasets] Skipping FactorCL datasets import: {e}")

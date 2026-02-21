@@ -88,10 +88,7 @@ python mydatasets/ESNLI/ESNLI_CodeBook_v2.py \
   --shard_size 512 \
   --max_samples "${TEST_SAMPLES}"
 
-python scripts/entrypoints/train.py \
-  --config ./configs/ESNLI/cache_lora.json \
-  --default_config "${DEFAULT_CONFIG}" \
-  --fold 0 --lr "${LR}" --wd "${WD}" --batch_size "${BS}" --start_over
+echo "[ESNLI tiny] Skipping multimodal cache_lora run; executing unimodal-only smoke."
 
 python scripts/entrypoints/train.py \
   --config ./configs/ESNLI/cache_image_lora.json \

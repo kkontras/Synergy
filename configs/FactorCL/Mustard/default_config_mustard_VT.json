@@ -47,7 +47,8 @@
   "dataset": {
     "dataloader_class": "FactorCL_Dataloader",
     "data_roots": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/FactorCL/sarcasm.pkl",
-    "data_type": "mustard"
+    "data_type": "mustard",
+    "z_norm": true
   },
   "model": {
     "model_class": "Base_Model",

@@ -813,7 +813,13 @@ def build_and_save_cache(
 
     ds = ESNLIVE_Dataset(
         data_root=data_root,
-        split=split
+        split=split,
+        max_samples=max_samples if max_samples and max_samples > 0 else None,
+    )
+
+    print(
+        f"[cache] split={split} requested_max_samples={max_samples} "
+        f"effective_samples={len(ds)} batch_size={batch_size}"
     )
 
     dl = DataLoader(

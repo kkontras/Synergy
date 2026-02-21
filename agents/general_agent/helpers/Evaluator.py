@@ -1,5 +1,6 @@
 import torch
 import logging
+import os
 from torchmetrics import F1Score, CohenKappa, Accuracy
 from collections import defaultdict
 import torchmetrics
@@ -55,10 +56,20 @@ class General_Evaluator:
         self.best_acc = 0.0
         self.best_loss = 0.0
 
+        self.multi_fold_results_test = None
+        self._ceu_available = False
         ceu = self.config.model.get("ceu",{})
-        if set in ceu and ceu[set] is not None:
-            with open(ceu[set], 'rb') as f:
-                self.multi_fold_results_test = pickle.load(f)["folds"]
+        ceu_path = ceu.get(set)
+        if ceu_path is not None:
+            if os.path.exists(ceu_path):
+                with open(ceu_path, 'rb') as f:
+                    self.multi_fold_results_test = pickle.load(f)["folds"]
+                self._ceu_available = True
+            else:
+                logging.info(
+                    f"CEU was configured for {set} but file is missing ({ceu_path}). "
+                    "Treating CEU as not provided."
+                )
         else:
             logging.info("There is no CEU for {}".format(set))
 
@@ -246,8 +257,7 @@ class General_Evaluator:
             return cm
 
         this_fold = self.config.dataset.get("fold", 0)
-        if not hasattr(self, "multi_fold_results_test"):
-            logging.info("Model doesnt have CEU for split: ".format(self.set))
+        if not self._ceu_available:
             return None
 
         audio_preds = np.array(self.multi_fold_results_test[this_fold]["preds_combined"])
@@ -330,7 +340,8 @@ class General_Evaluator:
 
         # Data extraction logic - FIXED: video_targets now loaded correctly
         this_fold = self.config.dataset.get("fold", 0)
-        if not hasattr(self, "multi_fold_results_test"): return None
+        if not self._ceu_available or self.multi_fold_results_test is None:
+            return None
 
 
         # if hasattr(self, "multi_fold_results"):
@@ -375,7 +386,7 @@ class General_Evaluator:
         else:
             is_best_dict["accuracy"] = False
 
-        if "combined" in metrics["pg_acc"]:
+        if "pg_acc" in metrics and "combined" in metrics["pg_acc"]:
             prev = best_logs["best_vsyn_accuracy"]["pg_acc"]["combined"]["group_metrics"]["synergy"]["internal_acc"]
             is_best_dict["syn_accuracy"] = metrics["pg_acc"]["combined"]["group_metrics"]["synergy"]["internal_acc"] > prev
         else:

@@ -2982,12 +2982,13 @@ class SynIB(nn.Module):
         self.p_max = float(self.perturb.get("p_max", 0.9))
         self.cosine_s = 0.008
 
+        feature_dim = int(_cfg(args, "d_model", 512))
         if self.cls_type == "mlp":
-            self.stats_z1 = FeatureStatsMasker(d1=512, ema_beta=0.99)
-            self.stats_z2 = FeatureStatsMasker(d1=512, ema_beta=0.99)
+            self.stats_z1 = FeatureStatsMasker(d1=feature_dim, ema_beta=0.99)
+            self.stats_z2 = FeatureStatsMasker(d1=feature_dim, ema_beta=0.99)
         elif self.cls_type == "tf":
-            self.stats_na_z1 = FeatureStatsMasker(d1=512, ema_beta=0.99)
-            self.stats_na_z2 = FeatureStatsMasker(d1=512, ema_beta=0.99)
+            self.stats_na_z1 = FeatureStatsMasker(d1=feature_dim, ema_beta=0.99)
+            self.stats_na_z2 = FeatureStatsMasker(d1=feature_dim, ema_beta=0.99)
 
 
     @staticmethod
@@ -3092,7 +3093,7 @@ class SynIB(nn.Module):
                 return zK, None, token_mask
             keep = make_keep(zK, self.p)
             tzK = fill_func(zK, keep, ema)
-            return zK, tzK
+            return zK, tzK, None
 
         def make_tilde_diff(z, ema):
 
@@ -3197,9 +3198,20 @@ class SynIB(nn.Module):
             preds = logits.argmax(dim=1)
             return float((preds == y).float().mean().item())
         def _forward_probs(feat_dict: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-            p_f, _ = self.main._compute_logits(feat_dict["z1"], feat_dict["z2"], feat_dict["na_z1"], feat_dict["na_z2"])  # <-- implement in your class
-            p_u1 = self.main.enc_0.forward_uni(feat_dict["z1"], feat_dict["na_z1"], detach_pred=False)  # <-- implement in your class
-            p_u2 = self.main.enc_1.forward_uni(feat_dict["z2"], feat_dict["na_z2"], detach_pred=False)  # <-- implement in your class
+            p_f, _ = self.main._compute_logits(
+                feat_dict["z1"], feat_dict["z2"], feat_dict["na_z1"], feat_dict["na_z2"]
+            )
+
+            if hasattr(self.main.enc_0, "forward_uni"):
+                p_u1 = self.main.enc_0.forward_uni(feat_dict["z1"], feat_dict["na_z1"], detach_pred=False)
+            else:
+                p_u1 = p_f
+
+            if hasattr(self.main.enc_1, "forward_uni"):
+                p_u2 = self.main.enc_1.forward_uni(feat_dict["z2"], feat_dict["na_z2"], detach_pred=False)
+            else:
+                p_u2 = p_f
+
             return p_f, p_u1, p_u2
         def gate_to_hard_mask(g: torch.Tensor, hard_thresh: float, ref_shape: torch.Size,
                               inv_mask: bool = False) -> torch.Tensor:
@@ -3487,7 +3499,6 @@ class FusionIBModel_Mask(nn.Module):
             self.enc_4 = MLPHead(args)
             self.enc_5 = MLPHead(args)
 
-
         self.synib = SynIB(args, [], main=self)
 
     # -------------------------
@@ -3550,7 +3561,11 @@ class FusionIBModel_Mask(nn.Module):
                  "c":uni_pred_1,
                  "g":uni_pred_2}
         feat_tilde_random = self.synib.get_random_mask_multiclass(features)
-        feat_tilde = self.synib.get_learnable_mask_multiclass(x, features, preds, **kwargs)
+
+        if self.synib.p_type == "random":
+            feat_tilde = self.synib.get_random_mask_multiclass(features)
+        elif self.synib.p_type == "learned":
+            feat_tilde = self.synib.get_learnable_mask_multiclass(x, features, preds, **kwargs)
 
         pred_mask0, feat_mask0 = self._compute_logits(feat_tilde["z1K"], feat_tilde["tz2K"], feat_tilde["na_z1K"], feat_tilde["na_tz2K"], att_mask1=feat_tilde["mask1"], att_mask2=None)
         pred_mask1, feat_mask1 = self._compute_logits(feat_tilde["tz1K"], feat_tilde["z2K"], feat_tilde["na_tz1K"], feat_tilde["na_z2K"], att_mask1=None, att_mask2=feat_tilde["mask2"])
@@ -3600,5 +3615,3 @@ class FusionIBModel_Mask(nn.Module):
 
 
         return output
-
-

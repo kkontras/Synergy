@@ -178,7 +178,6 @@ class Bias_Infusion_MMPareto(General_Bias_Infusion):
 
         if self.agent.config.model.args.bias_infusion.starting_epoch <= self.agent.logs[
             "current_epoch"] <= self.agent.config.model.args.bias_infusion.ending_epoch:
-            print(output_losses)
             loss_mm = output_losses["ce_loss_combined"]
             loss_a = output_losses["ce_loss_c"]
             loss_v = output_losses["ce_loss_g"]

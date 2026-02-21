@@ -1,25 +1,14 @@
 {
   "model": {
-    "model_class": "Base_Model",
+    "model_class": "FusionIBModel_Mask",
     "args": {
       "d_model": 40,
       "num_classes": 2,
       "fc_inner": 64,
       "dropout": 0.1,
-      "cls_type": "linear",
-      "clip_grad": false,
-      "bias_infusion": {
-        "method": "DnR",
-        "reinit_epoch": 10,
-        "kmepoch": 3,
-        "epoch_stages": 1,
-        "n_classes": 2,
-        "alpha": 3,
-        "starting_epoch": 0,
-        "ending_epoch": 1500,
-        "use": true,
-        "plot": false
-      },
+      "cls_type": "mlp",
+      "norm_decision": false,
+      "bias_infusion": {},
       "multi_loss": {
         "multi_supervised_w": {
           "combined": 1,
@@ -33,7 +22,7 @@
       "val": "./artifacts/ceus/ur_funny/ur_funny_ceu_val.pkl",
       "test": "./artifacts/ceus/ur_funny/ur_funny_ceu_test.pkl"
     },
-    "save_dir": "DnR_{}.pth.tar",
+    "save_dir": "SynIB_RMask_nopre_{}.pth.tar",
     "encoders": [
       {
         "model": "FactorCL_Uni",
@@ -46,7 +35,7 @@
         },
         "pretrainedEncoder": {
           "use": false,
-          "dir": "unimodal_video_fold{}_vldaccuracy_lr0.001_wd0.0001.pth.tar"
+          "dir": "unimodal_video_{}.pth.tar"
         }
       },
       {
@@ -60,8 +49,37 @@
         },
         "pretrainedEncoder": {
           "use": false,
-          "dir": "unimodal_text_fold{}_vldaccuracy_lr0.001_wd0.001.pth.tar"
+          "dir": "unimodal_text_{}.pth.tar"
         }
+      },
+      {
+        "name": "enc_2_fusion_trunk",
+        "model": "FusionTrunkLinear",
+        "args": {
+          "d_model": 40,
+          "fc_inner": 64,
+          "dropout": 0.1,
+          "freeze_encoder": false
+        },
+        "pretrainedEncoder": {
+          "use": false,
+          "dir": "enc_2_fusion_trunk_{}.pth.tar"
+        },
+        "save_encoder": false
+      },
+      {
+        "name": "enc_3_fusion_head",
+        "model": "LinearHead",
+        "args": {
+          "in_dim": 64,
+          "num_classes": 2,
+          "freeze_encoder": false
+        },
+        "pretrainedEncoder": {
+          "use": false,
+          "dir": "enc_3_fusion_head_{}.pth.tar"
+        },
+        "save_encoder": false
       }
     ]
   }

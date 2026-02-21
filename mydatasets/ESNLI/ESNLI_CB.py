@@ -500,7 +500,23 @@ class ESNLI_ShardedLazyDataset(Dataset):
         attention_mask = _require_tensor(ex, "attention_mask").to(torch.long).reshape(-1)
         position_ids = _require_tensor(ex, "position_ids")
         visual_pos_masks = _require_tensor(ex, "visual_pos_masks")
-        hint_mask = _require_tensor(ex["masks"], "hint")
+
+        # Backward compatibility across cache versions:
+        # - newer caches may store masks["hint"]
+        # - older caches store masks["text"] for hypothesis/text span
+        # - if masks are absent, fall back to "non-image attended tokens"
+        hint_mask = None
+        masks = ex.get("masks", None)
+        if isinstance(masks, dict):
+            if "hint" in masks and torch.is_tensor(masks["hint"]):
+                hint_mask = masks["hint"]
+            elif "text" in masks and torch.is_tensor(masks["text"]):
+                hint_mask = masks["text"]
+
+        if hint_mask is None:
+            hint_mask = attention_mask.bool() & (~visual_pos_masks.bool())
+
+        hint_mask = hint_mask.to(torch.bool).reshape(-1)
         lab = _as_scalar_int(ex.get("label", 0), default=0)
 
         out: Dict[str, Any] = {
@@ -856,5 +872,4 @@ class ESNLI_MemmapDataloader:
                     print(f"{k:24s}: shape={tuple(t.shape)} dtype={t.dtype} device={t.device} numel={t.numel()}")
                 else:
                     print(f"{k:24s}: {type(t)}")
-
 

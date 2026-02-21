@@ -243,7 +243,7 @@ class ESNLIVE_Dataset(Dataset):
         self.logger.info(f"split={split} kept {len(self.keep)} / {len(self.rows)}")
 
     def __len__(self) -> int:
-        return int(len(self.keep)/2)
+        return len(self.keep)
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         ex = self.rows[self.keep[idx]]
@@ -695,16 +695,35 @@ def build_token_type_ids(
         if not text:
             return start
 
-        needle = _tokenize_no_special(tok, text+"\n")
-        i = _find_subseq(ids, needle[:-1], start=start, end=L)
+        candidates = [
+            text,
+            f"Hypothesis:{text}",
+            f"Hypothesis: {text}",
+            text + "\n",
+            f"Hypothesis:{text}\n",
+            f"Hypothesis: {text}\n",
+        ]
+
+        i = -1
+        needle = []
+        for cand in candidates:
+            cand_ids = _tokenize_no_special(tok, cand)
+            if len(cand_ids) == 0:
+                continue
+            hit = _find_subseq(ids, cand_ids, start=start, end=L)
+            if hit >= 0:
+                i = hit
+                needle = cand_ids
+                break
+
         if i < 0:
             if verbose:
                 print(f"[MISS] {name}: couldn't find tokens for text={text[:80]!r}")
-                print(f"  needle_len={len(needle)} start={start} L={L}")
+                print(f"  tried={len(candidates)} start={start} L={L}")
             return start
 
         # label span, but don't overwrite images/cls
-        for k in range(i, min(i + len(needle)-1, L)):
+        for k in range(i, min(i + len(needle), L)):
             if ttid[k] not in (TT_IMAGE, TT_CLS):
                 ttid[k] = tt
 

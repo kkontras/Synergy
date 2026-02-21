@@ -1,0 +1,59 @@
+{
+  "exp_name": "ESNLI Tiny Smoke",
+  "agent": "Agent",
+  "training_params": {
+    "cuda": true,
+    "gpu_device": [0],
+    "seed": 109,
+    "batch_size": 8,
+    "test_batch_size": 8,
+    "data_loader_workers": 0,
+    "pin_memory": false,
+    "async_loading": false,
+    "validation": true,
+    "rec_test": true,
+    "test_on_bottoms": false,
+    "use_test_set": true,
+    "verbose": true,
+    "adversarial_training": {
+      "use": false,
+      "adv_epsilon": 0.01
+    },
+    "tdqm_disable": true,
+    "wandb_disable": true,
+    "res": true
+  },
+  "scheduler": {
+    "type": "cosanneal",
+    "max_lr": 0.03,
+    "warm_up_steps": 100
+  },
+  "optimizer": {
+    "type": "Adam",
+    "learning_rate": 0.0001,
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "beta1": 0.9,
+    "beta2": 0.999
+  },
+  "early_stopping": {
+    "max_epoch": 30,
+    "end_of_epoch_check": true,
+    "log_interval": 10,
+    "save_every_step": 500,
+    "validate_every": 10,
+    "save_every_valstep": 5,
+    "validate_after": 0,
+    "n_steps_stop": 10,
+    "n_steps_stop_after": 0,
+    "validate_with": "accuracy"
+  },
+  "dataset": {
+    "dataloader_class": "ESNLI_MemmapDataloader",
+    "data_roots": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI",
+    "cache_root": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/ESNLI/cache_qwen3_vl_2b_nocls_vis_tiny"
+  },
+  "model": {
+    "save_base_dir": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/ESNLI"
+  }
+}

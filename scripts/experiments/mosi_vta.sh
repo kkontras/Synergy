@@ -19,7 +19,7 @@ if [[ ! -x "${PYTHON_BIN}" ]]; then
 fi
 
 GPU="${1:-0}"
-MODE="${2:-all}"   # all | train | show
+MODE="${2:-all}"   # all | unimodal | methods
 
 DEFAULT_CONFIG="./configs/FactorCL/Mosi/default_config_mosi_VTA.json"
 RELEASE_DIR="./configs/FactorCL/Mosi/release/VTA"
@@ -40,34 +40,37 @@ METHODS=(
   "${RELEASE_DIR}/pre_frozen.json"
 )
 
-IFS=',' read -r -a FOLDS <<< "${FOLDS_CSV:-0}"
-LR="${LR:-0.0001}"
-WD="${WD:-0.0001}"
+IFS=',' read -r -a FOLDS <<< "${FOLDS_CSV:-0,1,2}"
+IFS=',' read -r -a UNIMODAL_LRS <<< "${UNIMODAL_LRS_CSV:-0.001,0.0005,0.0001,0.00005}"
+IFS=',' read -r -a UNIMODAL_WDS <<< "${UNIMODAL_WDS_CSV:-0.001,0.0001,0.00001}"
+IFS=',' read -r -a METHOD_LRS <<< "${METHOD_LRS_CSV:-0.001,0.0001}"
+IFS=',' read -r -a METHOD_WDS <<< "${METHOD_WDS_CSV:-0.001,0.0001}"
 
 run_train() { CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/train.py "$@"; }
-run_show()  { CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/show.py "$@"; }
 
-do_train() { [[ "${MODE}" == "all" || "${MODE}" == "train" ]]; }
-do_show()  { [[ "${MODE}" == "all" || "${MODE}" == "show"  ]]; }
+do_unimodal() { [[ "${MODE}" == "all" || "${MODE}" == "unimodal" ]]; }
+do_methods() { [[ "${MODE}" == "all" || "${MODE}" == "methods" ]]; }
 
-for fold in "${FOLDS[@]}"; do
-  for cfg in "${UNIMODALS[@]}"; do
-    if do_train; then
-      run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${LR}" --wd "${WD}" --validate_with accuracy
-    fi
-    if do_show; then
-      run_show --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${LR}" --wd "${WD}" --validate_with accuracy
-    fi
+if do_unimodal; then
+  for fold in "${FOLDS[@]}"; do
+    for cfg in "${UNIMODALS[@]}"; do
+      for lr in "${UNIMODAL_LRS[@]}"; do
+        for wd in "${UNIMODAL_WDS[@]}"; do
+          run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${lr}" --wd "${wd}" --validate_with accuracy
+        done
+      done
+    done
   done
-done
+fi
 
-for fold in "${FOLDS[@]}"; do
-  for cfg in "${METHODS[@]}"; do
-    if do_train; then
-      run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${LR}" --wd "${WD}" --validate_with accuracy
-    fi
-    if do_show; then
-      run_show --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${LR}" --wd "${WD}" --validate_with accuracy
-    fi
+if do_methods; then
+  for fold in "${FOLDS[@]}"; do
+    for cfg in "${METHODS[@]}"; do
+      for lr in "${METHOD_LRS[@]}"; do
+        for wd in "${METHOD_WDS[@]}"; do
+          run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${lr}" --wd "${wd}" --validate_with accuracy
+        done
+      done
+    done
   done
-done
+fi

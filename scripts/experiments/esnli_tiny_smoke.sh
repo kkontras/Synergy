@@ -25,9 +25,12 @@ MODEL_NAME="${MODEL_NAME:-Qwen/Qwen3-VL-2B-Instruct}"
 
 DEFAULT_CONFIG="./configs/ESNLI/default_config_esnli_cache_tiny.json"
 
+export CUDA_VISIBLE_DEVICES=7
+
 echo "[ESNLI tiny] Data root: ${DATA_ROOT}"
 echo "[ESNLI tiny] Cache out:  ${OUT_DIR}"
 echo "[ESNLI tiny] Samples: train=${TRAIN_SAMPLES}, val=${VAL_SAMPLES}, test=${TEST_SAMPLES}"
+echo "[ESNLI tiny] CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}"
 
 rm -rf "${OUT_DIR}"
 

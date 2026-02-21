@@ -7,7 +7,22 @@ from models.VAVL_git.VAVL.conformer.model import Conformer
 from models.model_utils.fusion_gates import *
 from typing import Dict
 from transformers import VivitModel, VivitConfig, ASTConfig, Wav2Vec2Model, AutoModel
-from mydatasets.Factor_CL_Datasets.MultiBench.unimodals.common_models import Transformer
+try:
+    from mydatasets.Factor_CL_Datasets.MultiBench.unimodals.common_models import Transformer
+except ModuleNotFoundError as e:
+    print(f"[models] Using fallback Transformer (MultiBench missing): {e}")
+
+    class Transformer(torch.nn.Module):
+        def __init__(self, n_features, hidden_size):
+            super().__init__()
+            self.proj = torch.nn.Linear(n_features, hidden_size)
+
+        def forward(self, x):
+            if x.ndim == 2:
+                x = x.unsqueeze(1)  # (B,F) -> (B,1,F)
+            feat_nonaggr = self.proj(x)      # (B,T,H)
+            feat = feat_nonaggr.mean(dim=1)  # (B,H)
+            return feat, feat_nonaggr
 from transformers import ViTModel, ViTConfig, DistilBertModel, DistilBertConfig
 import os
 from transformers import BlipForConditionalGeneration, BlipConfig
@@ -4540,5 +4555,4 @@ class TF_Fusion(nn.Module):
             return pred, aggr_feat_mm, feat_mm
         else:
             return pred
-
 

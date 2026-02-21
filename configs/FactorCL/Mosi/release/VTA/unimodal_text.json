@@ -5,7 +5,7 @@
       "n_features": 300,
       "hidden_size": 40,
       "modality": "g",
-      "num_classes": 1,
+      "num_classes": 2,
       "clip_grad": false,
       "bias_infusion": {
         "method": false

@@ -1,7 +1,7 @@
 {
   "exp_name": "Mosi Experiment",
   "agent": "Agent",
-  "task": "regression",
+  "task": "classification",
   "training_params": {
     "cuda": true,
     "gpu_device": [0],
@@ -53,7 +53,7 @@
     "save_base_dir": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/Balance_Final/MOSI/VT",
     "args": {
       "d_model": 40,
-      "num_classes": 1,
+      "num_classes": 2,
       "fc_inner": 64,
       "dropout": 0.1,
       "cls_type": "linear",
@@ -78,7 +78,7 @@
           "n_features": 20,
           "hidden_size": 40,
           "modality": "c",
-          "num_classes": 1,
+          "num_classes": 2,
           "freeze_encoder": false},
         "pretrainedEncoder": {
           "use": true,
@@ -91,7 +91,7 @@
           "n_features": 300,
           "hidden_size": 40,
           "modality": "g",
-          "num_classes": 1,
+          "num_classes": 2,
           "freeze_encoder": false},
         "pretrainedEncoder": {
           "use": true,

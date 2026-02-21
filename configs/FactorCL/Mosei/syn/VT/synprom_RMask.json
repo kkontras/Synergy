@@ -3,7 +3,7 @@
     "model_class": "FusionIBModel_Mask",
     "args": {
       "d_model": 40,
-      "num_classes": 1,
+      "num_classes": 2,
       "fc_inner": 64,
       "dropout": 0.1,
       "cls_type": "mlp",
@@ -22,7 +22,7 @@
           "n_features": 35,
           "hidden_size": 40,
           "modality": "c",
-          "num_classes": 1,
+          "num_classes": 2,
           "freeze_encoder": false},
         "pretrainedEncoder": {
           "use": true,
@@ -35,7 +35,7 @@
           "n_features": 300,
           "hidden_size": 40,
           "modality": "g",
-          "num_classes": 1,
+          "num_classes": 2,
           "freeze_encoder": false},
         "pretrainedEncoder": {
           "use": true,

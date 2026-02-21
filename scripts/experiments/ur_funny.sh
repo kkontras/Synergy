@@ -26,21 +26,11 @@ DEFAULT_CONFIG="./configs/FactorCL/URFunny/default_config_ur_funny_VT.json"
 FOLDS=(0 1 2)
 BASE_LRS=(0.001 0.0001 0.00005 0.00001)
 BASE_WDS=(0.001 0.0001 0.00001)
-METHOD_LRS=(0.001 0.0001 0.00005 0.00001)
-METHOD_WDS=(0.001 0.0001 0.00001)
-RMASK_LS=(0 0.1 1)
 
-run_train() {
-  CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/train.py "$@"
-}
 
-run_show() {
-  CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/show.py "$@"
-}
-
-run_ceu() {
-  CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/get_ceu_cli.py "$@"
-}
+run_train() {CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/train.py "$@"}
+run_show() {CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/show.py "$@"}
+run_ceu() {CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/get_ceu_cli.py "$@"}
 
 do_train() { [[ "${MODE}" == "all" || "${MODE}" == "train" ]]; }
 do_show()  { [[ "${MODE}" == "all" || "${MODE}" == "show"  ]]; }
@@ -66,7 +56,7 @@ for fold in "${FOLDS[@]}"; do
 
   if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/ens.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l 0 --validate_with accuracy; fi
   if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/ens.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l 0 --validate_with accuracy; fi
- 
+
 #  for l in 0.001 0.01 0.1 1; do for lsparse in 0.001 0.01 0.1 1 3 5 10; do
 ##      echo "--config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l $l  --perturb learned --perturb_fill ema --perturb_lsparse $lsparse --validate_with accuracy"
 #      if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l $l  --perturb learned --perturb_fill ema --perturb_lsparse $lsparse --validate_with accuracy; fi
@@ -79,11 +69,6 @@ for fold in "${FOLDS[@]}"; do
 #      if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --l $l --wd 0.001 --perturb random --perturb_fill ema --perturb_pmin $pmin  --validate_with accuracy; fi
 #  done; done
 #
-#  for l in 0.001 0.01 0.1 1; do for multil in 0.01 0.1 1; do
-##      echo "--config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l $l --multil $multil --validate_with accuracy"
-#      if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l $l --multil $multil --validate_with accuracy; fi
-#      if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l $l --multil $multil --validate_with accuracy; fi
-#  done; done
 
 
 #  for l in 0.001 0.01 0.1 1; do for multil in 0.01 0.1 1; do
@@ -101,11 +86,11 @@ for fold in "${FOLDS[@]}"; do
 #      if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/DnR.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --kmepoch $kmpe --validate_with accuracy; fi
 #      if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/DnR.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --kmepoch $kmpe --validate_with accuracy; fi
 #  done; done
-  for alpha in 0.5 1.0 1.5 2.0 3.0 5.0; do for recon_stages in 1 4 10; do for recon_weight1 in 1 3 5 10; do
-#      echo "--config ./configs/FactorCL/URFunny/release/VT/ReconBoost.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --recon_weight1 $recon_weight1 --recon_weight2 1 --recon_epochstages $recon_stages --recon_ensemblestages $recon_stages --validate_with accuracy"
-      if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/ReconBoost.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --recon_weight1 $recon_weight1 --recon_weight2 1 --recon_epochstages $recon_stages --recon_ensemblestages $recon_stages --validate_with accuracy; fi
-      if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/ReconBoost.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --recon_weight1 $recon_weight1 --recon_weight2 1 --recon_epochstages $recon_stages --recon_ensemblestages $recon_stages --validate_with accuracy; fi
-  done;done;done
+#  for alpha in 0.5 1.0 1.5 2.0 3.0 5.0; do for recon_stages in 1 4 10; do for recon_weight1 in 1 3 5 10; do
+##      echo "--config ./configs/FactorCL/URFunny/release/VT/ReconBoost.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --recon_weight1 $recon_weight1 --recon_weight2 1 --recon_epochstages $recon_stages --recon_ensemblestages $recon_stages --validate_with accuracy"
+#      if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/ReconBoost.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --recon_weight1 $recon_weight1 --recon_weight2 1 --recon_epochstages $recon_stages --recon_ensemblestages $recon_stages --validate_with accuracy; fi
+#      if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/ReconBoost.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --recon_weight1 $recon_weight1 --recon_weight2 1 --recon_epochstages $recon_stages --recon_ensemblestages $recon_stages --validate_with accuracy; fi
+#  done;done;done
 done
 
 

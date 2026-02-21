@@ -5,7 +5,7 @@
       "d_model": 40,
       "num_classes": 2,
       "fc_inner": 64,
-      "dropout": 0.1, 
+      "dropout": 0.1,
       "cls_type": "linear",
       "norm_decision": "standardization",
       "bias_infusion": {},

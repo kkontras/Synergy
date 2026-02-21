@@ -64,6 +64,9 @@ for fold in "${FOLDS[@]}"; do
 #  if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l 0 --validate_with accuracy; fi
 #  if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l 0 --validate_with accuracy; fi
 
+  if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/ens.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l 0 --validate_with accuracy; fi
+  if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/ens.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l 0 --validate_with accuracy; fi
+ 
 #  for l in 0.001 0.01 0.1 1; do for lsparse in 0.001 0.01 0.1 1 3 5 10; do
 ##      echo "--config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l $l  --perturb learned --perturb_fill ema --perturb_lsparse $lsparse --validate_with accuracy"
 #      if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l $l  --perturb learned --perturb_fill ema --perturb_lsparse $lsparse --validate_with accuracy; fi
@@ -81,7 +84,6 @@ for fold in "${FOLDS[@]}"; do
 #      if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l $l --multil $multil --validate_with accuracy; fi
 #      if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l $l --multil $multil --validate_with accuracy; fi
 #  done; done
-
 
 
 #  for l in 0.001 0.01 0.1 1; do for multil in 0.01 0.1 1; do

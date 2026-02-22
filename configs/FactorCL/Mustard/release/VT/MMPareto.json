@@ -41,8 +41,8 @@
           "freeze_encoder": false
         },
         "pretrainedEncoder": {
-          "use": true,
-          "dir": "unimodal_video_{}.pth.tar"
+          "use": false,
+          "dir": "unimodal_video_fold{}_vldaccuracy_lr0.0005_wd0.00001.pth.tar"
         }
       },
       {
@@ -55,8 +55,8 @@
           "freeze_encoder": false
         },
         "pretrainedEncoder": {
-          "use": true,
-          "dir": "unimodal_text_{}.pth.tar"
+          "use": false,
+          "dir": "unimodal_text_fold{}_vldaccuracy_lr0.0005_wd0.0001.pth.tar"
         }
       }
     ]

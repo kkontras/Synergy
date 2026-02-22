@@ -202,6 +202,10 @@ def main(config_path, default_config_path, args):
         config.training_params.batch_size = int(args.batch_size)
         m += "_bs{}".format(args.batch_size)
         # enc_m += "_bs{}".format(args.batch_size)
+    if "clip" in args and args.clip is not None:
+        config.model.args.clip_grad = True
+        config.model.args.clip_value = float(args.clip)
+        m += "_clip{}".format(args.clip)
     if "pre" in args and args.pre:
         m += "_pre"
         if hasattr(config.model, "encoders"):

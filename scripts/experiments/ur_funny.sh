@@ -28,9 +28,15 @@ BASE_LRS=(0.001 0.0001 0.00005 0.00001)
 BASE_WDS=(0.001 0.0001 0.00001)
 
 
-run_train() {CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/train.py "$@"}
-run_show() {CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/show.py "$@"}
-run_ceu() {CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/get_ceu_cli.py "$@"}
+run_train() {
+  CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/train.py "$@"
+}
+run_show() {
+  CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/show.py "$@"
+}
+run_ceu() {
+  CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/get_ceu_cli.py "$@"
+}
 
 do_train() { [[ "${MODE}" == "all" || "${MODE}" == "train" ]]; }
 do_show()  { [[ "${MODE}" == "all" || "${MODE}" == "show"  ]]; }
@@ -54,8 +60,8 @@ for fold in "${FOLDS[@]}"; do
 #  if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l 0 --validate_with accuracy; fi
 #  if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l 0 --validate_with accuracy; fi
 
-  if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/ens.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l 0 --validate_with accuracy; fi
-  if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/ens.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l 0 --validate_with accuracy; fi
+#  if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/ens.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l 0 --validate_with accuracy --start_over; fi
+#  if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/ens.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l 0 --validate_with accuracy; fi
 
 #  for l in 0.001 0.01 0.1 1; do for lsparse in 0.001 0.01 0.1 1 3 5 10; do
 ##      echo "--config ./configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --l $l  --perturb learned --perturb_fill ema --perturb_lsparse $lsparse --validate_with accuracy"
@@ -81,31 +87,14 @@ for fold in "${FOLDS[@]}"; do
 #      if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/MMPareto.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --validate_with accuracy; fi
 #      if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/MMPareto.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --validate_with accuracy; fi
 #  done
-#  for alpha in 0.5 1.0 1.5 2.0 3.0 5.0; do for kmpe in 1 3 5 10; do
-##      echo "--config ./configs/FactorCL/URFunny/release/VT/DnR.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --kmepoch $kmpe --validate_with accuracy"
-#      if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/DnR.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --kmepoch $kmpe --validate_with accuracy; fi
-#      if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/DnR.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --kmepoch $kmpe --validate_with accuracy; fi
-#  done; done
+  for alpha in 0.5 1.0 1.5 2.0 3.0 5.0; do for kmpe in 1 3 5 10; do
+#      echo "--config ./configs/FactorCL/URFunny/release/VT/DnR.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --kmepoch $kmpe --validate_with accuracy"
+      if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/DnR.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --kmepoch $kmpe --validate_with accuracy; fi
+      if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/DnR.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --kmepoch $kmpe --validate_with accuracy; fi
+  done; done
 #  for alpha in 0.5 1.0 1.5 2.0 3.0 5.0; do for recon_stages in 1 4 10; do for recon_weight1 in 1 3 5 10; do
 ##      echo "--config ./configs/FactorCL/URFunny/release/VT/ReconBoost.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --recon_weight1 $recon_weight1 --recon_weight2 1 --recon_epochstages $recon_stages --recon_ensemblestages $recon_stages --validate_with accuracy"
 #      if do_train; then  run_train --config ./configs/FactorCL/URFunny/release/VT/ReconBoost.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --recon_weight1 $recon_weight1 --recon_weight2 1 --recon_epochstages $recon_stages --recon_ensemblestages $recon_stages --validate_with accuracy; fi
 #      if do_show && [[ "${fold}" == "0" ]]; then run_show --config ./configs/FactorCL/URFunny/release/VT/ReconBoost.json --default_config "${DEFAULT_CONFIG}" --fold $fold --lr 0.001 --wd 0.001 --alpha $alpha --recon_weight1 $recon_weight1 --recon_weight2 1 --recon_epochstages $recon_stages --recon_ensemblestages $recon_stages --validate_with accuracy; fi
 #  done;done;done
 done
-
-
-#SynIB_RMask_fold0_l1_vldaccuracy_perturblearned_fillema_lsparse3_lr0.001_wd0.001.pth.tar
-#SynIB_RMask_fold2_l0.001_vldaccuracy_perturbrandom_fillema_pmin0.7_lr0.001_wd0.001.pth.tar
-
-#CEU_LR="${CEU_LR:-0.001}"
-#CEU_WD="${CEU_WD:-0.001}"
-#run_ceu \
-#  --dataset ur_funny \
-#  --default_config "${DEFAULT_CONFIG}" \
-#  --unimodal_configs \
-#    ./configs/FactorCL/URFunny/release/VT/unimodal_video.json \
-#    ./configs/FactorCL/URFunny/release/VT/unimodal_text.json \
-#  --folds 0 1 2 \
-#  --lr "${CEU_LR}" \
-#  --wd "${CEU_WD}" \
-#  --validate_with accuracy

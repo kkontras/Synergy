@@ -19,6 +19,11 @@ from tqdm import tqdm
 from collections import defaultdict
 import logging
 import librosa
+import soundfile as sf
+from scipy.signal import resample_poly
+
+BASE_CLASS_DICT = {'NEU': 0, 'HAP': 1, 'SAD': 2, 'FEA': 3, 'DIS': 4, 'ANG': 5}
+BASE_CLASS_DICT_INV = {0: "NEU", 1: "HAP", 2: "SAD", 3: "FEA", 4: "DIS", 5: "ANG", 6: "SARCASM"}
 
 class CremadDataset(Dataset):
 
@@ -43,7 +48,13 @@ class CremadDataset(Dataset):
         self.return_data = config.dataset.get("return_data", {"video": True, "spectrogram":True, "audio":False, "face":False, "face_image":False})
 
 
-        class_dict = {'NEU':0, 'HAP':1, 'SAD':2, 'FEA':3, 'DIS':4, 'ANG':5}
+        class_dict = dict(BASE_CLASS_DICT)
+        self.class_dict = class_dict
+        self.ironic_rate = float(self.config.dataset.get("ironic_rate", 0.0))
+        self.ironic_label_name = str(self.config.dataset.get("ironic_label_name", "SARCASM"))
+        self.ironic_modes = set(self.config.dataset.get("ironic_modes", ["train"]))
+        self.ironic_label_id = len(self.class_dict)
+        self.class_dict[self.ironic_label_name] = self.ironic_label_id
 
         self.visual_feature_path = self.config.dataset.data_roots
         self.audio_feature_path = os.path.join(self.config.dataset.data_roots, "AudioWAV")
@@ -57,6 +68,10 @@ class CremadDataset(Dataset):
             self.split_noninclusive(fold, mode, class_dict)
         else: raise ValueError("config.dataset.data_split should be either 'inclusive' or 'non_inclusive', then {} is not an option".format(self.config.dataset.get("data_split", "inclusive")))
 
+        # When irony mode is enabled, labels can switch to irony class and audio may come from another sample.
+        self.audio_src_index = np.arange(len(self.audio), dtype=np.int64)
+        self.ironic_mask = np.zeros(len(self.audio), dtype=np.bool_)
+        self._apply_ironic_pairs_if_enabled()
 
         if self.config.dataset.get("norm_wav_path", None) and os.path.exists(self.config.dataset.get("norm_wav_path", None)):
             self.wav_norm = pickle.loads(open(self.config.dataset.norm_wav_path, "rb").read())
@@ -123,7 +138,7 @@ class CremadDataset(Dataset):
                     self.train_image.append(visual_path)
                     # self.train_face_image.append(face_image_path)
                     self.train_audio.append(audio_path)
-                    self.train_faces.append(audio_path)
+                    self.train_faces.append(face_path)
                     self.train_label.append(class_dict[item[1]])
                 else:
                     continue
@@ -313,6 +328,92 @@ class CremadDataset(Dataset):
                 print("This path does not exist {} or {} or {}".format(ap, vp, fp))
                 continue
 
+    def _apply_ironic_pairs_if_enabled(self):
+        if self.mode not in self.ironic_modes:
+            return
+        if len(self.audio) < 2:
+            return
+
+        labels_np = np.asarray(self.label, dtype=np.int64)
+        base_mask = labels_np != self.ironic_label_id
+        base_labels = labels_np[base_mask]
+        if base_labels.size == 0:
+            return
+
+        uniq, counts = np.unique(base_labels, return_counts=True)
+        target = float(np.mean(counts))
+        k = int(round(float(self.ironic_rate) * target))
+        k = max(0, min(k, int(base_mask.sum())))
+        if k == 0:
+            return
+
+        idx_by_label = {int(lab): np.where(labels_np == lab)[0] for lab in uniq.tolist()}
+
+        contradiction_map = {
+            0: [],
+            1: [2, 3, 4, 5],
+            2: [1],
+            3: [1],
+            4: [1],
+            5: [1],
+        }
+
+        candidates_for_flip = np.where(base_mask)[0]
+        candidates_t = torch.as_tensor(candidates_for_flip, dtype=torch.long)
+        candidates_t = torch.sort(candidates_t).values
+        g = torch.Generator()
+        g.manual_seed(int(self.config.training_params.seed))
+        perm = candidates_t[torch.randperm(candidates_t.numel(), generator=g)]
+        chosen = perm[:k].cpu().numpy()
+        self.ironic_mask[chosen] = True
+
+        per_pair_count = {}
+        for i in chosen:
+            src_label = int(labels_np[i])
+            preferred = contradiction_map.get(src_label, [])
+
+            pool = []
+            for lab in preferred:
+                if lab in idx_by_label:
+                    pool.append(idx_by_label[lab])
+
+            if pool:
+                cand = np.concatenate(pool)
+                cand = cand[cand != i]
+            else:
+                cand = np.where(labels_np != src_label)[0]
+                cand = cand[cand != i]
+
+            if cand.size == 0:
+                self.ironic_mask[i] = False
+                continue
+
+            cand_t = torch.as_tensor(cand, dtype=torch.long)
+            cand_t = torch.sort(cand_t).values
+            g = torch.Generator()
+            g.manual_seed(int(self.config.training_params.seed + i))
+            j = int(cand_t[torch.randint(0, cand_t.numel(), (1,), generator=g)].item())
+
+            self.audio_src_index[i] = j
+            self.label[i] = self.ironic_label_id
+
+            donor_label = int(labels_np[j])
+            per_pair_count[(src_label, donor_label)] = per_pair_count.get((src_label, donor_label), 0) + 1
+
+        labels_after, counts_after = np.unique(np.asarray(self.label, dtype=np.int64), return_counts=True)
+        dist_after = dict(zip(labels_after.tolist(), counts_after.tolist()))
+        top_pairs = sorted(per_pair_count.items(), key=lambda x: x[1], reverse=True)[:10]
+        logging.info(
+            "[%s] Ironic pairing enabled: ironic_rate=%.3f target≈%.1f requested_k=%d applied_k=%d",
+            self.mode, float(self.ironic_rate), target, k, int(self.ironic_mask.sum())
+        )
+        logging.info(
+            "[%s] Top (orig_label -> donor_label) irony pairs: %s",
+            self.mode,
+            [(f"{BASE_CLASS_DICT_INV.get(a, a)}->{BASE_CLASS_DICT_INV.get(b, b)}", c) for (a, b), c in top_pairs],
+        )
+        logging.info("[%s] Label distribution after irony pairing: %s", self.mode, dist_after)
+
     def get_wav_normalizer(self):
 
         count = 0
@@ -322,9 +423,7 @@ class CremadDataset(Dataset):
         max_duration = 0 #seconds
 
         for cur_wav in tqdm(self.audio):
-            audio, fps = torchaudio.load(cur_wav)
-            audio = torchaudio.functional.resample(audio, fps, self.sampling_rate)
-            audio = audio[0]
+            audio = self._load_audio_mono(cur_wav)
             if audio.shape[0] > max_duration * self.sampling_rate:
                 max_duration = audio.shape[0] / self.sampling_rate
             wav_sum += torch.sum(audio)
@@ -443,29 +542,44 @@ class CremadDataset(Dataset):
         if not self.return_data["audio"]:
             return False
 
-        audio, fps = torchaudio.load(self.audio[idx])
-        audio = torchaudio.functional.resample(audio, fps, self.sampling_rate)
-        # max_duration = 10 #seconds
-        #
-        # audio = audio[0][:int(self.sampling_rate*max_duration)]
-        # audio = audio[0][:int(self.sampling_rate*3])]
-        # audio = audio[0][:int(self.sampling_rate*self.wav_norm["max_duration"])]
-        audio = audio[0]
+        # Avoid torchaudio->torchcodec runtime dependency in restricted environments.
+        audio = self._load_audio_mono(self.audio[idx])
 
         if hasattr(self, "wav_norm"):
             audio = (audio - self.wav_norm["mean"]) / self.wav_norm["std"]
 
         return audio
 
-    def _get_spectrogram(self, idx, audio):
+    def _get_audio_from_index(self, aidx):
+        if not self.return_data["audio"]:
+            return False
+        audio = self._load_audio_mono(self.audio[aidx])
+        if hasattr(self, "wav_norm"):
+            audio = (audio - self.wav_norm["mean"]) / self.wav_norm["std"]
+        return audio
+
+    def _load_audio_mono(self, wav_path: str) -> torch.Tensor:
+        samples, rate = sf.read(wav_path, dtype="float32", always_2d=False)
+        if isinstance(samples, np.ndarray) and samples.ndim > 1:
+            samples = np.mean(samples, axis=1)
+        if rate != self.sampling_rate:
+            samples = resample_poly(samples, self.sampling_rate, rate)
+        return torch.from_numpy(np.asarray(samples, dtype=np.float32)).to(torch.float32)
+
+    def _get_spectrogram(self, idx, audio, aidx=None):
 
         if not self.return_data["spectrogram"]:
             return False
 
 
         if audio is False:
-            samples, rate = librosa.load(self.audio[idx], sr=self.sampling_rate)
+            source_idx = idx if aidx is None else aidx
+            samples, rate = librosa.load(self.audio[source_idx], sr=self.sampling_rate)
             resamples = np.tile(samples, 3)[:self.sampling_rate * 3]
+            resamples[resamples > 1.] = 1.
+            resamples[resamples < -1.] = -1.
+        else:
+            resamples = np.tile(audio.detach().cpu().numpy(), 3)[:self.sampling_rate * 3]
             resamples[resamples > 1.] = 1.
             resamples[resamples < -1.] = -1.
 
@@ -509,11 +623,12 @@ class CremadDataset(Dataset):
     def __getitem__(self, idx):
 
         images = self._get_images(idx)
-        audio = self._get_audio(idx)
+        aidx = int(self.audio_src_index[idx]) if hasattr(self, "audio_src_index") else idx
+        audio = self._get_audio_from_index(aidx)
         face_features = self._get_face(idx)
         # face_image = self._get_face_image(idx)
-        spectrogram = self._get_spectrogram(idx, audio)
-        label = self.label[idx]
+        spectrogram = self._get_spectrogram(idx, audio, aidx=aidx)
+        label = int(self.label[idx])
 
         # if self.mode=="test":
         #     random_idx = random.randint(0, len(self.image)-1)
@@ -533,7 +648,7 @@ def collate_fn_padd(batch):
     aggregated_batch = {}
     for key in batch[0].keys():
         aggregated_batch[key] = {}
-        if type(batch[0][key]) is int:
+        if isinstance(batch[0][key], (int, np.integer)):
             aggregated_batch[key] = torch.LongTensor([d[key] for d in batch])
 
     key = "data"
@@ -747,5 +862,3 @@ if __name__ == "__main__":
 
         if i == 2:
             break
-
-

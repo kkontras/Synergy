@@ -68,7 +68,9 @@ def configure_hf_cache(config, logger=None):
         if not os.environ.get(key):
             os.environ[key] = path
 
-    if logger is not None:
+    # Keep HF cache path logging opt-in to avoid noisy repeated logs
+    hf_cache_log = os.environ.get("HF_CACHE_LOG", "").strip().lower()
+    if logger is not None and hf_cache_log in ("1", "true", "yes", "on"):
         logger.info(
             "HF cache dirs: HF_HOME=%s TRANSFORMERS_CACHE=%s HF_DATASETS_CACHE=%s HF_HUB_CACHE=%s",
             os.environ.get("HF_HOME"),

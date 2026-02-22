@@ -17,6 +17,41 @@ from utils.metrics.corr_metrics import (
 )
 import json
 
+
+def _detach_to_cpu(x):
+    if isinstance(x, torch.Tensor):
+        return x.detach().cpu()
+    if isinstance(x, dict):
+        return {k: _detach_to_cpu(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_detach_to_cpu(v) for v in x]
+    if isinstance(x, tuple):
+        return tuple(_detach_to_cpu(v) for v in x)
+    return x
+
+
+def _extract_label_tensor(x):
+    if isinstance(x, torch.Tensor):
+        return x.detach().cpu()
+    if isinstance(x, dict):
+        for key in ("combined", "label", "target", "targets", "y"):
+            if key in x:
+                out = _extract_label_tensor(x[key])
+                if out is not None:
+                    return out
+        for v in x.values():
+            out = _extract_label_tensor(v)
+            if out is not None:
+                return out
+        return None
+    if isinstance(x, (list, tuple)):
+        for v in x:
+            out = _extract_label_tensor(v)
+            if out is not None:
+                return out
+    return None
+
+
 def multiclass_acc(preds, truths):
     return np.sum(np.round(preds) == np.round(truths)) / float(len(truths))
 
@@ -94,7 +129,9 @@ class General_Evaluator:
         logits = {pred: all_output["pred"][pred].cpu() for pred in all_output["pred"]}
         if self.set == "val":
             features = {feat: all_output["features"][feat].cpu() for feat in all_output["features"]}
-        label = all_output["label"].cpu()
+        label = _extract_label_tensor(all_output["label"])
+        if label is None:
+            raise TypeError(f"Could not extract tensor labels from type {type(all_output['label'])}")
         loss = {l_i: all_output["loss"][l_i].detach().cpu() for l_i in all_output["loss"]}
         num_instances = label.shape[0]
 
@@ -432,8 +469,10 @@ class General_Evaluator_Regression:
     def process(self, all_output: dict):
 
         logits = all_output["pred"]
-        label = all_output["label"]
-        loss = all_output["loss"]
+        label = _extract_label_tensor(all_output["label"])
+        if label is None:
+            raise TypeError(f"Could not extract tensor labels from type {type(all_output['label'])}")
+        loss = _detach_to_cpu(all_output["loss"])
         num_instances = label.shape[0]
 
         for pred_key in logits:

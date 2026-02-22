@@ -17,6 +17,43 @@ import random
 import numpy as np
 import hashlib
 
+
+def _detach_like(x):
+    if isinstance(x, torch.Tensor):
+        return x.detach()
+    if isinstance(x, dict):
+        return {k: _detach_like(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_detach_like(v) for v in x]
+    if isinstance(x, tuple):
+        return tuple(_detach_like(v) for v in x)
+    return x
+
+
+def _has_non_finite(x):
+    if isinstance(x, torch.Tensor):
+        return torch.is_floating_point(x) and (not torch.isfinite(x).all())
+    if isinstance(x, dict):
+        return any(_has_non_finite(v) for v in x.values())
+    if isinstance(x, (list, tuple)):
+        return any(_has_non_finite(v) for v in x)
+    return False
+
+
+def _sanitize_non_finite(x):
+    if isinstance(x, torch.Tensor):
+        if torch.is_floating_point(x):
+            return torch.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
+        return x
+    if isinstance(x, dict):
+        return {k: _sanitize_non_finite(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_sanitize_non_finite(v) for v in x]
+    if isinstance(x, tuple):
+        return tuple(_sanitize_non_finite(v) for v in x)
+    return x
+
+
 class Trainer():
 
     def __init__(self, agent):
@@ -35,6 +72,7 @@ class Trainer():
         self.end_of_epoch_check = self.agent.config.early_stopping.get("end_of_epoch_check", False)
         if self.end_of_epoch_check:
             self.agent.config.early_stopping.validate_every = len(self.agent.data_loader.train_loader)
+        self._skip_optimizer_step = False
 
     def train_steps(self):
 
@@ -84,9 +122,11 @@ class Trainer():
                 #         continue
 
                 self.agent.optimizer.zero_grad()
+                self._skip_optimizer_step = False
                 step_outcome, optstep_done = self.this_train_step_func(served_dict)
                 self._clip_grads()
-                if not optstep_done: self.agent.optimizer.step()
+                if not optstep_done and not self._skip_optimizer_step:
+                    self.agent.optimizer.step()
                 self.agent.scheduler.step(step=self.agent.logs["current_step"]+1, loss=step_outcome["loss"]["total"].item())
 
                 all_outputs = self.agent.accelerator.gather(step_outcome)
@@ -122,7 +162,16 @@ class Trainer():
 
     def train_one_step(self, served_dict, **kwargs):
 
+            sample_idx = served_dict.get("sample_idx", None)
+
             data = to_device(served_dict["data"], self.agent.accelerator.device)
+            if _has_non_finite(data):
+                self.agent.logger.warning(
+                    "Non-finite values found in training inputs at step %s (sample_idx=%s). Sanitizing batch.",
+                    self.agent.logs["current_step"],
+                    sample_idx.detach().cpu().tolist() if isinstance(sample_idx, torch.Tensor) else sample_idx,
+                )
+                data = _sanitize_non_finite(data)
             label = to_device(served_dict["label"], self.agent.accelerator.device)
 
             bias_method = self.agent.config.model.args.get("bias_infusion", {}).get("method", False)
@@ -167,6 +216,20 @@ class Trainer():
                                                                                               w_loss=self.w_loss, loss_fun = calculate_loss,
                                                                                               data=data, label=label, output=output)
 
+            if not torch.isfinite(total_loss):
+                self.agent.logger.warning(
+                    "Non-finite total loss at step %s (sample_idx=%s). Skipping optimizer step for this batch.",
+                    self.agent.logs["current_step"],
+                    sample_idx.detach().cpu().tolist() if isinstance(sample_idx, torch.Tensor) else sample_idx,
+                )
+                self.agent.optimizer.zero_grad(set_to_none=True)
+                optstep_done = True
+                total_loss = torch.zeros((), device=self.agent.accelerator.device)
+            else:
+                total_loss = _sanitize_non_finite(total_loss)
+
+            output_losses = _sanitize_non_finite(output_losses)
+            output["preds"] = _sanitize_non_finite(output["preds"])
 
             if total_loss.requires_grad and not optstep_done:
                 self.agent.accelerator.backward(total_loss)
@@ -180,16 +243,17 @@ class Trainer():
             # torch.cuda.reset_peak_memory_stats()
 
             if "c" in output["preds"] and "g" in output["preds"]:
+                    detached_label = _detach_like(label)
                     if bias_method == "OGM-Mine_3d":
                         self.agent.bias_infuser.on_backward_end(
-                            label=label.detach(),
+                            label=detached_label,
                             out_color=output["preds"]["c"].detach(),
                             out_gray=output["preds"]["g"].detach(),
                             out_f=output["preds"]["f"].detach(),
                         )
                     else:
                         self.agent.bias_infuser.on_backward_end(
-                            label=label.detach().cpu(),
+                            label=to_device(detached_label, "cpu"),
                             preds = output["preds"])
             this_output = {}
 
@@ -201,7 +265,7 @@ class Trainer():
                     "loss": output_losses,
                     "pred" : {pred: output["preds"][pred].detach() for pred in output["preds"]},
                     # "features" : {pred: output["features"][pred].detach() for pred in output["features"]},
-                   "label": label.detach().to(self.agent.accelerator.device)
+                   "label": to_device(_detach_like(label), self.agent.accelerator.device)
                     })
 
 
@@ -247,16 +311,17 @@ class Trainer():
             for i in output_losses: output_losses[i] = output_losses[i].detach()
 
             if "c" in output["preds"] and "g" in output["preds"]:
+                detached_label = _detach_like(label)
                 if bias_method == "MLB_3d" or bias_method == "MLB_3d_Reg":
                     self.agent.bias_infuser.on_backward_end(
-                        label=label.detach(),
+                        label=detached_label,
                         out_mod0=output["preds"]["c"].detach(),
                         out_mod1=output["preds"]["g"].detach(),
                         out_mod2=output["preds"]["f"].detach(),
                     )
                 else:
                     self.agent.bias_infuser.on_backward_end(
-                        label=label.detach().cpu().cpu(),
+                        label=to_device(detached_label, "cpu"),
                         out_mod0=output["preds"]["c"].detach().cpu(),
                         out_mod1=output["preds"]["g"].detach().cpu())
 
@@ -269,7 +334,7 @@ class Trainer():
             this_output.update({
                     "loss": output_losses,
                     "pred" : {pred: output["preds"][pred].detach() for pred in output["preds"]},
-                   "label": label.detach()
+                   "label": _detach_like(label)
                     })
 
 
@@ -305,6 +370,16 @@ class Trainer():
 
         clip_method = self.agent.config.model.args.get("clip_grad", False)
         bias_method = self.agent.config.model.args.get("bias_infusion", {}).get("method", False)
+
+        for p in self.agent.model.parameters():
+            if p.grad is not None and torch.is_floating_point(p.grad) and not torch.isfinite(p.grad).all():
+                self.agent.logger.warning(
+                    "Non-finite gradients at step %s. Zeroing gradients and skipping optimizer step.",
+                    self.agent.logs["current_step"],
+                )
+                self.agent.optimizer.zero_grad(set_to_none=True)
+                self._skip_optimizer_step = True
+                return
 
         if (bias_method == "AGM" or bias_method == "AGM_3mod") and clip_method=="AGM":
             named_modules = [i[0] for i in self.agent.model.named_children()]
@@ -364,4 +439,3 @@ class Trainer():
             self.agent.logs["w_loss"] = w_loss
 
         self.agent.logger.info("Loss Weights are {}".format( dict(self.w_loss)))
-

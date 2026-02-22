@@ -6557,9 +6557,14 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
 
         # call it right before language_model(...)
         # print_lm_input_stats(position_ids, input_embeds, attention_mask, image_mask, deep_stack_viz)
-        hint_mask = proc["hint_mask"]
-        hint_mask = hint_mask.to(device).bool()
+        hint_mask = proc.get("hint_mask", None)
+        if hint_mask is None:
+            hint_mask = torch.zeros_like(attention_mask, dtype=torch.bool, device=device)
+        else:
+            hint_mask = hint_mask.to(device).bool()
 
+        # Image-unimodal setting requested by user:
+        # keep question/instruction text, hide only hypothesis tokens.
         mask_to_null = attention_mask.bool() & hint_mask.bool()
         mask_3d = mask_to_null.unsqueeze(-1)
         input_embeds = torch.where(mask_3d, torch.tensor(1e-5, device=device, dtype=input_embeds.dtype), input_embeds)
@@ -8702,4 +8707,3 @@ if __name__ == "__main__":
 
     print(f"[OK] Saved CLS embedding to {CLS_PATH}")
     print(f"[OK] CLS row shape: {tuple(cls_row.shape)}")
-

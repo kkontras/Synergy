@@ -51,10 +51,12 @@
       "norm_face_path": "./mydatasets/CREMAD/norm_face_path_fold{}.pkl",
       "data_split": {"method": "non_inclusive", "fold": 0},
       "return_data" : {"video": false, "spectrogram":false, "audio":true, "face": true},
-      "sampling_rate": 16000
+      "sampling_rate": 16000,
+      "ironic_rate": 0.0,
+      "ironic_label_name": "SARCASM",
+      "ironic_modes": ["train", "val", "test"]
   },
   "model": {
-    "save_base_dir": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy"
+    "save_base_dir": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/data/2025_data/synergy/cremad/vit"
   }
 }
-

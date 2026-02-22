@@ -48,7 +48,7 @@
         },
         "pretrainedEncoder": {
           "use": true,
-          "dir": "unimodal_video_{}.pth.tar"
+          "dir": "unimodal_video_fold{}_vldaccuracy_lr0.0005_wd0.00001.pth.tar"
         }
       },
       {
@@ -62,7 +62,7 @@
         },
         "pretrainedEncoder": {
           "use": true,
-          "dir": "unimodal_text_{}.pth.tar"
+          "dir": "unimodal_text_fold{}_vldaccuracy_lr0.0005_wd0.0001.pth.tar"
         }
       }
     ]

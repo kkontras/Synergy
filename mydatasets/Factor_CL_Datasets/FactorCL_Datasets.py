@@ -9,26 +9,39 @@ def _convert_affect_batch(batch, task="classification"):
     if not isinstance(batch, (tuple, list)) or len(batch) < 4:
         return batch
 
+    sample_idx = None
     if isinstance(batch[0], (tuple, list)) and len(batch[0]) >= 3:
         modalities = batch[0]
+        if len(batch) > 2 and torch.is_tensor(batch[2]):
+            sample_idx = batch[2]
         label = batch[3]
     elif all(torch.is_tensor(batch[i]) for i in [0, 1, 2]):
         modalities = [batch[0], batch[1], batch[2]]
+        if len(batch) > 2 and torch.is_tensor(batch[2]):
+            sample_idx = batch[2]
         label = batch[3]
     else:
         return batch
+
+    # Keep values finite so a single corrupted sample cannot poison training.
+    modalities = [
+        torch.nan_to_num(m, nan=0.0, posinf=0.0, neginf=0.0) if torch.is_tensor(m) and torch.is_floating_point(m) else m
+        for m in modalities
+    ]
 
     if isinstance(label, torch.Tensor) and label.ndim > 1 and label.shape[-1] == 1:
         label = label.squeeze(-1)
 
     if isinstance(label, torch.Tensor):
+        if torch.is_floating_point(label):
+            label = torch.nan_to_num(label, nan=0.0, posinf=0.0, neginf=0.0)
         if task == "classification":
             label = label.long()
             label = torch.where(label < 0, torch.zeros_like(label), label)
         else:
             label = label.float()
 
-    return {
+    out = {
         "data": {
             "c": modalities[0],
             "f": modalities[1],
@@ -36,6 +49,9 @@ def _convert_affect_batch(batch, task="classification"):
         },
         "label": label,
     }
+    if sample_idx is not None:
+        out["sample_idx"] = sample_idx.view(-1)
+    return out
 
 
 class _BatchAdapter:

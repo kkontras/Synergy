@@ -19,7 +19,7 @@ if [[ ! -x "${PYTHON_BIN}" ]]; then
 fi
 
 GPU="${1:-0}"
-MODE="${2:-all}"   # all | unimodal | ceu | methods
+MODE="${2:-all}"   # all | unimodal | ceu | methods (methods runs CEU first)
 
 DEFAULT_CONFIG="./configs/FactorCL/Mustard/default_config_mustard_VT.json"
 RELEASE_DIR="./configs/FactorCL/Mustard/release/VT"
@@ -29,6 +29,7 @@ METHODS=(
   "${RELEASE_DIR}/DnR.json"
   "${RELEASE_DIR}/MCR.json"
   "${RELEASE_DIR}/MMPareto.json"
+  "${RELEASE_DIR}/ReconBoost.json"
   "${RELEASE_DIR}/synprom_RMask.json"
   "${RELEASE_DIR}/synprom_RMask_learned.json"
   "${RELEASE_DIR}/synprom_RMask_random.json"
@@ -40,16 +41,27 @@ IFS=',' read -r -a UNIMODAL_WDS <<< "${UNIMODAL_WDS_CSV:-0.001,0.0001,0.00001}"
 IFS=',' read -r -a METHOD_LRS <<< "${METHOD_LRS_CSV:-0.001,0.0001}"
 IFS=',' read -r -a METHOD_WDS <<< "${METHOD_WDS_CSV:-0.001,0.0001}"
 
-BEST_VIDEO_LR="${BEST_VIDEO_LR:-}"
-BEST_VIDEO_WD="${BEST_VIDEO_WD:-}"
-BEST_TEXT_LR="${BEST_TEXT_LR:-}"
-BEST_TEXT_WD="${BEST_TEXT_WD:-}"
+BEST_VIDEO_LR="${BEST_VIDEO_LR:-0.0005}"
+BEST_VIDEO_WD="${BEST_VIDEO_WD:-0.00001}"
+BEST_TEXT_LR="${BEST_TEXT_LR:-0.0005}"
+BEST_TEXT_WD="${BEST_TEXT_WD:-0.0001}"
+METHOD_FIXED_LR="${METHOD_FIXED_LR:-${BEST_TEXT_LR}}"
+METHOD_FIXED_WD="${METHOD_FIXED_WD:-${BEST_TEXT_WD}}"
 
 run_train() { CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/train.py "$@"; }
 run_ceu() { CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/get_ceu_cli.py "$@"; }
 
-do_unimodal() { [[ "${MODE}" == "all" || "${MODE}" == "unimodal" ]]; }
-do_ceu() { [[ "${MODE}" == "all" || "${MODE}" == "ceu" ]]; }
+do_unimodal() {
+  if [[ "${MODE}" == "unimodal" ]]; then
+    return 0
+  fi
+  if [[ "${MODE}" == "all" ]]; then
+    [[ -z "${BEST_VIDEO_LR}" || -z "${BEST_VIDEO_WD}" || -z "${BEST_TEXT_LR}" || -z "${BEST_TEXT_WD}" ]]
+    return
+  fi
+  return 1
+}
+do_ceu() { [[ "${MODE}" == "all" || "${MODE}" == "ceu" || "${MODE}" == "methods" ]]; }
 do_methods() { [[ "${MODE}" == "all" || "${MODE}" == "methods" ]]; }
 
 if do_unimodal; then
@@ -61,6 +73,10 @@ if do_unimodal; then
       done
     done
   done
+fi
+
+if [[ "${MODE}" == "all" && -n "${BEST_VIDEO_LR}" && -n "${BEST_VIDEO_WD}" && -n "${BEST_TEXT_LR}" && -n "${BEST_TEXT_WD}" ]]; then
+  echo "BEST_* vars detected. Skipping unimodal sweep and proceeding to CEU + methods."
 fi
 
 if [[ "${MODE}" == "all" && ( -z "${BEST_VIDEO_LR}" || -z "${BEST_VIDEO_WD}" || -z "${BEST_TEXT_LR}" || -z "${BEST_TEXT_WD}" ) ]]; then
@@ -90,13 +106,85 @@ if do_ceu; then
 fi
 
 if do_methods; then
+  echo "Methods stage uses fixed optimizer lr/wd: lr=${METHOD_FIXED_LR} wd=${METHOD_FIXED_WD} (defaulting to text-best)."
   for fold in "${FOLDS[@]}"; do
     for cfg in "${METHODS[@]}"; do
-      for lr in "${METHOD_LRS[@]}"; do
-        for wd in "${METHOD_WDS[@]}"; do
-          run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${lr}" --wd "${wd}" --validate_with accuracy
-        done
-      done
+      cfg_name="$(basename "${cfg}")"
+      case "${cfg_name}" in
+        DnR.json)
+          for alpha in 0.5 1.0 1.5 2.0 3.0 5.0; do
+            for kmpe in 1 3 5 10; do
+              run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" \
+                --lr "${METHOD_FIXED_LR}" --wd "${METHOD_FIXED_WD}" \
+                --alpha "${alpha}" --kmepoch "${kmpe}" --validate_with accuracy
+            done
+          done
+          ;;
+        MCR.json)
+          for l in 0.001 0.01 0.1 1; do
+            for multil in 0.01 0.1 1; do
+              run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" \
+                --lr "${METHOD_FIXED_LR}" --wd "${METHOD_FIXED_WD}" \
+                --l "${l}" --multil "${multil}" --validate_with accuracy
+            done
+          done
+          ;;
+        MMPareto.json)
+          for alpha in 0.5 1.0 1.5 2.0 3.0 5.0; do
+            run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" \
+              --lr "${METHOD_FIXED_LR}" --wd "${METHOD_FIXED_WD}" \
+              --alpha "${alpha}" --validate_with accuracy
+          done
+          ;;
+        ReconBoost.json)
+          for alpha in 0.5 1.0 1.5 2.0 3.0 5.0; do
+            for recon_stages in 1 4 10; do
+              for recon_weight1 in 1 3 5 10; do
+                run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" \
+                  --lr "${METHOD_FIXED_LR}" --wd "${METHOD_FIXED_WD}" \
+                  --alpha "${alpha}" \
+                  --recon_weight1 "${recon_weight1}" --recon_weight2 1 \
+                  --recon_epochstages "${recon_stages}" --recon_ensemblestages "${recon_stages}" \
+                  --validate_with accuracy
+              done
+            done
+          done
+          ;;
+        synprom_RMask_learned.json)
+          for l in 0.001 0.01 0.1 1; do
+            for lsparse in 0.001 0.01 0.1 1 3 5 10; do
+              run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" \
+                --lr "${METHOD_FIXED_LR}" --wd "${METHOD_FIXED_WD}" \
+                --l "${l}" --perturb learned --perturb_fill ema --perturb_lsparse "${lsparse}" \
+                --validate_with accuracy
+            done
+          done
+          ;;
+        synprom_RMask_random.json)
+          for l in 0.001 0.01 0.1 1; do
+            for pmin in 0.1 0.3 0.5 0.7 0.9; do
+              run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" \
+                --lr "${METHOD_FIXED_LR}" --wd "${METHOD_FIXED_WD}" \
+                --l "${l}" --perturb random --perturb_fill ema --perturb_pmin "${pmin}" \
+                --validate_with accuracy
+            done
+          done
+          ;;
+        synprom_RMask.json)
+          for l in 0.001 0.01 0.1 1; do
+            run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" \
+              --lr "${METHOD_FIXED_LR}" --wd "${METHOD_FIXED_WD}" \
+              --l "${l}" --validate_with accuracy
+          done
+          ;;
+        *)
+          for lr in "${METHOD_LRS[@]}"; do
+            for wd in "${METHOD_WDS[@]}"; do
+              run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${lr}" --wd "${wd}" --validate_with accuracy
+            done
+          done
+          ;;
+      esac
     done
   done
 fi

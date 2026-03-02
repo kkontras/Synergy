@@ -203,6 +203,7 @@ class ESNLIVE_Dataset(Dataset):
         source: str = "evil",
         image_size: int = 224,
         max_samples: Optional[int] = None,
+        max_images: Optional[int] = None,
         seed: int = 0,
         drop_invalid_labels: bool = True,
     ):
@@ -237,6 +238,26 @@ class ESNLIVE_Dataset(Dataset):
             rnd = random.Random(seed)
             rnd.shuffle(keep)
             keep = keep[:max_samples]
+
+        # Filter to the first max_images unique Flickr30k image IDs (in dataset order),
+        # keeping ALL hypothesis rows that belong to those images.
+        if max_images is not None and max_images > 0:
+            _fid_keys = ["Flikr30kID", "Flickr30kID", "flickr30k_id", "image_id"]
+            seen_fids: list = []
+            fid_set: set = set()
+            for i in keep:
+                fid = str(pick_first(self.rows[i], _fid_keys, default="")).strip()
+                if fid not in fid_set:
+                    fid_set.add(fid)
+                    seen_fids.append(fid)
+                if len(fid_set) >= max_images:
+                    break
+            keep = [i for i in keep
+                    if str(pick_first(self.rows[i], _fid_keys, default="")).strip() in fid_set]
+            self.logger.info(
+                f"max_images={max_images}: keeping {len(fid_set)} unique images "
+                f"→ {len(keep)} rows (images: {seen_fids})"
+            )
 
         self.keep = keep
         self.tf = transforms.Compose([transforms.Resize((image_size, image_size)), transforms.ToTensor()])
@@ -703,6 +724,18 @@ def build_token_type_ids(
             f"Hypothesis:{text}\n",
             f"Hypothesis: {text}\n",
         ]
+        # BPE suffix-merge fix: the prompt template places the hypothesis before
+        # multiple \n characters (e.g. \n\n\n\n\n\n from "\n\n".join([..., "\n", instr, ...]))
+        # which causes the tokenizer to merge the last hypothesis character with
+        # the trailing newlines into a single BPE token (e.g. ".\n\n\n\n\n\n" → ".ĊĊĊĊĊĊ").
+        # Adding candidates with 2-8 trailing newlines ensures we find the span.
+        for _n in range(2, 9):
+            _nl = "\n" * _n
+            candidates += [
+                text + _nl,
+                f"Hypothesis:{text}" + _nl,
+                f"Hypothesis: {text}" + _nl,
+            ]
 
         i = -1
         needle = []
@@ -775,6 +808,7 @@ def build_and_save_cache(
     num_workers: int,
     shard_size: int,
     max_samples: int,
+    max_images: int,
     require_image: bool,
     require_outside_knowledge: bool,
     drop_near_blank: bool,
@@ -808,12 +842,15 @@ def build_and_save_cache(
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         model_name,
         trust_remote_code=True,
+        cache_dir=data_root,
     ).cuda()
     model.eval()
 
     ds = ESNLIVE_Dataset(
         data_root=data_root,
-        split=split
+        split=split,
+        max_samples=max_samples if max_samples > 0 else None,
+        max_images=max_images if max_images > 0 else None,
     )
 
     dl = DataLoader(
@@ -991,7 +1028,13 @@ def build_and_save_cache(
                 # verify_shard(shard_path, n_show=1)
 
     shard_path = flush_shard()
-    verify_shard(shard_path, n_show=1)
+    if shard_path is None:
+        # All items were already flushed mid-loop; verify the last written shard
+        import glob as _glob
+        written = sorted(_glob.glob(os.path.join(split_out, "shard_*.pt")))
+        shard_path = written[-1] if written else None
+    if shard_path is not None:
+        verify_shard(shard_path, n_show=1)
 
     meta = {
         "model_name": model_name,
@@ -1032,6 +1075,9 @@ def main():
     ap.add_argument("--num_workers", type=int, default=4)
     ap.add_argument("--shard_size", type=int, default=4096)
     ap.add_argument("--max_samples", type=int, default=0, help="0 means all filtered samples")
+    ap.add_argument("--max_images", type=int, default=0,
+                    help="Keep only the first N unique Flickr30k images (0 = all). "
+                         "All hypothesis rows for those images are kept.")
 
     ap.add_argument("--require_image", action="store_true", default=True)
     ap.add_argument("--require_outside_knowledge", action="store_true", default=True)
@@ -1054,6 +1100,7 @@ def main():
         num_workers=args.num_workers,
         shard_size=args.shard_size,
         max_samples=args.max_samples,
+        max_images=args.max_images,
         require_image=args.require_image,
         require_outside_knowledge=args.require_outside_knowledge,
         drop_near_blank=args.drop_near_blank,

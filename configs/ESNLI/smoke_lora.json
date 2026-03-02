@@ -1,0 +1,69 @@
+{
+  "training_params": {
+    "batch_size": 4,
+    "test_batch_size": 8
+  },
+  "early_stopping": {
+    "n_steps_stop": 15,
+    "validate_every": 20
+  },
+  "optimizer": {
+    "type": "Adaw",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.00001
+  },
+  "dataset": {
+    "data_split": { "fold": 0 }
+  },
+  "model": {
+    "model_class": "QwenVL_ScienceQA_Cached",
+    "args": {
+      "model_name": "Qwen/Qwen3-VL-2B-Instruct",
+      "d_model": 512,
+      "num_classes": 3,
+      "fc_inner": 64,
+      "dropout": 0.1,
+      "cls_finetune": true,
+      "cls_type": "linear",
+      "clip_grad": true,
+      "clip_value": 1.0,
+      "bias_infusion": {
+        "method": "false",
+        "l": 0.1,
+        "starting_epoch": 0,
+        "ending_epoch": 9999,
+        "use": false,
+        "plot": false
+      },
+      "lora_config": {
+        "use_lora": true,
+        "lora_r": 8,
+        "lora_alpha": 16,
+        "lora_dropout": 0.05,
+        "lora_target_modules": ["q_proj", "v_proj"],
+        "lora_bias": "none",
+        "lora_lr": 0.0002
+      },
+      "multi_loss": {
+        "multi_supervised_w": {
+          "combined": 1
+        }
+      }
+    },
+    "load_ongoing": false,
+    "save_dir": "smoke_combined_{}.pth.tar",
+    "encoders": [
+      {
+        "model": "LinearHead_Qwen",
+        "args": {
+          "d_model": 2048,
+          "num_classes": 3
+        },
+        "pretrainedEncoder": {
+          "use": false,
+          "dir": "smoke_combined_head.pth.tar"
+        }
+      }
+    ]
+  }
+}

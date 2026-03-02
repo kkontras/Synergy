@@ -242,7 +242,7 @@ def make_collate_from_cache( *, padding_side: str = "right", pad_token_id: int =
         labels = torch.stack([b["label"] for b in batch], dim=0)
 
         # squeeze cached (1,L)->(L) etc; collect lengths and K
-        ids_list, attn_list, pos_list, emb_list, vmask_list, deep_list = [], [], [], [], [], []
+        ids_list, attn_list, pos_list, emb_list, vmask_list, hmask_list, deep_list = [], [], [], [], [], [], []
         lengths, Ks = [], []
 
         for b in batch:
@@ -252,6 +252,7 @@ def make_collate_from_cache( *, padding_side: str = "right", pad_token_id: int =
             emb = b["input_embeds"]
             vm = b["visual_pos_masks"]
             ds = b["deepstack_visual_embeds"]
+            hm = b.get("hint_mask", None)
 
             # squeeze sample batch dim
             ids = ids[0] if (ids.dim() == 2 and ids.shape[0] == 1) else ids
@@ -270,6 +271,7 @@ def make_collate_from_cache( *, padding_side: str = "right", pad_token_id: int =
             pos_list.append(pos)
             emb_list.append(emb)
             vmask_list.append(vm)
+            hmask_list.append(hm.reshape(-1).bool() if torch.is_tensor(hm) else torch.zeros(L, dtype=torch.bool))
             deep_list.append(ds)
 
         Lmax = max(lengths) if lengths else 0
@@ -286,6 +288,7 @@ def make_collate_from_cache( *, padding_side: str = "right", pad_token_id: int =
 
         # (B,Lmax) bool
         visual_pos_masks = torch.stack([_pad_1d(v.to(torch.bool), Lmax, pad_value=0, padding_side=padding_side).to(torch.bool) for v in vmask_list], dim=0)
+        hint_mask = torch.stack([_pad_1d(hm, Lmax, pad_value=0, padding_side=padding_side).bool() for hm in hmask_list], dim=0)
 
         # (B,Kmax,64,2048)
         deepstack_visual_embeds = torch.stack(
@@ -303,6 +306,7 @@ def make_collate_from_cache( *, padding_side: str = "right", pad_token_id: int =
                 "position_ids": position_ids,
                 "input_embeds": input_embeds,
                 "visual_pos_masks": visual_pos_masks,
+                "hint_mask": hint_mask,
                 "deepstack_visual_embeds": deepstack_visual_embeds,
             },
         }

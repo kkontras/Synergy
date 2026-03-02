@@ -1,4 +1,5 @@
 import copy
+import warnings
 
 from models.model_utils.fusion_gates import *
 from models.VAVL_git.VAVL.conformer.model import Conformer
@@ -6181,9 +6182,11 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
         input_embeds = torch.where(mask_3d, torch.tensor(1e-5, device=device, dtype=input_embeds.dtype), input_embeds)
         attention_mask = (attention_mask.bool() & ~image_mask.bool()).to(input_embeds.dtype)
 
-        is_text = (position_ids > 0) & (~image_mask.bool())
-        new_pos = torch.cumsum(is_text.long(), dim=-1) - 1
-        new_pos = torch.where(is_text, new_pos, torch.zeros_like(new_pos))
+        # Zero out image token positions in position_ids while preserving text
+        # spatial coordinates. The old cumsum approach was wrong: it renumbered
+        # all remaining tokens, corrupting 3D-RoPE geometry for image tokens.
+        img_expanded = image_mask.bool().unsqueeze(0).expand_as(position_ids)  # (3,B,T)
+        new_pos = position_ids.masked_fill(img_expanded, 0)
 
         out = self.backbone.model.language_model(
             input_ids=None,
@@ -6563,6 +6566,15 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
         else:
             hint_mask = hint_mask.to(device).bool()
 
+        # Sanity check: if hint_mask is empty the model sees the full hypothesis.
+        hint_frac = hint_mask.float().mean().item()
+        if hint_frac < 0.01:
+            warnings.warn(
+                f"[image-only] hint_mask is nearly empty (mean={hint_frac:.4f}) "
+                "— hypothesis tokens may not be masked! Check build_token_type_ids.",
+                stacklevel=2,
+            )
+
         # Image-unimodal setting requested by user:
         # keep question/instruction text, hide only hypothesis tokens.
         mask_to_null = attention_mask.bool() & hint_mask.bool()
@@ -6570,9 +6582,12 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
         input_embeds = torch.where(mask_3d, torch.tensor(1e-5, device=device, dtype=input_embeds.dtype), input_embeds)
         attention_mask = (attention_mask.bool() & ~hint_mask.bool()).to(input_embeds.dtype)
 
-        is_text = (position_ids > 0) & (~hint_mask.bool())
-        new_pos = torch.cumsum(is_text.long(), dim=-1) - 1
-        new_pos = torch.where(is_text, new_pos, torch.zeros_like(new_pos))
+        # Zero out hypothesis token positions in position_ids while preserving all
+        # other spatial coordinates (image 3D-RoPE height/width/depth coords).
+        # The old cumsum approach was wrong: it renumbered every remaining token,
+        # corrupting the 2D spatial coordinates needed by Qwen3-VL image tokens.
+        hint_expanded = hint_mask.bool().unsqueeze(0).expand_as(position_ids)  # (3,B,T)
+        new_pos = position_ids.masked_fill(hint_expanded, 0)
 
         out = self.backbone.model.language_model(
             input_ids=None,
@@ -8707,3 +8722,160 @@ if __name__ == "__main__":
 
     print(f"[OK] Saved CLS embedding to {CLS_PATH}")
     print(f"[OK] CLS row shape: {tuple(cls_row.shape)}")
+
+
+# =============================================================================
+# Bias-Infusion method model classes for the ESNLI cached pipeline
+# =============================================================================
+
+class QwenVL_ScienceQA_Cached_DnR(QwenVL_ScienceQA_Cached_MMPareto):
+    """
+    Disagree-and-Reweight (DnR) variant.
+
+    Identical forward to QwenVL_ScienceQA_Cached_MMPareto (three passes:
+    combined, text-only, image-only) but does NOT include ce_loss_combined
+    in output["losses"].  The combined CE loss is handled exclusively by
+    the trainer's calculate_loss (multi_supervised_w = {"combined": 1}),
+    so total_loss = ce_loss_combined + ce_loss_c + ce_loss_g without
+    any double-counting.
+
+    The DnR bias-infusion handler (Bias_Infusion_DnR) uses features["c"]
+    and features["g"] for K-Means purity scoring and periodic reinit.
+    Set bias_infusion.method = "DnR" in the config.
+    """
+
+    def forward(self, x, *, label=None, return_features=False, **kwargs):
+        out = super().forward(x, label=label, return_features=return_features, **kwargs)
+        out["losses"].pop("ce_loss_combined", None)
+        return out
+
+
+class QwenVL_ScienceQA_Cached_ReconBoost(QwenVL_ScienceQA_Cached_MMPareto):
+    """
+    ReconBoost variant.
+
+    Same dual-forward structure as QwenVL_ScienceQA_Cached_MMPareto but
+    ce_loss_combined is removed from output["losses"] to avoid double-
+    counting with the trainer's calculate_loss.
+
+    The ReconBoost handler (Bias_Infusion_ReconBoost) manages its own
+    per-stage backward passes:
+      - Stage 0 / 2: boosting loss on preds["c"] or preds["g"]
+      - Stage 1 (ensemble): combined CE via output_losses["ce_loss_combined"]
+    Set bias_infusion.method = "ReconBoost" in the config.
+    """
+
+    def forward(self, x, *, label=None, return_features=False, **kwargs):
+        out = super().forward(x, label=label, return_features=return_features, **kwargs)
+        out["losses"].pop("ce_loss_combined", None)
+        return out
+
+
+class QwenVL_ScienceQA_Cached_RMask(QwenVL_ScienceQA_Cached):
+    """
+    Random Modality Masking (RMask) for the Qwen cached multimodal model.
+
+    During *training* each forward step randomly selects one of three modes:
+      - combined    (prob = 1 - p_mask_image - p_mask_text)
+      - text-only   (prob = p_mask_image)  image tokens suppressed
+      - image-only  (prob = p_mask_text)   hint/text tokens suppressed
+
+    During *eval* the combined (full multimodal) pass is always used.
+
+    Configuration via model.args.rmask (dict):
+      p_mask_image  float  (default 0.15): prob of text-only forward
+      p_mask_text   float  (default 0.15): prob of image-only forward
+
+    CE loss is computed entirely by the trainer's calculate_loss;
+    this model returns an empty losses dict.
+    """
+
+    def forward(self, x, *, label=None, return_features=False, **kwargs):
+        proc   = x
+        device = self.backbone.device
+
+        input_ids      = proc["input_ids"].to(device)
+        attention_mask = proc["attention_mask"].to(device)
+
+        if "image_mask" in proc:
+            image_mask = proc["image_mask"].to(device)
+        elif "visual_pos_masks" in proc:
+            image_mask = proc["visual_pos_masks"].to(device)
+        else:
+            image_mask = torch.zeros_like(attention_mask, dtype=torch.bool)
+
+        input_embeds   = proc["input_embeds"].to(device)
+        position_ids   = proc["position_ids"].to(device)
+        deep_stack_viz = proc["deepstack_visual_embeds"].to(device)
+        deep_stack_viz = [deep_stack_viz[i] for i in range(len(deep_stack_viz))]
+
+        hint_mask = proc.get("hint_mask", None)
+        if hint_mask is None:
+            hint_mask = torch.zeros_like(attention_mask, dtype=torch.bool, device=device)
+        else:
+            hint_mask = hint_mask.to(device).bool()
+
+        rmask_cfg = getattr(self.args, "rmask", {})
+        p_img     = float(rmask_cfg.get("p_mask_image", 0.15))
+        p_txt     = float(rmask_cfg.get("p_mask_text",  0.15))
+        rand_val  = torch.rand(1).item() if self.training else 1.0
+
+        if self.training and rand_val < p_img:
+            # --- text-only: suppress image tokens ---
+            m3d        = (attention_mask.bool() & image_mask.bool()).unsqueeze(-1)
+            cur_embeds = torch.where(
+                m3d,
+                torch.tensor(1e-5, device=device, dtype=input_embeds.dtype),
+                input_embeds,
+            )
+            cur_attn = (attention_mask.bool() & ~image_mask.bool()).to(input_embeds.dtype)
+            img_exp  = image_mask.bool().unsqueeze(0).expand_as(position_ids)
+            cur_pos  = position_ids.masked_fill(img_exp, 0)
+            lm_out   = self.backbone.model.language_model(
+                input_ids=None, position_ids=cur_pos,
+                inputs_embeds=cur_embeds, attention_mask=cur_attn,
+                output_hidden_states=True, return_dict=True,
+                cache_position=None, use_cache=False,
+            )
+
+        elif self.training and rand_val < p_img + p_txt:
+            # --- image-only: suppress hint/text tokens ---
+            m3d        = (attention_mask.bool() & hint_mask.bool()).unsqueeze(-1)
+            cur_embeds = torch.where(
+                m3d,
+                torch.tensor(1e-5, device=device, dtype=input_embeds.dtype),
+                input_embeds,
+            )
+            cur_attn  = (attention_mask.bool() & ~hint_mask.bool()).to(input_embeds.dtype)
+            hint_exp  = hint_mask.bool().unsqueeze(0).expand_as(position_ids)
+            cur_pos   = position_ids.masked_fill(hint_exp, 0)
+            lm_out    = self.backbone.model.language_model(
+                input_ids=None, position_ids=cur_pos,
+                inputs_embeds=cur_embeds, attention_mask=cur_attn,
+                visual_pos_masks=image_mask,
+                deepstack_visual_embeds=deep_stack_viz,
+                output_hidden_states=True, return_dict=True,
+                cache_position=None, use_cache=False,
+            )
+
+        else:
+            # --- combined: standard multimodal forward ---
+            lm_out = self.backbone.model.language_model(
+                input_ids=None, position_ids=position_ids,
+                inputs_embeds=input_embeds, attention_mask=attention_mask,
+                visual_pos_masks=image_mask,
+                deepstack_visual_embeds=deep_stack_viz,
+                output_hidden_states=True, return_dict=True,
+                cache_position=None, use_cache=False,
+            )
+
+        hidden = lm_out.hidden_states[-1]
+        h_cls  = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
+        logits = self.enc_0(h_cls)
+
+        # CE loss is computed by the trainer's calculate_loss; no losses here.
+        return {
+            "preds":    {"combined": logits},
+            "features": {"combined": h_cls},
+            "losses":   {},
+        }

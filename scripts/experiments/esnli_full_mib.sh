@@ -42,7 +42,7 @@ hr() { echo; echo "=============================================================
 mkdir -p "${FULL_CACHE}" "${CKPT_DIR}"
 
 # =============================================================================
-if [[ "${MODE}" == "all" || "${MODE}" == "cache" ]]; then
+if [ "${MODE}" = "all" -o "${MODE}" = "cache" ]; then
 
 hr "STEP 1  Build full v2 cache"
 # Train: ~401k samples | Val: ~14k | Test: ~14k
@@ -134,7 +134,7 @@ PYEOF
 fi   # end cache block
 
 # =============================================================================
-if [[ "${MODE}" == "all" || "${MODE}" == "train" ]]; then
+if [ "${MODE}" = "all" -o "${MODE}" = "train" ]; then
 
 # =============================================================================
 hr "STEP 3  Train COMBINED model (image + text, LoRA)"

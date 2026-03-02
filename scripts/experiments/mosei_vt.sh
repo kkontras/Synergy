@@ -61,14 +61,16 @@ do_ceu() { [[ "${MODE}" == "all" || "${MODE}" == "ceu" ]]; }
 do_methods() { [[ "${MODE}" == "all" || "${MODE}" == "methods" ]]; }
 
 if do_unimodal; then
-  for fold in "${FOLDS[@]}"; do
-    for lr in "${UNIMODAL_LRS[@]}"; do
-      for wd in "${UNIMODAL_WDS[@]}"; do
-        run_train --config "${UNIMODAL_VIDEO}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${lr}" --wd "${wd}" --validate_with accuracy
-        run_train --config "${UNIMODAL_TEXT}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${lr}" --wd "${wd}" --validate_with accuracy
-      done
-    done
-  done
+  echo "[SKIP] Unimodal sweep block is commented out to avoid rerunning existing checkpoints."
+  echo "[SKIP] Re-enable the block in scripts/experiments/mosei_vt.sh if you want to retrain unimodals."
+  # for fold in "${FOLDS[@]}"; do
+  #   for lr in "${UNIMODAL_LRS[@]}"; do
+  #     for wd in "${UNIMODAL_WDS[@]}"; do
+  #       run_train --config "${UNIMODAL_VIDEO}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${lr}" --wd "${wd}" --validate_with accuracy
+  #       run_train --config "${UNIMODAL_TEXT}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${lr}" --wd "${wd}" --validate_with accuracy
+  #     done
+  #   done
+  # done
 fi
 
 if [[ "${MODE}" == "all" && ( -z "${BEST_VIDEO_LR}" || -z "${BEST_VIDEO_WD}" || -z "${BEST_TEXT_LR}" || -z "${BEST_TEXT_WD}" ) ]]; then

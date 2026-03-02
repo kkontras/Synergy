@@ -1,53 +1,59 @@
 {
   "model": {
-    "model_class": "Base_Model",
     "args": {
-      "d_model": 40,
-      "num_classes": 2,
-      "fc_inner": 64,
-      "dropout": 0.1,
-      "cls_type": "linear",
-      "clip_grad": false,
       "bias_infusion": {
         "method": false
       },
-    "multi_loss": {
-      "multi_supervised_w": {
-        "combined": 1,
-        "c": 0,
-        "g": 0
-      }
-    }
+      "clip_grad": false,
+      "cls_type": "linear",
+      "d_model": 40,
+      "dropout": 0.1,
+      "fc_inner": 64,
+      "multi_loss": {
+        "multi_supervised_w": {
+          "c": 0,
+          "combined": 1,
+          "g": 0
+        }
+      },
+      "num_classes": 2
     },
-    "load_ongoing": false,
-    "save_dir": "pre_frozen_{}.pth.tar",
+    "ceu": {
+      "test": "./artifacts/ceus/mosi/mosi_ceu_test.pkl",
+      "val": "./artifacts/ceus/mosi/mosi_ceu_val.pkl"
+    },
     "encoders": [
       {
-        "model": "FactorCL_Uni",
         "args": {
-          "n_features": 20,
+          "freeze_encoder": true,
           "hidden_size": 40,
           "modality": "c",
-          "num_classes": 2,
-          "freeze_encoder": true},
+          "n_features": 20,
+          "num_classes": 2
+        },
+        "model": "FactorCL_Uni",
         "pretrainedEncoder": {
-          "use": true,
-          "dir": "unimodal_video_{}_lr0.0001.pth.tar"
+          "dir": "unimodal_video_fold{}_vldaccuracy_lr0.0005_wd0.00001.pth.tar",
+          "use": true
         }
       },
       {
-        "model": "FactorCL_Uni",
         "args": {
-          "n_features": 300,
+          "freeze_encoder": true,
           "hidden_size": 40,
           "modality": "g",
-          "num_classes": 2,
-          "freeze_encoder": true},
+          "n_features": 300,
+          "num_classes": 2
+        },
+        "model": "FactorCL_Uni",
         "pretrainedEncoder": {
-          "use": true,
-          "dir": "unimodal_text_{}_lr0.0001.pth.tar"
+          "dir": "unimodal_text_fold{}_vldaccuracy_lr0.0005_wd0.0001.pth.tar",
+          "use": true
         }
       }
-    ]
+    ],
+    "load_ongoing": false,
+    "model_class": "Base_Model",
+    "save_dir": "pre_frozen_{}.pth.tar"
   }
 }

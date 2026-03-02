@@ -45,10 +45,16 @@
     "n_steps_stop_after": 0
   },
   "dataset": {
-    "dataloader_class": "FactorCL_Dataloader",
+    "dataloader_class": "FactorCL_MustardFiltered_Dataloader",
     "data_roots": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/FactorCL/sarcasm.pkl",
     "data_type": "mustard",
-    "z_norm": true
+    "z_norm": true,
+    "mustard_video_filter": {
+      "enabled": true,
+      "vision_absmax_threshold": 1000000.0,
+      "check_aligned_segment": true,
+      "min_aligned_len": 1
+    }
   },
   "model": {
     "model_class": "Base_Model",

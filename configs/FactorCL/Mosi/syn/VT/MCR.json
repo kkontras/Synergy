@@ -29,6 +29,10 @@
       },
       "num_classes": 2
     },
+    "ceu": {
+      "test": "./artifacts/ceus/mosi/mosi_ceu_test.pkl",
+      "val": "./artifacts/ceus/mosi/mosi_ceu_val.pkl"
+    },
     "encoders": [
       {
         "args": {
@@ -41,7 +45,7 @@
         "model": "FactorCL_Uni",
         "pretrainedEncoder": {
           "dir": "unimodal_video_fold{}_vldaccuracy_lr0.0005_wd0.00001.pth.tar",
-          "use": false
+          "use": true
         }
       },
       {
@@ -55,16 +59,12 @@
         "model": "FactorCL_Uni",
         "pretrainedEncoder": {
           "dir": "unimodal_text_fold{}_vldaccuracy_lr0.0005_wd0.0001.pth.tar",
-          "use": false
+          "use": true
         }
       }
     ],
     "load_ongoing": false,
     "model_class": "MCR_Model",
-    "save_dir": "MCR_{}.pth.tar",
-    "ceu": {
-      "val": "./artifacts/ceus/mosi/mosi_ceu_val.pkl",
-      "test": "./artifacts/ceus/mosi/mosi_ceu_test.pkl"
-    }
+    "save_dir": "MCR_{}.pth.tar"
   }
 }

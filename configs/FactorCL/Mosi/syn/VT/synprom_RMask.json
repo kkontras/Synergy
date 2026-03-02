@@ -1,22 +1,8 @@
 {
   "model": {
     "args": {
-      "bias_infusion": {
-        "ending_epoch": 1500,
-        "l": 0.1,
-        "l_gradnorm": 0,
-        "method": "ShuffleGradFinal_Reg",
-        "noise": false,
-        "num_samples": 1024,
-        "plot": false,
-        "regby": "dist_pred_cub",
-        "shuffle": true,
-        "shuffle_type": "rand",
-        "starting_epoch": 0,
-        "use": true
-      },
-      "clip_grad": false,
-      "cls_type": "linear",
+      "bias_infusion": {},
+      "cls_type": "mlp",
       "d_model": 40,
       "dropout": 0.1,
       "fc_inner": 64,
@@ -27,6 +13,7 @@
           "g": 1
         }
       },
+      "norm_decision": false,
       "num_classes": 2
     },
     "encoders": [
@@ -41,7 +28,7 @@
         "model": "FactorCL_Uni",
         "pretrainedEncoder": {
           "dir": "unimodal_video_fold{}_vldaccuracy_lr0.0005_wd0.00001.pth.tar",
-          "use": false
+          "use": true
         }
       },
       {
@@ -55,13 +42,42 @@
         "model": "FactorCL_Uni",
         "pretrainedEncoder": {
           "dir": "unimodal_text_fold{}_vldaccuracy_lr0.0005_wd0.0001.pth.tar",
-          "use": false
+          "use": true
         }
+      },
+      {
+        "args": {
+          "d_model": 40,
+          "dropout": 0.1,
+          "fc_inner": 64,
+          "freeze_encoder": false
+        },
+        "model": "FusionTrunkLinear",
+        "name": "enc_2_fusion_trunk",
+        "pretrainedEncoder": {
+          "dir": "enc_2_fusion_trunk_fold{}.pth.tar",
+          "use": false
+        },
+        "save_encoder": false
+      },
+      {
+        "args": {
+          "freeze_encoder": false,
+          "in_dim": 64,
+          "num_classes": 2
+        },
+        "model": "LinearHead",
+        "name": "enc_3_fusion_head",
+        "pretrainedEncoder": {
+          "dir": "enc_3_fusion_head_fold{}.pth.tar",
+          "use": false
+        },
+        "save_encoder": false
       }
     ],
     "load_ongoing": false,
-    "model_class": "MCR_Model",
-    "save_dir": "MCR_{}.pth.tar",
+    "model_class": "FusionIBModel_Mask",
+    "save_dir": "SynIB_RMask_fold{}.pth.tar",
     "ceu": {
       "val": "./artifacts/ceus/mosi/mosi_ceu_val.pkl",
       "test": "./artifacts/ceus/mosi/mosi_ceu_test.pkl"

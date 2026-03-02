@@ -700,7 +700,7 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        HF_CACHE = getattr(self.args, "save_base_dir", None)
+        HF_CACHE = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         # -----------------------------
         # Processor / Tokenizer
@@ -1174,7 +1174,7 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS_VisualEmb(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        HF_CACHE = getattr(self.args, "save_base_dir", None)
+        HF_CACHE = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         # -----------------------------
         # Processor / Tokenizer
@@ -2049,7 +2049,7 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        HF_CACHE = getattr(self.args, "save_base_dir", None)
+        HF_CACHE = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
 
         # -----------------------------
@@ -2428,7 +2428,7 @@ class QwenVL_ScienceQA_Unimodal_Image(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        HF_CACHE = getattr(self.args, "save_base_dir", None)
+        HF_CACHE = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         # -----------------------------
         # Processor / Tokenizer
@@ -2770,7 +2770,7 @@ class QwenVL_ScienceQA_Unimodal_Text(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        HF_CACHE = getattr(self.args, "save_base_dir", None)
+        HF_CACHE = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         # -----------------------------
         # Processor / Tokenizer
@@ -3466,7 +3466,7 @@ class SynIB_QwenFaster(nn.Module):
 #         self.num_classes = getattr(args, "num_classes")
 #
 #         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-#         HF_CACHE = getattr(self.args, "save_base_dir", None)
+#         HF_CACHE = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 #
 #         # -----------------------------
 #         # Processor / Tokenizer
@@ -4220,7 +4220,7 @@ class QwenVL_ESNLI_Synergy_FrozenCLS(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        HF_CACHE = getattr(self.args, "save_base_dir", None)
+        HF_CACHE = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         # -----------------------------
         # Processor / Tokenizer
@@ -4729,7 +4729,7 @@ class QwenVL_ESNLI_Synergy_FrozenCLS_VisualEmb(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        HF_CACHE = getattr(self.args, "save_base_dir", None)
+        HF_CACHE = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         # -----------------------------
         # Processor / Tokenizer
@@ -5515,7 +5515,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        hf_cache = getattr(self.args, "save_base_dir", None)
+        hf_cache = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
         tok = self.processor.tokenizer
@@ -5889,7 +5889,7 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        hf_cache = getattr(self.args, "save_base_dir", None)
+        hf_cache = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
         tok = self.processor.tokenizer
@@ -6270,7 +6270,7 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        hf_cache = getattr(self.args, "save_base_dir", None)
+        hf_cache = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
         tok = self.processor.tokenizer
@@ -6671,7 +6671,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        hf_cache = getattr(self.args, "save_base_dir", None)
+        hf_cache = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
         tok = self.processor.tokenizer
@@ -7269,7 +7269,7 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        hf_cache = getattr(self.args, "save_base_dir", None)
+        hf_cache = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
         tok = self.processor.tokenizer
@@ -7643,7 +7643,7 @@ class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
         self.num_classes = getattr(args, "num_classes")
 
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        hf_cache = getattr(self.args, "save_base_dir", None)
+        hf_cache = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
         tok = self.processor.tokenizer
@@ -8018,7 +8018,7 @@ class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):
 
         self.args = args
         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-        hf_cache = getattr(self.args, "save_base_dir", None)
+        hf_cache = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 
         self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
         tok = self.processor.tokenizer
@@ -8155,7 +8155,7 @@ class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):
 #         self.num_classes = getattr(args, "num_classes")
 #
 #         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-#         hf_cache = getattr(self.args, "save_base_dir", None)
+#         hf_cache = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 #
 #         self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
 #         tok = self.processor.tokenizer
@@ -8483,7 +8483,7 @@ class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):
 #         self.num_classes = getattr(args, "num_classes")
 #
 #         model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
-#         hf_cache = getattr(self.args, "save_base_dir", None)
+#         hf_cache = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
 #
 #         self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
 #         tok = self.processor.tokenizer
@@ -8704,7 +8704,7 @@ if __name__ == "__main__":
     # ---- tokenizer to get CLS id ----
     from transformers import AutoProcessor
     model_name = "Qwen/Qwen3-VL-2B-Instruct"
-    processor = AutoProcessor.from_pretrained(model_name)
+    processor = AutoProcessor.from_pretrained(model_name, cache_dir=os.environ.get("HF_HOME"))
     tok = processor.tokenizer
     tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
     cls_token_id = tok.convert_tokens_to_ids("<CLS>")

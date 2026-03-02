@@ -69,7 +69,7 @@ print(total)
         --model_name  "${MODEL_NAME}"   \
         --shard_size  "${SHARD_SIZE}"   \
         --batch_size  "${BUILD_BATCH}"  \
-        --device      "cuda:${GPU}"     \
+        --device      "cuda:0"          \
         --dtype       fp16
     echo "  Done: ${SPLIT}"
 done

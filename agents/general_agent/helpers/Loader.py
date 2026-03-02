@@ -108,6 +108,31 @@ class Loader():
         enc = self.load_encoder(enc_args=self.agent.config.model.get("encoders", []))
         model_class = self._resolve_model_class(self.agent.config.model.model_class)
 
+        # Expose save_base_dir and hf_cache_dir to model/encoder args so HF backbones
+        # can use the correct cache location (avoids writing to ~/.cache on clusters).
+        if "save_base_dir" in self.agent.config.model:
+            try:
+                self.agent.config.model.args.save_base_dir = self.agent.config.model.save_base_dir
+            except Exception:
+                pass
+            for enc_cfg in self.agent.config.model.get("encoders", []):
+                try:
+                    enc_cfg.args.save_base_dir = self.agent.config.model.save_base_dir
+                except Exception:
+                    pass
+
+        hf_cache_dir = getattr(self.agent.config, "hf_cache_dir", None)
+        if hf_cache_dir:
+            try:
+                self.agent.config.model.args.hf_cache = hf_cache_dir
+            except Exception:
+                pass
+            for enc_cfg in self.agent.config.model.get("encoders", []):
+                try:
+                    enc_cfg.args.hf_cache = hf_cache_dir
+                except Exception:
+                    pass
+
         if "save_base_dir" in self.agent.config.model and "swin_backbone" in self.agent.config.model.args:
             self.agent.config.model.args.swin_backbone = os.path.join(self.agent.config.model.save_base_dir, self.agent.config.model.args.swin_backbone)
 

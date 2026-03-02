@@ -10,21 +10,21 @@
 # /scratch/kkontras/ESNLI/.
 #
 # Usage (sequential, single GPU):
-#   GPU=0 bash scripts/experiments/esnli_full_mib.sh
+#   bash scripts/experiments/esnli_full_mib.sh
 #
 # Usage (cache only, then train separately):
-#   MODE=cache GPU=0 bash scripts/experiments/esnli_full_mib.sh
-#   MODE=train GPU=0 bash scripts/experiments/esnli_full_mib.sh
+#   MODE=cache bash scripts/experiments/esnli_full_mib.sh
+#   MODE=train bash scripts/experiments/esnli_full_mib.sh
 #
 # Tuneable env vars:
-#   GPU=0            which CUDA device to use
+#   GPU=5            which CUDA device to use
 #   BUILD_BATCH=4    batch size for the cache builder
 #   SHARD_SIZE=4096  items per shard file
 #   MODEL_NAME=Qwen/Qwen3-VL-2B-Instruct
 # =============================================================================
-set -euo pipefail
+set -eu
 
-GPU=${GPU:-0}
+GPU=${GPU:-5}
 MODE=${MODE:-all}       # all | cache | train
 BUILD_BATCH=${BUILD_BATCH:-4}
 SHARD_SIZE=${SHARD_SIZE:-4096}

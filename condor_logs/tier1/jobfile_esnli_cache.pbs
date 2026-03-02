@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+#PBS -l walltime=48:00:00
+#PBS -l nodes=1:ppn=12:gpus=1
+
+#PBS -A 2024_111
+
+#PBS -o ./condor_logs/logs_vsc/out_${PBS_JOBID}.txt
+#PBS -e ./condor_logs/logs_vsc/err_${PBS_JOBID}.txt
+
+
+cd /dodrio/scratch/projects/2024_111/Synergy
+
+git pull origin main
+
+source /dodrio/scratch/projects/starting_2024_024/env/Anaconda/etc/profile.d/conda.sh
+conda activate /dodrio/scratch/projects/starting_2024_024/env/balance
+
+which python
+python -V
+echo $PWD
+
+DATA_ROOT="/dodrio/scratch/projects/2024_111/ESNLI"
+CACHE_OUT="${DATA_ROOT}/cache_v2_full"
+MODEL_NAME="${model_name:-Qwen/Qwen3-VL-2B-Instruct}"
+SHARD_SIZE="${shard_size:-4096}"
+BUILD_BATCH="${build_batch:-8}"
+
+mkdir -p "${CACHE_OUT}" ./condor_logs/logs_vsc
+
+for SPLIT in train validation test; do
+    SPLIT_DIR="${CACHE_OUT}/${SPLIT}"
+    if [ -f "${SPLIT_DIR}/manifest.jsonl" ]; then
+        echo "[skip] ${SPLIT}: manifest exists"
+        continue
+    fi
+
+    echo "Building ${SPLIT} ..."
+    python mydatasets/ESNLI/ESNLI_CodeBook_v2.py \
+        --split      "${SPLIT}"      \
+        --data_root  "${DATA_ROOT}"  \
+        --out_dir    "${CACHE_OUT}"  \
+        --model_name "${MODEL_NAME}" \
+        --shard_size "${SHARD_SIZE}" \
+        --batch_size "${BUILD_BATCH}" \
+        --device     "cuda:0"        \
+        --dtype      fp16
+    echo "Done: ${SPLIT}"
+done
+
+echo "All splits done. Cache at ${CACHE_OUT}"

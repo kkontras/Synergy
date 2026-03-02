@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+#PBS -l walltime=48:00:00
+#PBS -l nodes=1:ppn=12:gpus=1
+
+#PBS -A 2024_111
+
+#PBS -o ./condor_logs/logs_vsc/out_${PBS_JOBID}.txt
+#PBS -e ./condor_logs/logs_vsc/err_${PBS_JOBID}.txt
+
+
+cd /dodrio/scratch/projects/2024_111/Synergy
+
+git pull origin main
+
+source /dodrio/scratch/projects/starting_2024_024/env/Anaconda/etc/profile.d/conda.sh
+conda activate /dodrio/scratch/projects/starting_2024_024/env/balance
+
+which python
+python -V
+echo $PWD
+
+mkdir -p ./condor_logs/logs_vsc
+
+# Set unspecified variables to None so train.py uses config defaults
+for var_name in fold lr wd batch_size load_ongoing; do
+    var_value="${!var_name}"
+    if [ -z "$var_value" ]; then
+        declare "$var_name"="None"
+    fi
+done
+
+python scripts/entrypoints/train.py \
+    --config         "${config}"         \
+    --default_config "${default_config}" \
+    --fold           "${fold}"           \
+    --lr             "${lr}"             \
+    --wd             "${wd}"             \
+    --batch_size     "${batch_size}"     \
+    --load_ongoing   "${load_ongoing}"   \
+    --tdqm_disable

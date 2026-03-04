@@ -16,6 +16,8 @@ git pull origin main
 source $VSC_DATA/anaconda3/etc/profile.d/conda.sh
 conda activate /dodrio/scratch/projects/2026_029/kkontras/envs/synergy_new
 
+python -m pip install -r env/requirements_tier1.txt
+
 which python
 python -V
 echo $PWD

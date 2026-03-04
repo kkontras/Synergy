@@ -29,7 +29,9 @@ mkdir -p "${IMG_DIR}" "${HF_CACHE}"
 export IMG_DIR HF_CACHE
 
 echo "[download_esnli_data.sh] revision=${SCRIPT_REV}"
+SKIP_IMAGES="${SKIP_IMAGES:-0}"
 
+if [ "${SKIP_IMAGES}" != "1" ]; then
 echo "Downloading Flickr30k images to ${IMG_DIR} ..."
 echo "(This requires ~9 GB of disk space and may take 20-40 minutes.)"
 
@@ -83,6 +85,9 @@ if final_total < 30000:
     )
 print(f"Done. Flickr30k images ready: {final_total} files in {final_dir}.")
 PYEOF
+else
+echo "SKIP_IMAGES=1 -> skipping Flickr30k image download/extract step."
+fi
 
 echo ""
 echo "Ensuring e-SNLI-VE annotations from e-ViL ..."

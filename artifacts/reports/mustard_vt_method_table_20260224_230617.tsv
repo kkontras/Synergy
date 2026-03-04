@@ -1,0 +1,5 @@
+method	latex_pair	(ceu/acc)	val_acc_mean_pct	val_acc_std_pct	selected_hparams
+synprom_RMask	NA	NA	NA	NA	MISSING
+synprom_RMask_nonpre	25.4{\tiny$\pm$}2.5/57.5{\tiny$\pm$}2.3	25.400±2.515/57.467±2.298	65.667	3.591	--lr=0.0005 --wd=0.001
+synprom_RMask_learned	41.3{\tiny$\pm$}3.0/60.9{\tiny$\pm$}0.9	41.333±3.009/60.933±0.918	67.667	2.451	--lr=0.0005 --wd=0.001 --l=1 --perturb=learned --perturn=learned --perturb_fill=ema --perturb_lsparse=0.1
+synprom_RMask_random	47.5{\tiny$\pm$}17.5/62.2{\tiny$\pm$}1.9	47.467±17.480/62.200±1.871	66.767	1.915	--lr=0.0005 --wd=0.001 --l=0.001 --perturb=random --perturn=random --perturb_fill=ema --perturb_pmin=0.1

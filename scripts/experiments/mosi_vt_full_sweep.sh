@@ -26,20 +26,30 @@ WD="${WD:-0.001}"
 MCR_L_CSV="${MCR_L_CSV:-0.001,0.01,0.1,1}"
 MCR_MULTIL_CSV="${MCR_MULTIL_CSV:-0.01,0.1,1}"
 MMPARETO_ALPHA_CSV="${MMPARETO_ALPHA_CSV:-0.5,1.0,1.5,2.0,3.0,5.0}"
+DNR_ALPHA_CSV="${DNR_ALPHA_CSV:-0.5,1.0,1.5,2.0,3.0,5.0}"
+DNR_KMEPOCH_CSV="${DNR_KMEPOCH_CSV:-1,3,5,10}"
+RECONBOOST_ALPHA_CSV="${RECONBOOST_ALPHA_CSV:-0.5,1.0,1.5,2.0,3.0,5.0}"
+RECONBOOST_STAGES_CSV="${RECONBOOST_STAGES_CSV:-1,4,10}"
+RECONBOOST_W1_CSV="${RECONBOOST_W1_CSV:-1,3,5,10}"
 RMASK_LS_CSV="${RMASK_LS_CSV:-0}"
 RMASK_LEARNED_L_CSV="${RMASK_LEARNED_L_CSV:-0.001,0.01,0.1,1}"
 RMASK_LEARNED_LSPARSE_CSV="${RMASK_LEARNED_LSPARSE_CSV:-0.001,0.01,0.1,1,3,5,10}"
 RMASK_RANDOM_L_CSV="${RMASK_RANDOM_L_CSV:-0.001,0.01,0.1,1}"
 RMASK_RANDOM_PMIN_CSV="${RMASK_RANDOM_PMIN_CSV:-0.1,0.3,0.5,0.7,0.9}"
 
-IFS=',' read -r -a MCR_LS              <<< "${MCR_L_CSV}"
-IFS=',' read -r -a MCR_MULTILS         <<< "${MCR_MULTIL_CSV}"
-IFS=',' read -r -a MMPARETO_ALPHAS     <<< "${MMPARETO_ALPHA_CSV}"
-IFS=',' read -r -a RMASK_LS            <<< "${RMASK_LS_CSV}"
-IFS=',' read -r -a RMASK_LEARNED_LS    <<< "${RMASK_LEARNED_L_CSV}"
+IFS=',' read -r -a MCR_LS                <<< "${MCR_L_CSV}"
+IFS=',' read -r -a MCR_MULTILS           <<< "${MCR_MULTIL_CSV}"
+IFS=',' read -r -a MMPARETO_ALPHAS       <<< "${MMPARETO_ALPHA_CSV}"
+IFS=',' read -r -a DNR_ALPHAS            <<< "${DNR_ALPHA_CSV}"
+IFS=',' read -r -a DNR_KMEPOCHS          <<< "${DNR_KMEPOCH_CSV}"
+IFS=',' read -r -a RECONBOOST_ALPHAS     <<< "${RECONBOOST_ALPHA_CSV}"
+IFS=',' read -r -a RECONBOOST_STAGES     <<< "${RECONBOOST_STAGES_CSV}"
+IFS=',' read -r -a RECONBOOST_W1S        <<< "${RECONBOOST_W1_CSV}"
+IFS=',' read -r -a RMASK_LS              <<< "${RMASK_LS_CSV}"
+IFS=',' read -r -a RMASK_LEARNED_LS      <<< "${RMASK_LEARNED_L_CSV}"
 IFS=',' read -r -a RMASK_LEARNED_LSPARSES <<< "${RMASK_LEARNED_LSPARSE_CSV}"
-IFS=',' read -r -a RMASK_RANDOM_LS     <<< "${RMASK_RANDOM_L_CSV}"
-IFS=',' read -r -a RMASK_RANDOM_PMINS  <<< "${RMASK_RANDOM_PMIN_CSV}"
+IFS=',' read -r -a RMASK_RANDOM_LS       <<< "${RMASK_RANDOM_L_CSV}"
+IFS=',' read -r -a RMASK_RANDOM_PMINS    <<< "${RMASK_RANDOM_PMIN_CSV}"
 
 TMPDIR_SWEEP="/tmp/mosi_full_sweep_$$"
 mkdir -p "${TMPDIR_SWEEP}"
@@ -144,158 +154,115 @@ section() {
   echo "============================================================"
 }
 
+# # ------------------------------------------------------------------ #
+# section "MCR"
+# D="${TMPDIR_SWEEP}/MCR"; mkdir -p "${D}"
+# for l in "${MCR_LS[@]}"; do
+#   for multil in "${MCR_MULTILS[@]}"; do
+#     parse_and_track "${D}" "l=${l} multil=${multil}" \
+#       --config "${RELEASE_DIR}/MCR.json" --lr "${LR}" --wd "${WD}" --l "${l}" --multil "${multil}"
+#   done
+# done
+# print_top3 "${D}"
+
+# # ------------------------------------------------------------------ #
+# section "MMPareto"
+# D="${TMPDIR_SWEEP}/MMPareto"; mkdir -p "${D}"
+# for alpha in "${MMPARETO_ALPHAS[@]}"; do
+#   parse_and_track "${D}" "alpha=${alpha}" \
+#     --config "${RELEASE_DIR}/MMPareto.json" --lr "${LR}" --wd "${WD}" --alpha "${alpha}"
+# done
+# print_top3 "${D}"
+
+# # ------------------------------------------------------------------ #
+# section "Ensemble"
+# D="${TMPDIR_SWEEP}/ens"; mkdir -p "${D}"
+# parse_and_track "${D}" "l=0 lr=${LR} wd=${WD}" \
+#   --config "${RELEASE_DIR}/ens.json" --lr "${LR}" --wd "${WD}" --l 0
+# print_top3 "${D}"
+
+# # ------------------------------------------------------------------ #
+# section "Joint Training"
+# D="${TMPDIR_SWEEP}/joint_training"; mkdir -p "${D}"
+# parse_and_track "${D}" "lr=${LR} wd=${WD}" \
+#   --config "${RELEASE_DIR}/joint_training.json" --lr "${LR}" --wd "${WD}"
+# print_top3 "${D}"
+
+# # ------------------------------------------------------------------ #
+# section "SynProm RMask (no-pre)"
+# D="${TMPDIR_SWEEP}/synprom_nopre"; mkdir -p "${D}"
+# parse_and_track "${D}" "lr=${LR} wd=${WD}" \
+#   --config "${SYN_DIR}/synprom_RMask_nopre.json" --lr "${LR}" --wd "${WD}"
+# print_top3 "${D}"
+
+# # ------------------------------------------------------------------ #
+# section "SynProm RMask (base, l sweep)"
+# D="${TMPDIR_SWEEP}/synprom_base"; mkdir -p "${D}"
+# for l in "${RMASK_LS[@]}"; do
+#   parse_and_track "${D}" "l=${l}" \
+#     --config "${SYN_DIR}/synprom_RMask.json" --lr "${LR}" --wd "${WD}" --l "${l}"
+# done
+# print_top3 "${D}"
+
+# # ------------------------------------------------------------------ #
+# section "SynProm Learned (l x lsparse sweep)"
+# D="${TMPDIR_SWEEP}/synprom_learned"; mkdir -p "${D}"
+# for l in "${RMASK_LEARNED_LS[@]}"; do
+#   for lsparse in "${RMASK_LEARNED_LSPARSES[@]}"; do
+#     parse_and_track "${D}" "l=${l} lsparse=${lsparse}" \
+#       --config "${SYN_DIR}/synprom_RMask_nopre.json" --lr "${LR}" --wd "${WD}" \
+#       --l "${l}" --perturb learned --perturb_fill ema --perturb_lsparse "${lsparse}"
+#   done
+# done
+# print_top3 "${D}"
+
+# # ------------------------------------------------------------------ #
+# section "SynProm Random (l x pmin sweep)"
+# D="${TMPDIR_SWEEP}/synprom_random"; mkdir -p "${D}"
+# for l in "${RMASK_RANDOM_LS[@]}"; do
+#   for pmin in "${RMASK_RANDOM_PMINS[@]}"; do
+#     parse_and_track "${D}" "l=${l} pmin=${pmin}" \
+#       --config "${SYN_DIR}/synprom_RMask_nopre.json" --lr "${LR}" --wd "${WD}" \
+#       --l "${l}" --perturb random --perturb_fill ema --perturb_pmin "${pmin}"
+#   done
+# done
+# print_top3 "${D}"
+
 # ------------------------------------------------------------------ #
-section "MCR"
-D="${TMPDIR_SWEEP}/MCR"; mkdir -p "${D}"
-for l in "${MCR_LS[@]}"; do
-  for multil in "${MCR_MULTILS[@]}"; do
-    parse_and_track "${D}" "l=${l} multil=${multil}" \
-      --config "${RELEASE_DIR}/MCR.json" --lr "${LR}" --wd "${WD}" --l "${l}" --multil "${multil}"
-  done
-done
+section "Unimodal models"
+D="${TMPDIR_SWEEP}/unimodal"; mkdir -p "${D}"
+parse_and_track "${D}" "text"  --config "${RELEASE_DIR}/unimodal_text.json"  --lr "${LR}" --wd "${WD}"
+parse_and_track "${D}" "video" --config "${RELEASE_DIR}/unimodal_video.json" --lr "${LR}" --wd "${WD}"
+parse_and_track "${D}" "audio" --config "${RELEASE_DIR}/unimodal_audio.json" --lr "${LR}" --wd "${WD}"
 print_top3 "${D}"
 
 # ------------------------------------------------------------------ #
-section "MCR_NoiseInput"
-D="${TMPDIR_SWEEP}/MCR_NoiseInput"; mkdir -p "${D}"
-for l in "${MCR_LS[@]}"; do
-  for multil in "${MCR_MULTILS[@]}"; do
-    parse_and_track "${D}" "l=${l} multil=${multil}" \
-      --config "${RELEASE_DIR}/MCR_NoiseInput.json" --lr "${LR}" --wd "${WD}" --l "${l}" --multil "${multil}"
-  done
-done
-print_top3 "${D}"
+# section "DnR (alpha x kmepoch sweep)"
+# D="${TMPDIR_SWEEP}/DnR"; mkdir -p "${D}"
+# for alpha in "${DNR_ALPHAS[@]}"; do
+#   for kmpe in "${DNR_KMEPOCHS[@]}"; do
+#     parse_and_track "${D}" "alpha=${alpha} kmepoch=${kmpe}" \
+#       --config "${SYN_DIR}/DnR.json" --lr "${LR}" --wd "${WD}" \
+#       --alpha "${alpha}" --kmepoch "${kmpe}"
+#   done
+# done
+# print_top3 "${D}"
 
-# ------------------------------------------------------------------ #
-section "MCR_NoiseLatent"
-D="${TMPDIR_SWEEP}/MCR_NoiseLatent"; mkdir -p "${D}"
-for l in "${MCR_LS[@]}"; do
-  for multil in "${MCR_MULTILS[@]}"; do
-    parse_and_track "${D}" "l=${l} multil=${multil}" \
-      --config "${RELEASE_DIR}/MCR_NoiseLatent.json" --lr "${LR}" --wd "${WD}" --l "${l}" --multil "${multil}"
-  done
-done
-print_top3 "${D}"
+# # ------------------------------------------------------------------ #
+# section "ReconBoost (alpha x stages x w1 sweep)"
+# D="${TMPDIR_SWEEP}/ReconBoost"; mkdir -p "${D}"
+# for alpha in "${RECONBOOST_ALPHAS[@]}"; do
+#   for stages in "${RECONBOOST_STAGES[@]}"; do
+#     for w1 in "${RECONBOOST_W1S[@]}"; do
+#       parse_and_track "${D}" "alpha=${alpha} stages=${stages} w1=${w1}" \
+#         --config "${SYN_DIR}/ReconBoost.json" --lr "${LR}" --wd "${WD}" \
+#         --alpha "${alpha}" \
+#         --recon_weight1 "${w1}" --recon_weight2 1 \
+#         --recon_epochstages "${stages}" --recon_ensemblestages "${stages}"
+#     done
+#   done
+# done
+# print_top3 "${D}"
 
-# ------------------------------------------------------------------ #
-section "MCR_ZeroInput"
-D="${TMPDIR_SWEEP}/MCR_ZeroInput"; mkdir -p "${D}"
-for l in "${MCR_LS[@]}"; do
-  for multil in "${MCR_MULTILS[@]}"; do
-    parse_and_track "${D}" "l=${l} multil=${multil}" \
-      --config "${RELEASE_DIR}/MCR_ZeroInput.json" --lr "${LR}" --wd "${WD}" --l "${l}" --multil "${multil}"
-  done
-done
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "MCR_ZeroLatent"
-D="${TMPDIR_SWEEP}/MCR_ZeroLatent"; mkdir -p "${D}"
-for l in "${MCR_LS[@]}"; do
-  for multil in "${MCR_MULTILS[@]}"; do
-    parse_and_track "${D}" "l=${l} multil=${multil}" \
-      --config "${RELEASE_DIR}/MCR_ZeroLatent.json" --lr "${LR}" --wd "${WD}" --l "${l}" --multil "${multil}"
-  done
-done
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "MLB"
-D="${TMPDIR_SWEEP}/MLB"; mkdir -p "${D}"
-parse_and_track "${D}" "lr=${LR} wd=${WD}" \
-  --config "${RELEASE_DIR}/MLB.json" --lr "${LR}" --wd "${WD}"
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "MMPareto"
-D="${TMPDIR_SWEEP}/MMPareto"; mkdir -p "${D}"
-for alpha in "${MMPARETO_ALPHAS[@]}"; do
-  parse_and_track "${D}" "alpha=${alpha}" \
-    --config "${RELEASE_DIR}/MMPareto.json" --lr "${LR}" --wd "${WD}" --alpha "${alpha}"
-done
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "OGM"
-D="${TMPDIR_SWEEP}/OGM"; mkdir -p "${D}"
-parse_and_track "${D}" "lr=${LR} wd=${WD}" \
-  --config "${RELEASE_DIR}/OGM.json" --lr "${LR}" --wd "${WD}"
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "Ensemble"
-D="${TMPDIR_SWEEP}/ens"; mkdir -p "${D}"
-parse_and_track "${D}" "l=0 lr=${LR} wd=${WD}" \
-  --config "${RELEASE_DIR}/ens.json" --lr "${LR}" --wd "${WD}" --l 0
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "Joint Training"
-D="${TMPDIR_SWEEP}/joint_training"; mkdir -p "${D}"
-parse_and_track "${D}" "lr=${LR} wd=${WD}" \
-  --config "${RELEASE_DIR}/joint_training.json" --lr "${LR}" --wd "${WD}"
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "Multi-Loss"
-D="${TMPDIR_SWEEP}/multiloss"; mkdir -p "${D}"
-parse_and_track "${D}" "lr=${LR} wd=${WD}" \
-  --config "${RELEASE_DIR}/multiloss.json" --lr "${LR}" --wd "${WD}"
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "Pre Fine-tuned"
-D="${TMPDIR_SWEEP}/pre_finetuned"; mkdir -p "${D}"
-parse_and_track "${D}" "lr=${LR} wd=${WD}" \
-  --config "${RELEASE_DIR}/pre_finetuned.json" --lr "${LR}" --wd "${WD}"
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "Pre Frozen"
-D="${TMPDIR_SWEEP}/pre_frozen"; mkdir -p "${D}"
-parse_and_track "${D}" "lr=${LR} wd=${WD}" \
-  --config "${RELEASE_DIR}/pre_frozen.json" --lr "${LR}" --wd "${WD}"
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "SynProm RMask (no-pre)"
-D="${TMPDIR_SWEEP}/synprom_nopre"; mkdir -p "${D}"
-parse_and_track "${D}" "lr=${LR} wd=${WD}" \
-  --config "${SYN_DIR}/synprom_RMask_nopre.json" --lr "${LR}" --wd "${WD}"
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "SynProm RMask (base, l sweep)"
-D="${TMPDIR_SWEEP}/synprom_base"; mkdir -p "${D}"
-for l in "${RMASK_LS[@]}"; do
-  parse_and_track "${D}" "l=${l}" \
-    --config "${SYN_DIR}/synprom_RMask.json" --lr "${LR}" --wd "${WD}" --l "${l}"
-done
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "SynProm Learned (l x lsparse sweep)"
-D="${TMPDIR_SWEEP}/synprom_learned"; mkdir -p "${D}"
-for l in "${RMASK_LEARNED_LS[@]}"; do
-  for lsparse in "${RMASK_LEARNED_LSPARSES[@]}"; do
-    parse_and_track "${D}" "l=${l} lsparse=${lsparse}" \
-      --config "${SYN_DIR}/synprom_RMask.json" --lr "${LR}" --wd "${WD}" \
-      --l "${l}" --perturb learned --perturn learned --perturb_fill ema --perturb_lsparse "${lsparse}"
-  done
-done
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "SynProm Random (l x pmin sweep)"
-D="${TMPDIR_SWEEP}/synprom_random"; mkdir -p "${D}"
-for l in "${RMASK_RANDOM_LS[@]}"; do
-  for pmin in "${RMASK_RANDOM_PMINS[@]}"; do
-    parse_and_track "${D}" "l=${l} pmin=${pmin}" \
-      --config "${SYN_DIR}/synprom_RMask.json" --lr "${LR}" --wd "${WD}" \
-      --l "${l}" --perturb random --perturn random --perturb_fill ema --perturb_pmin "${pmin}"
-  done
-done
-print_top3 "${D}"
-
-echo ""
-echo "Done."
+# echo ""
+# echo "Done."

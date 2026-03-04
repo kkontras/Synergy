@@ -1,4 +1,5 @@
 import argparse
+import copy
 import os
 import pickle
 import sys
@@ -270,6 +271,8 @@ def main() -> None:
     parser.add_argument("--perturb_pmax")
     parser.add_argument("--lr")
     parser.add_argument("--wd")
+    parser.add_argument("--unimodal_lrs", nargs=2, default=None, help="Optional per-unimodal lr values matching --unimodal_configs order.")
+    parser.add_argument("--unimodal_wds", nargs=2, default=None, help="Optional per-unimodal wd values matching --unimodal_configs order.")
     parser.add_argument("--mm")
     parser.add_argument("--cls")
     parser.add_argument("--batch_size")
@@ -280,6 +283,11 @@ def main() -> None:
     for k, v in vars(args).items():
         if v == "None":
             setattr(args, k, None)
+
+    if args.unimodal_lrs is not None and len(args.unimodal_lrs) != len(args.unimodal_configs):
+        raise ValueError("--unimodal_lrs must have exactly one value per unimodal config.")
+    if args.unimodal_wds is not None and len(args.unimodal_wds) != len(args.unimodal_configs):
+        raise ValueError("--unimodal_wds must have exactly one value per unimodal config.")
 
     offset = args.offset if args.offset is not None else len(args.folds)
     dataset_slug = _sanitize_dataset_name(args.dataset)
@@ -297,10 +305,15 @@ def main() -> None:
         mod_offset = mod_idx * offset
         for fold in args.folds:
             print(f"[INFO] Evaluating {unimodal_config} fold={fold} offset={mod_offset}")
+            eval_args = copy.copy(args)
+            if args.unimodal_lrs is not None:
+                eval_args.lr = args.unimodal_lrs[mod_idx]
+            if args.unimodal_wds is not None:
+                eval_args.wd = args.unimodal_wds[mod_idx]
             result = _evaluate(
                 config_path=unimodal_config,
                 default_config_path=args.default_config,
-                args=args,
+                args=eval_args,
                 fold=fold,
             )
             if not result:

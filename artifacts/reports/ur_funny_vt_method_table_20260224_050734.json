@@ -1,0 +1,368 @@
+[
+  {
+    "method": "MMPareto.json",
+    "selected_config": "configs/FactorCL/URFunny/release/VT/MMPareto.json",
+    "selected_flags": [
+      "--lr",
+      "0.001",
+      "--wd",
+      "0.001",
+      "--alpha",
+      "2.0"
+    ],
+    "selected_flags_str": "--lr=0.001 --wd=0.001 --alpha=2.0",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/URFunny/release/VT/MMPareto.json --default_config ./configs/FactorCL/URFunny/default_config_ur_funny_VT.json --fold 0 --validate_with accuracy --lr 0.001 --wd 0.001 --alpha 2.0",
+    "val_acc_fold_pct": [
+      62.8,
+      62.1,
+      62.9
+    ],
+    "test_acc_fold_pct": [
+      62.7,
+      63.0,
+      62.8
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.199,
+      0.159,
+      0.118
+    ],
+    "val_acc_mean_pct": 62.6,
+    "val_acc_std_pct": 0.3559026084010421,
+    "test_acc_mean_pct": 62.833333333333336,
+    "test_acc_std_pct": 0.12472191289246395,
+    "test_ceu_synergy_mean_raw": 0.15866666666666668,
+    "test_ceu_synergy_std_raw": 0.03306895153396243,
+    "test_ceu_synergy_mean_pct": 15.866666666666667,
+    "test_ceu_synergy_std_pct": 3.3068951533962427,
+    "raw_output": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/joblib/_multiprocessing_helpers.py:44: UserWarning: [Errno 13] Permission denied.  joblib will operate in serial mode\n  warnings.warn(\"%s.  joblib will operate in serial mode\" % (e,))\n/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:182: UserWarning: CUDA initialization: Unexpected error from cudaGetDeviceCount(). Did you run some cuda functions before calling NumCudaDevices() that might have already set an error? Error 304: OS call failed or operation not supported on this OS (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)\n  return torch._C._cuda_getDeviceCount() > 0\nMMPareto_fold0_alpha2.0_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 67  Steps no improve: 29  Acc_combined: 62.8 Test_Acc_combined: 62.7 Test_Acc_c: 50.2 Test_Acc_g: 61.7 Test_F1_combined: 60.7 Test_F1_c: 40.9 Test_F1_g: 56.5 V_CEU_S: 0.173 T_CEU_S: 0.199 F1_perclass: 60.7 \nMMPareto_fold1_alpha2.0_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 47  Steps no improve: 29  Acc_combined: 62.1 Test_Acc_combined: 63.0 Test_Acc_c: 51.1 Test_Acc_g: 62.3 Test_F1_combined: 64.1 Test_F1_c: 65.0 Test_F1_g: 60.4 V_CEU_S: 0.133 T_CEU_S: 0.159 F1_perclass: 64.1 \nMMPareto_fold2_alpha2.0_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 35  Steps no improve: 29  Acc_combined: 62.9 Test_Acc_combined: 62.8 Test_Acc_c: 52.5 Test_Acc_g: 60.5 Test_F1_combined: 64.4 Test_F1_c: 57.0 Test_F1_g: 49.3 V_CEU_S: 0.129 T_CEU_S: 0.118 F1_perclass: 64.4 \nVal  acc_combined: 62.6 + 0.3 acc_c: 50.1 + 0.2 acc_g: 61.7 + 0.8 f1_combined: 0.6276 + 0.0121 f1_c: 0.5257 + 0.1079 f1_g: 0.5567 + 0.0461 f1_perclass 0.63 ceu_cue_audio: 0.28 ceu_cue_video: 0.83 ceu_synergy: 0.14 ceu_coexistence: 0.92 \nTest  acc_combined: 62.8 + 0.2 acc_c: 51.3 + 1.0 acc_g: 61.5 + 0.7 f1_combined: 0.6308 + 0.0169 f1_c: 0.5432 + 0.1003 f1_g: 0.5541 + 0.0459 f1_perclass 0.63 ceu_cue_audio: 0.26 ceu_cue_video: 0.83 ceu_synergy: 0.16 ceu_coexistence: 0.92 \n63.1 2.1 -- 63.1 1.7 --\n\n",
+    "status": "ok",
+    "latex_pair": "15.9{\\tiny$\\pm$}3.3/62.8{\\tiny$\\pm$}0.1"
+  },
+  {
+    "method": "DnR.json",
+    "selected_config": "configs/FactorCL/URFunny/release/VT/DnR.json",
+    "selected_flags": [
+      "--lr",
+      "0.001",
+      "--wd",
+      "0.001",
+      "--alpha",
+      "0.5",
+      "--kmepoch",
+      "5"
+    ],
+    "selected_flags_str": "--lr=0.001 --wd=0.001 --alpha=0.5 --kmepoch=5",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/URFunny/release/VT/DnR.json --default_config ./configs/FactorCL/URFunny/default_config_ur_funny_VT.json --fold 0 --validate_with accuracy --lr 0.001 --wd 0.001 --alpha 0.5 --kmepoch 5",
+    "val_acc_fold_pct": [
+      63.1,
+      62.8,
+      63.2
+    ],
+    "test_acc_fold_pct": [
+      63.4,
+      63.0,
+      64.3
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.133,
+      0.139,
+      0.184
+    ],
+    "val_acc_mean_pct": 63.03333333333333,
+    "val_acc_std_pct": 0.1699673171197619,
+    "test_acc_mean_pct": 63.56666666666666,
+    "test_acc_std_pct": 0.5436502143433353,
+    "test_ceu_synergy_mean_raw": 0.152,
+    "test_ceu_synergy_std_raw": 0.02275961335348208,
+    "test_ceu_synergy_mean_pct": 15.2,
+    "test_ceu_synergy_std_pct": 2.275961335348208,
+    "raw_output": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/joblib/_multiprocessing_helpers.py:44: UserWarning: [Errno 13] Permission denied.  joblib will operate in serial mode\n  warnings.warn(\"%s.  joblib will operate in serial mode\" % (e,))\n/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:182: UserWarning: CUDA initialization: Unexpected error from cudaGetDeviceCount(). Did you run some cuda functions before calling NumCudaDevices() that might have already set an error? Error 304: OS call failed or operation not supported on this OS (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)\n  return torch._C._cuda_getDeviceCount() > 0\nDnR_fold0_alpha0.5_kmepoch5_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 35  Steps no improve: 29  Acc_combined: 63.1 Test_Acc_combined: 63.4 Test_Acc_c: 51.0 Test_Acc_g: 58.5 Test_F1_combined: 59.0 Test_F1_c: 7.2 Test_F1_g: 69.1 V_CEU_S: 0.162 T_CEU_S: 0.133 F1_perclass: 59.0 \nDnR_fold1_alpha0.5_kmepoch5_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 49  Steps no improve: 29  Acc_combined: 62.8 Test_Acc_combined: 63.0 Test_Acc_c: 50.9 Test_Acc_g: 60.5 Test_F1_combined: 65.0 Test_F1_c: 65.8 Test_F1_g: 68.4 V_CEU_S: 0.119 T_CEU_S: 0.139 F1_perclass: 65.0 \nDnR_fold2_alpha0.5_kmepoch5_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 59  Steps no improve: 29  Acc_combined: 63.2 Test_Acc_combined: 64.3 Test_Acc_c: 51.7 Test_Acc_g: 58.5 Test_F1_combined: 64.7 Test_F1_c: 22.4 Test_F1_g: 43.5 V_CEU_S: 0.159 T_CEU_S: 0.184 F1_perclass: 64.7 \nVal  acc_combined: 63.0 + 0.2 acc_c: 50.2 + 0.1 acc_g: 57.9 + 1.0 f1_combined: 0.6230 + 0.0282 f1_c: 0.2991 + 0.2564 f1_g: 0.5934 + 0.1185 f1_perclass 0.62 ceu_cue_audio: 0.23 ceu_cue_video: 0.87 ceu_synergy: 0.15 ceu_coexistence: 0.92 \nTest  acc_combined: 63.6 + 0.5 acc_c: 51.2 + 0.3 acc_g: 59.2 + 0.9 f1_combined: 0.6289 + 0.0278 f1_c: 0.3179 + 0.2482 f1_g: 0.6035 + 0.1188 f1_perclass 0.63 ceu_cue_audio: 0.25 ceu_cue_video: 0.86 ceu_synergy: 0.15 ceu_coexistence: 0.93 \n62.9 3.4 -- 62.9 2.8 --\n\n",
+    "status": "ok",
+    "latex_pair": "15.2{\\tiny$\\pm$}2.3/63.6{\\tiny$\\pm$}0.5"
+  },
+  {
+    "method": "MCR.json",
+    "selected_config": "configs/FactorCL/URFunny/release/VT/MCR.json",
+    "selected_flags": [
+      "--lr",
+      "0.001",
+      "--wd",
+      "0.001",
+      "--l",
+      "0.01",
+      "--multil",
+      "0.1"
+    ],
+    "selected_flags_str": "--lr=0.001 --wd=0.001 --l=0.01 --multil=0.1",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/URFunny/release/VT/MCR.json --default_config ./configs/FactorCL/URFunny/default_config_ur_funny_VT.json --fold 0 --validate_with accuracy --lr 0.001 --wd 0.001 --l 0.01 --multil 0.1",
+    "val_acc_fold_pct": [
+      63.8,
+      62.8,
+      63.4
+    ],
+    "test_acc_fold_pct": [
+      62.3,
+      62.7,
+      62.1
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.11,
+      0.096,
+      0.123
+    ],
+    "val_acc_mean_pct": 63.33333333333333,
+    "val_acc_std_pct": 0.41096093353126517,
+    "test_acc_mean_pct": 62.36666666666667,
+    "test_acc_std_pct": 0.24944382578493043,
+    "test_ceu_synergy_mean_raw": 0.10966666666666666,
+    "test_ceu_synergy_std_raw": 0.01102522360569415,
+    "test_ceu_synergy_mean_pct": 10.966666666666667,
+    "test_ceu_synergy_std_pct": 1.102522360569415,
+    "raw_output": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/joblib/_multiprocessing_helpers.py:44: UserWarning: [Errno 13] Permission denied.  joblib will operate in serial mode\n  warnings.warn(\"%s.  joblib will operate in serial mode\" % (e,))\n/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:182: UserWarning: CUDA initialization: Unexpected error from cudaGetDeviceCount(). Did you run some cuda functions before calling NumCudaDevices() that might have already set an error? Error 304: OS call failed or operation not supported on this OS (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)\n  return torch._C._cuda_getDeviceCount() > 0\nMCR_fold0_l0.01_multil0.1_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 50  Steps no improve: 29  Acc_combined: 63.8 Test_Acc_combined: 62.3 Test_Acc_c: 51.2 Test_Acc_g: 62.1 Test_F1_combined: 60.8 Test_F1_c: 20.5 Test_F1_g: 62.5 T_CEU_S: 0.110 F1_perclass: 60.8 \nMCR_fold1_l0.01_multil0.1_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 36  Steps no improve: 29  Acc_combined: 62.8 Test_Acc_combined: 62.7 Test_Acc_c: 51.7 Test_Acc_g: 61.3 Test_F1_combined: 61.0 Test_F1_c: 22.4 Test_F1_g: 65.9 T_CEU_S: 0.096 F1_perclass: 61.0 \nMCR_fold2_l0.01_multil0.1_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 100  Steps no improve: 25  Acc_combined: 63.4 Test_Acc_combined: 62.1 Test_Acc_c: 54.2 Test_Acc_g: 61.6 Test_F1_combined: 61.4 Test_F1_c: 44.7 Test_F1_g: 60.4 T_CEU_S: 0.123 F1_perclass: 61.4 \nVal  acc_combined: 63.3 + 0.4 acc_c: 50.0 + 0.3 acc_g: 62.8 + 0.8 f1_combined: 0.6225 + 0.0086 f1_c: 0.2498 + 0.1008 f1_g: 0.6408 + 0.0177 f1_perclass 0.62 \nTest  acc_combined: 62.3 + 0.3 acc_c: 52.4 + 1.3 acc_g: 61.7 + 0.3 f1_combined: 0.6105 + 0.0024 f1_c: 0.2920 + 0.1096 f1_g: 0.6292 + 0.0225 f1_perclass 0.61 ceu_cue_audio: 0.18 ceu_cue_video: 0.86 ceu_synergy: 0.11 ceu_coexistence: 0.95 \n61.0 0.3 -- 61.0 0.2 --\n\n",
+    "status": "ok",
+    "latex_pair": "11.0{\\tiny$\\pm$}1.1/62.4{\\tiny$\\pm$}0.2"
+  },
+  {
+    "method": "ReconBoost.json",
+    "selected_config": "configs/FactorCL/URFunny/release/VT/ReconBoost.json",
+    "selected_flags": [
+      "--lr",
+      "0.001",
+      "--wd",
+      "0.001",
+      "--alpha",
+      "1.5",
+      "--recon_weight1",
+      "10",
+      "--recon_weight2",
+      "1",
+      "--recon_epochstages",
+      "1",
+      "--recon_ensemblestages",
+      "1"
+    ],
+    "selected_flags_str": "--lr=0.001 --wd=0.001 --alpha=1.5 --recon_weight1=10 --recon_weight2=1 --recon_epochstages=1 --recon_ensemblestages=1",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/URFunny/release/VT/ReconBoost.json --default_config ./configs/FactorCL/URFunny/default_config_ur_funny_VT.json --fold 0 --validate_with accuracy --lr 0.001 --wd 0.001 --alpha 1.5 --recon_weight1 10 --recon_weight2 1 --recon_epochstages 1 --recon_ensemblestages 1",
+    "val_acc_fold_pct": [
+      62.6,
+      62.8,
+      63.2
+    ],
+    "test_acc_fold_pct": [
+      63.2,
+      62.8,
+      63.6
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.056,
+      0.125,
+      0.2
+    ],
+    "val_acc_mean_pct": 62.86666666666667,
+    "val_acc_std_pct": 0.24944382578493043,
+    "test_acc_mean_pct": 63.2,
+    "test_acc_std_pct": 0.32659863237109216,
+    "test_ceu_synergy_mean_raw": 0.127,
+    "test_ceu_synergy_std_raw": 0.05880476171195663,
+    "test_ceu_synergy_mean_pct": 12.7,
+    "test_ceu_synergy_std_pct": 5.880476171195663,
+    "raw_output": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/joblib/_multiprocessing_helpers.py:44: UserWarning: [Errno 13] Permission denied.  joblib will operate in serial mode\n  warnings.warn(\"%s.  joblib will operate in serial mode\" % (e,))\n/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:182: UserWarning: CUDA initialization: Unexpected error from cudaGetDeviceCount(). Did you run some cuda functions before calling NumCudaDevices() that might have already set an error? Error 304: OS call failed or operation not supported on this OS (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)\n  return torch._C._cuda_getDeviceCount() > 0\nReconBoost_fold0_alpha1.5_w110_w21_epochstage1_ensstage1_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 53  Steps no improve: 29  Acc_combined: 62.6 Test_Acc_combined: 63.2 Test_Acc_c: 54.5 Test_Acc_g: 62.7 Test_F1_combined: 64.3 Test_F1_c: 59.0 Test_F1_g: 61.9 V_CEU_S: 0.059 T_CEU_S: 0.056 F1_perclass: 64.3 \nReconBoost_fold1_alpha1.5_w110_w21_epochstage1_ensstage1_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 47  Steps no improve: 29  Acc_combined: 62.8 Test_Acc_combined: 62.8 Test_Acc_c: 51.0 Test_Acc_g: 62.8 Test_F1_combined: 59.7 Test_F1_c: 7.2 Test_F1_g: 65.4 V_CEU_S: 0.075 T_CEU_S: 0.125 F1_perclass: 59.7 \nReconBoost_fold2_alpha1.5_w110_w21_epochstage1_ensstage1_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 55  Steps no improve: 29  Acc_combined: 63.2 Test_Acc_combined: 63.6 Test_Acc_c: 52.7 Test_Acc_g: 63.1 Test_F1_combined: 61.0 Test_F1_c: 63.4 Test_F1_g: 57.3 V_CEU_S: 0.184 T_CEU_S: 0.200 F1_perclass: 61.0 \nVal  acc_combined: 62.9 + 0.2 acc_c: 50.4 + 0.4 acc_g: 63.2 + 0.3 f1_combined: 0.6125 + 0.0215 f1_c: 0.4114 + 0.2526 f1_g: 0.6188 + 0.0363 f1_perclass 0.61 ceu_cue_audio: 0.21 ceu_cue_video: 0.87 ceu_synergy: 0.11 ceu_coexistence: 0.94 \nTest  acc_combined: 63.2 + 0.3 acc_c: 52.7 + 1.4 acc_g: 62.9 + 0.2 f1_combined: 0.6166 + 0.0197 f1_c: 0.4321 + 0.2555 f1_g: 0.6154 + 0.0330 f1_perclass 0.62 ceu_cue_audio: 0.23 ceu_cue_video: 0.87 ceu_synergy: 0.13 ceu_coexistence: 0.95 \n61.7 2.4 -- 61.7 2.0 --\n\n",
+    "status": "ok",
+    "latex_pair": "12.7{\\tiny$\\pm$}5.9/63.2{\\tiny$\\pm$}0.3"
+  },
+  {
+    "method": "ens.json",
+    "selected_config": "configs/FactorCL/URFunny/release/VT/ens.json",
+    "selected_flags": [
+      "--lr",
+      "0.001",
+      "--wd",
+      "0.001",
+      "--l",
+      "0"
+    ],
+    "selected_flags_str": "--lr=0.001 --wd=0.001 --l=0",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/URFunny/release/VT/ens.json --default_config ./configs/FactorCL/URFunny/default_config_ur_funny_VT.json --fold 0 --validate_with accuracy --lr 0.001 --wd 0.001 --l 0",
+    "val_acc_fold_pct": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "test_acc_fold_pct": [
+      53.2,
+      61.9,
+      61.1
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.022,
+      0.0,
+      0.021
+    ],
+    "val_acc_mean_pct": 0.0,
+    "val_acc_std_pct": 0.0,
+    "test_acc_mean_pct": 58.733333333333334,
+    "test_acc_std_pct": 3.9262648351270886,
+    "test_ceu_synergy_mean_raw": 0.014333333333333333,
+    "test_ceu_synergy_std_raw": 0.010143416036468626,
+    "test_ceu_synergy_mean_pct": 1.4333333333333333,
+    "test_ceu_synergy_std_pct": 1.0143416036468627,
+    "raw_output": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/joblib/_multiprocessing_helpers.py:44: UserWarning: [Errno 13] Permission denied.  joblib will operate in serial mode\n  warnings.warn(\"%s.  joblib will operate in serial mode\" % (e,))\n/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:182: UserWarning: CUDA initialization: Unexpected error from cudaGetDeviceCount(). Did you run some cuda functions before calling NumCudaDevices() that might have already set an error? Error 304: OS call failed or operation not supported on this OS (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)\n  return torch._C._cuda_getDeviceCount() > 0\nEns_fold0_l0_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 0  Steps no improve: 0  Acc_combined: 0.0 Test_Acc_combined: 53.2 Test_Acc_c: 50.0 Test_Acc_g: 61.5 Test_F1_combined: 41.8 Test_F1_c: 33.0 Test_F1_g: 55.1 T_CEU_S: 0.022 F1_perclass: 41.8 \nEns_fold1_l0_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 0  Steps no improve: 0  Acc_combined: 0.0 Test_Acc_combined: 61.9 Test_Acc_c: 53.7 Test_Acc_g: 61.2 Test_F1_combined: 65.3 Test_F1_c: 40.3 Test_F1_g: 66.2 T_CEU_S: 0.000 F1_perclass: 65.3 \nEns_fold2_l0_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 0  Steps no improve: 0  Acc_combined: 0.0 Test_Acc_combined: 61.1 Test_Acc_c: 51.0 Test_Acc_g: 61.9 Test_F1_combined: 66.8 Test_F1_c: 66.5 Test_F1_g: 61.2 T_CEU_S: 0.021 F1_perclass: 66.8 \nVal  acc_combined: 0.0 + 0.0 \n\n",
+    "status": "ok",
+    "latex_pair": "1.4{\\tiny$\\pm$}1.0/58.7{\\tiny$\\pm$}3.9"
+  },
+  {
+    "method": "synprom_RMask.json",
+    "selected_config": "configs/FactorCL/URFunny/release/VT/synprom_RMask.json",
+    "selected_flags": [
+      "--lr",
+      "0.001",
+      "--wd",
+      "0.001",
+      "--l",
+      "0"
+    ],
+    "selected_flags_str": "--lr=0.001 --wd=0.001 --l=0",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config ./configs/FactorCL/URFunny/default_config_ur_funny_VT.json --fold 0 --validate_with accuracy --lr 0.001 --wd 0.001 --l 0",
+    "val_acc_fold_pct": [
+      62.9,
+      62.5,
+      62.4
+    ],
+    "test_acc_fold_pct": [
+      63.7,
+      63.4,
+      61.7
+    ],
+    "test_ceu_synergy_fold_raw": [],
+    "val_acc_mean_pct": 62.6,
+    "val_acc_std_pct": 0.21602468994692844,
+    "test_acc_mean_pct": 62.93333333333334,
+    "test_acc_std_pct": 0.880656320908193,
+    "test_ceu_synergy_mean_raw": NaN,
+    "test_ceu_synergy_std_raw": NaN,
+    "test_ceu_synergy_mean_pct": NaN,
+    "test_ceu_synergy_std_pct": NaN,
+    "raw_output": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/joblib/_multiprocessing_helpers.py:44: UserWarning: [Errno 13] Permission denied.  joblib will operate in serial mode\n  warnings.warn(\"%s.  joblib will operate in serial mode\" % (e,))\n/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:182: UserWarning: CUDA initialization: Unexpected error from cudaGetDeviceCount(). Did you run some cuda functions before calling NumCudaDevices() that might have already set an error? Error 304: OS call failed or operation not supported on this OS (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)\n  return torch._C._cuda_getDeviceCount() > 0\nSynIB_RMask_fold0_l0_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 35  Steps no improve: 29  Acc_combined: 62.9 Test_Acc_combined: 63.7 Test_Acc_c: 51.0 Test_Acc_g: 62.6 Test_F1_combined: 65.2 Test_F1_c: 7.2 Test_F1_g: 62.0 F1_perclass: 65.2 \nSynIB_RMask_fold1_l0_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 38  Steps no improve: 29  Acc_combined: 62.5 Test_Acc_combined: 63.4 Test_Acc_c: 49.2 Test_Acc_g: 63.3 Test_F1_combined: 63.6 Test_F1_c: 38.3 Test_F1_g: 66.5 F1_perclass: 63.6 \nSynIB_RMask_fold2_l0_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 63  Steps no improve: 29  Acc_combined: 62.4 Test_Acc_combined: 61.7 Test_Acc_c: 49.9 Test_Acc_g: 62.3 Test_F1_combined: 59.7 Test_F1_c: 65.7 Test_F1_g: 61.0 F1_perclass: 59.7 \nVal  acc_combined: 62.6 + 0.2 acc_c: 50.2 + 0.3 acc_g: 62.5 + 0.4 f1_combined: 0.6240 + 0.0177 f1_c: 0.3680 + 0.2460 f1_g: 0.6284 + 0.0206 f1_perclass 0.62 \nTest  acc_combined: 62.9 + 0.9 acc_c: 50.0 + 0.7 acc_g: 62.8 + 0.4 f1_combined: 0.6285 + 0.0234 f1_c: 0.3705 + 0.2393 f1_g: 0.6316 + 0.0239 f1_perclass 0.63 \n62.9 2.9 -- 62.9 2.3 --\n\n",
+    "status": "ok",
+    "latex_pair": "NA"
+  },
+  {
+    "method": "synprom_RMask_nopre.json",
+    "selected_config": "configs/FactorCL/URFunny/release/VT/synprom_RMask_nopre.json",
+    "selected_flags": [
+      "--lr",
+      "0.001",
+      "--wd",
+      "0.001"
+    ],
+    "selected_flags_str": "--lr=0.001 --wd=0.001",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/URFunny/release/VT/synprom_RMask_nopre.json --default_config ./configs/FactorCL/URFunny/default_config_ur_funny_VT.json --fold 0 --validate_with accuracy --lr 0.001 --wd 0.001",
+    "val_acc_fold_pct": [
+      62.8,
+      62.8,
+      63.2
+    ],
+    "test_acc_fold_pct": [
+      62.7,
+      62.5,
+      62.4
+    ],
+    "test_ceu_synergy_fold_raw": [],
+    "val_acc_mean_pct": 62.93333333333333,
+    "val_acc_std_pct": 0.18856180831641536,
+    "test_acc_mean_pct": 62.53333333333333,
+    "test_acc_std_pct": 0.12472191289246648,
+    "test_ceu_synergy_mean_raw": NaN,
+    "test_ceu_synergy_std_raw": NaN,
+    "test_ceu_synergy_mean_pct": NaN,
+    "test_ceu_synergy_std_pct": NaN,
+    "raw_output": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/joblib/_multiprocessing_helpers.py:44: UserWarning: [Errno 13] Permission denied.  joblib will operate in serial mode\n  warnings.warn(\"%s.  joblib will operate in serial mode\" % (e,))\n/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:182: UserWarning: CUDA initialization: Unexpected error from cudaGetDeviceCount(). Did you run some cuda functions before calling NumCudaDevices() that might have already set an error? Error 304: OS call failed or operation not supported on this OS (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)\n  return torch._C._cuda_getDeviceCount() > 0\nSynIB_RMask_nopre_fold0_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 46  Steps no improve: 29  Acc_combined: 62.8 Test_Acc_combined: 62.7 Test_Acc_c: 50.7 Test_Acc_g: 59.8 Test_F1_combined: 62.2 Test_F1_c: 24.2 Test_F1_g: 47.3 F1_perclass: 62.2 \nSynIB_RMask_nopre_fold1_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 35  Steps no improve: 29  Acc_combined: 62.8 Test_Acc_combined: 62.5 Test_Acc_c: 50.3 Test_Acc_g: 58.0 Test_F1_combined: 62.0 Test_F1_c: 16.9 Test_F1_g: 38.7 F1_perclass: 62.0 \nSynIB_RMask_nopre_fold2_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 78  Steps no improve: 29  Acc_combined: 63.2 Test_Acc_combined: 62.4 Test_Acc_c: 51.0 Test_Acc_g: 57.2 Test_F1_combined: 61.5 Test_F1_c: 18.8 Test_F1_g: 67.3 F1_perclass: 61.5 \nVal  acc_combined: 63.0 + 0.2 acc_c: 50.1 + 0.2 acc_g: 57.5 + 1.8 f1_combined: 0.6224 + 0.0004 f1_c: 0.1765 + 0.0284 f1_g: 0.5014 + 0.1250 f1_perclass 0.62 \nTest  acc_combined: 62.5 + 0.1 acc_c: 50.6 + 0.3 acc_g: 58.3 + 1.1 f1_combined: 0.6189 + 0.0032 f1_c: 0.1998 + 0.0311 f1_g: 0.5109 + 0.1201 f1_perclass 0.62 \n61.9 0.4 -- 61.9 0.3 --\n\n",
+    "status": "ok",
+    "latex_pair": "NA"
+  },
+  {
+    "method": "synprom_RMask_learned.json",
+    "selected_config": "configs/FactorCL/URFunny/release/VT/synprom_RMask.json",
+    "selected_flags": [
+      "--lr",
+      "0.001",
+      "--wd",
+      "0.001",
+      "--l",
+      "1",
+      "--perturb",
+      "learned",
+      "--perturb_fill",
+      "ema",
+      "--perturb_lsparse",
+      "0.1"
+    ],
+    "selected_flags_str": "--lr=0.001 --wd=0.001 --l=1 --perturb=learned --perturb_fill=ema --perturb_lsparse=0.1",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config ./configs/FactorCL/URFunny/default_config_ur_funny_VT.json --fold 0 --validate_with accuracy --lr 0.001 --wd 0.001 --l 1 --perturb learned --perturb_fill ema --perturb_lsparse 0.1",
+    "val_acc_fold_pct": [
+      64.0,
+      62.6,
+      64.2
+    ],
+    "test_acc_fold_pct": [
+      60.3,
+      64.2,
+      62.6
+    ],
+    "test_ceu_synergy_fold_raw": [],
+    "val_acc_mean_pct": 63.6,
+    "val_acc_std_pct": 0.7118052168020875,
+    "test_acc_mean_pct": 62.36666666666667,
+    "test_acc_std_pct": 1.6006942938057316,
+    "test_ceu_synergy_mean_raw": NaN,
+    "test_ceu_synergy_std_raw": NaN,
+    "test_ceu_synergy_mean_pct": NaN,
+    "test_ceu_synergy_std_pct": NaN,
+    "raw_output": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/joblib/_multiprocessing_helpers.py:44: UserWarning: [Errno 13] Permission denied.  joblib will operate in serial mode\n  warnings.warn(\"%s.  joblib will operate in serial mode\" % (e,))\n/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:182: UserWarning: CUDA initialization: Unexpected error from cudaGetDeviceCount(). Did you run some cuda functions before calling NumCudaDevices() that might have already set an error? Error 304: OS call failed or operation not supported on this OS (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)\n  return torch._C._cuda_getDeviceCount() > 0\nSynIB_RMask_fold0_l1_vldaccuracy_perturblearned_fillema_lsparse0.1_lr0.001_wd0.001.pth.tar  Epoch: 81  Steps no improve: 29  Acc_combined: 64.0 Test_Acc_combined: 60.3 Test_Acc_c: 52.8 Test_Acc_g: 59.9 Test_F1_combined: 60.5 Test_F1_c: 64.3 Test_F1_g: 60.0 F1_perclass: 60.5 \nSynIB_RMask_fold1_l1_vldaccuracy_perturblearned_fillema_lsparse0.1_lr0.001_wd0.001.pth.tar  Epoch: 47  Steps no improve: 29  Acc_combined: 62.6 Test_Acc_combined: 64.2 Test_Acc_c: 51.0 Test_Acc_g: 63.5 Test_F1_combined: 64.0 Test_F1_c: 7.2 Test_F1_g: 63.6 F1_perclass: 64.0 \nSynIB_RMask_fold2_l1_vldaccuracy_perturblearned_fillema_lsparse0.1_lr0.001_wd0.001.pth.tar  Epoch: 78  Steps no improve: 29  Acc_combined: 64.2 Test_Acc_combined: 62.6 Test_Acc_c: 50.7 Test_Acc_g: 62.9 Test_F1_combined: 62.5 Test_F1_c: 50.7 Test_F1_g: 61.6 F1_perclass: 62.5 \nVal  acc_combined: 63.6 + 0.7 acc_c: 50.1 + 0.2 acc_g: 63.4 + 0.5 f1_combined: 0.6350 + 0.0086 f1_c: 0.3939 + 0.2440 f1_g: 0.6317 + 0.0062 f1_perclass 0.63 \nTest  acc_combined: 62.4 + 1.6 acc_c: 51.5 + 1.0 acc_g: 62.1 + 1.6 f1_combined: 0.6231 + 0.0144 f1_c: 0.4069 + 0.2435 f1_g: 0.6174 + 0.0143 f1_perclass 0.62 \n62.3 1.8 -- 62.3 1.4 --\n\n",
+    "status": "ok",
+    "latex_pair": "NA"
+  },
+  {
+    "method": "synprom_RMask_random.json",
+    "selected_config": "configs/FactorCL/URFunny/release/VT/synprom_RMask.json",
+    "selected_flags": [
+      "--lr",
+      "0.001",
+      "--wd",
+      "0.001",
+      "--l",
+      "0.1",
+      "--perturb",
+      "random",
+      "--perturb_fill",
+      "ema",
+      "--perturb_pmin",
+      "0.5"
+    ],
+    "selected_flags_str": "--lr=0.001 --wd=0.001 --l=0.1 --perturb=random --perturb_fill=ema --perturb_pmin=0.5",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/URFunny/release/VT/synprom_RMask.json --default_config ./configs/FactorCL/URFunny/default_config_ur_funny_VT.json --fold 0 --validate_with accuracy --lr 0.001 --wd 0.001 --l 0.1 --perturb random --perturb_fill ema --perturb_pmin 0.5",
+    "val_acc_fold_pct": [
+      63.8,
+      63.2,
+      63.4
+    ],
+    "test_acc_fold_pct": [
+      62.0,
+      62.4,
+      60.7
+    ],
+    "test_ceu_synergy_fold_raw": [],
+    "val_acc_mean_pct": 63.46666666666667,
+    "val_acc_std_pct": 0.24944382578492727,
+    "test_acc_mean_pct": 61.7,
+    "test_acc_std_pct": 0.7257180352359063,
+    "test_ceu_synergy_mean_raw": NaN,
+    "test_ceu_synergy_std_raw": NaN,
+    "test_ceu_synergy_mean_pct": NaN,
+    "test_ceu_synergy_std_pct": NaN,
+    "raw_output": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/joblib/_multiprocessing_helpers.py:44: UserWarning: [Errno 13] Permission denied.  joblib will operate in serial mode\n  warnings.warn(\"%s.  joblib will operate in serial mode\" % (e,))\n/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/lib/python3.10/site-packages/torch/cuda/__init__.py:182: UserWarning: CUDA initialization: Unexpected error from cudaGetDeviceCount(). Did you run some cuda functions before calling NumCudaDevices() that might have already set an error? Error 304: OS call failed or operation not supported on this OS (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)\n  return torch._C._cuda_getDeviceCount() > 0\nSynIB_RMask_fold0_l0.1_vldaccuracy_perturbrandom_fillema_pmin0.5_lr0.001_wd0.001.pth.tar  Epoch: 31  Steps no improve: 29  Acc_combined: 63.8 Test_Acc_combined: 62.0 Test_Acc_c: 50.0 Test_Acc_g: 62.1 Test_F1_combined: 61.3 Test_F1_c: 10.0 Test_F1_g: 61.2 F1_perclass: 61.3 \nSynIB_RMask_fold1_l0.1_vldaccuracy_perturbrandom_fillema_pmin0.5_lr0.001_wd0.001.pth.tar  Epoch: 55  Steps no improve: 29  Acc_combined: 63.2 Test_Acc_combined: 62.4 Test_Acc_c: 51.0 Test_Acc_g: 61.4 Test_F1_combined: 62.4 Test_F1_c: 25.2 Test_F1_g: 66.1 F1_perclass: 62.4 \nSynIB_RMask_fold2_l0.1_vldaccuracy_perturbrandom_fillema_pmin0.5_lr0.001_wd0.001.pth.tar  Epoch: 47  Steps no improve: 29  Acc_combined: 63.4 Test_Acc_combined: 60.7 Test_Acc_c: 54.3 Test_Acc_g: 61.2 Test_F1_combined: 60.5 Test_F1_c: 63.5 Test_F1_g: 60.9 F1_perclass: 60.5 \nVal  acc_combined: 63.4 + 0.3 acc_c: 49.8 + 0.2 acc_g: 63.2 + 0.7 f1_combined: 0.6318 + 0.0008 f1_c: 0.3062 + 0.2144 f1_g: 0.6442 + 0.0186 f1_perclass 0.63 \nTest  acc_combined: 61.7 + 0.7 acc_c: 51.8 + 1.8 acc_g: 61.6 + 0.4 f1_combined: 0.6141 + 0.0078 f1_c: 0.3293 + 0.2250 f1_g: 0.6275 + 0.0234 f1_perclass 0.61 \n61.4 0.9 -- 61.4 0.8 --\n\n",
+    "status": "ok",
+    "latex_pair": "NA"
+  }
+]

@@ -50,10 +50,10 @@
   },
   "dataset": {
     "dataloader_class": "ESNLI_MemmapDataloader",
-    "data_roots": "/dodrio/scratch/projects/2024_111/ESNLI",
-    "cache_root": "/dodrio/scratch/projects/2024_111/ESNLI/cache_v2_full"
+    "data_roots": "/dodrio/scratch/projects/2026_029/kkontras/data/ESNLI",
+    "cache_root": "/dodrio/scratch/projects/2026_029/kkontras/data/ESNLI/cache_v2_full"
   },
   "model": {
-    "save_base_dir": "/dodrio/scratch/projects/2024_111/checkpoints/synergy/ESNLI/full"
+    "save_base_dir": "/dodrio/scratch/projects/2026_029/kkontras/checkpoints/synergy/esnli"
   }
 }

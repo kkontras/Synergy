@@ -1,0 +1,5 @@
+method	latex_pair	(ceu/acc)	val_acc_mean_pct	val_acc_std_pct	selected_hparams
+synprom_RMask	NA	NA	NA	NA	MISSING
+synprom_RMask_nonpre	NA	NA	NA	NA	MISSING
+synprom_RMask_learned	NA	NA	NA	NA	MISSING
+synprom_RMask_random	NA	NA	NA	NA	MISSING

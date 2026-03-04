@@ -3,30 +3,41 @@
 #PBS -l walltime=48:00:00
 #PBS -l nodes=1:ppn=12:gpus=1
 
-#PBS -A 2024_111
+#PBS -A 2026_029
 
 #PBS -o ./condor_logs/logs_vsc/out_${PBS_JOBID}.txt
 #PBS -e ./condor_logs/logs_vsc/err_${PBS_JOBID}.txt
 
 
-cd /dodrio/scratch/projects/2024_111/Synergy
+cd /dodrio/scratch/projects/2026_029/kkontras/projects/Synergy
 
 git pull origin main
 
-source /dodrio/scratch/projects/starting_2024_024/env/Anaconda/etc/profile.d/conda.sh
-conda activate /dodrio/scratch/projects/starting_2024_024/env/balance
+source /dodrio/scratch/projects/2026_029/kkontras/env/Anaconda/etc/profile.d/conda.sh
+conda activate /dodrio/scratch/projects/2026_029/kkontras/envs/synergy_new
 
 which python
 python -V
 echo $PWD
 
-DATA_ROOT="/dodrio/scratch/projects/2024_111/ESNLI"
+DATA_ROOT="/dodrio/scratch/projects/2026_029/kkontras/data/ESNLI"
 CACHE_OUT="${DATA_ROOT}/cache_v2_full"
 MODEL_NAME="${model_name:-Qwen/Qwen3-VL-2B-Instruct}"
 SHARD_SIZE="${shard_size:-4096}"
 BUILD_BATCH="${build_batch:-8}"
+HF_CACHE_ROOT="${DATA_ROOT}/hf_cache"
 
-mkdir -p "${CACHE_OUT}" ./condor_logs/logs_vsc
+mkdir -p "${CACHE_OUT}" "${HF_CACHE_ROOT}" ./condor_logs/logs_vsc
+export HF_HOME="${HF_CACHE_ROOT}"
+export HUGGINGFACE_HUB_CACHE="${HF_CACHE_ROOT}/hub"
+export HF_HUB_CACHE="${HUGGINGFACE_HUB_CACHE}"
+export HF_DATASETS_CACHE="${HF_CACHE_ROOT}/datasets"
+export TRANSFORMERS_CACHE="${HF_CACHE_ROOT}/transformers"
+export TORCH_HOME="${HF_CACHE_ROOT}/torch"
+echo "HF_HOME=${HF_HOME}"
+
+echo "Preflight: ensuring ESNLI assets under ${DATA_ROOT}"
+bash ./condor_logs/tier1/download_esnli_data.sh "${DATA_ROOT}"
 
 for SPLIT in train validation test; do
     SPLIT_DIR="${CACHE_OUT}/${SPLIT}"

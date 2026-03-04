@@ -1,0 +1,148 @@
+[
+  {
+    "method": "synprom_RMask.json",
+    "status": "missing",
+    "candidates_tried": 1,
+    "candidates_found": 0
+  },
+  {
+    "method": "synprom_RMask_nonpre.json",
+    "status": "ok",
+    "candidates_tried": 1,
+    "candidates_found": 1,
+    "selected_config": "configs/FactorCL/Mustard/release/VT/synprom_RMask_nonpre.json",
+    "selected_flags": [
+      "--lr",
+      "0.0005",
+      "--wd",
+      "0.001"
+    ],
+    "selected_flags_str": "--lr=0.0005 --wd=0.001",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mustard/release/VT/synprom_RMask_nonpre.json --default_config ./configs/FactorCL/Mustard/default_config_mustard_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001",
+    "val_acc_fold_pct": [
+      70.5,
+      61.9,
+      64.6
+    ],
+    "test_acc_fold_pct": [
+      60.1,
+      57.8,
+      54.5
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.231,
+      0.289,
+      0.242
+    ],
+    "val_acc_mean_pct": 65.66666666666666,
+    "val_acc_std_pct": 3.5910382280832884,
+    "test_acc_mean_pct": 57.46666666666667,
+    "test_acc_std_pct": 2.2983085567917603,
+    "test_ceu_synergy_mean_raw": 0.254,
+    "test_ceu_synergy_std_raw": 0.025152865973217964,
+    "test_ceu_synergy_mean_pct": 25.4,
+    "test_ceu_synergy_std_pct": 2.5152865973217966,
+    "raw_output": "SynIB_RMask_nonpre_fold0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 74  Steps no improve: 29  Acc_combined: 70.5 Test_Acc_combined: 60.1 Test_Acc_c: 53.4 Test_Acc_g: 59.0 Test_F1_combined: 60.2 Test_F1_c: 19.4 Test_F1_g: 63.6 V_CEU_S: 0.185 T_CEU_S: 0.231 F1_perclass: 60.2 \nSynIB_RMask_nonpre_fold1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 64  Steps no improve: 29  Acc_combined: 61.9 Test_Acc_combined: 57.8 Test_Acc_c: 50.7 Test_Acc_g: 59.3 Test_F1_combined: 60.4 Test_F1_c: 50.7 Test_F1_g: 45.8 V_CEU_S: 0.258 T_CEU_S: 0.289 F1_perclass: 60.4 \nSynIB_RMask_nonpre_fold2_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 60  Steps no improve: 29  Acc_combined: 64.6 Test_Acc_combined: 54.5 Test_Acc_c: 52.2 Test_Acc_g: 54.9 Test_F1_combined: 53.8 Test_F1_c: 62.1 Test_F1_g: 18.8 V_CEU_S: 0.360 T_CEU_S: 0.242 F1_perclass: 53.8 \nVal  acc_combined: 65.7 + 3.6 acc_c: 55.7 + 3.1 acc_g: 55.7 + 6.9 f1_combined: 0.6637 + 0.0318 f1_c: 0.4708 + 0.2158 f1_g: 0.3856 + 0.2160 f1_perclass 0.66 ceu_cue_audio: 0.70 ceu_cue_video: 0.51 ceu_synergy: 0.27 ceu_coexistence: 0.85 \nTest  acc_combined: 57.5 + 2.3 acc_c: 52.1 + 1.1 acc_g: 57.7 + 2.0 f1_combined: 0.5812 + 0.0306 f1_c: 0.4408 + 0.1809 f1_g: 0.4271 + 0.1841 f1_perclass 0.58 ceu_cue_audio: 0.69 ceu_cue_video: 0.56 ceu_synergy: 0.25 ceu_coexistence: 0.78 \n58.1 3.8 -- 58.1 3.1 --\n\n",
+    "latex_pair": "25.4{\\tiny$\\pm$}2.5/57.5{\\tiny$\\pm$}2.3"
+  },
+  {
+    "method": "synprom_RMask_learned.json",
+    "status": "ok",
+    "candidates_tried": 28,
+    "candidates_found": 28,
+    "selected_config": "configs/FactorCL/Mustard/release/VT/synprom_RMask.json",
+    "selected_flags": [
+      "--lr",
+      "0.0005",
+      "--wd",
+      "0.001",
+      "--l",
+      "1",
+      "--perturb",
+      "learned",
+      "--perturn",
+      "learned",
+      "--perturb_fill",
+      "ema",
+      "--perturb_lsparse",
+      "0.1"
+    ],
+    "selected_flags_str": "--lr=0.0005 --wd=0.001 --l=1 --perturb=learned --perturn=learned --perturb_fill=ema --perturb_lsparse=0.1",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mustard/release/VT/synprom_RMask.json --default_config ./configs/FactorCL/Mustard/default_config_mustard_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001 --l 1 --perturb learned --perturn learned --perturb_fill ema --perturb_lsparse 0.1",
+    "val_acc_fold_pct": [
+      69.4,
+      64.2,
+      69.4
+    ],
+    "test_acc_fold_pct": [
+      61.2,
+      59.7,
+      61.9
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.385,
+      0.4,
+      0.455
+    ],
+    "val_acc_mean_pct": 67.66666666666667,
+    "val_acc_std_pct": 2.4513035081133663,
+    "test_acc_mean_pct": 60.93333333333334,
+    "test_acc_std_pct": 0.9177266598624121,
+    "test_ceu_synergy_mean_raw": 0.41333333333333333,
+    "test_ceu_synergy_std_raw": 0.03009245014211298,
+    "test_ceu_synergy_mean_pct": 41.333333333333336,
+    "test_ceu_synergy_std_pct": 3.009245014211298,
+    "raw_output": "SynIB_RMask_fold0_l1_vldaccuracy_perturblearned_perturnlearned_fillema_lsparse0.1_lr0.0005_wd0.001.pth.tar  Epoch: 37  Steps no improve: 29  Acc_combined: 69.4 Test_Acc_combined: 61.2 Test_Acc_c: 55.2 Test_Acc_g: 60.8 Test_F1_combined: 61.2 Test_F1_c: 60.0 Test_F1_g: 61.0 V_CEU_S: 0.407 T_CEU_S: 0.385 F1_perclass: 61.2 \nSynIB_RMask_fold1_l1_vldaccuracy_perturblearned_perturnlearned_fillema_lsparse0.1_lr0.0005_wd0.001.pth.tar  Epoch: 68  Steps no improve: 29  Acc_combined: 64.2 Test_Acc_combined: 59.7 Test_Acc_c: 50.4 Test_Acc_g: 61.6 Test_F1_combined: 59.4 Test_F1_c: 62.3 Test_F1_g: 60.5 V_CEU_S: 0.387 T_CEU_S: 0.400 F1_perclass: 59.4 \nSynIB_RMask_fold2_l1_vldaccuracy_perturblearned_perturnlearned_fillema_lsparse0.1_lr0.0005_wd0.001.pth.tar  Epoch: 100  Steps no improve: 8  Acc_combined: 69.4 Test_Acc_combined: 61.9 Test_Acc_c: 57.8 Test_Acc_g: 60.4 Test_F1_combined: 61.9 Test_F1_c: 57.4 Test_F1_g: 58.6 V_CEU_S: 0.320 T_CEU_S: 0.455 F1_perclass: 61.9 \nVal  acc_combined: 67.7 + 2.5 acc_c: 51.1 + 7.0 acc_g: 67.2 + 2.9 f1_combined: 0.6766 + 0.0246 f1_c: 0.5568 + 0.1071 f1_g: 0.6620 + 0.0341 f1_perclass 0.68 ceu_cue_audio: 0.63 ceu_cue_video: 0.62 ceu_synergy: 0.37 ceu_coexistence: 0.83 \nTest  acc_combined: 60.9 + 0.9 acc_c: 54.5 + 3.1 acc_g: 60.9 + 0.5 f1_combined: 0.6084 + 0.0107 f1_c: 0.5989 + 0.0203 f1_g: 0.6003 + 0.0103 f1_perclass 0.61 ceu_cue_audio: 0.57 ceu_cue_video: 0.70 ceu_synergy: 0.41 ceu_coexistence: 0.75 \n60.8 1.3 -- 60.8 1.1 --\n\n",
+    "latex_pair": "41.3{\\tiny$\\pm$}3.0/60.9{\\tiny$\\pm$}0.9"
+  },
+  {
+    "method": "synprom_RMask_random.json",
+    "status": "ok",
+    "candidates_tried": 20,
+    "candidates_found": 20,
+    "selected_config": "configs/FactorCL/Mustard/release/VT/synprom_RMask.json",
+    "selected_flags": [
+      "--lr",
+      "0.0005",
+      "--wd",
+      "0.001",
+      "--l",
+      "0.001",
+      "--perturb",
+      "random",
+      "--perturn",
+      "random",
+      "--perturb_fill",
+      "ema",
+      "--perturb_pmin",
+      "0.1"
+    ],
+    "selected_flags_str": "--lr=0.0005 --wd=0.001 --l=0.001 --perturb=random --perturn=random --perturb_fill=ema --perturb_pmin=0.1",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mustard/release/VT/synprom_RMask.json --default_config ./configs/FactorCL/Mustard/default_config_mustard_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001 --l 0.001 --perturb random --perturn random --perturb_fill ema --perturb_pmin 0.1",
+    "val_acc_fold_pct": [
+      66.0,
+      64.9,
+      69.4
+    ],
+    "test_acc_fold_pct": [
+      62.7,
+      59.7,
+      64.2
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.513,
+      0.244,
+      0.667
+    ],
+    "val_acc_mean_pct": 66.76666666666667,
+    "val_acc_std_pct": 1.9154343864744863,
+    "test_acc_mean_pct": 62.2,
+    "test_acc_std_pct": 1.8708286933869707,
+    "test_ceu_synergy_mean_raw": 0.4746666666666667,
+    "test_ceu_synergy_std_raw": 0.17480338160980247,
+    "test_ceu_synergy_mean_pct": 47.46666666666667,
+    "test_ceu_synergy_std_pct": 17.480338160980246,
+    "raw_output": "SynIB_RMask_fold0_l0.001_vldaccuracy_perturbrandom_perturnrandom_fillema_pmin0.1_lr0.0005_wd0.001.pth.tar  Epoch: 39  Steps no improve: 29  Acc_combined: 66.0 Test_Acc_combined: 62.7 Test_Acc_c: 55.2 Test_Acc_g: 61.6 Test_F1_combined: 63.2 Test_F1_c: 37.5 Test_F1_g: 62.5 V_CEU_S: 0.370 T_CEU_S: 0.513 F1_perclass: 63.2 \nSynIB_RMask_fold1_l0.001_vldaccuracy_perturbrandom_perturnrandom_fillema_pmin0.1_lr0.0005_wd0.001.pth.tar  Epoch: 59  Steps no improve: 29  Acc_combined: 64.9 Test_Acc_combined: 59.7 Test_Acc_c: 54.1 Test_Acc_g: 57.1 Test_F1_combined: 60.6 Test_F1_c: 52.5 Test_F1_g: 68.5 V_CEU_S: 0.258 T_CEU_S: 0.244 F1_perclass: 60.6 \nSynIB_RMask_fold2_l0.001_vldaccuracy_perturbrandom_perturnrandom_fillema_pmin0.1_lr0.0005_wd0.001.pth.tar  Epoch: 37  Steps no improve: 29  Acc_combined: 69.4 Test_Acc_combined: 64.2 Test_Acc_c: 59.0 Test_Acc_g: 63.1 Test_F1_combined: 64.2 Test_F1_c: 59.9 Test_F1_g: 63.2 V_CEU_S: 0.560 T_CEU_S: 0.667 F1_perclass: 64.2 \nVal  acc_combined: 66.8 + 1.9 acc_c: 53.4 + 5.8 acc_g: 62.2 + 6.5 f1_combined: 0.6692 + 0.0180 f1_c: 0.4542 + 0.1438 f1_g: 0.6677 + 0.0134 f1_perclass 0.67 ceu_cue_audio: 0.65 ceu_cue_video: 0.59 ceu_synergy: 0.40 ceu_coexistence: 0.80 \nTest  acc_combined: 62.2 + 1.9 acc_c: 56.1 + 2.1 acc_g: 60.6 + 2.5 f1_combined: 0.6267 + 0.0152 f1_c: 0.4995 + 0.0930 f1_g: 0.6475 + 0.0266 f1_perclass 0.63 ceu_cue_audio: 0.56 ceu_cue_video: 0.62 ceu_synergy: 0.47 ceu_coexistence: 0.76 \n62.7 1.9 -- 62.7 1.5 --\n\n",
+    "latex_pair": "47.5{\\tiny$\\pm$}17.5/62.2{\\tiny$\\pm$}1.9"
+  }
+]

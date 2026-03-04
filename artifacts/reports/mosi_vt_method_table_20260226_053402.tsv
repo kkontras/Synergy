@@ -1,0 +1,17 @@
+method	latex_pair	test_ceu_synergy_mean_pct	test_ceu_synergy_std_pct	test_acc_mean_pct	test_acc_std_pct	val_acc_mean_pct	val_acc_std_pct	selected_hparams	selected_config
+AGM	NA	NA	NA	NA	NA	NA	NA	missing	configs/FactorCL/Mosi/release/VT/AGM.json
+MCR	NA	nan	nan	73.133	1.484	73.867	1.144	--lr=0.0005 --wd=0.001	configs/FactorCL/Mosi/release/VT/MCR.json
+MCR_NoiseInput	NA	NA	NA	NA	NA	NA	NA	missing	configs/FactorCL/Mosi/release/VT/MCR_NoiseInput.json
+MCR_NoiseLatent	NA	nan	nan	72.867	2.073	75.567	1.302	--lr=0.0005 --wd=0.001	configs/FactorCL/Mosi/release/VT/MCR_NoiseLatent.json
+MCR_ZeroInput	NA	nan	nan	72.133	1.943	74.800	0.572	--lr=0.0005 --wd=0.001	configs/FactorCL/Mosi/release/VT/MCR_ZeroInput.json
+MCR_ZeroLatent	NA	nan	nan	72.133	1.943	74.800	0.572	--lr=0.0005 --wd=0.001	configs/FactorCL/Mosi/release/VT/MCR_ZeroLatent.json
+MLB	NA	nan	nan	71.767	0.896	77.000	1.780	--lr=0.0005 --wd=0.001	configs/FactorCL/Mosi/release/VT/MLB.json
+MMPareto	NA	nan	nan	72.633	1.879	76.667	1.650	--lr=0.0005 --wd=0.001	configs/FactorCL/Mosi/release/VT/MMPareto.json
+OGM	NA	nan	nan	72.833	1.837	76.867	0.998	--lr=0.0005 --wd=0.001	configs/FactorCL/Mosi/release/VT/OGM.json
+ens	NA	NA	NA	NA	NA	NA	NA	missing	configs/FactorCL/Mosi/release/VT/ens.json
+joint_training	NA	nan	nan	72.833	1.837	76.867	0.998	--lr=0.0005 --wd=0.001	configs/FactorCL/Mosi/release/VT/joint_training.json
+multiloss	NA	nan	nan	71.767	0.896	77.000	1.780	--lr=0.0005 --wd=0.001	configs/FactorCL/Mosi/release/VT/multiloss.json
+pre_finetuned	NA	NA	NA	NA	NA	NA	NA	missing	configs/FactorCL/Mosi/release/VT/pre_finetuned.json
+pre_frozen	NA	NA	NA	NA	NA	NA	NA	missing	configs/FactorCL/Mosi/release/VT/pre_frozen.json
+SynProm RMask	NA	nan	nan	72.633	2.179	79.400	0.852	--lr=0.0005 --wd=0.001	configs/FactorCL/Mosi/syn/VT/synprom_RMask.json
+SynProm RMask no-pre	NA	nan	nan	74.400	1.395	78.000	0.141	--lr=0.0005 --wd=0.001	configs/FactorCL/Mosi/syn/VT/synprom_RMask_nopre.json

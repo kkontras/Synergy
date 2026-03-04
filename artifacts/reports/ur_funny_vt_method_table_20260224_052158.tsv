@@ -1,0 +1,5 @@
+method	latex_pair	test_ceu_synergy_mean_pct	test_ceu_synergy_std_pct	test_acc_mean_pct	test_acc_std_pct	val_acc_mean_pct	val_acc_std_pct	selected_hparams
+Uni Pre Enc	NA	nan	nan	62.933	0.881	62.600	0.216	--lr=0.001 --wd=0.001 --l=0
+Vanilla Fusion	NA	nan	nan	62.533	0.125	62.933	0.189	--lr=0.001 --wd=0.001
+SynProm Learned	NA	nan	nan	62.367	1.601	63.600	0.712	--lr=0.001 --wd=0.001 --l=1 --perturb=learned --perturb_fill=ema --perturb_lsparse=0.1
+SynProm Random	NA	nan	nan	61.700	0.726	63.467	0.249	--lr=0.001 --wd=0.001 --l=0.1 --perturb=random --perturb_fill=ema --perturb_pmin=0.5

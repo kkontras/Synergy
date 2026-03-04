@@ -1,0 +1,26 @@
+[
+  {
+    "method": "synprom_RMask.json",
+    "status": "missing",
+    "candidates_tried": 1,
+    "candidates_found": 0
+  },
+  {
+    "method": "synprom_RMask_nonpre.json",
+    "status": "missing",
+    "candidates_tried": 1,
+    "candidates_found": 0
+  },
+  {
+    "method": "synprom_RMask_learned.json",
+    "status": "missing",
+    "candidates_tried": 28,
+    "candidates_found": 0
+  },
+  {
+    "method": "synprom_RMask_random.json",
+    "status": "missing",
+    "candidates_tried": 20,
+    "candidates_found": 0
+  }
+]

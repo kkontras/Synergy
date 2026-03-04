@@ -158,6 +158,35 @@ def merge_dicts(default_dict: EasyDict, dict2: EasyDict)-> EasyDict:
 
     return merged
 
+def _normalize_exp_name(config):
+    if hasattr(config, "exp_name"):
+        return
+    experiment = _safe_get(config, "experiment")
+    nested_exp_name = _safe_get(experiment, "exp_name")
+    if isinstance(nested_exp_name, str) and nested_exp_name.strip():
+        config.exp_name = nested_exp_name.strip()
+        return
+    nested_name = _safe_get(experiment, "name")
+    if isinstance(nested_name, str) and nested_name.strip():
+        config.exp_name = nested_name.strip()
+
+def _log_exp_name_or_exit(config, config_logger, json_file, default_files=None):
+    _normalize_exp_name(config)
+    try:
+        config_logger.info(" *************************************** ")
+        config_logger.info("The experiment name is {}".format(config.exp_name))
+        config_logger.info(" *************************************** ")
+    except AttributeError:
+        config_logger.info("ERROR!! Missing top-level 'exp_name' in config.")
+        config_logger.info("Config file: %s", json_file)
+        if default_files:
+            config_logger.info("Default config merged from: %s", default_files)
+            config_logger.info("Merged config still has no 'exp_name'. Add it to the default or override JSON.")
+        else:
+            config_logger.info("No default config was provided.")
+            config_logger.info("If this is a release/override config, pass its dataset default JSON via --default_config.")
+        exit(-1)
+
 def process_config_default(json_file, default_files=False, printing = True):
     """
     Get the json file
@@ -186,13 +215,7 @@ def process_config_default(json_file, default_files=False, printing = True):
         config_logger.info(" THE Configuration of your experiment ..")
         pprint(config)
         # making sure that you have provided the exp_name.
-        try:
-            config_logger.info(" *************************************** ")
-            config_logger.info("The experiment name is {}".format(config.exp_name))
-            config_logger.info(" *************************************** ")
-        except AttributeError:
-            config_logger.info("ERROR!!..Please provide the exp_name in json file..")
-            exit(-1)
+        _log_exp_name_or_exit(config, config_logger, json_file, default_files=default_files)
 
     # create some important directories to be used for that experiment.
     # config.summary_dir = os.path.join("experiments", config.exp_name, "summaries/")
@@ -228,13 +251,7 @@ def process_config(json_file, printing = True):
         config_logger.info(" THE Configuration of your experiment ..")
         pprint(config)
         # making sure that you have provided the exp_name.
-        try:
-            config_logger.info(" *************************************** ")
-            config_logger.info("The experiment name is {}".format(config.exp_name))
-            config_logger.info(" *************************************** ")
-        except AttributeError:
-            config_logger.info("ERROR!!..Please provide the exp_name in json file..")
-            exit(-1)
+        _log_exp_name_or_exit(config, config_logger, json_file)
 
     # create some important directories to be used for that experiment.
     # config.summary_dir = os.path.join("experiments", config.exp_name, "summaries/")

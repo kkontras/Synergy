@@ -189,8 +189,16 @@ class MLPHead(nn.Module):
     """
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
-        in_dim = int(_cfg(args, "in_dim"))
-        hidden_dim = int(_cfg(args, "hidden_dim"))
+        # Backward-compatible defaults for older experiment JSONs that only set fc_inner.
+        in_dim = _cfg(args, "in_dim")
+        if in_dim is None:
+            in_dim = _cfg(args, "fc_inner", _cfg(args, "d_model"))
+        hidden_dim = _cfg(args, "hidden_dim")
+        if hidden_dim is None:
+            hidden_dim = _cfg(args, "fc_inner", in_dim)
+
+        in_dim = int(in_dim)
+        hidden_dim = int(hidden_dim)
         num_classes = int(_cfg(args, "num_classes"))
         dropout = float(_cfg(args, "dropout", 0.1))
 
@@ -2983,7 +2991,7 @@ class SynIB(nn.Module):
         self.cosine_s = 0.008
 
         feature_dim = int(_cfg(args, "d_model", 512))
-        if self.cls_type == "mlp":
+        if self.cls_type in ("mlp", "linear"):
             self.stats_z1 = FeatureStatsMasker(d1=feature_dim, ema_beta=0.99)
             self.stats_z2 = FeatureStatsMasker(d1=feature_dim, ema_beta=0.99)
         elif self.cls_type == "tf":
@@ -3107,7 +3115,7 @@ class SynIB(nn.Module):
 
         make_tilde_fn = make_tilde_diff if self.p_type=="diff" else make_tilde_once
 
-        if self.cls_type == "mlp":
+        if self.cls_type in ("mlp", "linear"):
             self.stats_z1.ema_update(z1)
             self.stats_z2.ema_update(z2)
 
@@ -3481,7 +3489,7 @@ class FusionIBModel_Mask(nn.Module):
         self.enc_0 = encs[0]
         self.enc_1 = encs[1]
 
-        if self.cls_type == "mlp":
+        if self.cls_type in ("mlp", "linear"):
             if len(encs)>2:
                 self.enc_2 = encs[2]
                 self.enc_3 = encs[3]

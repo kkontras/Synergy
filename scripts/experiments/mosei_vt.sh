@@ -21,60 +21,52 @@ fi
 GPU="${1:-0}"
 MODE="${2:-all}"   # all | unimodal | ceu | methods
 
-DEFAULT_CONFIG="./configs/FactorCL/Mosei/default_config_mosei_VT.json"
-RELEASE_DIR="./configs/FactorCL/Mosei/release/VT"
-UNIMODAL_VIDEO="${RELEASE_DIR}/unimodal_video.json"
-UNIMODAL_TEXT="${RELEASE_DIR}/unimodal_text.json"
-METHODS=(
-  "${RELEASE_DIR}/AGM.json"
-  "${RELEASE_DIR}/MCR.json"
-  "${RELEASE_DIR}/MCR_NoiseInput.json"
-  "${RELEASE_DIR}/MCR_NoiseLatent.json"
-  "${RELEASE_DIR}/MCR_ZeroInput.json"
-  "${RELEASE_DIR}/MCR_ZeroLatent.json"
-  "${RELEASE_DIR}/MLB.json"
-  "${RELEASE_DIR}/MMPareto.json"
-  "${RELEASE_DIR}/OGM.json"
-  "${RELEASE_DIR}/ens.json"
-  "${RELEASE_DIR}/joint_training.json"
-  "${RELEASE_DIR}/multiloss.json"
-  "${RELEASE_DIR}/pre_finetuned.json"
-  "${RELEASE_DIR}/pre_frozen.json"
-)
+DEFAULT_CONFIG="./configs/FactorCL/Mosei/default_config_mosei_VT_syn.json"
+SYN_DIR="./configs/FactorCL/Mosei/syn/VT"
+UNIMODAL_VIDEO="${SYN_DIR}/unimodal_video.json"
+UNIMODAL_TEXT="${SYN_DIR}/unimodal_text.json"
 
-IFS=',' read -r -a FOLDS <<< "${FOLDS_CSV:-0,1,2}"
+IFS=',' read -r -a FOLDS        <<< "${FOLDS_CSV:-0,1,2}"
 IFS=',' read -r -a UNIMODAL_LRS <<< "${UNIMODAL_LRS_CSV:-0.001,0.0005,0.0001,0.00005}"
 IFS=',' read -r -a UNIMODAL_WDS <<< "${UNIMODAL_WDS_CSV:-0.001,0.0001,0.00001}"
-IFS=',' read -r -a METHOD_LRS <<< "${METHOD_LRS_CSV:-0.001,0.0001}"
-IFS=',' read -r -a METHOD_WDS <<< "${METHOD_WDS_CSV:-0.001,0.0001}"
 
-BEST_VIDEO_LR="${BEST_VIDEO_LR:-}"
-BEST_VIDEO_WD="${BEST_VIDEO_WD:-}"
-BEST_TEXT_LR="${BEST_TEXT_LR:-}"
-BEST_TEXT_WD="${BEST_TEXT_WD:-}"
+# Fixed lr/wd for methods (override via env if needed)
+METHOD_LR="${METHOD_LR:-0.0005}"
+METHOD_WD="${METHOD_WD:-0.001}"
+
+# Per-method hyperparameter grids
+IFS=',' read -r -a MCR_LS        <<< "${MCR_L_CSV:-0.001,0.01,0.1,1}"
+IFS=',' read -r -a MCR_MULTILS   <<< "${MCR_MULTIL_CSV:-0.01,0.1,1}"
+IFS=',' read -r -a MMPARETO_ALPHAS <<< "${MMPARETO_ALPHA_CSV:-0.5,1.0,1.5,2.0,3.0,5.0}"
+
+BEST_VIDEO_LR="${BEST_VIDEO_LR:-0.001}"
+BEST_VIDEO_WD="${BEST_VIDEO_WD:-0.001}"
+BEST_TEXT_LR="${BEST_TEXT_LR:-0.0005}"
+BEST_TEXT_WD="${BEST_TEXT_WD:-0.001}"
 
 run_train() { CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/train.py "$@"; }
-run_ceu() { CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/get_ceu_cli.py "$@"; }
+run_ceu()   { CUDA_VISIBLE_DEVICES="${GPU}" "${PYTHON_BIN}" scripts/entrypoints/get_ceu_cli.py "$@"; }
+run_train_safe() {
+  if ! run_train "$@"; then
+    echo "Method run failed (continuing): $*"
+  fi
+}
 
 do_unimodal() { [[ "${MODE}" == "all" || "${MODE}" == "unimodal" ]]; }
-do_ceu() { [[ "${MODE}" == "all" || "${MODE}" == "ceu" ]]; }
-do_methods() { [[ "${MODE}" == "all" || "${MODE}" == "methods" ]]; }
+do_ceu()      { [[ "${MODE}" == "all" || "${MODE}" == "ceu" ]]; }
+do_methods()  { [[ "${MODE}" == "all" || "${MODE}" == "methods" ]]; }
 
 if do_unimodal; then
-  echo "[SKIP] Unimodal sweep block is commented out to avoid rerunning existing checkpoints."
-  echo "[SKIP] Re-enable the block in scripts/experiments/mosei_vt.sh if you want to retrain unimodals."
-  # for fold in "${FOLDS[@]}"; do
-  #   for lr in "${UNIMODAL_LRS[@]}"; do
-  #     for wd in "${UNIMODAL_WDS[@]}"; do
-  #       run_train --config "${UNIMODAL_VIDEO}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${lr}" --wd "${wd}" --validate_with accuracy
-  #       run_train --config "${UNIMODAL_TEXT}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${lr}" --wd "${wd}" --validate_with accuracy
-  #     done
-  #   done
-  # done
+  echo "Unimodal stage: video lr=${BEST_VIDEO_LR} wd=${BEST_VIDEO_WD} | text lr=${BEST_TEXT_LR} wd=${BEST_TEXT_WD}"
+  for fold in "${FOLDS[@]}"; do
+    run_train --config "${UNIMODAL_VIDEO}" --default_config "${DEFAULT_CONFIG}" \
+      --fold "${fold}" --lr "${BEST_VIDEO_LR}" --wd "${BEST_VIDEO_WD}" --validate_with accuracy
+    run_train --config "${UNIMODAL_TEXT}"  --default_config "${DEFAULT_CONFIG}" \
+      --fold "${fold}" --lr "${BEST_TEXT_LR}"  --wd "${BEST_TEXT_WD}"  --validate_with accuracy
+  done
 fi
 
 if [[ "${MODE}" == "all" && ( -z "${BEST_VIDEO_LR}" || -z "${BEST_VIDEO_WD}" || -z "${BEST_TEXT_LR}" || -z "${BEST_TEXT_WD}" ) ]]; then
-  echo "Unimodal search finished."
   echo "Set BEST_VIDEO_LR/BEST_VIDEO_WD and BEST_TEXT_LR/BEST_TEXT_WD, then rerun with MODE=ceu (or MODE=all)."
   exit 0
 fi
@@ -94,19 +86,66 @@ if do_ceu; then
     --default_config "${DEFAULT_CONFIG}" \
     --unimodal_configs "${UNIMODAL_VIDEO}" "${UNIMODAL_TEXT}" \
     --folds "${FOLDS[@]}" \
-    --lr "${BEST_VIDEO_LR}" \
-    --wd "${BEST_VIDEO_WD}" \
+    --lr "${BEST_TEXT_LR}" \
+    --wd "${BEST_TEXT_WD}" \
     --validate_with accuracy
 fi
 
 if do_methods; then
+  echo "Methods stage: lr=${METHOD_LR} wd=${METHOD_WD}"
+
+  # MCR (release) — l x multil sweep
   for fold in "${FOLDS[@]}"; do
-    for cfg in "${METHODS[@]}"; do
-      for lr in "${METHOD_LRS[@]}"; do
-        for wd in "${METHOD_WDS[@]}"; do
-          run_train --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${lr}" --wd "${wd}" --validate_with accuracy
-        done
+    for l in "${MCR_LS[@]}"; do
+      for multil in "${MCR_MULTILS[@]}"; do
+        run_train_safe --config "${SYN_DIR}/MCR.json" --default_config "${DEFAULT_CONFIG}" \
+          --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+          --l "${l}" --multil "${multil}" --validate_with accuracy
       done
     done
+  done
+
+  # MMPareto — alpha sweep
+  for fold in "${FOLDS[@]}"; do
+    for alpha in "${MMPARETO_ALPHAS[@]}"; do
+      run_train_safe --config "${SYN_DIR}/MMPareto.json" --default_config "${DEFAULT_CONFIG}" \
+        --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+        --alpha "${alpha}" --validate_with accuracy
+    done
+  done
+
+  # Ensemble — fixed lr/wd
+  for fold in "${FOLDS[@]}"; do
+    run_train_safe --config "${SYN_DIR}/ens.json" --default_config "${DEFAULT_CONFIG}" \
+      --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --validate_with accuracy
+  done
+
+  # Joint Training — fixed lr/wd
+  for fold in "${FOLDS[@]}"; do
+    run_train_safe --config "${SYN_DIR}/joint_training.json" --default_config "${DEFAULT_CONFIG}" \
+      --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --validate_with accuracy
+  done
+
+  # Syn MCR — l x multil sweep
+  for fold in "${FOLDS[@]}"; do
+    for l in "${MCR_LS[@]}"; do
+      for multil in "${MCR_MULTILS[@]}"; do
+        run_train_safe --config "${SYN_DIR}/MCR.json" --default_config "${DEFAULT_CONFIG}" \
+          --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+          --l "${l}" --multil "${multil}" --validate_with accuracy
+      done
+    done
+  done
+
+  # Syn RMask — l=0, fixed lr/wd
+  for fold in "${FOLDS[@]}"; do
+    run_train_safe --config "${SYN_DIR}/synprom_RMask.json" --default_config "${DEFAULT_CONFIG}" \
+      --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --l 0 --validate_with accuracy
+  done
+
+  # Syn RMask nopre — l=0, fixed lr/wd (no pretrained encoders → uses VT_syn save dir)
+  for fold in "${FOLDS[@]}"; do
+    run_train_safe --config "${SYN_DIR}/synprom_RMask_nopre.json" --default_config "${DEFAULT_CONFIG}" \
+      --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --l 0 --validate_with accuracy
   done
 fi

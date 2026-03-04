@@ -39,8 +39,10 @@ METHODS=(
   "${SYN_DIR}/joint_training.json"
   "${SYNPROM_RMASK_NOPRE_CFG}"
   "${SYNPROM_RMASK_BASE_CFG}"
-  "${SYN_DIR}/synprom_RMask_learned.json"   # virtual label -> train with base cfg + --perturb learned
-  "${SYN_DIR}/synprom_RMask_random.json"    # virtual label -> train with base cfg + --perturb random
+  "${SYN_DIR}/synprom_RMask_learned.json"        # virtual label -> train with base cfg + --perturb learned
+  "${SYN_DIR}/synprom_RMask_random.json"         # virtual label -> train with base cfg + --perturb random
+  "${SYN_DIR}/synprom_RMask_nopre_learned.json"  # virtual label -> train with nopre cfg + --perturb learned
+  "${SYN_DIR}/synprom_RMask_nopre_random.json"   # virtual label -> train with nopre cfg + --perturb random
 )
 
 # Method scheduling:
@@ -372,6 +374,26 @@ if do_methods; then
         synprom_RMask_nopre.json)
           run_train_method_safe --config "${SYNPROM_RMASK_NOPRE_CFG}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" \
             --lr "${METHOD_FIXED_LR}" --wd "${METHOD_FIXED_WD}" --validate_with accuracy
+          ;;
+        synprom_RMask_nopre_learned.json)
+          for l in "${RMASK_LEARNED_LS[@]}"; do
+            for lsparse in "${RMASK_LEARNED_LSPARSES[@]}"; do
+              run_train_method_safe --config "${SYNPROM_RMASK_NOPRE_CFG}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" \
+                --lr "${METHOD_FIXED_LR}" --wd "${METHOD_FIXED_WD}" \
+                --l "${l}" --perturb learned --perturb_fill ema --perturb_lsparse "${lsparse}" \
+                --validate_with accuracy
+            done
+          done
+          ;;
+        synprom_RMask_nopre_random.json)
+          for l in "${RMASK_RANDOM_LS[@]}"; do
+            for pmin in "${RMASK_RANDOM_PMINS[@]}"; do
+              run_train_method_safe --config "${SYNPROM_RMASK_NOPRE_CFG}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" \
+                --lr "${METHOD_FIXED_LR}" --wd "${METHOD_FIXED_WD}" \
+                --l "${l}" --perturb random --perturb_fill ema --perturb_pmin "${pmin}" \
+                --validate_with accuracy
+            done
+          done
           ;;
         *)
           run_train_method_safe --config "${cfg}" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" \

@@ -19,6 +19,7 @@ from .ESNLI.ESNLI_CB import *
 from .ESNLI.ESNLIDataset import *
 try:
     from .Factor_CL_Datasets.FactorCL_Datasets import *
+    from .Factor_CL_Datasets.FactorCL_Datasets_MustardFiltered import *
 except ModuleNotFoundError as e:
     # FactorCL/MultiBench is optional for tasks like ESNLI smoke tests.
     print(f"[mydatasets] Skipping FactorCL datasets import: {e}")

@@ -109,6 +109,8 @@ def print_search(config_path, default_config_path, args):
 
     if "perturb" in args and args.perturb is not None:
         m += "_perturb{}".format(args.perturb)
+    if "perturn" in args and args.perturn is not None:
+        m += "_perturn{}".format(args.perturn)
     if "ending_epoch" in args and args.ending_epoch is not None:
         m += "_endingepoch{}".format(args.ending_epoch)
     if "perturb_fill" in args and args.perturb_fill is not None:
@@ -234,6 +236,8 @@ from collections import defaultdict
 def print_mean(m: dict, val=True):
     agg = {}
     counts = defaultdict(int)  # Keep track of counts for non-dict metrics
+    mean_f1_irony_combined = torch.tensor([float("nan")])
+    std_f1_irony_combined = torch.tensor([float("nan")])
 
     # Step 1: Collect values
     for fold in m:
@@ -299,16 +303,20 @@ def print_mean(m: dict, val=True):
             message += Fore.LIGHTBLUE_EX + "SyG_Ens: {:.2f} ".format(metric["synergy_gap_ens"])
         elif "ceu" == metric:
             pred = "combined"
-            for each_ceu in agg[metric][pred][0]:
-                mean_value = np.concatenate([np.array([i[each_ceu]]) for i in agg[metric][pred]]).mean()
-                message += Fore.LIGHTBLUE_EX + "{}_{}: {:.2f} ".format(metric, each_ceu, mean_value)
+            if pred in agg[metric] and len(agg[metric][pred]) > 0:
+                for each_ceu in agg[metric][pred][0]:
+                    vals = np.concatenate([np.array([i[each_ceu]]) for i in agg[metric][pred]])
+                    mean_value = vals.mean()
+                    std_value = vals.std()
+                    message += Fore.LIGHTBLUE_EX + "{}_{}: {:.3f} + {:.3f} ".format(metric, each_ceu, mean_value, std_value)
         elif "f1_perclass" == metric:
-            f1_perclass_vals = [_to_1d_tensor(i).unsqueeze(dim=0) for i in agg["f1_perclass"]["combined"]]
-            mean_f1_irony_combined = torch.cat(f1_perclass_vals, dim=0).mean(dim=0)
-            std_f1_irony_combined = torch.cat(f1_perclass_vals, dim=0).std(dim=0)
-            message += Fore.LIGHTBLUE_EX + "{} ".format(metric)
-            for i in range(len(mean_f1_irony_combined)):
-                message += "{:.2f} ".format(mean_f1_irony_combined[i])
+            if "combined" in agg["f1_perclass"] and len(agg["f1_perclass"]["combined"]) > 0:
+                f1_perclass_vals = [_to_1d_tensor(i).unsqueeze(dim=0) for i in agg["f1_perclass"]["combined"]]
+                mean_f1_irony_combined = torch.cat(f1_perclass_vals, dim=0).mean(dim=0)
+                std_f1_irony_combined = torch.cat(f1_perclass_vals, dim=0).std(dim=0)
+                message += Fore.LIGHTBLUE_EX + "{} ".format(metric)
+                for i in range(len(mean_f1_irony_combined)):
+                    message += "{:.2f} ".format(mean_f1_irony_combined[i])
 
 
 
@@ -316,8 +324,16 @@ def print_mean(m: dict, val=True):
     if args.printing is True:
         print(message)
 
-    mean_acc_combined = np.mean(agg["f1"]["combined"])
-    std_acc_combined = np.std(agg["f1"]["combined"])
+    if "acc" in agg and isinstance(agg["acc"], defaultdict) and "combined" in agg["acc"]:
+        mean_acc_combined = np.mean(agg["acc"]["combined"])
+        std_acc_combined = np.std(agg["acc"]["combined"])
+    elif "f1" in agg and isinstance(agg["f1"], defaultdict) and "combined" in agg["f1"]:
+        # Fallback for legacy result payloads missing acc but providing f1.
+        mean_acc_combined = np.mean(agg["f1"]["combined"])
+        std_acc_combined = np.std(agg["f1"]["combined"])
+    else:
+        mean_acc_combined = float("nan")
+        std_acc_combined = float("nan")
 
     mean_f1_irony_combined = _to_1d_tensor(mean_f1_irony_combined)[-1]
     std_f1_irony_combined = _to_1d_tensor(std_f1_irony_combined)[-1]
@@ -377,6 +393,7 @@ if __name__ == "__main__":
     parser.add_argument('--printing', required=False, help="print_results", default=True)
     parser.add_argument('--ironic_rate', required=False, help="Perturbation type of MCR", default=None)
     parser.add_argument('--perturb', required=False, help="Perturbation type of MCR", default=None)
+    parser.add_argument('--perturn', required=False, help="Per-turn RMask mode (e.g., learned/random)", default=None)
     parser.add_argument('--perturb_fill', required=False, help="Fill for mask type perturbation of MCR", default=None)
     parser.add_argument('--perturb_pmax', required=False, help="Fill for mask type perturbation of MCR", default=None)
     parser.add_argument('--perturb_pmin', required=False, help="Fill for mask type perturbation of MCR", default=None)

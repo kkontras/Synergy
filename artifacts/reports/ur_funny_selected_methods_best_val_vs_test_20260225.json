@@ -1,0 +1,360 @@
+{
+  "ens": {
+    "n_candidates_total": 1,
+    "n_candidates_found": 1,
+    "best_by_val": {
+      "config": "configs/FactorCL/URFunny/release/VT/ens.json",
+      "flags": [
+        "--lr",
+        "0.001",
+        "--wd",
+        "0.001",
+        "--l",
+        "0"
+      ],
+      "flags_str": "--lr=0.001 --wd=0.001 --l=0",
+      "val_acc_fold_pct": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "test_acc_fold_pct": [
+        53.2,
+        61.9,
+        61.1
+      ],
+      "test_ceu_synergy_fold_raw": [
+        0.022,
+        0.0,
+        0.021
+      ],
+      "val_acc_mean_pct": 0.0,
+      "val_acc_std_pct": 0.0,
+      "test_acc_mean_pct": 58.733333333333334,
+      "test_acc_std_pct": 3.9262648351270886,
+      "test_ceu_synergy_mean_raw": 0.014333333333333333,
+      "test_ceu_synergy_std_raw": 0.010143416036468626,
+      "test_ceu_synergy_mean_pct": 1.4333333333333333,
+      "test_ceu_synergy_std_pct": 1.0143416036468627
+    },
+    "best_by_test": {
+      "config": "configs/FactorCL/URFunny/release/VT/ens.json",
+      "flags": [
+        "--lr",
+        "0.001",
+        "--wd",
+        "0.001",
+        "--l",
+        "0"
+      ],
+      "flags_str": "--lr=0.001 --wd=0.001 --l=0",
+      "val_acc_fold_pct": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "test_acc_fold_pct": [
+        53.2,
+        61.9,
+        61.1
+      ],
+      "test_ceu_synergy_fold_raw": [
+        0.022,
+        0.0,
+        0.021
+      ],
+      "val_acc_mean_pct": 0.0,
+      "val_acc_std_pct": 0.0,
+      "test_acc_mean_pct": 58.733333333333334,
+      "test_acc_std_pct": 3.9262648351270886,
+      "test_ceu_synergy_mean_raw": 0.014333333333333333,
+      "test_ceu_synergy_std_raw": 0.010143416036468626,
+      "test_ceu_synergy_mean_pct": 1.4333333333333333,
+      "test_ceu_synergy_std_pct": 1.0143416036468627
+    }
+  },
+  "Vanilla Fusion": {
+    "n_candidates_total": 1,
+    "n_candidates_found": 1,
+    "best_by_val": {
+      "config": "configs/FactorCL/URFunny/release/VT/synprom_RMask_nopre.json",
+      "flags": [
+        "--lr",
+        "0.001",
+        "--wd",
+        "0.001"
+      ],
+      "flags_str": "--lr=0.001 --wd=0.001",
+      "val_acc_fold_pct": [
+        62.8,
+        62.8,
+        63.2
+      ],
+      "test_acc_fold_pct": [
+        62.7,
+        62.5,
+        62.4
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 62.93333333333333,
+      "val_acc_std_pct": 0.18856180831641536,
+      "test_acc_mean_pct": 62.53333333333333,
+      "test_acc_std_pct": 0.1247219128924665,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN
+    },
+    "best_by_test": {
+      "config": "configs/FactorCL/URFunny/release/VT/synprom_RMask_nopre.json",
+      "flags": [
+        "--lr",
+        "0.001",
+        "--wd",
+        "0.001"
+      ],
+      "flags_str": "--lr=0.001 --wd=0.001",
+      "val_acc_fold_pct": [
+        62.8,
+        62.8,
+        63.2
+      ],
+      "test_acc_fold_pct": [
+        62.7,
+        62.5,
+        62.4
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 62.93333333333333,
+      "val_acc_std_pct": 0.18856180831641536,
+      "test_acc_mean_pct": 62.53333333333333,
+      "test_acc_std_pct": 0.1247219128924665,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN
+    }
+  },
+  "Uni Pre Enc": {
+    "n_candidates_total": 1,
+    "n_candidates_found": 1,
+    "best_by_val": {
+      "config": "configs/FactorCL/URFunny/release/VT/synprom_RMask.json",
+      "flags": [
+        "--lr",
+        "0.001",
+        "--wd",
+        "0.001",
+        "--l",
+        "0"
+      ],
+      "flags_str": "--lr=0.001 --wd=0.001 --l=0",
+      "val_acc_fold_pct": [
+        62.9,
+        62.5,
+        62.4
+      ],
+      "test_acc_fold_pct": [
+        63.7,
+        63.4,
+        61.7
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 62.6,
+      "val_acc_std_pct": 0.21602468994692844,
+      "test_acc_mean_pct": 62.93333333333334,
+      "test_acc_std_pct": 0.880656320908193,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN
+    },
+    "best_by_test": {
+      "config": "configs/FactorCL/URFunny/release/VT/synprom_RMask.json",
+      "flags": [
+        "--lr",
+        "0.001",
+        "--wd",
+        "0.001",
+        "--l",
+        "0"
+      ],
+      "flags_str": "--lr=0.001 --wd=0.001 --l=0",
+      "val_acc_fold_pct": [
+        62.9,
+        62.5,
+        62.4
+      ],
+      "test_acc_fold_pct": [
+        63.7,
+        63.4,
+        61.7
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 62.6,
+      "val_acc_std_pct": 0.21602468994692844,
+      "test_acc_mean_pct": 62.93333333333334,
+      "test_acc_std_pct": 0.880656320908193,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN
+    }
+  },
+  "SynProm Learned": {
+    "n_candidates_total": 28,
+    "n_candidates_found": 28,
+    "best_by_val": {
+      "config": "configs/FactorCL/URFunny/release/VT/synprom_RMask.json",
+      "flags": [
+        "--lr",
+        "0.001",
+        "--wd",
+        "0.001",
+        "--l",
+        "1",
+        "--perturb",
+        "learned",
+        "--perturb_fill",
+        "ema",
+        "--perturb_lsparse",
+        "0.01"
+      ],
+      "flags_str": "--lr=0.001 --wd=0.001 --l=1 --perturb=learned --perturb_fill=ema --perturb_lsparse=0.01",
+      "val_acc_fold_pct": [
+        64.3,
+        62.5,
+        64.0
+      ],
+      "test_acc_fold_pct": [
+        62.7,
+        63.1,
+        62.4
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 63.6,
+      "val_acc_std_pct": 0.7874007874011802,
+      "test_acc_mean_pct": 62.733333333333334,
+      "test_acc_std_pct": 0.2867441755680886,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN
+    },
+    "best_by_test": {
+      "config": "configs/FactorCL/URFunny/release/VT/synprom_RMask.json",
+      "flags": [
+        "--lr",
+        "0.001",
+        "--wd",
+        "0.001",
+        "--l",
+        "1",
+        "--perturb",
+        "learned",
+        "--perturb_fill",
+        "ema",
+        "--perturb_lsparse",
+        "3"
+      ],
+      "flags_str": "--lr=0.001 --wd=0.001 --l=1 --perturb=learned --perturb_fill=ema --perturb_lsparse=3",
+      "val_acc_fold_pct": [
+        63.3,
+        62.7,
+        63.4
+      ],
+      "test_acc_fold_pct": [
+        63.3,
+        63.9,
+        62.7
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 63.13333333333333,
+      "val_acc_std_pct": 0.30912061651652123,
+      "test_acc_mean_pct": 63.3,
+      "test_acc_std_pct": 0.4898979485566339,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN
+    }
+  },
+  "SynProm Random": {
+    "n_candidates_total": 20,
+    "n_candidates_found": 20,
+    "best_by_val": {
+      "config": "configs/FactorCL/URFunny/release/VT/synprom_RMask.json",
+      "flags": [
+        "--lr",
+        "0.001",
+        "--wd",
+        "0.001",
+        "--l",
+        "0.1",
+        "--perturb",
+        "random",
+        "--perturb_fill",
+        "ema",
+        "--perturb_pmin",
+        "0.5"
+      ],
+      "flags_str": "--lr=0.001 --wd=0.001 --l=0.1 --perturb=random --perturb_fill=ema --perturb_pmin=0.5",
+      "val_acc_fold_pct": [
+        63.8,
+        63.2,
+        63.4
+      ],
+      "test_acc_fold_pct": [
+        62.0,
+        62.4,
+        60.7
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 63.46666666666667,
+      "val_acc_std_pct": 0.24944382578492727,
+      "test_acc_mean_pct": 61.7,
+      "test_acc_std_pct": 0.7257180352359063,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN
+    },
+    "best_by_test": {
+      "config": "configs/FactorCL/URFunny/release/VT/synprom_RMask.json",
+      "flags": [
+        "--lr",
+        "0.001",
+        "--wd",
+        "0.001",
+        "--l",
+        "0.001",
+        "--perturb",
+        "random",
+        "--perturb_fill",
+        "ema",
+        "--perturb_pmin",
+        "0.7"
+      ],
+      "flags_str": "--lr=0.001 --wd=0.001 --l=0.001 --perturb=random --perturb_fill=ema --perturb_pmin=0.7",
+      "val_acc_fold_pct": [
+        63.3,
+        63.4,
+        62.8
+      ],
+      "test_acc_fold_pct": [
+        62.9,
+        63.4,
+        64.5
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 63.166666666666664,
+      "val_acc_std_pct": 0.26246692913372743,
+      "test_acc_mean_pct": 63.6,
+      "test_acc_std_pct": 0.6683312551921147,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN
+    }
+  }
+}

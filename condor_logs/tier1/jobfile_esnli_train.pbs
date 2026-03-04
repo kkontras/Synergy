@@ -3,18 +3,18 @@
 #PBS -l walltime=48:00:00
 #PBS -l nodes=1:ppn=12:gpus=1
 
-#PBS -A 2024_111
+#PBS -A 2026_029
 
 #PBS -o ./condor_logs/logs_vsc/out_${PBS_JOBID}.txt
 #PBS -e ./condor_logs/logs_vsc/err_${PBS_JOBID}.txt
 
 
-cd /dodrio/scratch/projects/2024_111/Synergy
+cd /dodrio/scratch/projects/2026_029/kkontras/projects/Synergy
 
 git pull origin main
 
-source /dodrio/scratch/projects/starting_2024_024/env/Anaconda/etc/profile.d/conda.sh
-conda activate /dodrio/scratch/projects/starting_2024_024/env/balance
+source /dodrio/scratch/projects/2026_029/kkontras/env/Anaconda/etc/profile.d/conda.sh
+conda activate /dodrio/scratch/projects/2026_029/kkontras/envs/synergy_new
 
 which python
 python -V
@@ -29,6 +29,17 @@ for var_name in fold lr wd batch_size load_ongoing; do
         declare "$var_name"="None"
     fi
 done
+
+HF_DATA_ROOT="/dodrio/scratch/projects/2026_029/kkontras/data/ESNLI"
+HF_CACHE_ROOT="${HF_DATA_ROOT}/hf_cache"
+mkdir -p "${HF_CACHE_ROOT}"
+export HF_HOME="${HF_CACHE_ROOT}"
+export HUGGINGFACE_HUB_CACHE="${HF_CACHE_ROOT}/hub"
+export HF_HUB_CACHE="${HUGGINGFACE_HUB_CACHE}"
+export HF_DATASETS_CACHE="${HF_CACHE_ROOT}/datasets"
+export TRANSFORMERS_CACHE="${HF_CACHE_ROOT}/transformers"
+export TORCH_HOME="${HF_CACHE_ROOT}/torch"
+echo "HF_HOME=${HF_HOME}"
 
 python scripts/entrypoints/train.py \
     --config         "${config}"         \

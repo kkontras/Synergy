@@ -820,8 +820,10 @@ def build_and_save_cache(
     os.makedirs(out_dir, exist_ok=True)
     split_out = os.path.join(out_dir, split)
     os.makedirs(split_out, exist_ok=True)
+    hf_cache = os.path.join(data_root, "hf_cache")
+    os.makedirs(hf_cache, exist_ok=True)
 
-    processor = AutoProcessor.from_pretrained(model_name, cache_dir=data_root)
+    processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
     tok = processor.tokenizer
     tok.padding_side = "left"
     if tok.pad_token is None:
@@ -832,7 +834,7 @@ def build_and_save_cache(
     cls_token_id = int(tok.convert_tokens_to_ids("<CLS>"))
 
     # Get image token id/str from config
-    cfg = AutoConfig.from_pretrained(model_name, cache_dir=data_root)
+    cfg = AutoConfig.from_pretrained(model_name, cache_dir=hf_cache)
     if not hasattr(cfg, "image_token_id"):
         raise RuntimeError("Config has no image_token_id; cannot build image token masks.")
     image_token_id = int(getattr(cfg, "image_token_id"))
@@ -842,7 +844,7 @@ def build_and_save_cache(
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         model_name,
         trust_remote_code=True,
-        cache_dir=data_root,
+        cache_dir=hf_cache,
     ).cuda()
     model.eval()
 

@@ -1,0 +1,235 @@
+[
+  {
+    "method": "MMPareto.json",
+    "status": "ok",
+    "candidates_tried": 6,
+    "candidates_found": 6,
+    "selected_config": "configs/FactorCL/Mustard/release/VT/MMPareto.json",
+    "selected_flags": [
+      "--lr",
+      "0.0005",
+      "--wd",
+      "0.001",
+      "--alpha",
+      "1.0"
+    ],
+    "selected_flags_str": "--lr=0.0005 --wd=0.001 --alpha=1.0",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mustard/release/VT/MMPareto.json --default_config ./configs/FactorCL/Mustard/default_config_mustard_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001 --alpha 1.0",
+    "val_acc_fold_pct": [
+      54.1,
+      66.4,
+      67.9
+    ],
+    "test_acc_fold_pct": [
+      56.3,
+      58.6,
+      61.6
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.436,
+      0.222,
+      0.545
+    ],
+    "val_acc_mean_pct": 62.800000000000004,
+    "val_acc_std_pct": 6.182232606429495,
+    "test_acc_mean_pct": 58.833333333333336,
+    "test_acc_std_pct": 2.1699974398346407,
+    "test_ceu_synergy_mean_raw": 0.401,
+    "test_ceu_synergy_std_raw": 0.13416656314695802,
+    "test_ceu_synergy_mean_pct": 40.1,
+    "test_ceu_synergy_std_pct": 13.416656314695802,
+    "raw_output": "MMPareto_fold0_alpha1.0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 81  Steps no improve: 29  Acc_combined: 54.1 Test_Acc_combined: 56.3 Test_Acc_c: 53.7 Test_Acc_g: 55.2 Test_F1_combined: 61.4 Test_F1_c: 50.8 Test_F1_g: 60.3 V_CEU_S: 0.259 T_CEU_S: 0.436 F1_perclass: 61.4 \nMMPareto_fold1_alpha1.0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 70  Steps no improve: 29  Acc_combined: 66.4 Test_Acc_combined: 58.6 Test_Acc_c: 52.2 Test_Acc_g: 56.0 Test_F1_combined: 63.4 Test_F1_c: 59.0 Test_F1_g: 56.6 V_CEU_S: 0.387 T_CEU_S: 0.222 F1_perclass: 63.4 \nMMPareto_fold2_alpha1.0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 97  Steps no improve: 29  Acc_combined: 67.9 Test_Acc_combined: 61.6 Test_Acc_c: 50.7 Test_Acc_g: 60.4 Test_F1_combined: 62.3 Test_F1_c: 53.8 Test_F1_g: 60.7 V_CEU_S: 0.400 T_CEU_S: 0.545 F1_perclass: 62.3 \nVal  acc_combined: 62.8 + 6.2 acc_c: 48.5 + 1.3 acc_g: 67.8 + 4.5 f1_combined: 0.6552 + 0.0477 f1_c: 0.5097 + 0.0338 f1_g: 0.6919 + 0.0273 f1_perclass 0.66 ceu_cue_audio: 0.58 ceu_cue_video: 0.59 ceu_synergy: 0.35 ceu_coexistence: 0.80 \nTest  acc_combined: 58.8 + 2.1 acc_c: 52.2 + 1.2 acc_g: 57.2 + 2.3 f1_combined: 0.6234 + 0.0081 f1_c: 0.5454 + 0.0338 f1_g: 0.5921 + 0.0184 f1_perclass 0.62 ceu_cue_audio: 0.66 ceu_cue_video: 0.50 ceu_synergy: 0.40 ceu_coexistence: 0.74 \n62.3 1.0 -- 62.3 0.8 --\n\n"
+  },
+  {
+    "method": "DnR.json",
+    "status": "ok",
+    "candidates_tried": 24,
+    "candidates_found": 24,
+    "selected_config": "configs/FactorCL/Mustard/release/VT/DnR.json",
+    "selected_flags": [
+      "--lr",
+      "0.0005",
+      "--wd",
+      "0.001",
+      "--alpha",
+      "5.0",
+      "--kmepoch",
+      "3"
+    ],
+    "selected_flags_str": "--lr=0.0005 --wd=0.001 --alpha=5.0 --kmepoch=3",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mustard/release/VT/DnR.json --default_config ./configs/FactorCL/Mustard/default_config_mustard_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001 --alpha 5.0 --kmepoch 3",
+    "val_acc_fold_pct": [
+      67.2,
+      63.8,
+      61.2
+    ],
+    "test_acc_fold_pct": [
+      57.8,
+      58.6,
+      47.4
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.154,
+      0.311,
+      0.03
+    ],
+    "val_acc_mean_pct": 64.06666666666666,
+    "val_acc_std_pct": 2.4567367696917706,
+    "test_acc_mean_pct": 54.6,
+    "test_acc_std_pct": 5.1016337252557316,
+    "test_ceu_synergy_mean_raw": 0.165,
+    "test_ceu_synergy_std_raw": 0.11498115787670024,
+    "test_ceu_synergy_mean_pct": 16.5,
+    "test_ceu_synergy_std_pct": 11.498115787670024,
+    "raw_output": "DnR_fold0_alpha5.0_kmepoch3_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 87  Steps no improve: 29  Acc_combined: 67.2 Test_Acc_combined: 57.8 Test_Acc_c: 57.8 Test_Acc_g: 59.7 Test_F1_combined: 60.9 Test_F1_c: 56.7 Test_F1_g: 60.6 V_CEU_S: 0.185 T_CEU_S: 0.154 F1_perclass: 60.9 \nDnR_fold1_alpha5.0_kmepoch3_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 75  Steps no improve: 29  Acc_combined: 63.8 Test_Acc_combined: 58.6 Test_Acc_c: 51.9 Test_Acc_g: 62.3 Test_F1_combined: 63.4 Test_F1_c: 53.8 Test_F1_g: 63.5 V_CEU_S: 0.355 T_CEU_S: 0.311 F1_perclass: 63.4 \nDnR_fold2_alpha5.0_kmepoch3_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 50  Steps no improve: 29  Acc_combined: 61.2 Test_Acc_combined: 47.4 Test_Acc_c: 50.0 Test_Acc_g: 49.6 Test_F1_combined: 43.8 Test_F1_c: 66.7 Test_F1_g: 66.3 V_CEU_S: 0.120 T_CEU_S: 0.030 F1_perclass: 43.8 \nVal  acc_combined: 64.1 + 2.4 acc_c: 50.9 + 0.6 acc_g: 59.3 + 7.1 f1_combined: 0.6451 + 0.0457 f1_c: 0.5604 + 0.0775 f1_g: 0.6542 + 0.0029 f1_perclass 0.65 ceu_cue_audio: 0.70 ceu_cue_video: 0.47 ceu_synergy: 0.22 ceu_coexistence: 0.86 \nTest  acc_combined: 54.6 + 5.1 acc_c: 53.2 + 3.3 acc_g: 57.2 + 5.5 f1_combined: 0.5603 + 0.0869 f1_c: 0.5905 + 0.0552 f1_g: 0.6349 + 0.0235 f1_perclass 0.56 ceu_cue_audio: 0.62 ceu_cue_video: 0.45 ceu_synergy: 0.17 ceu_coexistence: 0.83 \n56.0 10.6 -- 56.0 8.7 --\n\n"
+  },
+  {
+    "method": "MCR.json",
+    "status": "ok",
+    "candidates_tried": 12,
+    "candidates_found": 12,
+    "selected_config": "configs/FactorCL/Mustard/release/VT/MCR.json",
+    "selected_flags": [
+      "--lr",
+      "0.0005",
+      "--wd",
+      "0.001",
+      "--l",
+      "0.001",
+      "--multil",
+      "0.1"
+    ],
+    "selected_flags_str": "--lr=0.0005 --wd=0.001 --l=0.001 --multil=0.1",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mustard/release/VT/MCR.json --default_config ./configs/FactorCL/Mustard/default_config_mustard_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001 --l 0.001 --multil 0.1",
+    "val_acc_fold_pct": [
+      65.7,
+      61.9,
+      60.8
+    ],
+    "test_acc_fold_pct": [
+      67.2,
+      48.9,
+      64.9
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.615,
+      0.089,
+      0.485
+    ],
+    "val_acc_mean_pct": 62.8,
+    "val_acc_std_pct": 2.099206199177841,
+    "test_acc_mean_pct": 60.333333333333336,
+    "test_acc_std_pct": 8.13893249893512,
+    "test_ceu_synergy_mean_raw": 0.3963333333333333,
+    "test_ceu_synergy_std_raw": 0.22370416973216112,
+    "test_ceu_synergy_mean_pct": 39.63333333333333,
+    "test_ceu_synergy_std_pct": 22.370416973216113,
+    "raw_output": "MCR_fold0_l0.001_multil0.1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 62  Steps no improve: 29  Acc_combined: 65.7 Test_Acc_combined: 67.2 Test_Acc_c: 56.0 Test_Acc_g: 66.8 Test_F1_combined: 67.4 Test_F1_c: 26.2 Test_F1_g: 67.2 V_CEU_S: 0.519 T_CEU_S: 0.615 F1_perclass: 67.4 \nMCR_fold1_l0.001_multil0.1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 45  Steps no improve: 29  Acc_combined: 61.9 Test_Acc_combined: 48.9 Test_Acc_c: 48.9 Test_Acc_g: 50.0 Test_F1_combined: 49.1 Test_F1_c: 48.3 Test_F1_g: 66.7 V_CEU_S: 0.161 T_CEU_S: 0.089 F1_perclass: 49.1 \nMCR_fold2_l0.001_multil0.1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 51  Steps no improve: 29  Acc_combined: 60.8 Test_Acc_combined: 64.9 Test_Acc_c: 64.6 Test_Acc_g: 64.9 Test_F1_combined: 67.4 Test_F1_c: 65.5 Test_F1_g: 65.2 V_CEU_S: 0.240 T_CEU_S: 0.485 F1_perclass: 67.4 \nVal  acc_combined: 62.8 + 2.1 acc_c: 54.6 + 5.7 acc_g: 60.6 + 7.5 f1_combined: 0.6425 + 0.0169 f1_c: 0.4349 + 0.1888 f1_g: 0.6642 + 0.0053 f1_perclass 0.64 ceu_cue_audio: 0.58 ceu_cue_video: 0.61 ceu_synergy: 0.31 ceu_coexistence: 0.76 \nTest  acc_combined: 60.3 + 8.1 acc_c: 56.5 + 6.4 acc_g: 60.6 + 7.5 f1_combined: 0.6128 + 0.0863 f1_c: 0.4667 + 0.1605 f1_g: 0.6634 + 0.0084 f1_perclass 0.61 ceu_cue_audio: 0.58 ceu_cue_video: 0.55 ceu_synergy: 0.40 ceu_coexistence: 0.79 \n61.3 10.6 -- 61.3 8.6 --\n\n"
+  },
+  {
+    "method": "ReconBoost.json",
+    "status": "ok",
+    "candidates_tried": 72,
+    "candidates_found": 72,
+    "selected_config": "configs/FactorCL/Mustard/release/VT/ReconBoost.json",
+    "selected_flags": [
+      "--lr",
+      "0.0005",
+      "--wd",
+      "0.001",
+      "--alpha",
+      "0.5",
+      "--recon_weight1",
+      "3",
+      "--recon_weight2",
+      "1",
+      "--recon_epochstages",
+      "4",
+      "--recon_ensemblestages",
+      "4"
+    ],
+    "selected_flags_str": "--lr=0.0005 --wd=0.001 --alpha=0.5 --recon_weight1=3 --recon_weight2=1 --recon_epochstages=4 --recon_ensemblestages=4",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mustard/release/VT/ReconBoost.json --default_config ./configs/FactorCL/Mustard/default_config_mustard_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001 --alpha 0.5 --recon_weight1 3 --recon_weight2 1 --recon_epochstages 4 --recon_ensemblestages 4",
+    "val_acc_fold_pct": [
+      64.9,
+      64.9,
+      64.6
+    ],
+    "test_acc_fold_pct": [
+      52.2,
+      65.3,
+      54.9
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.128,
+      0.267,
+      0.121
+    ],
+    "val_acc_mean_pct": 64.8,
+    "val_acc_std_pct": 0.14142135623731486,
+    "test_acc_mean_pct": 57.46666666666667,
+    "test_acc_std_pct": 5.6476150325208545,
+    "test_ceu_synergy_mean_raw": 0.17200000000000001,
+    "test_ceu_synergy_std_raw": 0.06723590310739247,
+    "test_ceu_synergy_mean_pct": 17.200000000000003,
+    "test_ceu_synergy_std_pct": 6.723590310739247,
+    "raw_output": "ReconBoost_fold0_alpha0.5_w13_w21_epochstage4_ensstage4_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 76  Steps no improve: 29  Acc_combined: 64.9 Test_Acc_combined: 52.2 Test_Acc_c: 51.9 Test_Acc_g: 49.3 Test_F1_combined: 52.6 Test_F1_c: 36.5 Test_F1_g: 66.0 V_CEU_S: 0.074 T_CEU_S: 0.128 F1_perclass: 52.6 \nReconBoost_fold1_alpha0.5_w13_w21_epochstage4_ensstage4_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 92  Steps no improve: 29  Acc_combined: 64.9 Test_Acc_combined: 65.3 Test_Acc_c: 51.9 Test_Acc_g: 63.1 Test_F1_combined: 65.4 Test_F1_c: 49.8 Test_F1_g: 63.5 V_CEU_S: 0.194 T_CEU_S: 0.267 F1_perclass: 65.4 \nReconBoost_fold2_alpha0.5_w13_w21_epochstage4_ensstage4_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 68  Steps no improve: 29  Acc_combined: 64.6 Test_Acc_combined: 54.9 Test_Acc_c: 53.7 Test_Acc_g: 50.0 Test_F1_combined: 51.4 Test_F1_c: 68.2 Test_F1_g: 0.0 V_CEU_S: 0.200 T_CEU_S: 0.121 F1_perclass: 51.4 \nVal  acc_combined: 64.8 + 0.2 acc_c: 55.5 + 2.9 acc_g: 54.2 + 5.7 f1_combined: 0.6420 + 0.0105 f1_c: 0.5612 + 0.0820 f1_g: 0.4337 + 0.3070 f1_perclass 0.64 ceu_cue_audio: 0.73 ceu_cue_video: 0.41 ceu_synergy: 0.16 ceu_coexistence: 0.91 \nTest  acc_combined: 57.5 + 5.6 acc_c: 52.5 + 0.9 acc_g: 54.1 + 6.3 f1_combined: 0.5648 + 0.0635 f1_c: 0.5149 + 0.1302 f1_g: 0.4316 + 0.3053 f1_perclass 0.56 ceu_cue_audio: 0.79 ceu_cue_video: 0.43 ceu_synergy: 0.17 ceu_coexistence: 0.87 \n56.5 7.8 -- 56.5 6.3 --\n\n"
+  },
+  {
+    "method": "synprom_RMask.json",
+    "status": "missing",
+    "candidates_tried": 4,
+    "candidates_found": 0
+  },
+  {
+    "method": "synprom_RMask_nonpre.json",
+    "status": "ok",
+    "candidates_tried": 4,
+    "candidates_found": 4,
+    "selected_config": "configs/FactorCL/Mustard/release/VT/synprom_RMask_nonpre.json",
+    "selected_flags": [
+      "--lr",
+      "0.001",
+      "--wd",
+      "0.001"
+    ],
+    "selected_flags_str": "--lr=0.001 --wd=0.001",
+    "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mustard/release/VT/synprom_RMask_nonpre.json --default_config ./configs/FactorCL/Mustard/default_config_mustard_VT.json --fold 0 --validate_with accuracy --lr 0.001 --wd 0.001",
+    "val_acc_fold_pct": [
+      66.4,
+      62.7,
+      65.7
+    ],
+    "test_acc_fold_pct": [
+      55.2,
+      49.6,
+      53.7
+    ],
+    "test_ceu_synergy_fold_raw": [
+      0.436,
+      0.089,
+      0.091
+    ],
+    "val_acc_mean_pct": 64.93333333333334,
+    "val_acc_std_pct": 1.6048537489614305,
+    "test_acc_mean_pct": 52.833333333333336,
+    "test_acc_std_pct": 2.3669013968102317,
+    "test_ceu_synergy_mean_raw": 0.20533333333333334,
+    "test_ceu_synergy_std_raw": 0.16310800784211124,
+    "test_ceu_synergy_mean_pct": 20.533333333333335,
+    "test_ceu_synergy_std_pct": 16.310800784211125,
+    "raw_output": "SynIB_RMask_nonpre_fold0_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 69  Steps no improve: 29  Acc_combined: 66.4 Test_Acc_combined: 55.2 Test_Acc_c: 53.4 Test_Acc_g: 55.6 Test_F1_combined: 54.5 Test_F1_c: 17.2 Test_F1_g: 61.5 V_CEU_S: 0.333 T_CEU_S: 0.436 F1_perclass: 54.5 \nSynIB_RMask_nonpre_fold1_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 63  Steps no improve: 29  Acc_combined: 62.7 Test_Acc_combined: 49.6 Test_Acc_c: 55.2 Test_Acc_g: 53.7 Test_F1_combined: 57.7 Test_F1_c: 23.1 Test_F1_g: 38.6 V_CEU_S: 0.032 T_CEU_S: 0.089 F1_perclass: 57.7 \nSynIB_RMask_nonpre_fold2_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 68  Steps no improve: 29  Acc_combined: 65.7 Test_Acc_combined: 53.7 Test_Acc_c: 50.4 Test_Acc_g: 54.5 Test_F1_combined: 53.0 Test_F1_c: 66.0 Test_F1_g: 55.8 V_CEU_S: 0.240 T_CEU_S: 0.091 F1_perclass: 53.0 \nVal  acc_combined: 64.9 + 1.6 acc_c: 51.5 + 0.6 acc_g: 60.6 + 4.3 f1_combined: 0.6613 + 0.0090 f1_c: 0.3430 + 0.2275 f1_g: 0.5460 + 0.1586 f1_perclass 0.66 ceu_cue_audio: 0.72 ceu_cue_video: 0.46 ceu_synergy: 0.20 ceu_coexistence: 0.87 \nTest  acc_combined: 52.9 + 2.4 acc_c: 53.0 + 2.0 acc_g: 54.6 + 0.8 f1_combined: 0.5509 + 0.0194 f1_c: 0.3543 + 0.2174 f1_g: 0.5197 + 0.0972 f1_perclass 0.55 ceu_cue_audio: 0.69 ceu_cue_video: 0.35 ceu_synergy: 0.21 ceu_coexistence: 0.82 \n55.1 2.4 -- 55.1 1.9 --\n\n"
+  },
+  {
+    "method": "synprom_RMask_learned.json",
+    "status": "missing",
+    "candidates_tried": 28,
+    "candidates_found": 0
+  },
+  {
+    "method": "synprom_RMask_random.json",
+    "status": "missing",
+    "candidates_tried": 20,
+    "candidates_found": 0
+  }
+]

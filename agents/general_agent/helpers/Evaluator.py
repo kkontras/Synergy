@@ -731,20 +731,20 @@ class General_Evaluator_Generative:
             wandb.log({"tsne/validation_embeddings": wandb.Image(fig)})
         else:
             fig.show()
-    def is_best(self, metrics = None, best_logs=None):
+    def is_best(self, metrics=None, best_logs=None):
         if metrics is None:
             metrics = self.evaluate()
 
-        is_best = (metrics["loss"]["total"] < best_logs["loss"]["total"])
+        is_best_dict = {"loss": False, "accuracy": False, "syn_accuracy": False}
 
-        # validate_with = self.config.early_stopping.get("validate_with", "loss")
-        # if validate_with == "loss":
-        #     is_best = (metrics["loss"]["total"] < best_logs["loss"]["total"])
-        # elif validate_with == "accuracy":
-        #     is_best = (metrics["acc"]["combined"] > best_logs["acc"]["combined"])
-        # else:
-        #     raise ValueError("self.agent.config.early_stopping.validate_with should be either loss or accuracy")
-        return is_best
+        if "loss" in metrics:
+            prev = (best_logs or {}).get("best_vloss", {}).get("loss", {})
+            curr_total = sum(metrics["loss"].values())
+            prev_total = sum(prev.get(k, 100.0) for k in metrics["loss"])
+            is_best_dict["loss"] = curr_total < prev_total
+
+        flag = any(is_best_dict.values())
+        return flag, is_best_dict
 
 
 def norm(features):

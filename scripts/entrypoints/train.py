@@ -20,6 +20,11 @@ def main(config_path, default_config_path, args):
     setup_logger()
 
     config = process_config_default(config_path, default_config_path)
+    # Route HuggingFace model/processor caching to dataset storage by default.
+    data_root = getattr(config.dataset, "data_roots", None) if hasattr(config, "dataset") else None
+    if data_root and hasattr(config, "model") and hasattr(config.model, "args"):
+        if not getattr(config.model.args, "hf_cache", None):
+            config.model.args.hf_cache = os.path.join(data_root, "hf_cache")
 
     m = ""
     enc_m = ""
@@ -156,6 +161,9 @@ def main(config_path, default_config_path, args):
             config.model.args.perturb = {}
         config.model.args.perturb.type = args.perturb
         m += "_perturb{}".format(args.perturb)
+    if "perturn" in args and args.perturn is not None:
+        config.model.args.perturn = args.perturn
+        m += "_perturn{}".format(args.perturn)
     if "ending_epoch" in args and args.ending_epoch is not None:
         if not hasattr(config.model.args, "perturb"):
             config.model.args.perturb = {}
@@ -288,6 +296,7 @@ parser.add_argument('--mm', required=False, help="Optimizer Momentum", default=N
 parser.add_argument('--cls', required=False, help="CLS linear, nonlinear, highlynonlinear", default=None)
 parser.add_argument('--ironic_rate', required=False, help="Perturbation type of MCR", default=None)
 parser.add_argument('--perturb', required=False, help="Perturbation type of MCR", default=None)
+parser.add_argument('--perturn', required=False, help="Per-turn RMask mode (e.g., learned/random)", default=None)
 parser.add_argument('--perturb_fill', required=False, help="Fill for mask type perturbation of MCR", default=None)
 parser.add_argument('--perturb_pmax', required=False, help="Fill for mask type perturbation of MCR", default=None)
 parser.add_argument('--perturb_pmin', required=False, help="Fill for mask type perturbation of MCR", default=None)

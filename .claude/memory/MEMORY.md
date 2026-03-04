@@ -19,4 +19,5 @@ Multimodal learning research codebase. Main focus: Synergy (both modalities need
 - `configs/ESNLI/default_config_esnli_smoke.json` — smoke test base config
 
 ## Detailed Notes
-See `esnli.md` for the ESNLI investigation details.
+- See `esnli.md` for ESNLI investigation details.
+- See `factorcl_experiments.md` for FactorCL experiment structure (MOSI/MOSEI sweep rules, RMask suite, script quirks, TODOs).

@@ -1,0 +1,637 @@
+{
+  "selection_policy": {
+    "unimodal_lrs": [
+      "0.001",
+      "0.0005",
+      "0.0001",
+      "0.00005"
+    ],
+    "unimodal_wds": [
+      "0.001",
+      "0.0001",
+      "0.00001"
+    ],
+    "rmask_nopre_lrs": [
+      "0.001",
+      "0.0005",
+      "0.0001",
+      "0.00005"
+    ],
+    "rmask_nopre_wds": [
+      "0.001",
+      "0.0001",
+      "0.00001"
+    ],
+    "fixed_lr": "0.0005",
+    "fixed_wd": "0.001",
+    "fixed_from": "synprom_RMask_nopre_best_val_acc"
+  },
+  "unimodals": [
+    {
+      "status": "ok",
+      "label": "unimodal_video",
+      "config": "configs/FactorCL/Mosi/release/VT/unimodal_video.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.00001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.00001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/release/VT/unimodal_video.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.00001",
+      "val_acc_fold_pct": [
+        57.0,
+        58.1,
+        60.9
+      ],
+      "test_acc_fold_pct": [
+        49.1,
+        51.6,
+        55.3
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 58.666666666666664,
+      "val_acc_std_pct": 1.6418147141366326,
+      "test_acc_mean_pct": 52.0,
+      "test_acc_std_pct": 2.546893532652407,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "unimodal_video_fold0_vldaccuracy_lr0.0005_wd0.00001.pth.tar  Epoch: 46  Steps no improve: 29  Acc_combined: 57.0 Test_Acc_combined: 49.1 Test_F1_combined: 32.9 F1_perclass: 32.9 \nunimodal_video_fold1_vldaccuracy_lr0.0005_wd0.00001.pth.tar  Epoch: 62  Steps no improve: 29  Acc_combined: 58.1 Test_Acc_combined: 51.6 Test_F1_combined: 60.0 F1_perclass: 60.0 \nunimodal_video_fold2_vldaccuracy_lr0.0005_wd0.00001.pth.tar  Epoch: 94  Steps no improve: 29  Acc_combined: 60.9 Test_Acc_combined: 55.3 Test_F1_combined: 56.7 F1_perclass: 56.7 \nVal  acc_combined: 58.7 + 1.7 f1_combined: 0.5758 + 0.0659 f1_perclass 0.58 \nTest  acc_combined: 52.0 + 2.5 f1_combined: 0.4987 + 0.1209 f1_perclass 0.50 \n49.9 13.2 -- 52.0 2.5 --\n\n",
+      "candidates_total": 12,
+      "candidates_found": 12,
+      "lr": "0.0005",
+      "wd": "0.00001",
+      "latex_pair": "NA"
+    },
+    {
+      "status": "ok",
+      "label": "unimodal_text",
+      "config": "configs/FactorCL/Mosi/release/VT/unimodal_text.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.0001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.0001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/release/VT/unimodal_text.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.0001",
+      "val_acc_fold_pct": [
+        80.8,
+        80.3,
+        81.7
+      ],
+      "test_acc_fold_pct": [
+        75.0,
+        76.3,
+        72.7
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 80.93333333333334,
+      "val_acc_std_pct": 0.5792715732327613,
+      "test_acc_mean_pct": 74.66666666666667,
+      "test_acc_std_pct": 1.4884742374510715,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "unimodal_text_fold0_vldaccuracy_lr0.0005_wd0.0001.pth.tar  Epoch: 60  Steps no improve: 29  Acc_combined: 80.8 Test_Acc_combined: 75.0 Test_F1_combined: 75.2 F1_perclass: 75.2 \nunimodal_text_fold1_vldaccuracy_lr0.0005_wd0.0001.pth.tar  Epoch: 62  Steps no improve: 29  Acc_combined: 80.3 Test_Acc_combined: 76.3 Test_F1_combined: 75.3 F1_perclass: 75.3 \nunimodal_text_fold2_vldaccuracy_lr0.0005_wd0.0001.pth.tar  Epoch: 56  Steps no improve: 29  Acc_combined: 81.7 Test_Acc_combined: 72.7 Test_F1_combined: 73.3 F1_perclass: 73.3 \nVal  acc_combined: 80.9 + 0.5 f1_combined: 0.8077 + 0.0099 f1_perclass 0.81 \nTest  acc_combined: 74.7 + 1.5 f1_combined: 0.7461 + 0.0095 f1_perclass 0.75 \n74.6 1.0 -- 74.7 1.5 --\n\n",
+      "candidates_total": 12,
+      "candidates_found": 12,
+      "lr": "0.0005",
+      "wd": "0.0001",
+      "latex_pair": "NA"
+    },
+    {
+      "status": "ok",
+      "label": "unimodal_audio",
+      "config": "configs/FactorCL/Mosi/release/VT/unimodal_audio.json",
+      "selected_flags": [
+        "--lr",
+        "0.001",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.001 --wd=0.001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/release/VT/unimodal_audio.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.001 --wd 0.001",
+      "val_acc_fold_pct": [
+        60.3,
+        56.6,
+        57.4
+      ],
+      "test_acc_fold_pct": [
+        52.0,
+        50.4,
+        53.1
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 58.1,
+      "val_acc_std_pct": 1.5895492023421804,
+      "test_acc_mean_pct": 51.833333333333336,
+      "test_acc_std_pct": 1.1085526098877272,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "unimodal_audio_fold0_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 100  Steps no improve: 26  Acc_combined: 60.3 Test_Acc_combined: 52.0 Test_F1_combined: 50.4 F1_perclass: 50.4 \nunimodal_audio_fold1_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 100  Steps no improve: 28  Acc_combined: 56.6 Test_Acc_combined: 50.4 Test_F1_combined: 53.6 F1_perclass: 53.6 \nunimodal_audio_fold2_vldaccuracy_lr0.001_wd0.001.pth.tar  Epoch: 100  Steps no improve: 0  Acc_combined: 57.4 Test_Acc_combined: 53.1 Test_F1_combined: 51.8 F1_perclass: 51.8 \nVal  acc_combined: 58.1 + 1.6 f1_combined: 0.5758 + 0.0159 f1_perclass 0.58 \nTest  acc_combined: 51.8 + 1.1 f1_combined: 0.5193 + 0.0130 f1_perclass 0.52 \n51.9 1.4 -- 51.8 1.1 --\n\n",
+      "candidates_total": 12,
+      "candidates_found": 12,
+      "lr": "0.001",
+      "wd": "0.001",
+      "latex_pair": "NA"
+    }
+  ],
+  "methods": [
+    {
+      "status": "missing",
+      "label": "AGM",
+      "config": "configs/FactorCL/Mosi/release/VT/AGM.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "method": "AGM",
+      "method_display": "AGM"
+    },
+    {
+      "status": "ok",
+      "label": "MCR",
+      "config": "configs/FactorCL/Mosi/release/VT/MCR.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/release/VT/MCR.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001",
+      "val_acc_fold_pct": [
+        75.3,
+        72.5,
+        73.8
+      ],
+      "test_acc_fold_pct": [
+        71.1,
+        74.6,
+        73.7
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 73.86666666666666,
+      "val_acc_std_pct": 1.1440668201153665,
+      "test_acc_mean_pct": 73.13333333333333,
+      "test_acc_std_pct": 1.4839886193034721,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "MCR_fold0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 39  Steps no improve: 29  Acc_combined: 75.3 Test_Acc_combined: 71.1 Test_Acc_c: 48.8 Test_Acc_g: 72.6 Test_F1_combined: 74.3 Test_F1_c: 57.4 Test_F1_g: 68.5 F1_perclass: 74.3 \nMCR_fold1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 46  Steps no improve: 29  Acc_combined: 72.5 Test_Acc_combined: 74.6 Test_Acc_c: 51.2 Test_Acc_g: 74.4 Test_F1_combined: 73.7 Test_F1_c: 66.2 Test_F1_g: 75.2 F1_perclass: 73.7 \nMCR_fold2_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 44  Steps no improve: 29  Acc_combined: 73.8 Test_Acc_combined: 73.7 Test_Acc_c: 53.0 Test_Acc_g: 74.9 Test_F1_combined: 70.9 Test_F1_c: 36.6 Test_F1_g: 74.9 F1_perclass: 70.9 \nVal  acc_combined: 73.9 + 1.2 acc_c: 53.1 + 2.2 acc_g: 74.7 + 1.5 f1_combined: 0.7321 + 0.0339 f1_c: 0.5469 + 0.1255 f1_g: 0.7386 + 0.0203 f1_perclass 0.73 \nTest  acc_combined: 73.1 + 1.5 acc_c: 51.0 + 1.7 acc_g: 74.0 + 1.0 f1_combined: 0.7293 + 0.0148 f1_c: 0.5338 + 0.1241 f1_g: 0.7285 + 0.0311 f1_perclass 0.73 \n72.9 1.8 -- 73.1 1.5 --\n\n",
+      "lr": "0.0005",
+      "wd": "0.001",
+      "latex_pair": "NA",
+      "method": "MCR",
+      "method_display": "MCR"
+    },
+    {
+      "status": "missing",
+      "label": "MCR_NoiseInput",
+      "config": "configs/FactorCL/Mosi/release/VT/MCR_NoiseInput.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "method": "MCR_NoiseInput",
+      "method_display": "MCR_NoiseInput"
+    },
+    {
+      "status": "ok",
+      "label": "MCR_NoiseLatent",
+      "config": "configs/FactorCL/Mosi/release/VT/MCR_NoiseLatent.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/release/VT/MCR_NoiseLatent.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001",
+      "val_acc_fold_pct": [
+        76.9,
+        73.8,
+        76.0
+      ],
+      "test_acc_fold_pct": [
+        75.7,
+        72.1,
+        70.8
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 75.56666666666666,
+      "val_acc_std_pct": 1.3021349989749773,
+      "test_acc_mean_pct": 72.86666666666666,
+      "test_acc_std_pct": 2.0725722075613113,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "MCR_NoiseLatent_fold0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 91  Steps no improve: 29  Acc_combined: 76.9 Test_Acc_combined: 75.7 Test_Acc_c: 50.3 Test_Acc_g: 74.0 Test_F1_combined: 75.6 Test_F1_c: 64.0 Test_F1_g: 76.2 F1_perclass: 75.6 \nMCR_NoiseLatent_fold1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 46  Steps no improve: 29  Acc_combined: 73.8 Test_Acc_combined: 72.1 Test_Acc_c: 50.7 Test_Acc_g: 71.6 Test_F1_combined: 68.6 Test_F1_c: 65.9 Test_F1_g: 74.2 F1_perclass: 68.6 \nMCR_NoiseLatent_fold2_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 81  Steps no improve: 29  Acc_combined: 76.0 Test_Acc_combined: 70.8 Test_Acc_c: 54.6 Test_Acc_g: 71.5 Test_F1_combined: 67.3 Test_F1_c: 58.7 Test_F1_g: 69.9 F1_perclass: 67.3 \nVal  acc_combined: 75.5 + 1.3 acc_c: 53.0 + 1.2 acc_g: 74.6 + 0.6 f1_combined: 0.7389 + 0.0235 f1_c: 0.6270 + 0.0365 f1_g: 0.7541 + 0.0147 f1_perclass 0.74 \nTest  acc_combined: 72.8 + 2.1 acc_c: 51.8 + 1.9 acc_g: 72.4 + 1.1 f1_combined: 0.7048 + 0.0365 f1_c: 0.6285 + 0.0307 f1_g: 0.7340 + 0.0263 f1_perclass 0.70 \n70.5 4.5 -- 72.8 2.1 --\n\n",
+      "lr": "0.0005",
+      "wd": "0.001",
+      "latex_pair": "NA",
+      "method": "MCR_NoiseLatent",
+      "method_display": "MCR_NoiseLatent"
+    },
+    {
+      "status": "ok",
+      "label": "MCR_ZeroInput",
+      "config": "configs/FactorCL/Mosi/release/VT/MCR_ZeroInput.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/release/VT/MCR_ZeroInput.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001",
+      "val_acc_fold_pct": [
+        75.3,
+        74.0,
+        75.1
+      ],
+      "test_acc_fold_pct": [
+        74.7,
+        71.7,
+        70.0
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 74.8,
+      "val_acc_std_pct": 0.5715476066494064,
+      "test_acc_mean_pct": 72.13333333333334,
+      "test_acc_std_pct": 1.9430788855719574,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "MCR_ZeroInput_fold0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 46  Steps no improve: 29  Acc_combined: 75.3 Test_Acc_combined: 74.7 Test_Acc_c: 50.1 Test_Acc_g: 73.8 Test_F1_combined: 75.9 Test_F1_c: 64.0 Test_F1_g: 71.7 F1_perclass: 75.9 \nMCR_ZeroInput_fold1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 46  Steps no improve: 29  Acc_combined: 74.0 Test_Acc_combined: 71.7 Test_Acc_c: 50.3 Test_Acc_g: 71.7 Test_F1_combined: 66.4 Test_F1_c: 63.4 Test_F1_g: 75.3 F1_perclass: 66.4 \nMCR_ZeroInput_fold2_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 94  Steps no improve: 29  Acc_combined: 75.1 Test_Acc_combined: 70.0 Test_Acc_c: 51.2 Test_Acc_g: 70.8 Test_F1_combined: 68.8 Test_F1_c: 64.4 Test_F1_g: 70.5 F1_perclass: 68.8 \nVal  acc_combined: 74.8 + 0.6 acc_c: 53.1 + 0.8 acc_g: 74.4 + 1.5 f1_combined: 0.7315 + 0.0259 f1_c: 0.6491 + 0.0110 f1_g: 0.7475 + 0.0198 f1_perclass 0.73 \nTest  acc_combined: 72.2 + 1.9 acc_c: 50.5 + 0.5 acc_g: 72.1 + 1.3 f1_combined: 0.7038 + 0.0399 f1_c: 0.6393 + 0.0041 f1_g: 0.7251 + 0.0205 f1_perclass 0.70 \n70.4 4.9 -- 72.2 1.9 --\n\n",
+      "lr": "0.0005",
+      "wd": "0.001",
+      "latex_pair": "NA",
+      "method": "MCR_ZeroInput",
+      "method_display": "MCR_ZeroInput"
+    },
+    {
+      "status": "ok",
+      "label": "MCR_ZeroLatent",
+      "config": "configs/FactorCL/Mosi/release/VT/MCR_ZeroLatent.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/release/VT/MCR_ZeroLatent.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001",
+      "val_acc_fold_pct": [
+        75.3,
+        74.0,
+        75.1
+      ],
+      "test_acc_fold_pct": [
+        74.7,
+        71.7,
+        70.0
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 74.8,
+      "val_acc_std_pct": 0.5715476066494064,
+      "test_acc_mean_pct": 72.13333333333334,
+      "test_acc_std_pct": 1.9430788855719574,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "MCR_ZeroLatent_fold0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 46  Steps no improve: 29  Acc_combined: 75.3 Test_Acc_combined: 74.7 Test_Acc_c: 50.1 Test_Acc_g: 73.8 Test_F1_combined: 75.9 Test_F1_c: 64.0 Test_F1_g: 71.7 F1_perclass: 75.9 \nMCR_ZeroLatent_fold1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 46  Steps no improve: 29  Acc_combined: 74.0 Test_Acc_combined: 71.7 Test_Acc_c: 50.3 Test_Acc_g: 71.7 Test_F1_combined: 66.4 Test_F1_c: 63.4 Test_F1_g: 75.3 F1_perclass: 66.4 \nMCR_ZeroLatent_fold2_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 94  Steps no improve: 29  Acc_combined: 75.1 Test_Acc_combined: 70.0 Test_Acc_c: 51.2 Test_Acc_g: 70.8 Test_F1_combined: 68.8 Test_F1_c: 64.4 Test_F1_g: 70.5 F1_perclass: 68.8 \nVal  acc_combined: 74.8 + 0.6 acc_c: 53.1 + 0.8 acc_g: 74.4 + 1.5 f1_combined: 0.7315 + 0.0259 f1_c: 0.6491 + 0.0110 f1_g: 0.7475 + 0.0198 f1_perclass 0.73 \nTest  acc_combined: 72.2 + 1.9 acc_c: 50.5 + 0.5 acc_g: 72.1 + 1.3 f1_combined: 0.7038 + 0.0399 f1_c: 0.6393 + 0.0041 f1_g: 0.7251 + 0.0205 f1_perclass 0.70 \n70.4 4.9 -- 72.2 1.9 --\n\n",
+      "lr": "0.0005",
+      "wd": "0.001",
+      "latex_pair": "NA",
+      "method": "MCR_ZeroLatent",
+      "method_display": "MCR_ZeroLatent"
+    },
+    {
+      "status": "ok",
+      "label": "MLB",
+      "config": "configs/FactorCL/Mosi/release/VT/MLB.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/release/VT/MLB.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001",
+      "val_acc_fold_pct": [
+        79.5,
+        75.5,
+        76.0
+      ],
+      "test_acc_fold_pct": [
+        71.4,
+        73.0,
+        70.9
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 77.0,
+      "val_acc_std_pct": 1.7795130420052185,
+      "test_acc_mean_pct": 71.76666666666667,
+      "test_acc_std_pct": 0.8956685895029576,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "MLB_fold0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 61  Steps no improve: 29  Acc_combined: 79.5 Test_Acc_combined: 71.4 Test_Acc_c: 51.0 Test_Acc_g: 74.3 Test_F1_combined: 72.5 Test_F1_c: 63.2 Test_F1_g: 74.1 F1_perclass: 72.5 \nMLB_fold1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 100  Steps no improve: 21  Acc_combined: 75.5 Test_Acc_combined: 73.0 Test_Acc_c: 56.6 Test_Acc_g: 74.1 Test_F1_combined: 72.2 Test_F1_c: 63.1 Test_F1_g: 74.1 F1_perclass: 72.2 \nMLB_fold2_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 56  Steps no improve: 29  Acc_combined: 76.0 Test_Acc_combined: 70.9 Test_Acc_c: 51.1 Test_Acc_g: 72.6 Test_F1_combined: 68.1 Test_F1_c: 19.4 Test_F1_g: 73.2 F1_perclass: 68.1 \nVal  acc_combined: 77.0 + 1.8 acc_c: 54.9 + 2.1 acc_g: 77.0 + 1.3 f1_combined: 0.7596 + 0.0268 f1_c: 0.5260 + 0.1491 f1_g: 0.7708 + 0.0108 f1_perclass 0.76 \nTest  acc_combined: 71.8 + 0.9 acc_c: 52.9 + 2.6 acc_g: 73.7 + 0.8 f1_combined: 0.7095 + 0.0201 f1_c: 0.4859 + 0.2060 f1_g: 0.7381 + 0.0042 f1_perclass 0.71 \n70.9 2.5 -- 71.8 0.9 --\n\n",
+      "lr": "0.0005",
+      "wd": "0.001",
+      "latex_pair": "NA",
+      "method": "MLB",
+      "method_display": "MLB"
+    },
+    {
+      "status": "ok",
+      "label": "MMPareto",
+      "config": "configs/FactorCL/Mosi/release/VT/MMPareto.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/release/VT/MMPareto.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001",
+      "val_acc_fold_pct": [
+        79.0,
+        75.5,
+        75.5
+      ],
+      "test_acc_fold_pct": [
+        74.9,
+        70.3,
+        72.7
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 76.66666666666667,
+      "val_acc_std_pct": 1.6499158227686108,
+      "test_acc_mean_pct": 72.63333333333334,
+      "test_acc_std_pct": 1.8785337071473862,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "MMPareto_fold0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 57  Steps no improve: 29  Acc_combined: 79.0 Test_Acc_combined: 74.9 Test_Acc_c: 52.3 Test_Acc_g: 74.9 Test_F1_combined: 76.2 Test_F1_c: 50.3 Test_F1_g: 74.4 F1_perclass: 76.2 \nMMPareto_fold1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 80  Steps no improve: 29  Acc_combined: 75.5 Test_Acc_combined: 70.3 Test_Acc_c: 53.1 Test_Acc_g: 70.6 Test_F1_combined: 67.1 Test_F1_c: 64.7 Test_F1_g: 72.6 F1_perclass: 67.1 \nMMPareto_fold2_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 44  Steps no improve: 29  Acc_combined: 75.5 Test_Acc_combined: 72.7 Test_Acc_c: 51.2 Test_Acc_g: 73.5 Test_F1_combined: 68.7 Test_F1_c: 11.8 Test_F1_g: 75.8 F1_perclass: 68.7 \nVal  acc_combined: 76.7 + 1.6 acc_c: 55.0 + 3.3 acc_g: 74.7 + 1.2 f1_combined: 0.7544 + 0.0318 f1_c: 0.4466 + 0.2312 f1_g: 0.7570 + 0.0060 f1_perclass 0.75 \nTest  acc_combined: 72.6 + 1.9 acc_c: 52.2 + 0.8 acc_g: 73.0 + 1.8 f1_combined: 0.7067 + 0.0395 f1_c: 0.4229 + 0.2232 f1_g: 0.7426 + 0.0134 f1_perclass 0.71 \n70.7 4.8 -- 72.6 1.9 --\n\n",
+      "lr": "0.0005",
+      "wd": "0.001",
+      "latex_pair": "NA",
+      "method": "MMPareto",
+      "method_display": "MMPareto"
+    },
+    {
+      "status": "ok",
+      "label": "OGM",
+      "config": "configs/FactorCL/Mosi/release/VT/OGM.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/release/VT/OGM.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001",
+      "val_acc_fold_pct": [
+        78.2,
+        76.6,
+        75.8
+      ],
+      "test_acc_fold_pct": [
+        74.6,
+        73.6,
+        70.3
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 76.86666666666666,
+      "val_acc_std_pct": 0.9977753031397205,
+      "test_acc_mean_pct": 72.83333333333333,
+      "test_acc_std_pct": 1.8372685039360879,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "OGM_fold0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 46  Steps no improve: 29  Acc_combined: 78.2 Test_Acc_combined: 74.6 Test_Acc_c: 58.8 Test_Acc_g: 73.7 Test_F1_combined: 75.8 Test_F1_c: 55.3 Test_F1_g: 74.8 F1_perclass: 75.8 \nOGM_fold1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 41  Steps no improve: 29  Acc_combined: 76.6 Test_Acc_combined: 73.6 Test_Acc_c: 59.5 Test_Acc_g: 56.0 Test_F1_combined: 73.3 Test_F1_c: 59.6 Test_F1_g: 67.2 F1_perclass: 73.3 \nOGM_fold2_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 40  Steps no improve: 29  Acc_combined: 75.8 Test_Acc_combined: 70.3 Test_Acc_c: 59.6 Test_Acc_g: 53.3 Test_F1_combined: 68.2 Test_F1_c: 59.4 Test_F1_g: 52.1 F1_perclass: 68.2 \nVal  acc_combined: 76.9 + 1.0 acc_c: 46.6 + 0.6 acc_g: 56.5 + 12.5 f1_combined: 0.7645 + 0.0208 f1_c: 0.4508 + 0.0167 f1_g: 0.5881 + 0.1532 f1_perclass 0.76 \nTest  acc_combined: 72.8 + 1.8 acc_c: 59.3 + 0.4 acc_g: 61.0 + 9.0 f1_combined: 0.7242 + 0.0317 f1_c: 0.5812 + 0.0197 f1_g: 0.6467 + 0.0944 f1_perclass 0.72 \n72.4 3.9 -- 72.8 1.8 --\n\n",
+      "lr": "0.0005",
+      "wd": "0.001",
+      "latex_pair": "NA",
+      "method": "OGM",
+      "method_display": "OGM"
+    },
+    {
+      "status": "missing",
+      "label": "ens",
+      "config": "configs/FactorCL/Mosi/release/VT/ens.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "method": "ens",
+      "method_display": "ens"
+    },
+    {
+      "status": "ok",
+      "label": "joint_training",
+      "config": "configs/FactorCL/Mosi/release/VT/joint_training.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/release/VT/joint_training.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001",
+      "val_acc_fold_pct": [
+        78.2,
+        76.6,
+        75.8
+      ],
+      "test_acc_fold_pct": [
+        74.6,
+        73.6,
+        70.3
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 76.86666666666666,
+      "val_acc_std_pct": 0.9977753031397205,
+      "test_acc_mean_pct": 72.83333333333333,
+      "test_acc_std_pct": 1.8372685039360879,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "late_fold0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 46  Steps no improve: 29  Acc_combined: 78.2 Test_Acc_combined: 74.6 Test_Acc_c: 58.8 Test_Acc_g: 73.7 Test_F1_combined: 75.8 Test_F1_c: 55.3 Test_F1_g: 74.8 F1_perclass: 75.8 \nlate_fold1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 41  Steps no improve: 29  Acc_combined: 76.6 Test_Acc_combined: 73.6 Test_Acc_c: 59.5 Test_Acc_g: 56.0 Test_F1_combined: 73.3 Test_F1_c: 59.6 Test_F1_g: 67.2 F1_perclass: 73.3 \nlate_fold2_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 40  Steps no improve: 29  Acc_combined: 75.8 Test_Acc_combined: 70.3 Test_Acc_c: 59.6 Test_Acc_g: 53.3 Test_F1_combined: 68.2 Test_F1_c: 59.4 Test_F1_g: 52.1 F1_perclass: 68.2 \nVal  acc_combined: 76.9 + 1.0 acc_c: 46.6 + 0.6 acc_g: 56.5 + 12.5 f1_combined: 0.7645 + 0.0208 f1_c: 0.4508 + 0.0167 f1_g: 0.5881 + 0.1532 f1_perclass 0.76 \nTest  acc_combined: 72.8 + 1.8 acc_c: 59.3 + 0.4 acc_g: 61.0 + 9.0 f1_combined: 0.7242 + 0.0317 f1_c: 0.5812 + 0.0197 f1_g: 0.6467 + 0.0944 f1_perclass 0.72 \n72.4 3.9 -- 72.8 1.8 --\n\n",
+      "lr": "0.0005",
+      "wd": "0.001",
+      "latex_pair": "NA",
+      "method": "joint_training",
+      "method_display": "joint_training"
+    },
+    {
+      "status": "ok",
+      "label": "multiloss",
+      "config": "configs/FactorCL/Mosi/release/VT/multiloss.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/release/VT/multiloss.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001",
+      "val_acc_fold_pct": [
+        79.5,
+        75.5,
+        76.0
+      ],
+      "test_acc_fold_pct": [
+        71.4,
+        73.0,
+        70.9
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 77.0,
+      "val_acc_std_pct": 1.7795130420052185,
+      "test_acc_mean_pct": 71.76666666666667,
+      "test_acc_std_pct": 0.8956685895029576,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "multiloss_fold0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 61  Steps no improve: 29  Acc_combined: 79.5 Test_Acc_combined: 71.4 Test_Acc_c: 51.0 Test_Acc_g: 74.3 Test_F1_combined: 72.5 Test_F1_c: 63.2 Test_F1_g: 74.1 F1_perclass: 72.5 \nmultiloss_fold1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 100  Steps no improve: 21  Acc_combined: 75.5 Test_Acc_combined: 73.0 Test_Acc_c: 56.6 Test_Acc_g: 74.1 Test_F1_combined: 72.2 Test_F1_c: 63.1 Test_F1_g: 74.1 F1_perclass: 72.2 \nmultiloss_fold2_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 56  Steps no improve: 29  Acc_combined: 76.0 Test_Acc_combined: 70.9 Test_Acc_c: 51.1 Test_Acc_g: 72.6 Test_F1_combined: 68.1 Test_F1_c: 19.4 Test_F1_g: 73.2 F1_perclass: 68.1 \nVal  acc_combined: 77.0 + 1.8 acc_c: 54.9 + 2.1 acc_g: 77.0 + 1.3 f1_combined: 0.7596 + 0.0268 f1_c: 0.5260 + 0.1491 f1_g: 0.7708 + 0.0108 f1_perclass 0.76 \nTest  acc_combined: 71.8 + 0.9 acc_c: 52.9 + 2.6 acc_g: 73.7 + 0.8 f1_combined: 0.7095 + 0.0201 f1_c: 0.4859 + 0.2060 f1_g: 0.7381 + 0.0042 f1_perclass 0.71 \n70.9 2.5 -- 71.8 0.9 --\n\n",
+      "lr": "0.0005",
+      "wd": "0.001",
+      "latex_pair": "NA",
+      "method": "multiloss",
+      "method_display": "multiloss"
+    },
+    {
+      "status": "missing",
+      "label": "pre_finetuned",
+      "config": "configs/FactorCL/Mosi/release/VT/pre_finetuned.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "method": "pre_finetuned",
+      "method_display": "pre_finetuned"
+    },
+    {
+      "status": "missing",
+      "label": "pre_frozen",
+      "config": "configs/FactorCL/Mosi/release/VT/pre_frozen.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "method": "pre_frozen",
+      "method_display": "pre_frozen"
+    },
+    {
+      "status": "ok",
+      "label": "synprom_RMask",
+      "config": "configs/FactorCL/Mosi/syn/VT/synprom_RMask.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/syn/VT/synprom_RMask.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001",
+      "val_acc_fold_pct": [
+        79.9,
+        80.1,
+        78.2
+      ],
+      "test_acc_fold_pct": [
+        69.8,
+        75.1,
+        73.0
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 79.4,
+      "val_acc_std_pct": 0.8524474568362931,
+      "test_acc_mean_pct": 72.63333333333333,
+      "test_acc_std_pct": 2.1791945504908194,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "SynIB_RMask_foldfold0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 32  Steps no improve: 29  Acc_combined: 79.9 Test_Acc_combined: 69.8 Test_Acc_c: 47.3 Test_Acc_g: 70.2 Test_F1_combined: 70.2 Test_F1_c: 30.4 Test_F1_g: 70.4 F1_perclass: 70.2 \nSynIB_RMask_foldfold1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 30  Steps no improve: 29  Acc_combined: 80.1 Test_Acc_combined: 75.1 Test_Acc_c: 47.3 Test_Acc_g: 76.0 Test_F1_combined: 74.9 Test_F1_c: 59.0 Test_F1_g: 75.8 F1_perclass: 74.9 \nSynIB_RMask_foldfold2_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 40  Steps no improve: 29  Acc_combined: 78.2 Test_Acc_combined: 73.0 Test_Acc_c: 53.6 Test_Acc_g: 72.5 Test_F1_combined: 72.5 Test_F1_c: 57.7 Test_F1_g: 72.6 F1_perclass: 72.5 \nVal  acc_combined: 79.4 + 0.9 acc_c: 56.5 + 0.6 acc_g: 78.5 + 0.9 f1_combined: 0.7923 + 0.0109 f1_c: 0.5574 + 0.0691 f1_g: 0.7839 + 0.0086 f1_perclass 0.79 \nTest  acc_combined: 72.6 + 2.2 acc_c: 49.4 + 3.0 acc_g: 72.9 + 2.4 f1_combined: 0.7253 + 0.0195 f1_c: 0.4903 + 0.1317 f1_g: 0.7293 + 0.0219 f1_perclass 0.73 \n72.5 2.4 -- 72.6 2.2 --\n\n",
+      "lr": "0.0005",
+      "wd": "0.001",
+      "latex_pair": "NA",
+      "method": "synprom_RMask",
+      "method_display": "SynProm RMask"
+    },
+    {
+      "status": "ok",
+      "label": "synprom_RMask_nopre",
+      "config": "configs/FactorCL/Mosi/syn/VT/synprom_RMask_nopre.json",
+      "selected_flags": [
+        "--lr",
+        "0.0005",
+        "--wd",
+        "0.001"
+      ],
+      "selected_flags_str": "--lr=0.0005 --wd=0.001",
+      "show_cmd": "/esat/smcdata/users/kkontras/Image_Dataset/no_backup/envs/synergy_new/bin/python scripts/entrypoints/show.py --config configs/FactorCL/Mosi/syn/VT/synprom_RMask_nopre.json --default_config ./configs/FactorCL/Mosi/default_config_mosi_VT.json --fold 0 --validate_with accuracy --lr 0.0005 --wd 0.001",
+      "val_acc_fold_pct": [
+        77.9,
+        77.9,
+        78.2
+      ],
+      "test_acc_fold_pct": [
+        74.6,
+        76.0,
+        72.6
+      ],
+      "test_ceu_synergy_fold_raw": [],
+      "val_acc_mean_pct": 78.0,
+      "val_acc_std_pct": 0.14142135623730817,
+      "test_acc_mean_pct": 74.39999999999999,
+      "test_acc_std_pct": 1.3952299690970922,
+      "test_ceu_synergy_mean_raw": NaN,
+      "test_ceu_synergy_std_raw": NaN,
+      "test_ceu_synergy_mean_pct": NaN,
+      "test_ceu_synergy_std_pct": NaN,
+      "raw_output": "SynIB_RMask_nopre_foldfold0_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 43  Steps no improve: 29  Acc_combined: 77.9 Test_Acc_combined: 74.6 Test_Acc_c: 51.2 Test_Acc_g: 73.5 Test_F1_combined: 74.7 Test_F1_c: 52.9 Test_F1_g: 75.4 F1_perclass: 74.7 \nSynIB_RMask_nopre_foldfold1_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 41  Steps no improve: 29  Acc_combined: 77.9 Test_Acc_combined: 76.0 Test_Acc_c: 50.8 Test_Acc_g: 74.9 Test_F1_combined: 76.0 Test_F1_c: 66.1 Test_F1_g: 75.7 F1_perclass: 76.0 \nSynIB_RMask_nopre_foldfold2_vldaccuracy_lr0.0005_wd0.001.pth.tar  Epoch: 42  Steps no improve: 29  Acc_combined: 78.2 Test_Acc_combined: 72.6 Test_Acc_c: 50.4 Test_Acc_g: 74.7 Test_F1_combined: 72.1 Test_F1_c: 64.5 Test_F1_g: 75.3 F1_perclass: 72.1 \nVal  acc_combined: 78.0 + 0.1 acc_c: 53.9 + 1.8 acc_g: 76.0 + 1.4 f1_combined: 0.7799 + 0.0007 f1_c: 0.6317 + 0.0442 f1_g: 0.7716 + 0.0080 f1_perclass 0.78 \nTest  acc_combined: 74.4 + 1.4 acc_c: 50.8 + 0.3 acc_g: 74.4 + 0.6 f1_combined: 0.7426 + 0.0159 f1_c: 0.6114 + 0.0587 f1_g: 0.7545 + 0.0017 f1_perclass 0.74 \n74.3 1.9 -- 74.4 1.4 --\n\n",
+      "candidates_total": 12,
+      "candidates_found": 12,
+      "lr": "0.0005",
+      "wd": "0.001",
+      "latex_pair": "NA",
+      "method": "synprom_RMask_nopre",
+      "method_display": "SynProm RMask no-pre"
+    }
+  ]
+}

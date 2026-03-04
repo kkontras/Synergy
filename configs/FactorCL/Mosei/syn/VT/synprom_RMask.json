@@ -26,7 +26,7 @@
           "freeze_encoder": false},
         "pretrainedEncoder": {
           "use": true,
-          "dir": "unimodal_video_fold{}.pth.tar"
+          "dir": "unimodal_video_fold{}_vldaccuracy_lr0.001_wd0.001.pth.tar"
         }
       },
       {
@@ -39,7 +39,7 @@
           "freeze_encoder": false},
         "pretrainedEncoder": {
           "use": true,
-          "dir": "unimodal_text_fold{}.pth.tar"
+          "dir": "unimodal_text_fold{}_vldaccuracy_lr0.0005_wd0.001.pth.tar"
         }
       },
       {

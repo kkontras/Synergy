@@ -92,9 +92,10 @@ class Audio_Wav2Vec2_LoRA_Pool(nn.Module):
         self.args = args
         self.num_classes = int(args.num_classes)
         self.d_model = int(args.d_model)
+        hf_cache = getattr(args, "hf_cache", None) or getattr(args, "save_base_dir", None)
 
         model_name = str(args.get("hf_audio_name", "facebook/wav2vec2-large-robust"))
-        self.backbone = Wav2Vec2Model.from_pretrained(model_name)
+        self.backbone = Wav2Vec2Model.from_pretrained(model_name, cache_dir=hf_cache)
         try:
             self.backbone.freeze_feature_encoder()
         except Exception:
@@ -156,11 +157,12 @@ class Video_ViViT_LoRA_Pool(nn.Module):
         self.args = args
         self.num_classes = int(args.num_classes)
         self.d_model = int(args.d_model)
+        hf_cache = getattr(args, "hf_cache", None) or getattr(args, "save_base_dir", None)
 
         num_frames = int(args.get("num_frame", 3))
         model_name = str(args.get("hf_video_name", "google/vivit-b-16x2-kinetics400"))
         self.backbone = VivitModel.from_pretrained(
-            model_name, num_frames=num_frames, ignore_mismatched_sizes=True
+            model_name, num_frames=num_frames, ignore_mismatched_sizes=True, cache_dir=hf_cache
         )
 
         self.backbone = _maybe_apply_peft_lora(

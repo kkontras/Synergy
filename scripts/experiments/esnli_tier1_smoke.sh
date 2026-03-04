@@ -25,6 +25,7 @@
 #   TRAIN_MAX_EPOCH=2
 # =============================================================================
 set -euo pipefail
+export PYTHONUNBUFFERED=1
 
 MODE="${MODE:-all}"                       # all | cache | train
 CACHE_METHOD="${CACHE_METHOD:-both}"      # v2 | legacy | both
@@ -61,6 +62,10 @@ hr() {
 die() {
   echo "[ERROR] $*" >&2
   exit 1
+}
+
+ts() {
+  date "+%Y-%m-%d %H:%M:%S"
 }
 
 need_cmd() {
@@ -121,8 +126,8 @@ if [ "${MODE}" = "all" ] || [ "${MODE}" = "cache" ]; then
   if [ "${CACHE_METHOD}" = "v2" ] || [ "${CACHE_METHOD}" = "both" ]; then
     hr "STEP 1A  Build v2 smoke cache (train/validation/test)"
     for SPLIT in train validation test; do
-      echo "[v2] Building split=${SPLIT} (max_images=${N_IMAGES})"
-      CUDA_VISIBLE_DEVICES="${GPU}" python mydatasets/ESNLI/ESNLI_CodeBook_v2.py \
+      echo "[$(ts)] [v2] START split=${SPLIT} (max_images=${N_IMAGES})"
+      CUDA_VISIBLE_DEVICES="${GPU}" python -u mydatasets/ESNLI/ESNLI_CodeBook_v2.py \
         --data_root "${DATA_ROOT}" \
         --out_dir "${CACHE_V2_DIR}" \
         --model_name "${MODEL_NAME}" \
@@ -133,6 +138,7 @@ if [ "${MODE}" = "all" ] || [ "${MODE}" = "cache" ]; then
         --max_images "${N_IMAGES}" \
         --device "cuda:0" \
         --dtype fp16
+      echo "[$(ts)] [v2] DONE split=${SPLIT}"
     done
 
     hr "STEP 1B  Verify v2 cache manifests"
@@ -147,7 +153,8 @@ if [ "${MODE}" = "all" ] || [ "${MODE}" = "cache" ]; then
 
   if [ "${CACHE_METHOD}" = "legacy" ] || [ "${CACHE_METHOD}" = "both" ]; then
     hr "STEP 2A  Build legacy v1 smoke cache (validation only)"
-    CUDA_VISIBLE_DEVICES="${GPU}" python mydatasets/ESNLI/ESNLI_CodeBook.py \
+    echo "[$(ts)] [legacy] START split=validation (max_samples=${LEGACY_MAX_SAMPLES})"
+    CUDA_VISIBLE_DEVICES="${GPU}" python -u mydatasets/ESNLI/ESNLI_CodeBook.py \
       --data_root "${DATA_ROOT}" \
       --flickr_images_dir "${FLICKR_IMAGES_DIR}" \
       --model_name "${MODEL_NAME}" \
@@ -161,6 +168,7 @@ if [ "${MODE}" = "all" ] || [ "${MODE}" = "cache" ]; then
       --dtype float16 \
       --verify_every_flush 1 \
       --verify_n_show 1
+    echo "[$(ts)] [legacy] DONE split=validation"
 
     hr "STEP 2B  Verify legacy v1 cache manifest"
     LEGACY_MANIFEST="${CACHE_V1_DIR}/validation/manifest.jsonl"
@@ -231,7 +239,8 @@ PYEOF
   for CFG in "${MODEL_CONFIGS[@]}"; do
     [ -f "${CFG}" ] || die "Missing model config: ${CFG}"
     echo "[train] ${CFG}"
-    CUDA_VISIBLE_DEVICES="${GPU}" python scripts/entrypoints/train.py \
+    echo "[$(ts)] [train] START ${CFG}"
+    CUDA_VISIBLE_DEVICES="${GPU}" python -u scripts/entrypoints/train.py \
       --config "${CFG}" \
       --default_config "${RUNTIME_CFG}" \
       --fold 0 \
@@ -240,6 +249,7 @@ PYEOF
       --batch_size "${TRAIN_BS}" \
       --start_over \
       --tdqm_disable
+    echo "[$(ts)] [train] DONE ${CFG}"
   done
 
   hr "STEP 5  Smoke summary"

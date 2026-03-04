@@ -454,6 +454,32 @@ def _stack_deep_levels_per_sample(deep_stack_viz_list: Any, B: int) -> List[torc
     return out
 
 
+def _unpack_image_feature_outputs(feat_out: Any) -> Tuple[List[torch.Tensor], Any]:
+    """
+    Robustly unpack model.get_image_features(...) across API variants.
+    """
+    if isinstance(feat_out, tuple):
+        if len(feat_out) == 0:
+            raise RuntimeError("get_image_features returned an empty tuple.")
+        image_part = feat_out[0]
+        deep_part = feat_out[1] if len(feat_out) > 1 else []
+    else:
+        image_part = feat_out
+        deep_part = []
+
+    if torch.is_tensor(image_part):
+        image_embeds_list = [image_part]
+    elif isinstance(image_part, (list, tuple)):
+        image_embeds_list = [t for t in image_part if torch.is_tensor(t)]
+    else:
+        raise RuntimeError(f"Unexpected image feature type: {type(image_part)}")
+
+    if len(image_embeds_list) == 0:
+        raise RuntimeError("No tensor image embeddings produced by get_image_features.")
+
+    return image_embeds_list, deep_part
+
+
 def main():
     ap = argparse.ArgumentParser()
 
@@ -568,7 +594,8 @@ def main():
 
             token_embeds = model.model.get_input_embeddings()(input_ids)  # (B,T,2048)
 
-            image_embeds_list, deep_stack_viz_list = model.get_image_features(pixel_values, image_grid_thw)
+            image_feat_out = model.get_image_features(pixel_values, image_grid_thw)
+            image_embeds_list, deep_stack_viz_list = _unpack_image_feature_outputs(image_feat_out)
 
             image_embeds_cat = torch.cat(image_embeds_list, dim=0).to(token_embeds.device, token_embeds.dtype)
 

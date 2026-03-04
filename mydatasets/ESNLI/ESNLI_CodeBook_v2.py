@@ -29,6 +29,7 @@ import zipfile
 import random
 import argparse
 import logging
+import time
 import urllib.request
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -62,7 +63,7 @@ def _download_url(url: str, dst_path: str, logger: logging.Logger) -> None:
 
 def ensure_esnli_repo(cache_root: str, source: str, logger: logging.Logger) -> str:
     if source == "evil":
-        zip_url = "https://github.com/multimodal-ai-lab/e-ViL/archive/refs/heads/main.zip"
+        zip_url = "https://github.com/maximek3/e-ViL/archive/refs/heads/main.zip"
         zip_name = "e-ViL-main.zip"
         extracted_folder_name = "e-ViL-main"
     elif source == "virginie":
@@ -477,6 +478,38 @@ def _stack_deep_levels_per_sample(deep_stack_viz_list: Any, B: int) -> List[torc
             out.append(torch.cat([x.unsqueeze(0) for x in per_sample_levels[i]], dim=0))  # (K,64,2048)
     return out
 
+
+def _unpack_image_feature_outputs(feat_out: Any) -> Tuple[List[torch.Tensor], Any]:
+    """
+    Robustly unpack model.get_image_features(...) across API variants.
+
+    Supported patterns:
+      - image_embeds_list
+      - (image_embeds_list, deep_stack_viz_list)
+      - (image_embeds_list, deep_stack_viz_list, *extras)
+      - image_embeds_tensor
+    """
+    if isinstance(feat_out, tuple):
+        if len(feat_out) == 0:
+            raise RuntimeError("get_image_features returned an empty tuple.")
+        image_part = feat_out[0]
+        deep_part = feat_out[1] if len(feat_out) > 1 else []
+    else:
+        image_part = feat_out
+        deep_part = []
+
+    if torch.is_tensor(image_part):
+        image_embeds_list = [image_part]
+    elif isinstance(image_part, (list, tuple)):
+        image_embeds_list = [t for t in image_part if torch.is_tensor(t)]
+    else:
+        raise RuntimeError(f"Unexpected image feature type: {type(image_part)}")
+
+    if len(image_embeds_list) == 0:
+        raise RuntimeError("No tensor image embeddings produced by get_image_features.")
+
+    return image_embeds_list, deep_part
+
 @torch.no_grad()
 def compute_qwen3vl_visual_outputs(
     model,
@@ -816,13 +849,20 @@ def build_and_save_cache(
     cache_image_embeds: bool,
     device: str,
     dtype: str,
+    heartbeat_every: int,
 ):
+    def tmux_log(msg: str) -> None:
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
+
+    heartbeat_every = max(1, int(heartbeat_every))
     os.makedirs(out_dir, exist_ok=True)
     split_out = os.path.join(out_dir, split)
     os.makedirs(split_out, exist_ok=True)
     hf_cache = os.path.join(data_root, "hf_cache")
     os.makedirs(hf_cache, exist_ok=True)
 
+    tmux_log(f"START split={split} data_root={data_root} out_dir={split_out}")
+    tmux_log(f"Loading processor/tokenizer: {model_name}")
     processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
     tok = processor.tokenizer
     tok.padding_side = "left"
@@ -841,13 +881,16 @@ def build_and_save_cache(
     image_token_str = tok.convert_ids_to_tokens(image_token_id)
 
     # Optional model for visual outputs caching
+    tmux_log(f"Loading model on CUDA: {model_name}")
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         model_name,
         trust_remote_code=True,
         cache_dir=hf_cache,
     ).cuda()
     model.eval()
+    tmux_log("Model loaded and set to eval().")
 
+    tmux_log(f"Building dataset split={split} ...")
     ds = ESNLIVE_Dataset(
         data_root=data_root,
         split=split,
@@ -881,13 +924,20 @@ def build_and_save_cache(
         torch.save(shard_items, shard_file)
         with open(manifest_path, "a", encoding="utf-8") as f:
             f.write(json.dumps({"shard": os.path.basename(shard_file), "num_items": len(shard_items)}) + "\n")
+        tmux_log(f"Flushed shard={os.path.basename(shard_file)} num_items={len(shard_items)}")
         shard_items = []
         shard_idx += 1
         return shard_file
 
+    tmux_log(f"Dataloader ready: batches={len(dl)} batch_size={batch_size} num_workers={num_workers}")
     pbar = tqdm(dl, desc=f"[cache] {split}", total=len(dl))
+    t0 = time.time()
+    items_seen = 0
+    last_beat = t0
+    batch_idx = 0
 
     for batch in pbar:
+        batch_idx += 1
         images = batch["images"]
         hint_texts = batch["texts"]
         labels = batch["labels"]
@@ -914,54 +964,45 @@ def build_and_save_cache(
         image_grid_thw = proc["image_grid_thw"].to(device)  # (B, 3) typically
 
 
-        try:
-            with torch.no_grad():
+        with torch.no_grad():
+            token_embeds = model.model.get_input_embeddings()(input_ids)  # (B,T,2048)
 
-                token_embeds = model.model.get_input_embeddings()(input_ids)  # (B,T,2048)
+            image_feat_out = model.get_image_features(pixel_values, image_grid_thw)
+            image_embeds_list, deep_stack_viz_list = _unpack_image_feature_outputs(image_feat_out)
 
-                image_embeds_list, deep_stack_viz_list = model.get_image_features(pixel_values, image_grid_thw)
+            image_embeds_cat = torch.cat(image_embeds_list, dim=0).to(token_embeds.device, token_embeds.dtype)
 
-                image_embeds_cat = torch.cat(image_embeds_list, dim=0).to(token_embeds.device, token_embeds.dtype)
+            placeholder_mask, _ = model.model.get_placeholder_mask(
+                input_ids,
+                inputs_embeds=token_embeds,
+                image_features=image_embeds_cat,
+            )
+            placeholder_mask_2d = placeholder_mask[..., 0] if placeholder_mask.dim() == 3 else placeholder_mask  # (B,T)
 
-                placeholder_mask, _ = model.model.get_placeholder_mask(
-                    input_ids,
-                    inputs_embeds=token_embeds,
-                    image_features=image_embeds_cat,
-                )
-                placeholder_mask_2d = placeholder_mask[..., 0] if placeholder_mask.dim() == 3 else placeholder_mask  # (B,T)
+            token_embeds = token_embeds.masked_scatter(placeholder_mask, image_embeds_cat)
 
-                token_embeds = token_embeds.masked_scatter(placeholder_mask, image_embeds_cat)
+            attention_mask_tensor = (
+                attention_mask if not isinstance(attention_mask, dict) else attention_mask["full_attention"]
+            )
+            if attention_mask_tensor is not None and attention_mask_tensor.ndim == 4:
+                attention_mask_tensor = torch.diagonal(attention_mask_tensor[:, 0], dim1=1, dim2=2)
+                if attention_mask_tensor.dtype.is_floating_point:
+                    attention_mask_tensor = attention_mask_tensor / torch.finfo(attention_mask_tensor.dtype).min
+                    attention_mask_tensor = (1.0 - attention_mask_tensor).int()
+            position_ids, _ = model.model.get_rope_index(
+                input_ids,
+                image_grid_thw,
+                None,
+                attention_mask=attention_mask_tensor,
+            )
 
-                # Force fp16 for caching (your requirement)
-                # token_embeds = token_embeds.to(torch.float16)
-
-                attention_mask_tensor = (
-                    attention_mask if not isinstance(attention_mask, dict) else attention_mask["full_attention"]
-                )
-                if attention_mask_tensor is not None and attention_mask_tensor.ndim == 4:
-                    attention_mask_tensor = torch.diagonal(attention_mask_tensor[:, 0], dim1=1, dim2=2)
-                    # Only apply conversion for floating point tensors (inverted masks)
-                    if attention_mask_tensor.dtype.is_floating_point:
-                        attention_mask_tensor = attention_mask_tensor / torch.finfo(attention_mask_tensor.dtype).min
-                        attention_mask_tensor = (1.0 - attention_mask_tensor).int()
-                position_ids, _ = model.model.get_rope_index(
-                    input_ids,
-                    image_grid_thw,
-                    None,
-                    attention_mask=attention_mask_tensor,
-                )
-
-            input_ids_cpu = input_ids.detach().cpu()
-            attention_cpu = attention_mask.detach().cpu()
-            placeholder_mask_2d_cpu = placeholder_mask_2d.detach().cpu()  # (B,T) bool
-            token_embeds_cpu = token_embeds.detach().cpu()  # (B,T,2048) fp16
-            position_ids_cpu = position_ids.detach().cpu()
-            pos_b = _normalize_pos_to_B_3_1_T(position_ids_cpu, len(labels))  # CPU
-            deep_per_sample = _stack_deep_levels_per_sample(deep_stack_viz_list, len(labels))
-
-
-        except Exception as e:
-            raise Exception(e)
+        input_ids_cpu = input_ids.detach().cpu()
+        attention_cpu = attention_mask.detach().cpu()
+        placeholder_mask_2d_cpu = placeholder_mask_2d.detach().cpu()  # (B,T) bool
+        token_embeds_cpu = token_embeds.detach().cpu()  # (B,T,2048) fp16
+        position_ids_cpu = position_ids.detach().cpu()
+        pos_b = _normalize_pos_to_B_3_1_T(position_ids_cpu, len(labels))  # CPU
+        deep_per_sample = _stack_deep_levels_per_sample(deep_stack_viz_list, len(labels))
 
         # gen_texts = generate_answer(
         #     backbone=model,
@@ -982,6 +1023,7 @@ def build_and_save_cache(
         #     print(t)
 
         B = input_ids.size(0)
+        items_seen += int(B)
         for i in range(B):
 
             keep = attention_cpu[i].bool()  # (T,)
@@ -1029,6 +1071,21 @@ def build_and_save_cache(
                 # shard_path = flush_shard(items, split_out, shard_idx, manifest_path)
                 # verify_shard(shard_path, n_show=1)
 
+        if (batch_idx % heartbeat_every) == 0 or (time.time() - last_beat) > 120:
+            elapsed = time.time() - t0
+            ips = items_seen / max(elapsed, 1e-6)
+            cuda_msg = ""
+            if torch.cuda.is_available():
+                dev = torch.cuda.current_device()
+                mem_gb = torch.cuda.memory_allocated(dev) / (1024 ** 3)
+                cuda_msg = f" cuda_mem_gb={mem_gb:.2f}"
+            tmux_log(
+                f"Heartbeat split={split} batch={batch_idx}/{len(dl)} "
+                f"items={items_seen} shards_written={shard_idx} "
+                f"rate={ips:.2f} items/s elapsed_s={int(elapsed)}{cuda_msg}"
+            )
+            last_beat = time.time()
+
     shard_path = flush_shard()
     if shard_path is None:
         # All items were already flushed mid-loop; verify the last written shard
@@ -1058,6 +1115,7 @@ def build_and_save_cache(
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
 
+    tmux_log(f"DONE split={split} total_items={items_seen} shards={shard_idx}")
     print(f"[OK] Wrote cache to: {split_out}")
     print(f"[OK] Manifest: {manifest_path}")
     print(f"[OK] Meta: {meta_path}")
@@ -1090,6 +1148,8 @@ def main():
                     help="Also cache vision 'tokens' (embeddings) via model.model.visual(...)")
     ap.add_argument("--device", type=str, default="cuda:0", help='device_map value, e.g. "cuda:0"')
     ap.add_argument("--dtype", type=str, default="fp16", choices=["fp16", "bf16"])
+    ap.add_argument("--heartbeat_every", type=int, default=10,
+                    help="Print tmux-friendly heartbeat every N batches (default: 10).")
 
     args = ap.parse_args()
 
@@ -1110,6 +1170,7 @@ def main():
         cache_image_embeds=args.cache_image_embeds,
         device=args.device,
         dtype=args.dtype,
+        heartbeat_every=args.heartbeat_every,
     )
 
 

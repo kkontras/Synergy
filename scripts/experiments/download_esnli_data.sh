@@ -22,6 +22,8 @@ IMG_DIR="${DATA_ROOT}/flickr30k-images"
 HF_CACHE="${DATA_ROOT}/hf_cache"
 EVIL_ZIP="${DATA_ROOT}/e-ViL-main.zip"
 EVIL_DIR="${DATA_ROOT}/e-ViL-main"
+EVIL_URL_PRIMARY="https://github.com/maximek3/e-ViL/archive/refs/heads/main.zip"
+EVIL_URL_FALLBACK="https://github.com/virginie-do/e-SNLI-VE/archive/refs/heads/master.zip"
 
 mkdir -p "${IMG_DIR}" "${HF_CACHE}"
 export IMG_DIR HF_CACHE
@@ -87,7 +89,12 @@ echo "Ensuring e-SNLI-VE annotations from e-ViL ..."
 if [ ! -d "${EVIL_DIR}" ]; then
     if [ ! -s "${EVIL_ZIP}" ]; then
         echo "Downloading ${EVIL_ZIP} ..."
-        wget -O "${EVIL_ZIP}" "https://github.com/multimodal-ai-lab/e-ViL/archive/refs/heads/main.zip"
+        if ! wget -O "${EVIL_ZIP}" "${EVIL_URL_PRIMARY}"; then
+            echo "Primary e-ViL URL failed, trying fallback e-SNLI-VE repo ..."
+            EVIL_ZIP="${DATA_ROOT}/e-SNLI-VE-master.zip"
+            EVIL_DIR="${DATA_ROOT}/e-SNLI-VE-master"
+            wget -O "${EVIL_ZIP}" "${EVIL_URL_FALLBACK}"
+        fi
     else
         echo "Found existing ${EVIL_ZIP}"
     fi

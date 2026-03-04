@@ -22,6 +22,9 @@ conda create -y -p "${ENV_PATH}" python=3.10
 echo "=== Activating env ==="
 conda activate "${ENV_PATH}"
 
+echo "=== Upgrading pip/setuptools/wheel ==="
+python -m pip install --upgrade pip setuptools wheel
+
 echo "=== Installing PyTorch 2.9.1+cu128 ==="
 pip install \
     torch==2.9.1+cu128 \
@@ -30,7 +33,7 @@ pip install \
     --index-url https://download.pytorch.org/whl/cu128
 
 echo "=== Installing remaining requirements ==="
-pip install -r "${REQUIREMENTS}"
+pip install --prefer-binary -r "${REQUIREMENTS}"
 
 echo "=== Done ==="
 python -c "import torch; print('torch', torch.__version__, '| CUDA', torch.version.cuda, '| GPU available:', torch.cuda.is_available())"

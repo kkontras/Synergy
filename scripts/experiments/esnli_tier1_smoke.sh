@@ -35,11 +35,12 @@ GPU="${GPU:-0}"
 PROJECT_ID="${PROJECT_ID:-2026_029}"
 USER_NAME="${USER:-kkontras}"
 
-BASE_ROOT="${BASE_ROOT:-/dodrio/scratch/projects/2026_029/kkontras/}"
+BASE_ROOT="${BASE_ROOT:-/dodrio/scratch/projects/2026_029/kkontras}"
 DATA_ROOT="${DATA_ROOT:-${BASE_ROOT}/data/ESNLI}"
 CACHE_V2_DIR="${CACHE_V2_DIR:-${DATA_ROOT}/cache_v2_tier1_smoke}"
 CACHE_V1_DIR="${CACHE_V1_DIR:-${DATA_ROOT}/cache_v1_tier1_smoke}"
 SAVE_BASE_DIR="${SAVE_BASE_DIR:-${BASE_ROOT}/checkpoints/synergy/esnli_smoke}"
+HF_CACHE_DIR="${HF_CACHE_DIR:-${DATA_ROOT}/hf_cache}"
 
 MODEL_NAME="${MODEL_NAME:-Qwen/Qwen3-VL-2B-Instruct}"
 N_IMAGES="${N_IMAGES:-8}"
@@ -47,6 +48,7 @@ LEGACY_MAX_SAMPLES="${LEGACY_MAX_SAMPLES:-64}"
 BUILD_BATCH="${BUILD_BATCH:-2}"
 TRAIN_BS="${TRAIN_BS:-4}"
 TRAIN_MAX_EPOCH="${TRAIN_MAX_EPOCH:-2}"
+HEARTBEAT_EVERY="${HEARTBEAT_EVERY:-1}"
 
 TIER1_DEFAULT_CFG="./configs/ESNLI/default_config_esnli_tier1.json"
 RUNTIME_CFG="$(mktemp /tmp/esnli_tier1_smoke_cfg.XXXXXX.json)"
@@ -107,7 +109,13 @@ if [ -z "${FLICKR_IMAGES_DIR}" ]; then
   fi
 fi
 
-mkdir -p "${CACHE_V2_DIR}" "${CACHE_V1_DIR}" "${SAVE_BASE_DIR}"
+mkdir -p "${CACHE_V2_DIR}" "${CACHE_V1_DIR}" "${SAVE_BASE_DIR}" "${HF_CACHE_DIR}"
+
+# Force all HF caches under DATA_ROOT (avoid ~/.cache on cluster home).
+export HF_HOME="${HF_CACHE_DIR}"
+export HUGGINGFACE_HUB_CACHE="${HF_CACHE_DIR}/hub"
+export TRANSFORMERS_CACHE="${HF_CACHE_DIR}/transformers"
+export HF_DATASETS_CACHE="${HF_CACHE_DIR}/datasets"
 
 hr "Tier1 Smoke Config"
 echo "MODE=${MODE}"
@@ -119,8 +127,10 @@ echo "DATA_ROOT=${DATA_ROOT}"
 echo "CACHE_V2_DIR=${CACHE_V2_DIR}"
 echo "CACHE_V1_DIR=${CACHE_V1_DIR}"
 echo "SAVE_BASE_DIR=${SAVE_BASE_DIR}"
+echo "HF_CACHE_DIR=${HF_CACHE_DIR}"
 echo "FLICKR_IMAGES_DIR=${FLICKR_IMAGES_DIR}"
 echo "MODEL_NAME=${MODEL_NAME}"
+echo "HEARTBEAT_EVERY=${HEARTBEAT_EVERY}"
 
 if [ "${MODE}" = "all" ] || [ "${MODE}" = "cache" ]; then
   if [ "${CACHE_METHOD}" = "v2" ] || [ "${CACHE_METHOD}" = "both" ]; then
@@ -137,7 +147,8 @@ if [ "${MODE}" = "all" ] || [ "${MODE}" = "cache" ]; then
         --shard_size 128 \
         --max_images "${N_IMAGES}" \
         --device "cuda:0" \
-        --dtype fp16
+        --dtype fp16 \
+        --heartbeat_every "${HEARTBEAT_EVERY}"
       echo "[$(ts)] [v2] DONE split=${SPLIT}"
     done
 

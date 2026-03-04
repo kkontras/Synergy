@@ -13,7 +13,7 @@ cd /dodrio/scratch/projects/2026_029/kkontras/projects/Synergy
 
 git pull origin main
 
-source /dodrio/scratch/projects/2026_029/kkontras/env/Anaconda/etc/profile.d/conda.sh
+source $VSC_DATA/anaconda3/etc/profile.d/conda.sh
 conda activate /dodrio/scratch/projects/2026_029/kkontras/envs/synergy_new
 
 which python

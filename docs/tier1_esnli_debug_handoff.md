@@ -38,12 +38,22 @@
 
 ### New Tier1 smoke orchestrator
 - `scripts/experiments/esnli_tier1_smoke.sh` (new)
-  - Modes: `MODE=all|cache|train`
-  - Cache methods: `CACHE_METHOD=v2|legacy|both`
+  - Modes: `MODE=all|cache|train` (default now `all` for true end-to-end run).
+  - Cache methods: `CACHE_METHOD=v2|legacy|both` (default now `v2` for minimal smoke runtime).
   - Model sets: `MODEL_SET=basic|extended`
   - Timestamped stage logging.
   - Uses unbuffered Python for live logs.
   - Forwards v2 heartbeat flag.
+  - Adds explicit smoke limits:
+    - `N_IMAGES=2` (v2), `LEGACY_MAX_SAMPLES=8` (legacy)
+    - `SPLITS=validation` by default (single split)
+    - `TRAIN_MAX_EPOCH=1`, `TRAIN_MODEL_LIMIT=1`, `TRAIN_BS=2`
+    - no hard timeout cutoff; stages run until completion/failure
+  - Adds proactive CUDA health probe + auto fallback:
+    - probes CUDA with a tiny torch op
+    - if probe fails/unavailable, switches smoke to CPU (`SMOKE_DEVICE=cpu`)
+    - if probe passes, keeps GPU path (`SMOKE_DEVICE=cuda:0`)
+    - dtype is auto-set to match device (`fp16/float16` on GPU, `fp32/float32` on CPU)
   - Forces HF caches under `${DATA_ROOT}/hf_cache` via:
     - `HF_HOME`
     - `HUGGINGFACE_HUB_CACHE`
@@ -77,7 +87,7 @@
   - heavy model load/cold-start on Tier1 filesystem/network.
   - Now instrumented; should print startup + heartbeat logs once processing starts.
 
-## Recommended commands (current)
+## Recommended commands (fast smoke)
 
 ### 1) Ensure data step (without re-downloading images)
 ```bash
@@ -86,13 +96,25 @@ SKIP_IMAGES=1 bash ./scripts/experiments/download_esnli_data.sh "${DATA_ROOT}"
 
 ### 2) Cache-only smoke (both builders), with frequent heartbeat
 ```bash
-MODE=cache CACHE_METHOD=both GPU=0 HEARTBEAT_EVERY=1 bash scripts/experiments/esnli_tier1_smoke.sh
+MODE=cache bash scripts/experiments/esnli_tier1_smoke.sh
 ```
 
-### 3) Train-only smoke (after cache exists)
+### 3) Explicit cache smoke command (same as defaults, shown for clarity)
 ```bash
-MODE=train MODEL_SET=basic GPU=0 bash scripts/experiments/esnli_tier1_smoke.sh
+MODE=cache CACHE_METHOD=both SPLITS=validation N_IMAGES=2 LEGACY_MAX_SAMPLES=8 HEARTBEAT_EVERY=1 bash scripts/experiments/esnli_tier1_smoke.sh
 ```
+
+### 4) Train-only smoke (after v2 cache exists, still fail-fast)
+```bash
+MODE=train MODEL_SET=basic TRAIN_MODEL_LIMIT=1 TRAIN_MAX_EPOCH=1 bash scripts/experiments/esnli_tier1_smoke.sh
+```
+
+## Expected runtime and behavior
+- There is no forced cutoff; runtime depends on model/cache warmness and cluster I/O.
+- For faster checks, keep `SPLITS=validation`, `N_IMAGES=2`, and `TRAIN_MODEL_LIMIT=1`.
+- CUDA behavior:
+  - If CUDA is healthy, smoke runs on GPU automatically.
+  - If CUDA is unavailable or misconfigured, smoke logs `CUDA_STATUS=cpu_fallback` and continues on CPU instead of crashing.
 
 ## If another Codex continues
 - First verify node is running the updated checkout:

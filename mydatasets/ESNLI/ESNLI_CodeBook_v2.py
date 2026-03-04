@@ -510,6 +510,11 @@ def _unpack_image_feature_outputs(feat_out: Any) -> Tuple[List[torch.Tensor], An
 
     return image_embeds_list, deep_part
 
+
+def _is_cuda_invalid_argument_error(err: BaseException) -> bool:
+    msg = str(err).lower()
+    return ("cuda" in msg) and ("invalid argument" in msg)
+
 @torch.no_grad()
 def compute_qwen3vl_visual_outputs(
     model,
@@ -968,12 +973,14 @@ def build_and_save_cache(
         with torch.no_grad():
             token_embeds = model.model.get_input_embeddings()(input_ids)  # (B,T,2048)
 
+            image_grid_thw_for_ops = image_grid_thw_dev
             try:
-                image_feat_out = model.get_image_features(pixel_values, image_grid_thw_dev)
+                image_feat_out = model.get_image_features(pixel_values, image_grid_thw_for_ops)
             except RuntimeError as e:
-                if "CUDA driver error: invalid argument" in str(e):
+                if _is_cuda_invalid_argument_error(e):
                     tmux_log("WARN get_image_features failed with CUDA image_grid_thw; retrying with CPU image_grid_thw.")
-                    image_feat_out = model.get_image_features(pixel_values, image_grid_thw_cpu)
+                    image_grid_thw_for_ops = image_grid_thw_cpu
+                    image_feat_out = model.get_image_features(pixel_values, image_grid_thw_for_ops)
                 else:
                     raise
             image_embeds_list, deep_stack_viz_list = _unpack_image_feature_outputs(image_feat_out)
@@ -997,12 +1004,25 @@ def build_and_save_cache(
                 if attention_mask_tensor.dtype.is_floating_point:
                     attention_mask_tensor = attention_mask_tensor / torch.finfo(attention_mask_tensor.dtype).min
                     attention_mask_tensor = (1.0 - attention_mask_tensor).int()
-            position_ids, _ = model.model.get_rope_index(
-                input_ids,
-                image_grid_thw_dev,
-                None,
-                attention_mask=attention_mask_tensor,
-            )
+            try:
+                position_ids, _ = model.model.get_rope_index(
+                    input_ids,
+                    image_grid_thw_for_ops,
+                    None,
+                    attention_mask=attention_mask_tensor,
+                )
+            except RuntimeError as e:
+                if _is_cuda_invalid_argument_error(e) and image_grid_thw_for_ops is image_grid_thw_dev:
+                    tmux_log("WARN get_rope_index failed with CUDA image_grid_thw; retrying with CPU image_grid_thw.")
+                    image_grid_thw_for_ops = image_grid_thw_cpu
+                    position_ids, _ = model.model.get_rope_index(
+                        input_ids,
+                        image_grid_thw_for_ops,
+                        None,
+                        attention_mask=attention_mask_tensor,
+                    )
+                else:
+                    raise
 
         input_ids_cpu = input_ids.detach().cpu()
         attention_cpu = attention_mask.detach().cpu()

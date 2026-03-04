@@ -12,23 +12,26 @@
 #
 # Useful env vars:
 #   MODE=all|cache|train              (default: all)
-#   CACHE_METHOD=v2|legacy|both       (default: both)
+#   CACHE_METHOD=v2|legacy|both       (default: v2)
 #   MODEL_SET=basic|extended          (default: basic)
 #   GPU=0
 #   PROJECT_ID=2026_029
 #   DATA_ROOT=/dodrio/scratch/projects/2026_029/kkontras/data/ESNLI/
 #   MODEL_NAME=Qwen/Qwen3-VL-2B-Instruct
-#   N_IMAGES=8                        (v2 cache tiny size)
-#   LEGACY_MAX_SAMPLES=64             (v1 cache tiny size)
+#   N_IMAGES=2                        (v2 cache tiny size)
+#   LEGACY_MAX_SAMPLES=8              (v1 cache tiny size)
 #   BUILD_BATCH=2
-#   TRAIN_BS=4
-#   TRAIN_MAX_EPOCH=2
+#   SPLITS=validation                 (comma list: train,validation,test)
+#   TRAIN_BS=2
+#   TRAIN_MAX_EPOCH=1
+#   TRAIN_MODEL_LIMIT=1               (basic set uses first N configs)
+#   No hard timeout cutoff is applied; stages run until completion/failure.
 # =============================================================================
 set -euo pipefail
 export PYTHONUNBUFFERED=1
 
 MODE="${MODE:-all}"                       # all | cache | train
-CACHE_METHOD="${CACHE_METHOD:-both}"      # v2 | legacy | both
+CACHE_METHOD="${CACHE_METHOD:-v2}"        # v2 | legacy | both
 MODEL_SET="${MODEL_SET:-basic}"           # basic | extended
 
 GPU="${GPU:-0}"
@@ -43,11 +46,13 @@ SAVE_BASE_DIR="${SAVE_BASE_DIR:-${BASE_ROOT}/checkpoints/synergy/esnli_smoke}"
 HF_CACHE_DIR="${HF_CACHE_DIR:-${DATA_ROOT}/hf_cache}"
 
 MODEL_NAME="${MODEL_NAME:-Qwen/Qwen3-VL-2B-Instruct}"
-N_IMAGES="${N_IMAGES:-8}"
-LEGACY_MAX_SAMPLES="${LEGACY_MAX_SAMPLES:-64}"
+N_IMAGES="${N_IMAGES:-2}"
+LEGACY_MAX_SAMPLES="${LEGACY_MAX_SAMPLES:-8}"
 BUILD_BATCH="${BUILD_BATCH:-2}"
-TRAIN_BS="${TRAIN_BS:-4}"
-TRAIN_MAX_EPOCH="${TRAIN_MAX_EPOCH:-2}"
+SPLITS="${SPLITS:-validation}"
+TRAIN_BS="${TRAIN_BS:-2}"
+TRAIN_MAX_EPOCH="${TRAIN_MAX_EPOCH:-1}"
+TRAIN_MODEL_LIMIT="${TRAIN_MODEL_LIMIT:-1}"
 HEARTBEAT_EVERY="${HEARTBEAT_EVERY:-1}"
 
 TIER1_DEFAULT_CFG="./configs/ESNLI/default_config_esnli_tier1.json"
@@ -92,6 +97,10 @@ case "${MODEL_SET}" in
   *) die "MODEL_SET must be one of: basic|extended (got: ${MODEL_SET})" ;;
 esac
 
+if ! [[ "${TRAIN_MODEL_LIMIT}" =~ ^[0-9]+$ ]] || [ "${TRAIN_MODEL_LIMIT}" -le 0 ]; then
+  die "TRAIN_MODEL_LIMIT must be a positive integer (got: ${TRAIN_MODEL_LIMIT})"
+fi
+
 if [ ! -d "${DATA_ROOT}" ]; then
   die "DATA_ROOT does not exist: ${DATA_ROOT}"
 fi
@@ -117,11 +126,52 @@ export HUGGINGFACE_HUB_CACHE="${HF_CACHE_DIR}/hub"
 export TRANSFORMERS_CACHE="${HF_CACHE_DIR}/transformers"
 export HF_DATASETS_CACHE="${HF_CACHE_DIR}/datasets"
 
+SMOKE_DEVICE="cpu"
+SMOKE_DTYPE_V2="fp32"
+SMOKE_DTYPE_V1="float32"
+CUDA_STATUS="cpu_fallback"
+
+if env CUDA_VISIBLE_DEVICES="${GPU}" python - <<'PYEOF'
+import os
+import sys
+
+try:
+    import torch
+except Exception as e:
+    print(f"probe_import_error:{e}")
+    sys.exit(1)
+
+try:
+    ok = bool(torch.cuda.is_available())
+except Exception as e:
+    print(f"probe_is_available_error:{e}")
+    sys.exit(1)
+
+if not ok:
+    print("probe_unavailable")
+    sys.exit(1)
+
+try:
+    x = torch.randn((2, 2), device="cuda:0")
+    _ = (x @ x).sum().item()
+    print("probe_ok")
+except Exception as e:
+    print(f"probe_runtime_error:{e}")
+    sys.exit(1)
+PYEOF
+then
+  SMOKE_DEVICE="cuda:0"
+  SMOKE_DTYPE_V2="fp16"
+  SMOKE_DTYPE_V1="float16"
+  CUDA_STATUS="cuda_ok"
+fi
+
 hr "Tier1 Smoke Config"
 echo "MODE=${MODE}"
 echo "CACHE_METHOD=${CACHE_METHOD}"
 echo "MODEL_SET=${MODEL_SET}"
 echo "GPU=${GPU}"
+echo "SPLITS=${SPLITS}"
 echo "PROJECT_ID=${PROJECT_ID}"
 echo "DATA_ROOT=${DATA_ROOT}"
 echo "CACHE_V2_DIR=${CACHE_V2_DIR}"
@@ -131,11 +181,20 @@ echo "HF_CACHE_DIR=${HF_CACHE_DIR}"
 echo "FLICKR_IMAGES_DIR=${FLICKR_IMAGES_DIR}"
 echo "MODEL_NAME=${MODEL_NAME}"
 echo "HEARTBEAT_EVERY=${HEARTBEAT_EVERY}"
+echo "CUDA_STATUS=${CUDA_STATUS}"
+echo "SMOKE_DEVICE=${SMOKE_DEVICE}"
+echo "SMOKE_DTYPE_V2=${SMOKE_DTYPE_V2}"
+echo "SMOKE_DTYPE_V1=${SMOKE_DTYPE_V1}"
 
 if [ "${MODE}" = "all" ] || [ "${MODE}" = "cache" ]; then
   if [ "${CACHE_METHOD}" = "v2" ] || [ "${CACHE_METHOD}" = "both" ]; then
     hr "STEP 1A  Build v2 smoke cache (train/validation/test)"
-    for SPLIT in train validation test; do
+    IFS=',' read -r -a SPLIT_LIST <<< "${SPLITS}"
+    for SPLIT in "${SPLIT_LIST[@]}"; do
+      case "${SPLIT}" in
+        train|validation|test) ;;
+        *) die "Invalid split in SPLITS: ${SPLIT}. Allowed: train,validation,test" ;;
+      esac
       echo "[$(ts)] [v2] START split=${SPLIT} (max_images=${N_IMAGES})"
       CUDA_VISIBLE_DEVICES="${GPU}" python -u mydatasets/ESNLI/ESNLI_CodeBook_v2.py \
         --data_root "${DATA_ROOT}" \
@@ -146,14 +205,14 @@ if [ "${MODE}" = "all" ] || [ "${MODE}" = "cache" ]; then
         --num_workers 0 \
         --shard_size 128 \
         --max_images "${N_IMAGES}" \
-        --device "cuda:0" \
-        --dtype fp16 \
+        --device "${SMOKE_DEVICE}" \
+        --dtype "${SMOKE_DTYPE_V2}" \
         --heartbeat_every "${HEARTBEAT_EVERY}"
       echo "[$(ts)] [v2] DONE split=${SPLIT}"
     done
 
     hr "STEP 1B  Verify v2 cache manifests"
-    for SPLIT in train validation test; do
+    for SPLIT in "${SPLIT_LIST[@]}"; do
       MANIFEST="${CACHE_V2_DIR}/${SPLIT}/manifest.jsonl"
       [ -f "${MANIFEST}" ] || die "[v2] Missing manifest: ${MANIFEST}"
       N_LINES=$(wc -l < "${MANIFEST}")
@@ -175,8 +234,8 @@ if [ "${MODE}" = "all" ] || [ "${MODE}" = "cache" ]; then
       --batch_size "${BUILD_BATCH}" \
       --num_workers 0 \
       --shard_size 128 \
-      --device "cuda:0" \
-      --dtype float16 \
+      --device "${SMOKE_DEVICE}" \
+      --dtype "${SMOKE_DTYPE_V1}" \
       --verify_every_flush 1 \
       --verify_n_show 1
     echo "[$(ts)] [legacy] DONE split=validation"
@@ -220,8 +279,8 @@ cfg["training_params"]["res"] = True
 
 cfg["early_stopping"]["max_epoch"] = max_epoch
 cfg["early_stopping"]["end_of_epoch_check"] = True
-cfg["early_stopping"]["validate_every"] = 5
-cfg["early_stopping"]["log_interval"] = 5
+cfg["early_stopping"]["validate_every"] = 1
+cfg["early_stopping"]["log_interval"] = 1
 cfg["early_stopping"]["save_every_step"] = 1000000
 cfg["early_stopping"]["save_every_valstep"] = 1000000
 
@@ -246,6 +305,7 @@ PYEOF
       "./configs/ESNLI/full_rmask.json"
     )
   fi
+  MODEL_CONFIGS=("${MODEL_CONFIGS[@]:0:${TRAIN_MODEL_LIMIT}}")
 
   for CFG in "${MODEL_CONFIGS[@]}"; do
     [ -f "${CFG}" ] || die "Missing model config: ${CFG}"

@@ -586,7 +586,8 @@ def main():
         input_ids = enc["input_ids"].to(model.device)            # (B,T)
         attention_mask = enc["attention_mask"].to(model.device)      # (B,T)
         pixel_values = enc["pixel_values"].to(model.device)
-        image_grid_thw = enc["image_grid_thw"].to(model.device)
+        image_grid_thw_cpu = enc["image_grid_thw"]
+        image_grid_thw_dev = image_grid_thw_cpu.to(model.device)
 
         with torch.no_grad():
             # input_ids_d = input_ids.to(model.device, non_blocking=True)
@@ -594,7 +595,14 @@ def main():
 
             token_embeds = model.model.get_input_embeddings()(input_ids)  # (B,T,2048)
 
-            image_feat_out = model.get_image_features(pixel_values, image_grid_thw)
+            try:
+                image_feat_out = model.get_image_features(pixel_values, image_grid_thw_dev)
+            except RuntimeError as e:
+                if "CUDA driver error: invalid argument" in str(e):
+                    print("[WARN] get_image_features failed with CUDA image_grid_thw; retrying with CPU image_grid_thw.", flush=True)
+                    image_feat_out = model.get_image_features(pixel_values, image_grid_thw_cpu)
+                else:
+                    raise
             image_embeds_list, deep_stack_viz_list = _unpack_image_feature_outputs(image_feat_out)
 
             image_embeds_cat = torch.cat(image_embeds_list, dim=0).to(token_embeds.device, token_embeds.dtype)
@@ -622,7 +630,7 @@ def main():
                     attention_mask_tensor = (1.0 - attention_mask_tensor).int()
             position_ids, _ = model.model.get_rope_index(
                 input_ids,
-                image_grid_thw,
+                image_grid_thw_dev,
                 None,
                 attention_mask=attention_mask_tensor,
             )

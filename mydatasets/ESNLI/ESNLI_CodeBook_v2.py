@@ -961,13 +961,21 @@ def build_and_save_cache(
         input_ids = proc["input_ids"].to(device)           # (B, T)
         attention_mask = proc["attention_mask"].to(device)     # (B, T)
         pixel_values = proc["pixel_values"].to(device)         # (B, C, H, W)
-        image_grid_thw = proc["image_grid_thw"].to(device)  # (B, 3) typically
+        image_grid_thw_cpu = proc["image_grid_thw"]  # (B, 3)
+        image_grid_thw_dev = image_grid_thw_cpu.to(device)
 
 
         with torch.no_grad():
             token_embeds = model.model.get_input_embeddings()(input_ids)  # (B,T,2048)
 
-            image_feat_out = model.get_image_features(pixel_values, image_grid_thw)
+            try:
+                image_feat_out = model.get_image_features(pixel_values, image_grid_thw_dev)
+            except RuntimeError as e:
+                if "CUDA driver error: invalid argument" in str(e):
+                    tmux_log("WARN get_image_features failed with CUDA image_grid_thw; retrying with CPU image_grid_thw.")
+                    image_feat_out = model.get_image_features(pixel_values, image_grid_thw_cpu)
+                else:
+                    raise
             image_embeds_list, deep_stack_viz_list = _unpack_image_feature_outputs(image_feat_out)
 
             image_embeds_cat = torch.cat(image_embeds_list, dim=0).to(token_embeds.device, token_embeds.dtype)
@@ -991,7 +999,7 @@ def build_and_save_cache(
                     attention_mask_tensor = (1.0 - attention_mask_tensor).int()
             position_ids, _ = model.model.get_rope_index(
                 input_ids,
-                image_grid_thw,
+                image_grid_thw_dev,
                 None,
                 attention_mask=attention_mask_tensor,
             )

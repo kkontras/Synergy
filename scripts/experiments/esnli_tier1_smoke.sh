@@ -16,7 +16,7 @@
 #   MODEL_SET=basic|extended          (default: basic)
 #   GPU=0
 #   PROJECT_ID=2026_029
-#   DATA_ROOT=/dodrio/scratch/projects/2026_029/$USER/data/ESNLI
+#   DATA_ROOT=/dodrio/scratch/projects/2026_029/kkontras/data/ESNLI/
 #   MODEL_NAME=Qwen/Qwen3-VL-2B-Instruct
 #   N_IMAGES=8                        (v2 cache tiny size)
 #   LEGACY_MAX_SAMPLES=64             (v1 cache tiny size)

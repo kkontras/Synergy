@@ -37,8 +37,8 @@ import shutil
 img_dir  = Path(os.environ["IMG_DIR"])
 hf_cache = Path(os.environ["HF_CACHE"])
 hf_repo_dir = hf_cache / "flickr30k_repo"
-flickr_tar = hf_cache / "flickr30k.tar.gz"
-flickr_url = "http://shannon.cs.illinois.edu/DenotationGraph/data/flickr30k.tar.gz"
+flickr_tar = hf_cache / "flickr30k-images.tar"
+flickr_url = "http://shannon.cs.illinois.edu/DenotationGraph/data/flickr30k-images.tar"
 
 img_dir.mkdir(parents=True, exist_ok=True)
 hf_cache.mkdir(parents=True, exist_ok=True)
@@ -82,9 +82,18 @@ if not hf_ok:
     else:
         print(f"Using existing tarball: {flickr_tar}")
 
+    # The captions archive is only a few MB; image tar should be multi-GB.
+    tar_size = flickr_tar.stat().st_size
+    if tar_size < 500_000_000:
+        raise RuntimeError(
+            f"Downloaded tarball is too small ({tar_size} bytes). "
+            "Expected Flickr30k image archive (multi-GB). "
+            f"Path: {flickr_tar}"
+        )
+
     extract_dir = hf_cache / "flickr30k_extracted"
     extract_dir.mkdir(parents=True, exist_ok=True)
-    subprocess.check_call(["tar", "-xzf", str(flickr_tar), "-C", str(extract_dir)])
+    subprocess.check_call(["tar", "-xf", str(flickr_tar), "-C", str(extract_dir)])
     copied = copy_images_from_tree(extract_dir)
     total = len(list(img_dir.glob("*.jpg")))
     print(f"Tarball step done. Copied {copied} new images, total now {total}.")

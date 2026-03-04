@@ -30,81 +30,53 @@ echo "(This requires ~9 GB of disk space and may take 20-40 minutes.)"
 
 python - <<'PYEOF'
 import os
-import subprocess
 from pathlib import Path
-import shutil
+import zipfile
 
 img_dir  = Path(os.environ["IMG_DIR"])
 hf_cache = Path(os.environ["HF_CACHE"])
-hf_repo_dir = hf_cache / "flickr30k_repo"
-flickr_tar = hf_cache / "flickr30k-images.tar"
-flickr_url = "http://shannon.cs.illinois.edu/DenotationGraph/data/flickr30k-images.tar"
+extracted_dir = img_dir / "flickr30k-images"
 
 img_dir.mkdir(parents=True, exist_ok=True)
 hf_cache.mkdir(parents=True, exist_ok=True)
 
-def copy_images_from_tree(src_root: Path) -> int:
-    copied = 0
-    for p in src_root.rglob("*.jpg"):
-        dst = img_dir / p.name
-        if not dst.exists():
-            shutil.copy2(p, dst)
-            copied += 1
-    return copied
+def count_jpgs(root: Path) -> int:
+    return len(list(root.rglob("*.jpg")))
 
-current = len(list(img_dir.glob("*.jpg")))
-if current >= 30000:
-    print(f"Found {current} images already present in {img_dir}, skipping download.")
+if extracted_dir.is_dir() and count_jpgs(extracted_dir) >= 30000:
+    print(f"Found extracted Flickr30k at {extracted_dir}, skipping download.")
     raise SystemExit(0)
 
-hf_ok = False
-try:
-    from huggingface_hub import snapshot_download
-    print(f"Trying HuggingFace snapshot download (nlphuji/flickr30k) into {hf_repo_dir} ...")
-    snapshot_download(
+from huggingface_hub import hf_hub_download
+
+print(f"Downloading flickr30k-images.zip from HF dataset repo (cache: {hf_cache}) ...")
+zip_path = Path(
+    hf_hub_download(
         repo_id="nlphuji/flickr30k",
+        filename="flickr30k-images.zip",
         repo_type="dataset",
         cache_dir=str(hf_cache),
-        local_dir=str(hf_repo_dir),
-        allow_patterns=["*.jpg", "**/*.jpg"],
     )
-    copied = copy_images_from_tree(hf_repo_dir)
-    total = len(list(img_dir.glob("*.jpg")))
-    print(f"HuggingFace step done. Copied {copied} new images, total now {total}.")
-    hf_ok = total >= 30000
-except Exception as e:
-    print(f"HuggingFace image download path failed: {e}")
+)
+print(f"Downloaded zip to: {zip_path}")
 
-if not hf_ok:
-    print(f"Falling back to direct Flickr30k tarball: {flickr_url}")
-    if not flickr_tar.exists() or flickr_tar.stat().st_size == 0:
-        subprocess.check_call(["wget", "-O", str(flickr_tar), flickr_url])
-    else:
-        print(f"Using existing tarball: {flickr_tar}")
+print(f"Extracting zip to: {img_dir}")
+with zipfile.ZipFile(zip_path, "r") as zf:
+    zf.extractall(img_dir)
 
-    # The captions archive is only a few MB; image tar should be multi-GB.
-    tar_size = flickr_tar.stat().st_size
-    if tar_size < 500_000_000:
-        raise RuntimeError(
-            f"Downloaded tarball is too small ({tar_size} bytes). "
-            "Expected Flickr30k image archive (multi-GB). "
-            f"Path: {flickr_tar}"
-        )
+if extracted_dir.is_dir():
+    final_total = count_jpgs(extracted_dir)
+    final_dir = extracted_dir
+else:
+    final_total = count_jpgs(img_dir)
+    final_dir = img_dir
 
-    extract_dir = hf_cache / "flickr30k_extracted"
-    extract_dir.mkdir(parents=True, exist_ok=True)
-    subprocess.check_call(["tar", "-xf", str(flickr_tar), "-C", str(extract_dir)])
-    copied = copy_images_from_tree(extract_dir)
-    total = len(list(img_dir.glob("*.jpg")))
-    print(f"Tarball step done. Copied {copied} new images, total now {total}.")
-
-final_total = len(list(img_dir.glob("*.jpg")))
 if final_total < 30000:
     raise RuntimeError(
-        f"Expected about 31k Flickr30k images, found only {final_total} in {img_dir}. "
+        f"Expected about 31k Flickr30k images, found only {final_total} in {final_dir}. "
         "Check network/access and retry."
     )
-print(f"Done. Flickr30k images ready: {final_total} files in {img_dir}.")
+print(f"Done. Flickr30k images ready: {final_total} files in {final_dir}.")
 PYEOF
 
 echo ""

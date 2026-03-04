@@ -16,6 +16,7 @@
 
 set -euo pipefail
 
+SCRIPT_REV="2026-03-04-hfzip-v2"
 DATA_ROOT="${1:-${DATA_ROOT:-/dodrio/scratch/projects/2026_029/kkontras/data/ESNLI}}"
 IMG_DIR="${DATA_ROOT}/flickr30k-images"
 HF_CACHE="${DATA_ROOT}/hf_cache"
@@ -24,6 +25,8 @@ EVIL_DIR="${DATA_ROOT}/e-ViL-main"
 
 mkdir -p "${IMG_DIR}" "${HF_CACHE}"
 export IMG_DIR HF_CACHE
+
+echo "[download_esnli_data.sh] revision=${SCRIPT_REV}"
 
 echo "Downloading Flickr30k images to ${IMG_DIR} ..."
 echo "(This requires ~9 GB of disk space and may take 20-40 minutes.)"

@@ -34,7 +34,7 @@ GPU="${GPU:-0}"
 PROJECT_ID="${PROJECT_ID:-2026_029}"
 USER_NAME="${USER:-kkontras}"
 
-BASE_ROOT="${BASE_ROOT:-/dodrio/scratch/projects/${PROJECT_ID}/${USER_NAME}}"
+BASE_ROOT="${BASE_ROOT:-/dodrio/scratch/projects/2026_029/kkontras/}"
 DATA_ROOT="${DATA_ROOT:-${BASE_ROOT}/data/ESNLI}"
 CACHE_V2_DIR="${CACHE_V2_DIR:-${DATA_ROOT}/cache_v2_tier1_smoke}"
 CACHE_V1_DIR="${CACHE_V1_DIR:-${DATA_ROOT}/cache_v1_tier1_smoke}"

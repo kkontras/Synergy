@@ -30,7 +30,7 @@ DATA_ROOT="/scratch/kkontras/ESNLI"
 CACHE_OUT="${DATA_ROOT}/cache_v2_full"
 MODEL_NAME="${model_name:-Qwen/Qwen3-VL-2B-Instruct}"
 SHARD_SIZE="${shard_size:-4096}"
-BUILD_BATCH="${build_batch:-8}"
+BUILD_BATCH="${build_batch:-256}"
 HF_CACHE_ROOT="${DATA_ROOT}/hf_cache"
 
 mkdir -p "${CACHE_OUT}" "${HF_CACHE_ROOT}" ./condor_logs/logs_vsc

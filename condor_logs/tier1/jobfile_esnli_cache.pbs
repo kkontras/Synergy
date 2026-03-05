@@ -15,12 +15,12 @@ git pull origin main
 # initialize conda in non-interactive shell
 source $VSC_DATA/anaconda3/etc/profile.d/conda.sh
 
-conda create -y -n synergy_new python=3.10
-conda activate synergy_new
+# conda create -y -n synergy_new python=3.10
+conda activate synergy_new 
 
 # Tooling + deps
-python -m pip install --upgrade pip setuptools wheel
-python -m pip install -r env/requirements_tier1.txt
+# python -m pip install --upgrade pip setuptools wheel
+# python -m pip install -r env/requirements_tier1.txt
 
 which python
 python -V

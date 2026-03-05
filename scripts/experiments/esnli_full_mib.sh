@@ -43,7 +43,7 @@ export TORCH_HOME="${HF_CACHE_ROOT}/torch"
 echo "HF_HOME=${HF_HOME}"
 
 echo "Preflight: ensuring ESNLI assets under ${DATA_ROOT}"
-bash ./condor_logs/tier1/download_esnli_data.sh "${DATA_ROOT}"
+# bash ./condor_logs/tier1/download_esnli_data.sh "${DATA_ROOT}"
 
 for SPLIT in train validation test; do
     SPLIT_DIR="${CACHE_OUT}/${SPLIT}"

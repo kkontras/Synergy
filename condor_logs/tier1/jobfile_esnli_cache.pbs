@@ -53,7 +53,7 @@ for SPLIT in train validation test; do
     fi
 
     echo "Building ${SPLIT} ..."
-    python mydatasets/ESNLI/ESNLI_CodeBook_v2.py \
+    python mydatasets/ESNLI/ESNLI_CodeBook_v3.py \
         --split      "${SPLIT}"      \
         --data_root  "${DATA_ROOT}"  \
         --out_dir    "${CACHE_OUT}"  \

@@ -12,11 +12,8 @@ cd /dodrio/scratch/projects/2026_029/kkontras/projects/Synergy
 
 git pull origin main
 
-conda deactivate >/dev/null 2>&1 || true
-rm -rf "$ENV_PATH"
-
 # initialize conda in non-interactive shell
-source $(conda info --base)/etc/profile.d/conda.sh
+source $VSC_DATA/anaconda3/etc/profile.d/conda.sh
 
 conda create -y -n synergy_new python=3.10
 conda activate synergy_new

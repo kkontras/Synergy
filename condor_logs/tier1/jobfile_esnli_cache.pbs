@@ -62,7 +62,7 @@ echo "Preflight: ensuring ESNLI assets under ${DATA_ROOT}"
 for SPLIT in train validation test; do
     SPLIT_DIR="${CACHE_OUT}/${SPLIT}"
     if [ -f "${SPLIT_DIR}/manifest.jsonl" ]; then
-        echo "[skip] ${SPLIT}: manifest exists"
+        echo "[skip] ${SPLIT}: manifest exists" 
         continue
     fi
 

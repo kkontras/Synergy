@@ -21,7 +21,7 @@ Important:
 - This script is padding-proof by trimming with keep = attention_mask.bool() PER SAMPLE.
 - It supports batch_size > 1 and saves each sample as its own item (still with leading batch dim 1).
 """
-print("[BOOTSTRAP] CodeBook_v2 starting import sequence...", flush=True)
+print("[BOOTSTRAP] CodeBook_v3 starting import sequence...", flush=True)
 
 import os
 import json
@@ -58,7 +58,7 @@ _bootstrap_import(
     "from transformers import AutoProcessor, Qwen3VLForConditionalGeneration, AutoConfig",
 )
 _bootstrap_import("tqdm", "from tqdm import tqdm")
-print("[BOOTSTRAP] CodeBook_v2 imports ready.", flush=True)
+print("[BOOTSTRAP] CodeBook_v3 imports ready.", flush=True)
 
 
 LABEL2IDX = {"entailment": 0, "neutral": 1, "contradiction": 2}

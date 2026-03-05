@@ -56,6 +56,7 @@ TRAIN_MAX_EPOCH="${TRAIN_MAX_EPOCH:-1}"
 TRAIN_MODEL_LIMIT="${TRAIN_MODEL_LIMIT:-1}"
 HEARTBEAT_EVERY="${HEARTBEAT_EVERY:-1}"
 LOCAL_FILES_ONLY="${LOCAL_FILES_ONLY:-1}"
+DEVICE_MODE="${DEVICE_MODE:-gpu}"         # gpu | auto | cpu
 
 TIER1_DEFAULT_CFG="./configs/ESNLI/default_config_esnli_tier1.json"
 RUNTIME_CFG="$(mktemp /tmp/esnli_tier1_smoke_cfg.XXXXXX.json)"
@@ -131,9 +132,17 @@ export HF_DATASETS_CACHE="${HF_CACHE_DIR}/datasets"
 SMOKE_DEVICE="cpu"
 SMOKE_DTYPE_V2="fp32"
 SMOKE_DTYPE_V1="float32"
-CUDA_STATUS="cpu_fallback"
+CUDA_STATUS="forced_cpu"
 
-if env CUDA_VISIBLE_DEVICES="${GPU}" python - <<'PYEOF'
+if [ "${DEVICE_MODE}" = "gpu" ]; then
+  SMOKE_DEVICE="cuda:0"
+  SMOKE_DTYPE_V2="fp16"
+  SMOKE_DTYPE_V1="float16"
+  CUDA_STATUS="forced_gpu"
+elif [ "${DEVICE_MODE}" = "auto" ]; then
+  CUDA_STATUS="cpu_fallback"
+  echo "[$(ts)] DEVICE_MODE=auto -> probing CUDA quickly"
+  if env CUDA_VISIBLE_DEVICES="${GPU}" python - <<'PYEOF'
 import os
 import sys
 
@@ -161,11 +170,14 @@ except Exception as e:
     print(f"probe_runtime_error:{e}")
     sys.exit(1)
 PYEOF
-then
-  SMOKE_DEVICE="cuda:0"
-  SMOKE_DTYPE_V2="fp16"
-  SMOKE_DTYPE_V1="float16"
-  CUDA_STATUS="cuda_ok"
+  then
+    SMOKE_DEVICE="cuda:0"
+    SMOKE_DTYPE_V2="fp16"
+    SMOKE_DTYPE_V1="float16"
+    CUDA_STATUS="cuda_ok"
+  fi
+elif [ "${DEVICE_MODE}" != "cpu" ]; then
+  die "DEVICE_MODE must be one of: gpu|auto|cpu (got: ${DEVICE_MODE})"
 fi
 
 hr "Tier1 Smoke Config"
@@ -184,6 +196,7 @@ echo "FLICKR_IMAGES_DIR=${FLICKR_IMAGES_DIR}"
 echo "MODEL_NAME=${MODEL_NAME}"
 echo "HEARTBEAT_EVERY=${HEARTBEAT_EVERY}"
 echo "LOCAL_FILES_ONLY=${LOCAL_FILES_ONLY}"
+echo "DEVICE_MODE=${DEVICE_MODE}"
 echo "CUDA_STATUS=${CUDA_STATUS}"
 echo "SMOKE_DEVICE=${SMOKE_DEVICE}"
 echo "SMOKE_DTYPE_V2=${SMOKE_DTYPE_V2}"

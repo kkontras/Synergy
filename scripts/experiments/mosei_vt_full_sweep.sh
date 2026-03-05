@@ -16,8 +16,7 @@ if [[ ! -x "${PYTHON_BIN}" ]]; then PYTHON_BIN="python"; fi
 
 GPU="${1:-0}"
 
-DEFAULT_CONFIG="./configs/FactorCL/Mosei/default_config_mosei_VT.json"
-RELEASE_DIR="./configs/FactorCL/Mosei/release/VT"
+DEFAULT_CONFIG="./configs/FactorCL/Mosei/default_config_mosei_VT_syn.json"
 SYN_DIR="./configs/FactorCL/Mosei/syn/VT"
 
 # Unimodal / RMask_nopre lr x wd grid
@@ -142,27 +141,27 @@ section() {
   echo "============================================================"
 }
 
-# ------------------------------------------------------------------ #
-section "Unimodal video (lr x wd sweep)"
-D="${TMPDIR_SWEEP}/unimodal_video"; mkdir -p "${D}"
-for lr in "${LRS[@]}"; do
-  for wd in "${WDS[@]}"; do
-    parse_and_track "${D}" "lr=${lr} wd=${wd}" \
-      --config "${RELEASE_DIR}/unimodal_video.json" --lr "${lr}" --wd "${wd}"
-  done
-done
-print_top3 "${D}"
+# # ------------------------------------------------------------------ #
+# section "Unimodal video (lr x wd sweep)"
+# D="${TMPDIR_SWEEP}/unimodal_video"; mkdir -p "${D}"
+# for lr in "${LRS[@]}"; do
+#   for wd in "${WDS[@]}"; do
+#     parse_and_track "${D}" "lr=${lr} wd=${wd}" \
+#       --config "${SYN_DIR}/unimodal_video.json" --lr "${lr}" --wd "${wd}"
+#   done
+# done
+# print_top3 "${D}"
 
 # ------------------------------------------------------------------ #
-section "Unimodal text (lr x wd sweep)"
-D="${TMPDIR_SWEEP}/unimodal_text"; mkdir -p "${D}"
-for lr in "${LRS[@]}"; do
-  for wd in "${WDS[@]}"; do
-    parse_and_track "${D}" "lr=${lr} wd=${wd}" \
-      --config "${RELEASE_DIR}/unimodal_text.json" --lr "${lr}" --wd "${wd}"
-  done
-done
-print_top3 "${D}"
+# section "Unimodal text (lr x wd sweep)"
+# D="${TMPDIR_SWEEP}/unimodal_text"; mkdir -p "${D}"
+# for lr in "${LRS[@]}"; do
+#   for wd in "${WDS[@]}"; do
+#     parse_and_track "${D}" "lr=${lr} wd=${wd}" \
+#       --config "${SYN_DIR}/unimodal_text.json" --lr "${lr}" --wd "${wd}"
+#   done
+# done
+# print_top3 "${D}"
 
 # ------------------------------------------------------------------ #
 section "RMask_nopre l=0 (lr x wd sweep)"
@@ -175,41 +174,8 @@ for lr in "${LRS[@]}"; do
 done
 print_top3 "${D}"
 
-# ------------------------------------------------------------------ #
-section "MCR (l x multil sweep)"
-D="${TMPDIR_SWEEP}/MCR"; mkdir -p "${D}"
-for l in "${MCR_LS[@]}"; do
-  for multil in "${MCR_MULTILS[@]}"; do
-    parse_and_track "${D}" "l=${l} multil=${multil}" \
-      --config "${RELEASE_DIR}/MCR.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
-      --l "${l}" --multil "${multil}"
-  done
-done
-print_top3 "${D}"
 
-# ------------------------------------------------------------------ #
-section "MMPareto (alpha sweep)"
-D="${TMPDIR_SWEEP}/MMPareto"; mkdir -p "${D}"
-for alpha in "${MMPARETO_ALPHAS[@]}"; do
-  parse_and_track "${D}" "alpha=${alpha}" \
-    --config "${RELEASE_DIR}/MMPareto.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
-    --alpha "${alpha}"
-done
-print_top3 "${D}"
 
-# ------------------------------------------------------------------ #
-section "Ensemble"
-D="${TMPDIR_SWEEP}/ens"; mkdir -p "${D}"
-parse_and_track "${D}" "lr=${METHOD_LR} wd=${METHOD_WD}" \
-  --config "${RELEASE_DIR}/ens.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}"
-print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "Joint Training"
-D="${TMPDIR_SWEEP}/joint_training"; mkdir -p "${D}"
-parse_and_track "${D}" "lr=${METHOD_LR} wd=${METHOD_WD}" \
-  --config "${RELEASE_DIR}/joint_training.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}"
-print_top3 "${D}"
 
 # ------------------------------------------------------------------ #
 section "Syn MCR (l x multil sweep)"
@@ -222,6 +188,15 @@ for l in "${MCR_LS[@]}"; do
   done
 done
 print_top3 "${D}"
+
+D="${TMPDIR_SWEEP}/syn_MCR"; mkdir -p "${D}"
+for l in "${MCR_LS[@]}"; do
+  for multil in "${MCR_MULTILS[@]}"; do
+    python scripts/entrypoints/show.py "${D}" "l=${l} multil=${multil}" \
+      --config "${SYN_DIR}/MCR.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+      --l "${l}" --multil "${multil}"
+  done
+done
 
 # ------------------------------------------------------------------ #
 section "Syn RMask (l=0)"

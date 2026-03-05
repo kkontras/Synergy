@@ -34,17 +34,30 @@ import time
 import urllib.request
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-import numpy as np
-import pandas as pd
-import torch
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-from PIL import Image
+def _bootstrap_import(label: str, stmt: str) -> None:
+    t0 = time.time()
+    print(f"[BOOTSTRAP] importing {label} ...", flush=True)
+    exec(stmt, globals())
+    dt = time.time() - t0
+    print(f"[BOOTSTRAP] imported {label} ({dt:.2f}s)", flush=True)
 
-from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
-from transformers import AutoProcessor, AutoConfig
-from tqdm import tqdm
+# Keep transformers import lean during startup.
+os.environ.setdefault("TRANSFORMERS_NO_TF", "1")
+os.environ.setdefault("TRANSFORMERS_NO_FLAX", "1")
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+
+_bootstrap_import("numpy", "import numpy as np")
+_bootstrap_import("pandas", "import pandas as pd")
+_bootstrap_import("torch", "import torch")
+_bootstrap_import("torch dataloader", "from torch.utils.data import Dataset, DataLoader")
+_bootstrap_import("torchvision", "from torchvision import transforms")
+_bootstrap_import("PIL", "from PIL import Image")
+_bootstrap_import(
+    "transformers symbols",
+    "from transformers import AutoProcessor, Qwen3VLForConditionalGeneration, AutoConfig",
+)
+_bootstrap_import("tqdm", "from tqdm import tqdm")
 print("[BOOTSTRAP] CodeBook_v2 imports ready.", flush=True)
 
 

@@ -21,6 +21,7 @@ Important:
 - This script is padding-proof by trimming with keep = attention_mask.bool() PER SAMPLE.
 - It supports batch_size > 1 and saves each sample as its own item (still with leading batch dim 1).
 """
+print("[BOOTSTRAP] CodeBook_v2 starting import sequence...", flush=True)
 
 import os
 import json
@@ -44,6 +45,7 @@ from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
 from transformers import AutoProcessor, AutoConfig
 from tqdm import tqdm
+print("[BOOTSTRAP] CodeBook_v2 imports ready.", flush=True)
 
 
 LABEL2IDX = {"entailment": 0, "neutral": 1, "contradiction": 2}
@@ -497,6 +499,20 @@ def _unpack_image_feature_outputs(feat_out: Any) -> Tuple[List[torch.Tensor], An
     else:
         image_part = feat_out
         deep_part = []
+        # Newer transformers can return a ModelOutput object
+        # (e.g., BaseModelOutputWithDeepstackFeatures).
+        if hasattr(feat_out, "pooler_output") or hasattr(feat_out, "last_hidden_state"):
+            pooler = getattr(feat_out, "pooler_output", None)
+            hidden = getattr(feat_out, "last_hidden_state", None)
+            deep = getattr(feat_out, "deepstack_features", None)
+            image_part = pooler if pooler is not None else hidden
+            deep_part = deep if deep is not None else []
+        elif isinstance(feat_out, dict):
+            pooler = feat_out.get("pooler_output", None)
+            hidden = feat_out.get("last_hidden_state", None)
+            deep = feat_out.get("deepstack_features", None)
+            image_part = pooler if pooler is not None else (hidden if hidden is not None else feat_out)
+            deep_part = deep if deep is not None else []
 
     if torch.is_tensor(image_part):
         image_embeds_list = [image_part]
@@ -855,6 +871,7 @@ def build_and_save_cache(
     device: str,
     dtype: str,
     heartbeat_every: int,
+    local_files_only: bool,
 ):
     def tmux_log(msg: str) -> None:
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
@@ -867,8 +884,13 @@ def build_and_save_cache(
     os.makedirs(hf_cache, exist_ok=True)
 
     tmux_log(f"START split={split} data_root={data_root} out_dir={split_out}")
+    tmux_log(f"HF cache dir: {hf_cache}")
     tmux_log(f"Loading processor/tokenizer: {model_name}")
-    processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
+    processor = AutoProcessor.from_pretrained(
+        model_name,
+        cache_dir=hf_cache,
+        local_files_only=bool(local_files_only),
+    )
     tok = processor.tokenizer
     tok.padding_side = "left"
     if tok.pad_token is None:
@@ -879,19 +901,41 @@ def build_and_save_cache(
     cls_token_id = int(tok.convert_tokens_to_ids("<CLS>"))
 
     # Get image token id/str from config
-    cfg = AutoConfig.from_pretrained(model_name, cache_dir=hf_cache)
+    tmux_log(f"Loading model config: {model_name}")
+    cfg = AutoConfig.from_pretrained(
+        model_name,
+        cache_dir=hf_cache,
+        local_files_only=bool(local_files_only),
+    )
     if not hasattr(cfg, "image_token_id"):
         raise RuntimeError("Config has no image_token_id; cannot build image token masks.")
     image_token_id = int(getattr(cfg, "image_token_id"))
     image_token_str = tok.convert_ids_to_tokens(image_token_id)
 
     # Optional model for visual outputs caching
-    tmux_log(f"Loading model on CUDA: {model_name}")
+    tmux_log(f"Loading model weights: {model_name} (device={device}, dtype={dtype})")
+    if dtype == "fp16":
+        model_dtype = torch.float16
+    elif dtype == "bf16":
+        model_dtype = torch.bfloat16
+    else:
+        model_dtype = torch.float32
+
+    load_kwargs = {
+        "trust_remote_code": True,
+        "cache_dir": hf_cache,
+        "torch_dtype": model_dtype,
+        "local_files_only": bool(local_files_only),
+    }
+    if str(device).startswith("cuda"):
+        load_kwargs["device_map"] = {"": device}
+
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         model_name,
-        trust_remote_code=True,
-        cache_dir=hf_cache,
-    ).cuda()
+        **load_kwargs,
+    )
+    if not str(device).startswith("cuda"):
+        model = model.to(device)
     model.eval()
     tmux_log("Model loaded and set to eval().")
 
@@ -1175,7 +1219,9 @@ def main():
     ap.add_argument("--cache_image_embeds", action="store_true",
                     help="Also cache vision 'tokens' (embeddings) via model.model.visual(...)")
     ap.add_argument("--device", type=str, default="cuda:0", help='device_map value, e.g. "cuda:0"')
-    ap.add_argument("--dtype", type=str, default="fp16", choices=["fp16", "bf16"])
+    ap.add_argument("--dtype", type=str, default="fp16", choices=["fp16", "bf16", "fp32"])
+    ap.add_argument("--local_files_only", action="store_true",
+                    help="Load processor/config/model only from local HF cache.")
     ap.add_argument("--heartbeat_every", type=int, default=10,
                     help="Print tmux-friendly heartbeat every N batches (default: 10).")
 
@@ -1199,6 +1245,7 @@ def main():
         device=args.device,
         dtype=args.dtype,
         heartbeat_every=args.heartbeat_every,
+        local_files_only=args.local_files_only,
     )
 
 

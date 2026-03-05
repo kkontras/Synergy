@@ -466,6 +466,20 @@ def _unpack_image_feature_outputs(feat_out: Any) -> Tuple[List[torch.Tensor], An
     else:
         image_part = feat_out
         deep_part = []
+        # Newer transformers can return a ModelOutput object
+        # (e.g., BaseModelOutputWithDeepstackFeatures).
+        if hasattr(feat_out, "pooler_output") or hasattr(feat_out, "last_hidden_state"):
+            pooler = getattr(feat_out, "pooler_output", None)
+            hidden = getattr(feat_out, "last_hidden_state", None)
+            deep = getattr(feat_out, "deepstack_features", None)
+            image_part = pooler if pooler is not None else hidden
+            deep_part = deep if deep is not None else []
+        elif isinstance(feat_out, dict):
+            pooler = feat_out.get("pooler_output", None)
+            hidden = feat_out.get("last_hidden_state", None)
+            deep = feat_out.get("deepstack_features", None)
+            image_part = pooler if pooler is not None else (hidden if hidden is not None else feat_out)
+            deep_part = deep if deep is not None else []
 
     if torch.is_tensor(image_part):
         image_embeds_list = [image_part]

@@ -25,6 +25,7 @@
 #   TRAIN_BS=2
 #   TRAIN_MAX_EPOCH=1
 #   TRAIN_MODEL_LIMIT=1               (basic set uses first N configs)
+#   LOCAL_FILES_ONLY=1                (v2: use only local HF cache)
 #   No hard timeout cutoff is applied; stages run until completion/failure.
 # =============================================================================
 set -euo pipefail
@@ -54,6 +55,7 @@ TRAIN_BS="${TRAIN_BS:-2}"
 TRAIN_MAX_EPOCH="${TRAIN_MAX_EPOCH:-1}"
 TRAIN_MODEL_LIMIT="${TRAIN_MODEL_LIMIT:-1}"
 HEARTBEAT_EVERY="${HEARTBEAT_EVERY:-1}"
+LOCAL_FILES_ONLY="${LOCAL_FILES_ONLY:-1}"
 
 TIER1_DEFAULT_CFG="./configs/ESNLI/default_config_esnli_tier1.json"
 RUNTIME_CFG="$(mktemp /tmp/esnli_tier1_smoke_cfg.XXXXXX.json)"
@@ -181,10 +183,16 @@ echo "HF_CACHE_DIR=${HF_CACHE_DIR}"
 echo "FLICKR_IMAGES_DIR=${FLICKR_IMAGES_DIR}"
 echo "MODEL_NAME=${MODEL_NAME}"
 echo "HEARTBEAT_EVERY=${HEARTBEAT_EVERY}"
+echo "LOCAL_FILES_ONLY=${LOCAL_FILES_ONLY}"
 echo "CUDA_STATUS=${CUDA_STATUS}"
 echo "SMOKE_DEVICE=${SMOKE_DEVICE}"
 echo "SMOKE_DTYPE_V2=${SMOKE_DTYPE_V2}"
 echo "SMOKE_DTYPE_V1=${SMOKE_DTYPE_V1}"
+
+V2_LOCAL_ONLY_FLAG=()
+if [ "${LOCAL_FILES_ONLY}" = "1" ]; then
+  V2_LOCAL_ONLY_FLAG+=(--local_files_only)
+fi
 
 if [ "${MODE}" = "all" ] || [ "${MODE}" = "cache" ]; then
   if [ "${CACHE_METHOD}" = "v2" ] || [ "${CACHE_METHOD}" = "both" ]; then
@@ -207,7 +215,8 @@ if [ "${MODE}" = "all" ] || [ "${MODE}" = "cache" ]; then
         --max_images "${N_IMAGES}" \
         --device "${SMOKE_DEVICE}" \
         --dtype "${SMOKE_DTYPE_V2}" \
-        --heartbeat_every "${HEARTBEAT_EVERY}"
+        --heartbeat_every "${HEARTBEAT_EVERY}" \
+        "${V2_LOCAL_ONLY_FLAG[@]}"
       echo "[$(ts)] [v2] DONE split=${SPLIT}"
     done
 

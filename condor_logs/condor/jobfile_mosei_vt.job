@@ -1,0 +1,14 @@
+Notification = Error
+executable   = /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/scripts/experiments/mosei_vt.sh
+Arguments    = 0 all
+initialdir   = /esat/smcdata/users/kkontras/Image_Dataset/no_backup/git/Synergy/condor_logs/logs
+Log          = $(ClusterId)_$(Process).log
+Output       = $(ClusterId)_$(Process).out
+Error        = $(ClusterId)_$(Process).err
+RequestCpus  = 8
+RequestMemory = 90G
+RequestWalltime = 500000
+Request_GPUs = 1
+NiceUser     = True
+Requirements = (GPUs_GlobalMemoryMb > 8000)
+Queue

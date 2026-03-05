@@ -1,0 +1,7 @@
+RequestCpus     = 8
+RequestMemory   = 40G
++RequestWallTime = 14400
+Request_GPUS    = 1
+Requirements = ( GPUs_GlobalMemoryMb > 7000)
+
+Queue

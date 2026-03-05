@@ -18,7 +18,7 @@ dist/
 # Logs/runtime outputs
 wandb/
 lightning_logs/
-condor_logs/
+condor_logs/logs/
 lm_call_dump/
 debug_viz/
 debug_input_images/

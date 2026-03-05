@@ -21,7 +21,7 @@ MODEL_NAME=${MODEL_NAME:-"Qwen/Qwen3-VL-2B-Instruct"}
 
 DATA_ROOT="dodrio/scratch/projects/2026_029/kkontras/data/ESNLI"
 NANO_CACHE="${DATA_ROOT}/cache_v2_nano"
-CKPT_DIR="dodrio/scratch/projects/2026_029/kkontras/checkpoints/ESNLI""
+CKPT_DIR="dodrio/scratch/projects/2026_029/kkontras/checkpoints/ESNLI"
 DEFAULT_CFG="./configs/ESNLI/default_config_esnli_nano.json"
 
 # batch_size=1 so even 3 samples per split is enough; lr/wd don't matter for pipeline check
@@ -99,7 +99,7 @@ CUDA_VISIBLE_DEVICES=${GPU} python scripts/entrypoints/train.py \
     --default_config "${NANO_10_CFG}" \
     ${TRAIN_FLAGS}
 echo "  Image-only done."
-
+ 
 # =============================================================================
 hr "STEP 4  Train TEXT-ONLY model  [max 10 epochs]"
 # =============================================================================

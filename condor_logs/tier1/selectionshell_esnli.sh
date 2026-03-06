@@ -50,25 +50,25 @@ qsub ${DEPEND} "${PBS_TRAIN}" \
     -v "${TRAIN_VARS},config=./configs/ESNLI/full_image_frozen.json"
 echo "Submitted: image-only frozen (full_image_frozen)"
 
-qsub ${DEPEND} "${PBS_TRAIN}" \
-    -v "${TRAIN_VARS},config=./configs/ESNLI/full_mcr.json"
-echo "Submitted: MCR (full_mcr)"
+# qsub ${DEPEND} "${PBS_TRAIN}" \
+#     -v "${TRAIN_VARS},config=./configs/ESNLI/full_mcr.json"
+# echo "Submitted: MCR (full_mcr)"
 
-qsub ${DEPEND} "${PBS_TRAIN}" \
-    -v "${TRAIN_VARS},config=./configs/ESNLI/full_mmpareto.json"
-echo "Submitted: MMPareto (full_mmpareto)"
+# qsub ${DEPEND} "${PBS_TRAIN}" \
+#     -v "${TRAIN_VARS},config=./configs/ESNLI/full_mmpareto.json"
+# echo "Submitted: MMPareto (full_mmpareto)"
 
-qsub ${DEPEND} "${PBS_TRAIN}" \
-    -v "${TRAIN_VARS},config=./configs/ESNLI/full_dnr.json"
-echo "Submitted: DnR (full_dnr)"
+# qsub ${DEPEND} "${PBS_TRAIN}" \
+#     -v "${TRAIN_VARS},config=./configs/ESNLI/full_dnr.json"
+# echo "Submitted: DnR (full_dnr)"
 
-qsub ${DEPEND} "${PBS_TRAIN}" \
-    -v "${TRAIN_VARS},config=./configs/ESNLI/full_reconboost.json"
-echo "Submitted: ReconBoost (full_reconboost)"
+# qsub ${DEPEND} "${PBS_TRAIN}" \
+#     -v "${TRAIN_VARS},config=./configs/ESNLI/full_reconboost.json"
+# echo "Submitted: ReconBoost (full_reconboost)"
 
-qsub ${DEPEND} "${PBS_TRAIN}" \
-    -v "${TRAIN_VARS},config=./configs/ESNLI/full_rmask.json"
-echo "Submitted: RMask (full_rmask)"
+# qsub ${DEPEND} "${PBS_TRAIN}" \
+#     -v "${TRAIN_VARS},config=./configs/ESNLI/full_rmask.json"
+# echo "Submitted: RMask (full_rmask)"
 
 echo ""
 echo "All jobs queued. Cache job: ${CACHE_JOBID}"

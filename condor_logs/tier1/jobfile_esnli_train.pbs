@@ -13,8 +13,8 @@ cd /dodrio/scratch/projects/2026_029/kkontras/projects/Synergy
 
 git pull origin main
 
-source /dodrio/scratch/projects/2026_029/kkontras/env/Anaconda/etc/profile.d/conda.sh
-conda activate /dodrio/scratch/projects/2026_029/kkontras/envs/synergy_new
+source $VSC_DATA/anaconda3/etc/profile.d/conda.sh
+conda activate synergy_new
 
 which python
 python -V
@@ -48,5 +48,5 @@ python scripts/entrypoints/train.py \
     --lr             "${lr}"             \
     --wd             "${wd}"             \
     --batch_size     "${batch_size}"     \
-    --load_ongoing   "${load_ongoing}"   \
-    --tdqm_disable
+    --load_ongoing   "${load_ongoing}"   
+

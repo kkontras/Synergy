@@ -1,0 +1,78 @@
+version: 1
+name: multibench_synergy_dataloader_contract
+purpose: >
+  Enforce that prepared FactorCL/MultiBench artifacts produce batch structures
+  compatible with Synergy dataset conventions and current training/eval paths.
+
+required_splits:
+  - train
+  - valid
+  - test
+
+external_modalities:
+  - vision
+  - audio
+  - text
+
+internal_modality_alias:
+  c: vision
+  f: audio
+  g: text
+
+required_sample_fields:
+  - id
+  - label
+  - vision
+  - audio
+  - text
+
+shape_policy:
+  sample_level:
+    modality_rank: 2          # [T, D] per sample before collation
+    label_rank: 1             # [1]
+  batch_level:
+    modality_rank: 3          # [B, T, D]
+    label_rank: 2             # [B, 1]
+  sequence_axis_order: [batch, time, feature]
+  allow_variable_time_with_padding: true
+
+dtype_policy:
+  modality_dtype: float32
+  label_dtype:
+    classification: int64
+    regression: float32
+  id_dtype: string
+
+value_policy:
+  forbid_nan: true
+  forbid_inf: true
+  allow_empty_text_tokens: false
+
+split_policy:
+  require_non_empty_each_split: true
+  minimum_samples_per_split:
+    train: 1
+    valid: 1
+    test: 1
+
+compatibility_checks:
+  - name: batch_keys_compatibility
+    description: >
+      Batch contains canonical top-level keys expected by existing Synergy
+      dataloader consumers (data/label/id style conventions).
+  - name: modality_alias_compatibility
+    description: >
+      Internal modality keys c/f/g map to vision/audio/text without ambiguity.
+  - name: rank_order_compatibility
+    description: >
+      Modalities preserve [B,T,D] structural format used in other sequence
+      datasets in this repository.
+  - name: label_compatibility
+    description: >
+      Labels follow consistent shape and dtype policy across splits.
+
+build_gate:
+  fail_on_contract_violation: true
+  fail_on_compatibility_violation: true
+  fail_on_dimension_mismatch_with_config: true
+

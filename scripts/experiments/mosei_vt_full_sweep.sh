@@ -19,11 +19,24 @@ GPU="${1:-0}"
 DEFAULT_CONFIG="./configs/FactorCL/Mosei/default_config_mosei_VT_syn.json"
 SYN_DIR="./configs/FactorCL/Mosei/syn/VT"
 
+# Section toggles (1=run, 0=skip)
+RUN_UNIMODALS="${RUN_UNIMODALS:-1}"
+RUN_RMASK_NOPRE="${RUN_RMASK_NOPRE:-1}"
+RUN_MCR="${RUN_MCR:-1}"
+RUN_MMPARETO="${RUN_MMPARETO:-1}"
+RUN_DNR="${RUN_DNR:-1}"
+RUN_RECONBOOST="${RUN_RECONBOOST:-1}"
+RUN_ENS="${RUN_ENS:-1}"
+RUN_JOINT="${RUN_JOINT:-1}"
+RUN_SYNPROM_RMASK="${RUN_SYNPROM_RMASK:-1}"
+RUN_SYNPROM_LEARNED="${RUN_SYNPROM_LEARNED:-1}"
+RUN_SYNPROM_RANDOM="${RUN_SYNPROM_RANDOM:-1}"
+
 # Unimodal / RMask_nopre lr x wd grid
 LRS_CSV="${LRS_CSV:-0.001,0.0005,0.0001,0.00005}"
 WDS_CSV="${WDS_CSV:-0.001,0.0001,0.00001}"
 
-# Fixed lr/wd for methods with their own hyperparam sweep
+# Fixed lr/wd for methods with their own hyperparameter sweep
 METHOD_LR="${METHOD_LR:-0.0005}"
 METHOD_WD="${METHOD_WD:-0.001}"
 
@@ -31,12 +44,32 @@ METHOD_WD="${METHOD_WD:-0.001}"
 MCR_L_CSV="${MCR_L_CSV:-0.001,0.01,0.1,1}"
 MCR_MULTIL_CSV="${MCR_MULTIL_CSV:-0.01,0.1,1}"
 MMPARETO_ALPHA_CSV="${MMPARETO_ALPHA_CSV:-0.5,1.0,1.5,2.0,3.0,5.0}"
+DNR_ALPHA_CSV="${DNR_ALPHA_CSV:-0.5,1.0,1.5,2.0,3.0,5.0}"
+DNR_KMEPOCH_CSV="${DNR_KMEPOCH_CSV:-1,3,5,10}"
+RECONBOOST_ALPHA_CSV="${RECONBOOST_ALPHA_CSV:-0.5,1.0,1.5,2.0,3.0,5.0}"
+RECONBOOST_STAGES_CSV="${RECONBOOST_STAGES_CSV:-1,4,10}"
+RECONBOOST_W1_CSV="${RECONBOOST_W1_CSV:-1,3,5,10}"
+RMASK_LS_CSV="${RMASK_LS_CSV:-0}"
+RMASK_LEARNED_L_CSV="${RMASK_LEARNED_L_CSV:-0.001,0.01,0.1,1}"
+RMASK_LEARNED_LSPARSE_CSV="${RMASK_LEARNED_LSPARSE_CSV:-0.001,0.01,0.1,1,3,5,10}"
+RMASK_RANDOM_L_CSV="${RMASK_RANDOM_L_CSV:-0.001,0.01,0.1,1}"
+RMASK_RANDOM_PMIN_CSV="${RMASK_RANDOM_PMIN_CSV:-0.1,0.3,0.5,0.7,0.9}"
 
-IFS=',' read -r -a LRS           <<< "${LRS_CSV}"
-IFS=',' read -r -a WDS           <<< "${WDS_CSV}"
-IFS=',' read -r -a MCR_LS        <<< "${MCR_L_CSV}"
-IFS=',' read -r -a MCR_MULTILS   <<< "${MCR_MULTIL_CSV}"
+IFS=',' read -r -a LRS             <<< "${LRS_CSV}"
+IFS=',' read -r -a WDS             <<< "${WDS_CSV}"
+IFS=',' read -r -a MCR_LS          <<< "${MCR_L_CSV}"
+IFS=',' read -r -a MCR_MULTILS     <<< "${MCR_MULTIL_CSV}"
 IFS=',' read -r -a MMPARETO_ALPHAS <<< "${MMPARETO_ALPHA_CSV}"
+IFS=',' read -r -a DNR_ALPHAS      <<< "${DNR_ALPHA_CSV}"
+IFS=',' read -r -a DNR_KMEPOCHS    <<< "${DNR_KMEPOCH_CSV}"
+IFS=',' read -r -a RECONBOOST_ALPHAS <<< "${RECONBOOST_ALPHA_CSV}"
+IFS=',' read -r -a RECONBOOST_STAGES <<< "${RECONBOOST_STAGES_CSV}"
+IFS=',' read -r -a RECONBOOST_W1S  <<< "${RECONBOOST_W1_CSV}"
+IFS=',' read -r -a RMASK_LS        <<< "${RMASK_LS_CSV}"
+IFS=',' read -r -a RMASK_LEARNED_LS <<< "${RMASK_LEARNED_L_CSV}"
+IFS=',' read -r -a RMASK_LEARNED_LSPARSES <<< "${RMASK_LEARNED_LSPARSE_CSV}"
+IFS=',' read -r -a RMASK_RANDOM_LS <<< "${RMASK_RANDOM_L_CSV}"
+IFS=',' read -r -a RMASK_RANDOM_PMINS <<< "${RMASK_RANDOM_PMIN_CSV}"
 
 TMPDIR_SWEEP="/tmp/mosei_full_sweep_$$"
 mkdir -p "${TMPDIR_SWEEP}"
@@ -141,69 +174,132 @@ section() {
   echo "============================================================"
 }
 
-# # ------------------------------------------------------------------ #
-# section "Unimodal video (lr x wd sweep)"
-# D="${TMPDIR_SWEEP}/unimodal_video"; mkdir -p "${D}"
-# for lr in "${LRS[@]}"; do
-#   for wd in "${WDS[@]}"; do
-#     parse_and_track "${D}" "lr=${lr} wd=${wd}" \
-#       --config "${SYN_DIR}/unimodal_video.json" --lr "${lr}" --wd "${wd}"
-#   done
-# done
-# print_top3 "${D}"
+if [[ "${RUN_UNIMODALS}" == "1" ]]; then
+  section "Unimodal models"
+  D="${TMPDIR_SWEEP}/unimodal"; mkdir -p "${D}"
+  parse_and_track "${D}" "text lr=0.0005 wd=0.001" \
+    --config "${SYN_DIR}/unimodal_text.json" --lr "0.0005" --wd "0.001"
+  parse_and_track "${D}" "video lr=0.001 wd=0.001" \
+    --config "${SYN_DIR}/unimodal_video.json" --lr "0.001" --wd "0.001"
+  print_top3 "${D}"
+fi
 
-# ------------------------------------------------------------------ #
-# section "Unimodal text (lr x wd sweep)"
-# D="${TMPDIR_SWEEP}/unimodal_text"; mkdir -p "${D}"
-# for lr in "${LRS[@]}"; do
-#   for wd in "${WDS[@]}"; do
-#     parse_and_track "${D}" "lr=${lr} wd=${wd}" \
-#       --config "${SYN_DIR}/unimodal_text.json" --lr "${lr}" --wd "${wd}"
-#   done
-# done
-# print_top3 "${D}"
-
-# ------------------------------------------------------------------ #
-section "RMask_nopre l=0 (lr x wd sweep)"
-D="${TMPDIR_SWEEP}/rmask_nopre"; mkdir -p "${D}"
-for lr in "${LRS[@]}"; do
-  for wd in "${WDS[@]}"; do
-    parse_and_track "${D}" "lr=${lr} wd=${wd}" \
-      --config "${SYN_DIR}/synprom_RMask_nopre.json" --lr "${lr}" --wd "${wd}" --l 0
+if [[ "${RUN_RMASK_NOPRE}" == "1" ]]; then
+  section "RMask_nopre l=0 (lr x wd sweep)"
+  D="${TMPDIR_SWEEP}/rmask_nopre"; mkdir -p "${D}"
+  for lr in "${LRS[@]}"; do
+    for wd in "${WDS[@]}"; do
+      parse_and_track "${D}" "lr=${lr} wd=${wd}" \
+        --config "${SYN_DIR}/synprom_RMask_nopre.json" --lr "${lr}" --wd "${wd}" --l 0
+    done
   done
-done
-print_top3 "${D}"
+  print_top3 "${D}"
+fi
 
-
-
-
-# ------------------------------------------------------------------ #
-section "Syn MCR (l x multil sweep)"
-D="${TMPDIR_SWEEP}/syn_MCR"; mkdir -p "${D}"
-for l in "${MCR_LS[@]}"; do
-  for multil in "${MCR_MULTILS[@]}"; do
-    parse_and_track "${D}" "l=${l} multil=${multil}" \
-      --config "${SYN_DIR}/MCR.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
-      --l "${l}" --multil "${multil}"
+if [[ "${RUN_MCR}" == "1" ]]; then
+  section "MCR (l x multil sweep)"
+  D="${TMPDIR_SWEEP}/MCR"; mkdir -p "${D}"
+  for l in "${MCR_LS[@]}"; do
+    for multil in "${MCR_MULTILS[@]}"; do
+      parse_and_track "${D}" "l=${l} multil=${multil}" \
+        --config "${SYN_DIR}/MCR.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+        --l "${l}" --multil "${multil}"
+    done
   done
-done
-print_top3 "${D}"
+  print_top3 "${D}"
+fi
 
-D="${TMPDIR_SWEEP}/syn_MCR"; mkdir -p "${D}"
-for l in "${MCR_LS[@]}"; do
-  for multil in "${MCR_MULTILS[@]}"; do
-    python scripts/entrypoints/show.py "${D}" "l=${l} multil=${multil}" \
-      --config "${SYN_DIR}/MCR.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
-      --l "${l}" --multil "${multil}"
+if [[ "${RUN_MMPARETO}" == "1" ]]; then
+  section "MMPareto (alpha sweep)"
+  D="${TMPDIR_SWEEP}/MMPareto"; mkdir -p "${D}"
+  for alpha in "${MMPARETO_ALPHAS[@]}"; do
+    parse_and_track "${D}" "alpha=${alpha}" \
+      --config "${SYN_DIR}/MMPareto.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --alpha "${alpha}"
   done
-done
+  print_top3 "${D}"
+fi
 
-# ------------------------------------------------------------------ #
-section "Syn RMask (l=0)"
-D="${TMPDIR_SWEEP}/syn_RMask"; mkdir -p "${D}"
-parse_and_track "${D}" "lr=${METHOD_LR} wd=${METHOD_WD} l=0" \
-  --config "${SYN_DIR}/synprom_RMask.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --l 0
-print_top3 "${D}"
+if [[ "${RUN_DNR}" == "1" ]]; then
+  section "DnR (alpha x kmepoch sweep)"
+  D="${TMPDIR_SWEEP}/DnR"; mkdir -p "${D}"
+  for alpha in "${DNR_ALPHAS[@]}"; do
+    for kmpe in "${DNR_KMEPOCHS[@]}"; do
+      parse_and_track "${D}" "alpha=${alpha} kmepoch=${kmpe}" \
+        --config "${SYN_DIR}/DnR.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+        --alpha "${alpha}" --kmepoch "${kmpe}"
+    done
+  done
+  print_top3 "${D}"
+fi
+
+if [[ "${RUN_RECONBOOST}" == "1" ]]; then
+  section "ReconBoost (alpha x stages x w1 sweep)"
+  D="${TMPDIR_SWEEP}/ReconBoost"; mkdir -p "${D}"
+  for alpha in "${RECONBOOST_ALPHAS[@]}"; do
+    for stages in "${RECONBOOST_STAGES[@]}"; do
+      for w1 in "${RECONBOOST_W1S[@]}"; do
+        parse_and_track "${D}" "alpha=${alpha} stages=${stages} w1=${w1}" \
+          --config "${SYN_DIR}/ReconBoost.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+          --alpha "${alpha}" \
+          --recon_weight1 "${w1}" --recon_weight2 1 \
+          --recon_epochstages "${stages}" --recon_ensemblestages "${stages}"
+      done
+    done
+  done
+  print_top3 "${D}"
+fi
+
+if [[ "${RUN_ENS}" == "1" ]]; then
+  section "Ensemble"
+  D="${TMPDIR_SWEEP}/ens"; mkdir -p "${D}"
+  parse_and_track "${D}" "lr=${METHOD_LR} wd=${METHOD_WD}" \
+    --config "${SYN_DIR}/ens.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}"
+  print_top3 "${D}"
+fi
+
+if [[ "${RUN_JOINT}" == "1" ]]; then
+  section "Joint Training"
+  D="${TMPDIR_SWEEP}/joint_training"; mkdir -p "${D}"
+  parse_and_track "${D}" "lr=${METHOD_LR} wd=${METHOD_WD}" \
+    --config "${SYN_DIR}/joint_training.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}"
+  print_top3 "${D}"
+fi
+
+if [[ "${RUN_SYNPROM_RMASK}" == "1" ]]; then
+  section "SynProm RMask (l sweep)"
+  D="${TMPDIR_SWEEP}/synprom_rmask"; mkdir -p "${D}"
+  for l in "${RMASK_LS[@]}"; do
+    parse_and_track "${D}" "l=${l}" \
+      --config "${SYN_DIR}/synprom_RMask.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --l "${l}"
+  done
+  print_top3 "${D}"
+fi
+
+if [[ "${RUN_SYNPROM_LEARNED}" == "1" ]]; then
+  section "SynProm Learned (l x lsparse sweep)"
+  D="${TMPDIR_SWEEP}/synprom_learned"; mkdir -p "${D}"
+  for l in "${RMASK_LEARNED_LS[@]}"; do
+    for lsparse in "${RMASK_LEARNED_LSPARSES[@]}"; do
+      parse_and_track "${D}" "l=${l} lsparse=${lsparse}" \
+        --config "${SYN_DIR}/synprom_RMask.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+        --l "${l}" --perturb learned --perturn learned --perturb_fill ema --perturb_lsparse "${lsparse}"
+    done
+  done
+  print_top3 "${D}"
+fi
+
+if [[ "${RUN_SYNPROM_RANDOM}" == "1" ]]; then
+  section "SynProm Random (l x pmin sweep)"
+  D="${TMPDIR_SWEEP}/synprom_random"; mkdir -p "${D}"
+  for l in "${RMASK_RANDOM_LS[@]}"; do
+    for pmin in "${RMASK_RANDOM_PMINS[@]}"; do
+      parse_and_track "${D}" "l=${l} pmin=${pmin}" \
+        --config "${SYN_DIR}/synprom_RMask.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+        --l "${l}" --perturb random --perturn random --perturb_fill ema --perturb_pmin "${pmin}"
+    done
+  done
+  print_top3 "${D}"
+fi
 
 echo ""
 echo "Done."

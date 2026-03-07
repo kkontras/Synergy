@@ -22,14 +22,20 @@
         "use": true,
         "plot": false
       },
-    "multi_loss": {
-      "multi_supervised_w": {
-        "combined": 1, "c": 1, "g": 1
+      "multi_loss": {
+        "multi_supervised_w": {
+          "combined": 1,
+          "c": 1,
+          "g": 1
+        }
       }
-    }
     },
     "load_ongoing": false,
     "save_dir": "MCR_{}.pth.tar",
+    "ceu": {
+      "val": "./artifacts/ceus/mosei/mosei_ceu_val.pkl",
+      "test": "./artifacts/ceus/mosei/mosei_ceu_test.pkl"
+    },
     "encoders": [
       {
         "model": "FactorCL_Uni",
@@ -38,7 +44,8 @@
           "hidden_size": 40,
           "modality": "c",
           "num_classes": 2,
-          "freeze_encoder": false},
+          "freeze_encoder": false
+        },
         "pretrainedEncoder": {
           "use": true,
           "dir": "unimodal_video_fold{}_vldaccuracy_lr0.001_wd0.001.pth.tar"
@@ -51,7 +58,8 @@
           "hidden_size": 40,
           "modality": "g",
           "num_classes": 2,
-          "freeze_encoder": false},
+          "freeze_encoder": false
+        },
         "pretrainedEncoder": {
           "use": true,
           "dir": "unimodal_text_fold{}_vldaccuracy_lr0.0005_wd0.001.pth.tar"

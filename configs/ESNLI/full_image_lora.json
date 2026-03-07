@@ -13,6 +13,7 @@
       "fc_inner": 64,
       "dropout": 0.1,
       "cls_finetune": true,
+      "train_cls_row": false,
       "cls_type": "linear",
       "clip_grad": true,
       "clip_value": 1.0,

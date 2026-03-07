@@ -25,10 +25,10 @@ mkdir -p ./condor_logs/logs_vsc
 # STEP 1: build the v2 cache (train + validation + test)
 # Capture the job ID so training jobs can depend on it.
 # -----------------------------------------------------------------------------
-CACHE_JOBID=$(qsub "${PBS_CACHE}")
-echo "Cache job submitted: ${CACHE_JOBID}"
+# CACHE_JOBID=$(qsub "${PBS_CACHE}")
+# echo "Cache job submitted: ${CACHE_JOBID}"
 
-DEPEND="-W depend=afterok:${CACHE_JOBID}"
+# DEPEND="-W depend=afterok:${CACHE_JOBID}"
 
 # -----------------------------------------------------------------------------
 # STEP 2: submit one training job per model, each waiting for the cache job

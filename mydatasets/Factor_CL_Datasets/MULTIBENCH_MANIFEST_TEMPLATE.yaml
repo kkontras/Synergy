@@ -1,0 +1,149 @@
+version: 1
+name: multibench_affect_manifest_template
+
+global:
+  data_root: /path/to/data_root
+  output_root: /path/to/prepared_outputs
+  random_seed: 42
+  log_level: INFO
+
+defaults:
+  text_representation: glove300      # glove300 | bert768
+  target_seq_len:
+    vision: 50
+    audio: 50
+    text: 50
+  pad_mode: right
+  truncate_mode: tail
+  output_label_shape: [N, 1]
+  serialization_format: pickle
+
+datasets:
+  mosi:
+    enabled: true
+    task_type: regression
+    data_type_for_loader: mosi
+    sources:
+      - name: multibench_mosi
+        url: https://example.com/mosi_source
+        expected_files:
+          - mosi_raw_file_1.ext
+          - mosi_raw_file_2.ext
+    input_format:
+      type: aligned_features
+      id_field: segment_id
+      split_field: split
+      label_field: label
+      modalities:
+        vision: vision
+        audio: audio
+        text: text
+    output:
+      artifact_path: ${global.output_root}/mosi/mosi_prepared.pkl
+      stats_path: ${global.output_root}/mosi/mosi_stats.json
+    validation:
+      expect_splits: [train, valid, test]
+      modality_feature_dims:
+        vision: null
+        audio: null
+        text: 300
+
+  mosei:
+    enabled: true
+    task_type: regression
+    data_type_for_loader: mosei
+    sources:
+      - name: multibench_mosei
+        url: https://example.com/mosei_source
+        expected_files:
+          - mosei_raw_file_1.ext
+    input_format:
+      type: aligned_features
+      id_field: segment_id
+      split_field: split
+      label_field: label
+      modalities:
+        vision: vision
+        audio: audio
+        text: text
+    output:
+      artifact_path: ${global.output_root}/mosei/mosei_prepared.pkl
+      stats_path: ${global.output_root}/mosei/mosei_stats.json
+    validation:
+      expect_splits: [train, valid, test]
+      modality_feature_dims:
+        vision: null
+        audio: null
+        text: 300
+
+  ur_funny:
+    enabled: true
+    task_type: classification
+    data_type_for_loader: humor
+    label_semantics: humor_binary
+    sources:
+      - name: multibench_ur_funny
+        url: https://example.com/ur_funny_source
+        expected_files:
+          - ur_funny_raw_file_1.ext
+    input_format:
+      type: preprocessed_or_raw
+      id_field: sample_id
+      split_field: split
+      label_field: label
+      modalities:
+        vision: vision
+        audio: audio
+        text: text
+    output:
+      artifact_path: ${global.output_root}/ur_funny/ur_funny_prepared.pkl
+      stats_path: ${global.output_root}/ur_funny/ur_funny_stats.json
+    validation:
+      expect_splits: [train, valid, test]
+      class_labels: [0, 1]
+      modality_feature_dims:
+        vision: null
+        audio: null
+        text: 300
+
+  mustard:
+    enabled: true
+    task_type: classification
+    data_type_for_loader: sarcasm
+    label_semantics: sarcasm_binary
+    apply_video_corruption_filter: true
+    sources:
+      - name: multibench_mustard
+        url: https://example.com/mustard_source
+        expected_files:
+          - mustard_raw_file_1.ext
+    input_format:
+      type: preprocessed_or_raw
+      id_field: sample_id
+      split_field: split
+      label_field: label
+      modalities:
+        vision: vision
+        audio: audio
+        text: text
+    output:
+      artifact_path: ${global.output_root}/mustard/mustard_prepared.pkl
+      stats_path: ${global.output_root}/mustard/mustard_stats.json
+    validation:
+      expect_splits: [train, valid, test]
+      class_labels: [0, 1]
+      modality_feature_dims:
+        vision: null
+        audio: null
+        text: 300
+
+execution:
+  stage_order: [download, build, validate, stats]
+  halt_on_failure: true
+  smoke_test_after_validate: true
+  smoke_test:
+    num_batches_per_split: 1
+    splits: [train, valid, test]
+    assert_contract: true
+    assert_synergy_compatibility: true
+

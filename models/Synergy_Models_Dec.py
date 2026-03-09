@@ -7299,7 +7299,7 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
         self.enc_0 = encs[0]
 
         bi = getattr(args, "bias_infusion", {}) or {}
-        self.mcr_enabled     = bi.get("method", "false") == "MCR"
+        self.mcr_enabled     = bi.get("l", 0) == 0
         self.mcr_l           = float(bi.get("l", 0.1))
         self.mcr_num_samples = int(bi.get("num_samples", 1))
         self._mcr_step       = 0   # alternates sv / sa each forward call
@@ -7551,24 +7551,6 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
         h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
         logits = self.enc_0(h_cls)
         return h_cls, logits
-
-    def _compute_lmipd(self, logits_base, logits_shuffled, label, shuffle_mode):
-        """Direct LMIPD for a shared LM: maximize JSD when one modality is shuffled.
-
-        shuffle_mode: "sv" (vision shuffled) or "sa" (text shuffled).
-        Returns (lmipd_loss, permutation_importance_dict).
-        lmipd_loss is negative (adding it to total loss maximises JSD).
-        """
-        base_acc = (logits_base.argmax(1) == label).float().mean() + 1e-8
-        acc_shuffled = (logits_shuffled.argmax(1) == label).float().mean()
-        importance_ratio = acc_shuffled / base_acc  # lower → that modality matters more
-        if shuffle_mode == "sv":
-            permutation_importance = {"enc_0": importance_ratio, "enc_1": None}
-        else:
-            permutation_importance = {"enc_0": None, "enc_1": importance_ratio}
-        jsd = self._jsd(logits_base, logits_shuffled)
-        lmipd_loss = -self.mcr_l * jsd
-        return lmipd_loss, permutation_importance
 
     def _compute_contrastive_term(self, h_cls_text, h_cls_image, labels):
         if not self.mcr_contr_coeff:

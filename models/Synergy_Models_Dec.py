@@ -7662,7 +7662,7 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
                     sa_acc = (logits_sa.argmax(1) == label).float().mean()
                     sv_acc = (logits_sv.argmax(1) == label).float().mean()
                     permutation_importance = {"enc_0": sa_acc / base_acc, "enc_1": sv_acc / base_acc}
-
+            print(lmipd_terms)
             losses["lmipd"] = torch.stack(lmipd_terms).mean()
             losses["contrastive"] = self._compute_contrastive_term(h_cls_text, h_cls_image, label)
 

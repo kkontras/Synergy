@@ -25,9 +25,9 @@
       }
   },
   "model": {
-    "model_class": "QwenVL_ScienceQA_Cached",
+    "model_class": "QwenVL_ScienceQA_Cached_MCR",
     "args": {
-      "model_class": "QwenVL_ScienceQA_Cached",
+      "model_class": "QwenVL_ScienceQA_Cached_MCR",
       "d_model": 512, "num_classes": 5, "fc_inner": 64, "dropout": 0.1,
       "cls_emb_path": "Synprom_IBInput2_fold0_lr0.0001_wd0.0001_cls_embedding.pt",
       "cls_finetune": false,
@@ -37,8 +37,12 @@
       "bias_infusion": {
         "method": "MCR",
         "regby": "greedy",
-        "num_samples": 32,
-        "shuffle": true
+        "num_samples": 1,
+        "shuffle": true,
+        "l": 0.1,
+        "contr_coeff": 0.0,
+        "temperature": 0.1,
+        "contr_type": "label"
       },
       "lora_config": {
       "use_lora": true,  "lora_r": 16, "lora_alpha": 32,  "lora_dropout": 0.05,  "lora_target_modules": ["q_proj", "v_proj"],  "lora_bias": "none", "lora_lr": 0.0002

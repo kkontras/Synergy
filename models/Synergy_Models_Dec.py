@@ -7298,6 +7298,15 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
 
         self.enc_0 = encs[0]
 
+        bi = getattr(args, "bias_infusion", {}) or {}
+        self.mcr_enabled     = bi.get("method", "false") == "MCR"
+        self.mcr_l           = float(bi.get("l", 0.1))
+        self.mcr_regby       = str(bi.get("regby", "greedy"))
+        self.mcr_num_samples = int(bi.get("num_samples", 1))
+        self.mcr_contr_coeff = float(bi.get("contr_coeff", 0.0))
+        self.mcr_temperature = float(bi.get("temperature", 0.1))
+        self.mcr_contr_type  = str(bi.get("contr_type", "label"))
+
         self._apply_lora()
         self._load_cls_embedding()
         self._setup_trainables()
@@ -7474,6 +7483,148 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
         )
         return out.hidden_states[-1]
 
+    def _random_shuffles(self, batch_size: int, num_samples: int):
+        return [torch.randperm(batch_size) for _ in range(num_samples)]
+
+    def _build_sv_embeds(self, input_embeds, image_mask, perm):
+        """Shuffle visual tokens: inject tokens from sample perm[b] into position b."""
+        B = input_embeds.shape[0]
+        sv = input_embeds.clone()
+        vis_tokens = [input_embeds[b, image_mask[b]] for b in range(B)]
+        for b in range(B):
+            sv[b, image_mask[b]] = vis_tokens[int(perm[b])]
+        return sv
+
+    def _build_sa_embeds(self, input_embeds, hint_mask, perm):
+        """Shuffle hint/text tokens from sample perm[b] into position b (min-fill, variable length)."""
+        B = input_embeds.shape[0]
+        sa = input_embeds.clone()
+        for b in range(B):
+            pb = int(perm[b])
+            dst = hint_mask[b].nonzero(as_tuple=False).view(-1)
+            src = input_embeds[pb, hint_mask[pb]]  # (H_pb, d)
+            n = min(dst.numel(), src.shape[0])
+            sa[b, dst] = 0.0
+            if n > 0:
+                sa[b, dst[:n]] = src[:n]
+        return sa
+
+    def _shuffle_deepstack(self, deep_stack_viz, perm, B):
+        """Permute B-groups in each packed (B*N_vis, D) tensor."""
+        result = []
+        for level in deep_stack_viz:  # each: (B*N_vis, D)
+            N = level.shape[0] // B
+            lv = level.view(B, N, -1)
+            result.append(lv[perm].reshape(B * N, -1))
+        return result
+
+    def _detach_at_mask(self, emb, mask_3d):
+        """Selective detach: gradient flows only through positions where mask_3d == 0.
+        emb: (B, T, d); mask_3d: (B, T, 1) float"""
+        return emb - emb * mask_3d + (emb * mask_3d).detach()
+
+    def _lm_forward(self, inputs_embeds, attn_mask, pos_ids, img_mask, dsv, input_ids):
+        """Single LM forward pass → (h_cls, logits)."""
+        out = self.backbone.model.language_model(
+            input_ids=None,
+            position_ids=pos_ids,
+            inputs_embeds=inputs_embeds,
+            attention_mask=attn_mask,
+            visual_pos_masks=img_mask,
+            deepstack_visual_embeds=dsv,
+            output_hidden_states=True,
+            return_dict=True,
+            cache_position=None,
+            use_cache=False,
+        )
+        hidden = out.hidden_states[-1]
+        h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
+        logits = self.enc_0(h_cls)
+        return h_cls, logits
+
+    def _get_lmipds(self, preds_dict):
+        P = preds_dict
+        device = P["pred_repeated"].device
+
+        def jsd(p, q):
+            p = F.softmax(p, dim=1)
+            q = F.softmax(q, dim=1)
+            m = 0.5 * (p + q)
+            return 0.5 * (
+                F.kl_div(m.log(), p, reduction="batchmean") +
+                F.kl_div(m.log(), q, reduction="batchmean")
+            )
+
+        def eval_side(side):
+            if side == "sa":
+                keys = ("sa_detv", "sa_deta", "sa")
+            else:
+                keys = ("sv_detv", "sv_deta", "sv")
+            if all(k in P for k in keys):
+                detv, deta, both = P[keys[0]], P[keys[1]], P[keys[2]]
+                base = P["pred_repeated"]
+                return {
+                    "enc0": jsd(detv, base),
+                    "enc1": jsd(deta, base),
+                    "all": jsd(both, base),
+                }
+            else:
+                zero = torch.tensor(0.0, device=device)
+                return {"enc0": zero, "enc1": zero, "all": zero}
+
+        sa = eval_side("sa")
+        sv = eval_side("sv")
+
+        base = P["pred_repeated"]
+        base_acc = (base.argmax(1) == P["label_repeated"]).float().mean() + 1e-8
+        acc_sa = (P["sa_detv"].argmax(1) == P["label_repeated"]).float().mean() if "sa_detv" in P else torch.tensor(0.0, device=device)
+        acc_sv = (P["sv_deta"].argmax(1) == P["label_repeated"]).float().mean() if "sv_deta" in P else torch.tensor(0.0, device=device)
+
+        permutation_importance = {
+            "enc_0": acc_sv / base_acc,
+            "enc_1": acc_sa / base_acc,
+        }
+        lmipd_out = {
+            "enc0_sa_jsd": sa["enc0"],
+            "enc1_sa_jsd": sa["enc1"],
+            "all_sa_jsd":  sa["all"],
+            "enc0_sv_jsd": sv["enc0"],
+            "enc1_sv_jsd": sv["enc1"],
+            "all_sv_jsd":  sv["all"],
+        }
+        return lmipd_out, permutation_importance
+
+    def _apply_game(self, lmipds):
+        enc0_sa = lmipds["enc0_sa_jsd"]
+        enc0_sv = lmipds["enc0_sv_jsd"]
+        enc1_sa = lmipds["enc1_sa_jsd"]
+        enc1_sv = lmipds["enc1_sv_jsd"]
+
+        if self.mcr_regby == "greedy":
+            reg0 = enc0_sa
+            reg1 = enc1_sv
+            total = self.mcr_l * (-enc0_sa + enc1_sa - enc1_sv + enc0_sv)
+        elif self.mcr_regby == "ind":
+            reg0 = enc0_sa
+            reg1 = enc1_sv
+            total = self.mcr_l * (-(enc0_sa + enc1_sv))
+        else:  # "colab"
+            reg0 = lmipds["all_sa_jsd"]
+            reg1 = lmipds["all_sv_jsd"]
+            total = self.mcr_l * (-(reg0 + reg1))
+
+        return {"total_reg": total, "reg0": reg0, "reg1": reg1}
+
+    def _compute_contrastive_term(self, h_cls_text, h_cls_image, labels):
+        if not self.mcr_contr_coeff:
+            return 0.0
+        t = self.mcr_temperature
+        if self.mcr_contr_type == "label":
+            loss = nt_xent_loss(h_cls_text, h_cls_image, label=labels, temperature=t)
+        else:
+            loss = nt_xent_loss(h_cls_text, h_cls_image, temperature=t)
+        return self.mcr_contr_coeff * loss
+
     def forward(self, x, *, label=None, return_features=False, **kwargs):
 
         proc = x
@@ -7486,116 +7637,95 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
             image_mask = proc["image_mask"].to(device)
         elif "visual_pos_masks" in proc:
             image_mask = proc["visual_pos_masks"].to(device)
-        # vision_embeds = proc["vision_embeds"].to(device)
         input_embeds = proc["input_embeds"].to(device)
         position_ids = proc["position_ids"].to(device)
         deep_stack_viz = proc["deepstack_visual_embeds"].to(device)
 
-        # position_ids = position_ids.permute(1, 0, 2)
-
-        # inputs_embeds = self.backbone.model.get_input_embeddings()(input_ids.to(device))
-        # print(vision_embeds.shape)
-        # print(inputs_embeds.shape)
-        # print(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]).shape)
-
-        # inputs_embeds = inputs_embeds.masked_scatter(image_mask.unsqueeze(dim=-1).repeat(1,1,vision_embeds.shape[-1]), vision_embeds)
-        # position_ids = einops.rearrange(position_ids, "b c i j-> c b (i j)", i=1)
-        # deep_stack_viz = einops.rearrange(deep_stack_viz, "b c i j -> c (b i) j")
         deep_stack_viz = [deep_stack_viz[i] for i in range(len(deep_stack_viz))]
-        # print(deep_stack_viz.shape)
-        # position_ids = position_ids.squeeze(dim=2)
 
-        # inputs_embeds = self._build_inputs_embeds_from_cache(input_ids, image_mask, vision_embeds)
-
-
-        # print(input_embeds.shape)
-        # print(vision_embeds.shape)
-        # print(deep_stack_viz.shape)
-
-        def print_lm_input_stats(position_ids, inputs_embeds, attention_mask, image_mask, deep_stack_viz,
-                                 name="LM inputs"):
-            """
-            Short, readable printout of shape + basic stats for each input tensor.
-            """
-            import torch
-
-            def stats(t):
-                if t is None:
-                    return "None"
-                # handle non-tensors (just in case)
-                if not torch.is_tensor(t):
-                    return f"{type(t)}"
-                tt = t.detach()
-                shape = tuple(tt.shape)
-                dtype = str(tt.dtype).replace("torch.", "")
-                device = str(tt.device)
-                numel = tt.numel()
-
-                # min/max/mean only for numeric tensors
-                if numel == 0:
-                    return f"shape={shape} dtype={dtype} device={device} numel=0"
-
-                # Use float() for stable stats even in fp16/bf16
-                if tt.dtype in (torch.float16, torch.bfloat16, torch.float32, torch.float64):
-                    x = tt.float()
-                    return (f"shape={shape} dtype={dtype} device={device} "
-                            f"min={x.min().item():.5g} max={x.max().item():.5g} "
-                            f"mean={x.mean().item():.5g} std={x.std(unbiased=False).item():.5g}")
-                elif tt.dtype in (torch.int8, torch.int16, torch.int32, torch.int64, torch.uint8, torch.bool):
-                    # for masks / ids: show min/max + %nonzero
-                    x = tt
-                    nz = (x != 0).float().mean().item() * 100.0
-                    return (f"shape={shape} dtype={dtype} device={device} "
-                            f"min={x.min().item()} max={x.max().item()} nonzero={nz:.2f}%")
-                else:
-                    return f"shape={shape} dtype={dtype} device={device} numel={numel}"
-
-            print(f"\n=== {name} ===")
-            print(f"position_ids            : {stats(position_ids)}")
-            print(f"inputs_embeds           : {stats(inputs_embeds)}")
-            print(f"attention_mask          : {stats(attention_mask)}")
-            print(f"visual_pos_masks        : {stats(image_mask)}")
-            print(f"deepstack_visual_embeds : {stats(deep_stack_viz)}")
-
-        # call it right before language_model(...)
-        # print_lm_input_stats(position_ids, input_embeds, attention_mask, image_mask, deep_stack_viz)
-
-
-        out = self.backbone.model.language_model(
-            input_ids=None,
-            position_ids = position_ids,
-            inputs_embeds=input_embeds,
-            attention_mask=attention_mask,
-            visual_pos_masks=image_mask,
-            deepstack_visual_embeds=deep_stack_viz,
-            output_hidden_states=True,
-            return_dict=True,
-            cache_position = None,
-            use_cache= False
+        # ── Pass 1: combined ────────────────────────────────────────────
+        h_cls, logits = self._lm_forward(
+            input_embeds, attention_mask, position_ids, image_mask, deep_stack_viz, input_ids
         )
-        hidden = out.hidden_states[-1]
-
-
-        # hidden = self._encode_from_inputs_embeds(inputs_embeds, attention_mask)
-        h_cls = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
-        logits = self.enc_0(h_cls)
 
         losses = {}
         if label is not None:
             losses["ce_loss_combined"] = self._mc_ce_loss(logits, label)
 
-        preds = {"combined": logits}
-        features = {"combined": h_cls}
-        if return_features:
-            features["hidden"] = hidden
+        # ── Pass 2: text-only (mask out image tokens) ──────────────────
+        image_mask_bool = image_mask.to(device).bool()
+        attention_mask_text = attention_mask * (~image_mask_bool).to(attention_mask.dtype)
+        h_cls_text, logits_text = self._lm_forward(
+            input_embeds, attention_mask_text, position_ids, image_mask_bool, deep_stack_viz, input_ids
+        )
+        if label is not None:
+            losses["ce_loss_c"] = self._mc_ce_loss(logits_text, label)
 
-        # ============================================================
-        # GENERATION (uses cached vision if available)
-        # ============================================================
-        gen_texts = False
-        do_generate = kwargs.get("do_generate", False)  # set True when you want it
+        # ── Pass 3: image-only (mask out hint/text tokens) ─────────────
+        hint_mask = proc["hint_mask"].to(device).bool()
+        attention_mask_image = attention_mask * (~hint_mask).to(attention_mask.dtype)
+        h_cls_image, logits_image = self._lm_forward(
+            input_embeds, attention_mask_image, position_ids, image_mask_bool, deep_stack_viz, input_ids
+        )
+        if label is not None:
+            losses["ce_loss_g"] = self._mc_ce_loss(logits_image, label)
+
+        # ── MCR block ───────────────────────────────────────────────────
+        permutation_importance = None
+        if self.training and self.mcr_enabled and label is not None:
+            B = input_embeds.shape[0]
+            img_mask_3d = image_mask_bool.unsqueeze(-1).to(input_embeds.dtype)
+            hint_mask_3d = hint_mask.unsqueeze(-1).to(input_embeds.dtype)
+
+            lmipd_terms = []
+            for perm in self._random_shuffles(B, self.mcr_num_samples):
+                perm = perm.to(device)
+
+                sv_embeds = self._build_sv_embeds(input_embeds, image_mask_bool, perm)
+                sa_embeds = self._build_sa_embeds(input_embeds, hint_mask, perm)
+                sv_deep = self._shuffle_deepstack(deep_stack_viz, perm, B)
+
+                sv_detv = self._detach_at_mask(sv_embeds, img_mask_3d)
+                sv_deta = self._detach_at_mask(sv_embeds, hint_mask_3d)
+                sa_detv = self._detach_at_mask(sa_embeds, img_mask_3d)
+                sa_deta = self._detach_at_mask(sa_embeds, hint_mask_3d)
+
+                _, logits_sv_detv = self._lm_forward(sv_detv, attention_mask, position_ids, image_mask_bool, sv_deep, input_ids)
+                _, logits_sv_deta = self._lm_forward(sv_deta, attention_mask, position_ids, image_mask_bool, sv_deep, input_ids)
+                _, logits_sv      = self._lm_forward(sv_embeds, attention_mask, position_ids, image_mask_bool, sv_deep, input_ids)
+                _, logits_sa_detv = self._lm_forward(sa_detv, attention_mask, position_ids, image_mask_bool, deep_stack_viz, input_ids)
+                _, logits_sa_deta = self._lm_forward(sa_deta, attention_mask, position_ids, image_mask_bool, deep_stack_viz, input_ids)
+                _, logits_sa      = self._lm_forward(sa_embeds, attention_mask, position_ids, image_mask_bool, deep_stack_viz, input_ids)
+
+                preds_dict = {
+                    "pred_repeated": logits,
+                    "label_repeated": label,
+                    "label_shuffled": label[perm],
+                    "sv_detv": logits_sv_detv,
+                    "sv_deta": logits_sv_deta,
+                    "sv":      logits_sv,
+                    "sa_detv": logits_sa_detv,
+                    "sa_deta": logits_sa_deta,
+                    "sa":      logits_sa,
+                }
+
+                lmipds, permutation_importance = self._get_lmipds(preds_dict)
+                lmipd_reg = self._apply_game(lmipds)
+                lmipd_terms.append(lmipd_reg["total_reg"])
+
+            losses["lmipd"] = torch.stack(lmipd_terms).mean()
+            losses["contrastive"] = self._compute_contrastive_term(h_cls_text, h_cls_image, label)
+
+        preds = {"combined": logits, "c": logits_text, "g": logits_image}
+        features = {"combined": h_cls, "c": h_cls_text, "g": h_cls_image}
+
+        out = {"preds": preds, "features": features, "losses": losses}
+        if permutation_importance is not None:
+            out["permutation_importance"] = permutation_importance
+
+        # ── Generation (optional) ─────────────────────────────────────
+        do_generate = kwargs.get("do_generate", False)
         if do_generate:
-            # For debugging labels, deterministic decode is usually best
             max_new_tokens = int(kwargs.get("gen_max_new_tokens", 128))
             min_new_tokens = int(kwargs.get("gen_min_new_tokens", 10))
             do_sample = bool(kwargs.get("gen_do_sample", False))
@@ -7623,12 +7753,9 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
                 skip_special_tokens=True,
                 clean_up_tokenization_spaces=False,
             )
-
             for i in gen_texts:
                 print("---------")
                 print(i)
-        out = {"preds": preds, "features": features, "losses": losses}
-        if gen_texts is not None:
             out["generated_text"] = gen_texts
 
         return out

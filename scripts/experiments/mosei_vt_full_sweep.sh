@@ -249,31 +249,31 @@ fi
 #   print_top3 "${D}"
 # fi
 
-if [[ "${RUN_ENS}" == "1" ]]; then
-  section "Ensemble"
-  D="${TMPDIR_SWEEP}/ens"; mkdir -p "${D}"
-  parse_and_track "${D}" "lr=${METHOD_LR} wd=${METHOD_WD}" \
-    --config "${SYN_DIR}/ens.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}"
-  print_top3 "${D}"
-fi
+# if [[ "${RUN_ENS}" == "1" ]]; then
+#   section "Ensemble"
+#   D="${TMPDIR_SWEEP}/ens"; mkdir -p "${D}"
+#   parse_and_track "${D}" "lr=${METHOD_LR} wd=${METHOD_WD}" \
+#     --config "${SYN_DIR}/ens.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}"
+#   print_top3 "${D}"
+# fi
 
-if [[ "${RUN_JOINT}" == "1" ]]; then
-  section "Joint Training"
-  D="${TMPDIR_SWEEP}/joint_training"; mkdir -p "${D}"
-  parse_and_track "${D}" "lr=${METHOD_LR} wd=${METHOD_WD}" \
-    --config "${SYN_DIR}/joint_training.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}"
-  print_top3 "${D}"
-fi
+# if [[ "${RUN_JOINT}" == "1" ]]; then
+#   section "Joint Training"
+#   D="${TMPDIR_SWEEP}/joint_training"; mkdir -p "${D}"
+#   parse_and_track "${D}" "lr=${METHOD_LR} wd=${METHOD_WD}" \
+#     --config "${SYN_DIR}/joint_training.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}"
+#   print_top3 "${D}"
+# fi
 
-if [[ "${RUN_SYNPROM_RMASK}" == "1" ]]; then
-  section "SynProm RMask (l sweep)"
-  D="${TMPDIR_SWEEP}/synprom_rmask"; mkdir -p "${D}"
-  for l in "${RMASK_LS[@]}"; do
-    parse_and_track "${D}" "l=${l}" \
-      --config "${SYN_DIR}/synprom_RMask.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --l "${l}"
-  done
-  print_top3 "${D}"
-fi
+# if [[ "${RUN_SYNPROM_RMASK}" == "1" ]]; then
+#   section "SynProm RMask (l sweep)"
+#   D="${TMPDIR_SWEEP}/synprom_rmask"; mkdir -p "${D}"
+#   for l in "${RMASK_LS[@]}"; do
+#     parse_and_track "${D}" "l=${l}" \
+#       --config "${SYN_DIR}/synprom_RMask.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --l "${l}"
+#   done
+#   print_top3 "${D}"
+# fi
 
 if [[ "${RUN_SYNPROM_LEARNED}" == "1" ]]; then
   section "SynProm Learned (l x lsparse sweep)"
@@ -281,7 +281,7 @@ if [[ "${RUN_SYNPROM_LEARNED}" == "1" ]]; then
   for l in "${RMASK_LEARNED_LS[@]}"; do
     for lsparse in "${RMASK_LEARNED_LSPARSES[@]}"; do
       parse_and_track "${D}" "l=${l} lsparse=${lsparse}" \
-        --config "${SYN_DIR}/synprom_RMask.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+        --config "${SYN_DIR}/synprom_RMask_nopre.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
         --l "${l}" --perturb learned --perturn learned --perturb_fill ema --perturb_lsparse "${lsparse}"
     done
   done
@@ -294,7 +294,7 @@ if [[ "${RUN_SYNPROM_RANDOM}" == "1" ]]; then
   for l in "${RMASK_RANDOM_LS[@]}"; do
     for pmin in "${RMASK_RANDOM_PMINS[@]}"; do
       parse_and_track "${D}" "l=${l} pmin=${pmin}" \
-        --config "${SYN_DIR}/synprom_RMask.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+        --config "${SYN_DIR}/synprom_RMask_nopre.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
         --l "${l}" --perturb random --perturn random --perturb_fill ema --perturb_pmin "${pmin}"
     done
   done

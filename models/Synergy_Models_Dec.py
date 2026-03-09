@@ -7339,9 +7339,15 @@ class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFas
 
                 logits = run_logits(ie, image_mask, deep_stack_viz)
                 ce      = F.cross_entropy(logits, label)
-                obj     = (-ce) + lsparse * (1.0 - g1).mean()
+                sparsity = (1.0 - g1).mean()
+                obj     = (-ce) + lsparse * sparsity
                 opt1.zero_grad(set_to_none=True)
                 obj.backward()
+                with torch.no_grad():
+                    gn = ell1.grad.norm().item() if ell1.grad is not None else float("nan")
+                    print(f"  [hint step {step:02d}] ce={ce.item():.4f}  sparsity={sparsity.item():.4f}"
+                          f"  obj={obj.item():.4f}  ell=[{ell1.min().item():.3f},{ell1.max().item():.3f}]"
+                          f"  g mean={g1.mean().item():.3f} std={g1.std().item():.4f}  grad_norm={gn:.4f}")
                 opt1.step()
 
             m1_keep_gate = torch.sigmoid(ell1 / tau).detach()
@@ -7385,9 +7391,15 @@ class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFas
 
                 logits = run_logits(ie, image_mask, this_dsv)
                 ce      = F.cross_entropy(logits, label)
-                obj     = (-ce) + lsparse * (1.0 - g2).mean()
+                sparsity = (1.0 - g2).mean()
+                obj     = (-ce) + lsparse * sparsity
                 opt2.zero_grad(set_to_none=True)
                 obj.backward()
+                with torch.no_grad():
+                    gn = ell2.grad.norm().item() if ell2.grad is not None else float("nan")
+                    print(f"  [image step {step:02d}] ce={ce.item():.4f}  sparsity={sparsity.item():.4f}"
+                          f"  obj={obj.item():.4f}  ell=[{ell2.min().item():.3f},{ell2.max().item():.3f}]"
+                          f"  g mean={g2.mean().item():.3f} std={g2.std().item():.4f}  grad_norm={gn:.4f}")
                 opt2.step()
 
             m2_keep_gate = torch.sigmoid(ell2 / tau).detach()

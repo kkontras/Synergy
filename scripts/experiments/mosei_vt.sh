@@ -129,69 +129,69 @@ if do_ceu; then
     --validate_with accuracy
 fi
 
-if do_methods; then
-  echo "Methods stage: lr=${METHOD_LR} wd=${METHOD_WD}"
+# if do_methods; then
+#   echo "Methods stage: lr=${METHOD_LR} wd=${METHOD_WD}"
 
-  # MCR (release) — l x multil sweep
-  for fold in "${FOLDS[@]}"; do
-    for l in "${MCR_LS[@]}"; do
-      for multil in "${MCR_MULTILS[@]}"; do
-        run_train_safe --config "${SYN_DIR}/MCR.json" --default_config "${DEFAULT_CONFIG}" \
-          --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
-          --l "${l}" --multil "${multil}" --validate_with accuracy
-      done
-    done
-  done
+#  # MCR (release) — l x multil sweep
+#   for fold in "${FOLDS[@]}"; do
+#     for l in "${MCR_LS[@]}"; do
+#       for multil in "${MCR_MULTILS[@]}"; do
+#         run_train_safe --config "${SYN_DIR}/MCR.json" --default_config "${DEFAULT_CONFIG}" \
+#           --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+#           --l "${l}" --multil "${multil}" --validate_with accuracy
+#       done
+#     done
+#   done
 
-  # MMPareto — alpha sweep
-  for fold in "${FOLDS[@]}"; do
-    for alpha in "${MMPARETO_ALPHAS[@]}"; do
-      run_train_safe --config "${SYN_DIR}/MMPareto.json" --default_config "${DEFAULT_CONFIG}" \
-        --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
-        --alpha "${alpha}" --validate_with accuracy
-    done
-  done
+#   # MMPareto — alpha sweep
+#   for fold in "${FOLDS[@]}"; do
+#     for alpha in "${MMPARETO_ALPHAS[@]}"; do
+#       run_train_safe --config "${SYN_DIR}/MMPareto.json" --default_config "${DEFAULT_CONFIG}" \
+#         --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+#         --alpha "${alpha}" --validate_with accuracy
+#     done
+#   done
 
-  # DnR — alpha x kmepoch sweep
-  for fold in "${FOLDS[@]}"; do
-    for alpha in "${DNR_ALPHAS[@]}"; do
-      for kmpe in "${DNR_KMEPOCHS[@]}"; do
-        run_train_safe --config "${SYN_DIR}/DnR.json" --default_config "${DEFAULT_CONFIG}" \
-          --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
-          --alpha "${alpha}" --kmepoch "${kmpe}" --validate_with accuracy
-      done
-    done
-  done
+#   # DnR — alpha x kmepoch sweep
+#   for fold in "${FOLDS[@]}"; do
+#     for alpha in "${DNR_ALPHAS[@]}"; do
+#       for kmpe in "${DNR_KMEPOCHS[@]}"; do
+#         run_train_safe --config "${SYN_DIR}/DnR.json" --default_config "${DEFAULT_CONFIG}" \
+#           --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+#           --alpha "${alpha}" --kmepoch "${kmpe}" --validate_with accuracy
+#       done
+#     done
+#   done
 
-  # ReconBoost — alpha x stages x w1 sweep
-  for fold in "${FOLDS[@]}"; do
-    for alpha in "${RECONBOOST_ALPHAS[@]}"; do
-      for stages in "${RECONBOOST_STAGES[@]}"; do
-        for w1 in "${RECONBOOST_W1S[@]}"; do
-          run_train_safe --config "${SYN_DIR}/ReconBoost.json" --default_config "${DEFAULT_CONFIG}" \
-            --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
-            --alpha "${alpha}" \
-            --recon_weight1 "${w1}" --recon_weight2 1 \
-            --recon_epochstages "${stages}" --recon_ensemblestages "${stages}" \
-            --validate_with accuracy
-        done
-      done
-    done
-  done
+#   # ReconBoost — alpha x stages x w1 sweep
+#   for fold in "${FOLDS[@]}"; do
+#     for alpha in "${RECONBOOST_ALPHAS[@]}"; do
+#       for stages in "${RECONBOOST_STAGES[@]}"; do
+#         for w1 in "${RECONBOOST_W1S[@]}"; do
+#           run_train_safe --config "${SYN_DIR}/ReconBoost.json" --default_config "${DEFAULT_CONFIG}" \
+#             --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+#             --alpha "${alpha}" \
+#             --recon_weight1 "${w1}" --recon_weight2 1 \
+#             --recon_epochstages "${stages}" --recon_ensemblestages "${stages}" \
+#             --validate_with accuracy
+#         done
+#       done
+#     done
+#   done
 
-  # Ensemble — fixed lr/wd
-  for fold in "${FOLDS[@]}"; do
-    run_train_safe --config "${SYN_DIR}/ens.json" --default_config "${DEFAULT_CONFIG}" \
-      --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --validate_with accuracy
-  done
+#   # Ensemble — fixed lr/wd
+#   for fold in "${FOLDS[@]}"; do
+#     run_train_safe --config "${SYN_DIR}/ens.json" --default_config "${DEFAULT_CONFIG}" \
+#       --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --validate_with accuracy
+#   done
 
-  # Joint Training — fixed lr/wd
-  for fold in "${FOLDS[@]}"; do
-    run_train_safe --config "${SYN_DIR}/joint_training.json" --default_config "${DEFAULT_CONFIG}" \
-      --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --validate_with accuracy
-  done
+#   # Joint Training — fixed lr/wd
+#   for fold in "${FOLDS[@]}"; do
+#     run_train_safe --config "${SYN_DIR}/joint_training.json" --default_config "${DEFAULT_CONFIG}" \
+#       --fold "${fold}" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --validate_with accuracy
+#   done
 
-fi
+# fi
 
 if do_rmask; then
   echo "RMask stage: lr=${METHOD_LR} wd=${METHOD_WD}"
@@ -248,3 +248,13 @@ if do_rmask; then
     done
   fi
 fi
+
+
+
+SYN_DIR="./configs/FactorCL/Mosei/syn/VT"
+fold=0
+lr=0.001
+wd=0.001
+pmin=0.5
+l=0.1
+python scripts/entrypoints/train.py --config "${SYN_DIR}/synprom_RMask_nopre.json" --default_config "${DEFAULT_CONFIG}" --fold "${fold}" --lr "${lr}" --wd "${wd}" --l "${l}" --perturb random --perturb_fill ema --perturb_pmin "${pmin}" --validate_with accuracy

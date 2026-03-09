@@ -66,3 +66,15 @@ for SPLIT in train validation test; do
 done
 
 echo "All splits done. Cache at ${CACHE_OUT}"
+
+
+
+CUDA_VISIBLE_DEVICES=1 python -u scripts/entrypoints/train.py --config ./configs/ESNLI/full_lora.json --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 8 
+CUDA_VISIBLE_DEVICES=2 python -u scripts/entrypoints/train.py --config ./configs/ESNLI/full_image_lora.json --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 8 
+CUDA_VISIBLE_DEVICES=6 python -u scripts/entrypoints/train.py --config ./configs/ESNLI/full_text_lora.json --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 8 
+CUDA_VISIBLE_DEVICES=7 python -u scripts/entrypoints/train.py --config ./configs/ESNLI/full_image_frozen.json --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 8 
+CUDA_VISIBLE_DEVICES=0 python -u scripts/entrypoints/train.py --config ./configs/ESNLI/full_mcr.json --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 8 
+CUDA_VISIBLE_DEVICES=0 python -u scripts/entrypoints/train.py --config ./configs/ESNLI/full_mmpareto.json --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 8 
+CUDA_VISIBLE_DEVICES=0 python -u scripts/entrypoints/train.py --config ./configs/ESNLI/full_dnr.json --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 8 
+CUDA_VISIBLE_DEVICES=0 python -u scripts/entrypoints/train.py --config ./configs/ESNLI/full_reconboost.json --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 8 
+CUDA_VISIBLE_DEVICES=0 python -u scripts/entrypoints/train.py --config ./configs/ESNLI/full_rmask.json --default_config ./configs/ESNLI/default_config_esnli_cache_mib.json --fold 0 --lr 0.0001 --wd 0.0001 --batch_size 8 

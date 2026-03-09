@@ -10,11 +10,19 @@
       "norm_decision": false,
       "bias_infusion": {},
       "multi_loss": {
-        "multi_supervised_w": { "combined": 1, "c": 1, "g": 1 }
+        "multi_supervised_w": {
+          "combined": 1,
+          "c": 1,
+          "g": 1
+        }
       }
     },
     "load_ongoing": false,
     "save_dir": "SynIB_RMask_fold{}.pth.tar",
+    "ceu": {
+      "val": "./artifacts/ceus/mosei/mosei_ceu_val.pkl",
+      "test": "./artifacts/ceus/mosei/mosei_ceu_test.pkl"
+    },
     "encoders": [
       {
         "model": "FactorCL_Uni",
@@ -23,7 +31,8 @@
           "hidden_size": 40,
           "modality": "c",
           "num_classes": 2,
-          "freeze_encoder": false},
+          "freeze_encoder": false
+        },
         "pretrainedEncoder": {
           "use": true,
           "dir": "unimodal_video_fold{}_vldaccuracy_lr0.001_wd0.001.pth.tar"
@@ -36,25 +45,12 @@
           "hidden_size": 40,
           "modality": "g",
           "num_classes": 2,
-          "freeze_encoder": false},
+          "freeze_encoder": false
+        },
         "pretrainedEncoder": {
           "use": true,
           "dir": "unimodal_text_fold{}_vldaccuracy_lr0.0005_wd0.001.pth.tar"
         }
-      },
-      {
-        "name": "enc_2_fusion_trunk",
-        "model": "FusionTrunkLinear",
-        "args": { "d_model": 35, "fc_inner": 64, "dropout": 0.1, "freeze_encoder": false },
-        "pretrainedEncoder": { "use": false, "dir": "enc_2_fusion_trunk_fold{}.pth.tar" },
-        "save_encoder": false
-      },
-      {
-        "name": "enc_3_fusion_head",
-        "model": "LinearHead",
-        "args": { "in_dim": 64, "num_classes": 2, "freeze_encoder": false },
-        "pretrainedEncoder": { "use": false, "dir": "enc_3_fusion_head_fold{}.pth.tar" },
-        "save_encoder": false
       }
     ]
   }

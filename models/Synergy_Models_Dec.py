@@ -7299,7 +7299,7 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
         self.enc_0 = encs[0]
 
         bi = getattr(args, "bias_infusion", {}) or {}
-        self.mcr_enabled     = bi.get("l", 0) == 0
+        self.mcr_enabled     = bi.get("l", 0) != 0
         self.mcr_l           = float(bi.get("l", 0.1))
         self.mcr_num_samples = int(bi.get("num_samples", 1))
         self._mcr_step       = 0   # alternates sv / sa each forward call

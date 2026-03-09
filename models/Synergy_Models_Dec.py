@@ -7306,6 +7306,10 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
         self.mcr_contr_coeff = float(bi.get("contr_coeff", 0.0))
         self.mcr_temperature = float(bi.get("temperature", 0.1))
         self.mcr_contr_type  = str(bi.get("contr_type", "label"))
+        self.mcr_regby       = str(bi.get("regby", "greedy")).lower()
+        if self.mcr_regby not in {"greedy", "colab"}:
+            warnings.warn(f"Unsupported regby='{self.mcr_regby}', defaulting to 'greedy'")
+            self.mcr_regby = "greedy"
 
         self._apply_lora()
         self._load_cls_embedding()
@@ -7622,30 +7626,58 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
             losses["ce_loss_g"] = self._mc_ce_loss(logits_image, label)
 
         # ── MCR block ───────────────────────────────────────────────────
-        # Direct LMIPD: maximize JSD(base, shuffled) for one modality per step.
-        # Alternates sv (shuffle vision) / sa (shuffle text) every forward call
-        # so each step pays only 1 extra LM pass instead of 2.
-        # No game / detach variants — they degenerate with a shared LM because
-        # all gradient paths update the same LoRA weights.
         permutation_importance = None
         if self.training and self.mcr_enabled and label is not None:
             B = input_embeds.shape[0]
-            shuffle_mode = "sv" if self._mcr_step % 2 == 0 else "sa"
+            step_even = (self._mcr_step % 2 == 0)
             self._mcr_step += 1
 
             lmipd_terms = []
+            base_acc = (logits.argmax(1) == label).float().mean() + 1e-8
             for perm in self._random_shuffles(B, self.mcr_num_samples):
                 perm = perm.to(device)
-                if shuffle_mode == "sv":
-                    sh_embeds = self._build_sv_embeds(input_embeds, image_mask_bool, perm)
-                    sh_deep   = self._shuffle_deepstack(deep_stack_viz, perm, B)
-                    _, logits_sh = self._lm_forward(sh_embeds, attention_mask, position_ids, image_mask_bool, sh_deep, input_ids)
-                else:
-                    sh_embeds = self._build_sa_embeds(input_embeds, hint_mask, perm)
-                    _, logits_sh = self._lm_forward(sh_embeds, attention_mask, position_ids, image_mask_bool, deep_stack_viz, input_ids)
 
-                lmipd_loss, permutation_importance = self._compute_lmipd(logits, logits_sh, label, shuffle_mode)
-                lmipd_terms.append(lmipd_loss)
+                if self.mcr_regby == "greedy":
+                    if step_even:
+                        # even steps: optimize SA term only
+                        sa_embeds = self._build_sa_embeds(input_embeds, hint_mask, perm)
+                        _, logits_sa = self._lm_forward(
+                            sa_embeds, attention_mask, position_ids, image_mask_bool, deep_stack_viz, input_ids
+                        )
+                        jsd_sa = self._jsd(logits, logits_sa)
+                        lmipd_terms.append(-self.mcr_l * jsd_sa)
+                        sa_acc = (logits_sa.argmax(1) == label).float().mean()
+                        permutation_importance = {"enc_0": sa_acc / base_acc, "enc_1": None}
+                    else:
+                        # odd steps: optimize SV term only
+                        sv_embeds = self._build_sv_embeds(input_embeds, image_mask_bool, perm)
+                        sv_deep = self._shuffle_deepstack(deep_stack_viz, perm, B)
+                        _, logits_sv = self._lm_forward(
+                            sv_embeds, attention_mask, position_ids, image_mask_bool, sv_deep, input_ids
+                        )
+                        jsd_sv = self._jsd(logits, logits_sv)
+                        lmipd_terms.append(-self.mcr_l * jsd_sv)
+                        sv_acc = (logits_sv.argmax(1) == label).float().mean()
+                        permutation_importance = {"enc_0": None, "enc_1": sv_acc / base_acc}
+                else:
+                    # colab: optimize both terms each step
+                    sa_embeds = self._build_sa_embeds(input_embeds, hint_mask, perm)
+                    _, logits_sa = self._lm_forward(
+                        sa_embeds, attention_mask, position_ids, image_mask_bool, deep_stack_viz, input_ids
+                    )
+                    jsd_sa = self._jsd(logits, logits_sa)
+
+                    sv_embeds = self._build_sv_embeds(input_embeds, image_mask_bool, perm)
+                    sv_deep = self._shuffle_deepstack(deep_stack_viz, perm, B)
+                    _, logits_sv = self._lm_forward(
+                        sv_embeds, attention_mask, position_ids, image_mask_bool, sv_deep, input_ids
+                    )
+                    jsd_sv = self._jsd(logits, logits_sv)
+
+                    lmipd_terms.append(-self.mcr_l * (jsd_sa + jsd_sv))
+                    sa_acc = (logits_sa.argmax(1) == label).float().mean()
+                    sv_acc = (logits_sv.argmax(1) == label).float().mean()
+                    permutation_importance = {"enc_0": sa_acc / base_acc, "enc_1": sv_acc / base_acc}
 
             losses["lmipd"] = torch.stack(lmipd_terms).mean()
             losses["contrastive"] = self._compute_contrastive_term(h_cls_text, h_cls_image, label)

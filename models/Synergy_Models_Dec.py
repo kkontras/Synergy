@@ -7311,6 +7311,8 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
             warnings.warn(f"Unsupported regby='{self.mcr_regby}', defaulting to 'greedy'")
             self.mcr_regby = "greedy"
 
+        print(self.bi)
+
         self._apply_lora()
         self._load_cls_embedding()
         self._setup_trainables()

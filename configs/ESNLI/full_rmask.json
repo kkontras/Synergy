@@ -39,7 +39,7 @@
         "type": "rand",
         "steps": 5,
         "lr": 0.1,
-        "tau": 0.3,
+        "tau": 1.0,
         "lsparse": 1.0,
         "noise_std": 1.0
       },

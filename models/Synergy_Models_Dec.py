@@ -7296,7 +7296,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFas
         device = proc["input_embeds"].device
         pcfg = self.args.get("perturb", {}) if isinstance(self.args, dict) else getattr(self.args, "perturb", {})
         steps        = int(pcfg.get("steps",      5))
-        lr           = float(pcfg.get("lr",        1e-1))
+        lr           = float(pcfg.get("lr",        5e-1))
         tau          = float(pcfg.get("tau",        0.3))
         lsparse      = float(pcfg.get("lsparse",   1.0))
         noise_std    = float(pcfg.get("noise_std", 1.0))

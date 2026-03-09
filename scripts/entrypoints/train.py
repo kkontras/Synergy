@@ -184,6 +184,11 @@ def main(config_path, default_config_path, args):
             config.model.args.perturb = {}
         config.model.args.perturb.lsparse = args.perturb_lsparse
         m += "_lsparse{}".format(args.perturb_lsparse)
+    if "perturb_steps" in args and args.perturb_steps is not None:
+        if not hasattr(config.model.args, "perturb"):
+            config.model.args.perturb = {}
+        config.model.args.perturb.steps = int(args.perturb_steps)
+        m += "_steps{}".format(args.perturb_steps)
     if "perturb_pmax" in args and args.perturb_pmax is not None:
         if not hasattr(config.model.args, "perturb"):
             config.model.args.perturb = {}
@@ -301,6 +306,7 @@ parser.add_argument('--perturb_fill', required=False, help="Fill for mask type p
 parser.add_argument('--perturb_pmax', required=False, help="Fill for mask type perturbation of MCR", default=None)
 parser.add_argument('--perturb_pmin', required=False, help="Fill for mask type perturbation of MCR", default=None)
 parser.add_argument('--perturb_lsparse', required=False, help="Fill for mask type perturbation of MCR", default=None)
+parser.add_argument('--perturb_steps', required=False, help="Inner optimisation steps for learned mask perturbation", default=None)
 parser.add_argument('--pre', action='store_true')
 parser.add_argument('--frozen', action='store_true')
 parser.add_argument('--tdqm_disable', action='store_true')

@@ -7258,6 +7258,303 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
             synergy_losses = self.synib.compute_training_losses(out, **kwargs)
             out["losses"].update(synergy_losses)
         return out
+
+
+class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFaster):
+    """
+    RMask variant of SynIBFaster.
+
+    Pass 0: same random-p noise augmentation as parent (via _random_masks_randomp).
+    Pass 1 (text-only view):
+        - rand:    ALL image tokens hard-suppressed with EMA noise; hint tokens kept clean.
+        - learned: learned keep-gate over hint tokens + ALL image tokens hard-suppressed.
+    Pass 2 (image-only view):
+        - rand:    ALL hint tokens hard-suppressed with EMA noise; image tokens kept clean.
+        - learned: ALL hint tokens hard-suppressed + learned keep-gate over image tokens.
+    """
+
+    # ------------------------------------------------------------------
+    # helpers
+    # ------------------------------------------------------------------
+
+    def _learned_masks_rmask(self, m1, m2, proc, label, **kwargs):
+        """
+        Cross-isolated learned mask optimisation.
+
+        For pass 1 (hint gate):
+          - optimise keep-gate over m1 (hint) tokens
+          - hard-suppress ALL m2 (image) tokens during inner loop
+
+        For pass 2 (image gate):
+          - hard-suppress ALL m1 (hint) tokens during inner loop
+          - optimise keep-gate over m2 (image) tokens
+
+        Returns:
+          m1_keep_gate : float tensor of shape (N_hint_eligible,) in [0,1]
+          m2_keep_gate : float tensor of shape (N_image_eligible,) in [0,1]
+        """
+        device = proc["input_embeds"].device
+        pcfg = self.args.get("perturb", {}) if isinstance(self.args, dict) else getattr(self.args, "perturb", {})
+        steps        = int(pcfg.get("steps",      5))
+        lr           = float(pcfg.get("lr",        1e-1))
+        tau          = float(pcfg.get("tau",        0.3))
+        lsparse      = float(pcfg.get("lsparse",   1.0))
+        noise_std    = float(pcfg.get("noise_std", 1.0))
+
+        input_ids    = proc["input_ids"]
+        position_ids = proc["position_ids"]
+        attention_mask = proc["attention_mask"]
+        input_embeds = proc["input_embeds"]
+        image_mask   = proc["image_mask"]
+        deep_stack_viz = proc["deep_stack_viz"]
+
+        def run_logits(ie, im, dsv):
+            hidden  = self._encode_from_inputs_embeds(position_ids, ie, im, dsv, attention_mask)
+            h_cls   = self._get_cls_token_repr(hidden, input_ids).to(self.enc_0.linear.weight.dtype)
+            return self.enc_0(h_cls)
+
+        # Freeze backbone+head while we optimise the gates
+        req = [p.requires_grad for p in self.parameters()]
+        for p in self.parameters():
+            p.requires_grad_(False)
+
+        try:
+            # ----------------------------------------------------------
+            # Pass 1: learn keep-gate over hint (m1), hard-suppress image (m2)
+            # ----------------------------------------------------------
+            n_m1 = int(m1.sum().item())
+            ell1 = torch.full((n_m1,), 1.0, device=device, dtype=torch.float32, requires_grad=True)
+            opt1 = torch.optim.Adam([ell1], lr=lr)
+
+            for step in range(steps):
+                g1 = torch.sigmoid(ell1 / tau).clamp(0, 1)
+                ie = input_embeds.clone()
+                g1_emb = g1.to(ie.dtype)
+                # learned gate over hint tokens
+                ie[m1] = (ie[m1] * g1_emb.unsqueeze(-1)
+                          + (1 - g1_emb.unsqueeze(-1))
+                          * self.synib.z1_stats.noise_like(ie[m1], noise_std).to(ie.dtype))
+                # hard-suppress ALL image tokens
+                ie[m2] = self.synib.z2_stats.noise_like(ie[m2], noise_std).to(ie.dtype)
+
+                logits = run_logits(ie, image_mask, deep_stack_viz)
+                ce      = F.cross_entropy(logits, label)
+                obj     = (-ce) + lsparse * (1.0 - g1).mean()
+                opt1.zero_grad(set_to_none=True)
+                obj.backward()
+                opt1.step()
+
+            m1_keep_gate = torch.sigmoid(ell1 / tau).detach()
+            with torch.no_grad():
+                kept_pct = 100.0 * m1_keep_gate.mean().item()
+                print(f"[RMask-learned hint] "
+                      f"kept={kept_pct:.1f}%  masked(noised)={100.0-kept_pct:.1f}%  "
+                      f"gate min={m1_keep_gate.min():.3f} max={m1_keep_gate.max():.3f} "
+                      f"mean={m1_keep_gate.mean():.3f} std={m1_keep_gate.std():.3f}")
+
+            # ----------------------------------------------------------
+            # Pass 2: hard-suppress hint (m1), learn keep-gate over image (m2)
+            # ----------------------------------------------------------
+            n_m2 = int(m2.sum().item())
+            ell2 = torch.full((n_m2,), 1.0, device=device, dtype=torch.float32, requires_grad=True)
+            opt2 = torch.optim.Adam([ell2], lr=lr)
+
+            # deep-stack has the same number of image positions as m2 is True
+            n_img_pos = int(image_mask.sum().item())  # total image positions across batch
+
+            for step in range(steps):
+                g2 = torch.sigmoid(ell2 / tau).clamp(0, 1)
+                ie = input_embeds.clone()
+                g2_emb = g2.to(ie.dtype)
+                # hard-suppress ALL hint tokens
+                ie[m1] = self.synib.z1_stats.noise_like(ie[m1], noise_std).to(ie.dtype)
+                # learned gate over image tokens
+                ie[m2] = (ie[m2] * g2_emb.unsqueeze(-1)
+                          + (1 - g2_emb.unsqueeze(-1))
+                          * self.synib.z2_stats.noise_like(ie[m2], noise_std).to(ie.dtype))
+
+                # gate the deepstack as well
+                this_dsv = []
+                for di in range(len(deep_stack_viz)):
+                    dsv_i = deep_stack_viz[di].clone()
+                    # deep_stack_viz[di] has shape [n_img_pos, hidden] — same ordering as image_mask==True
+                    dsv_i = (dsv_i * g2_emb.unsqueeze(-1)
+                             + (1 - g2_emb.unsqueeze(-1))
+                             * self.synib.z2_deepstack_stats[di].noise_like(dsv_i, noise_std).to(dsv_i.dtype))
+                    this_dsv.append(dsv_i)
+
+                logits = run_logits(ie, image_mask, this_dsv)
+                ce      = F.cross_entropy(logits, label)
+                obj     = (-ce) + lsparse * (1.0 - g2).mean()
+                opt2.zero_grad(set_to_none=True)
+                obj.backward()
+                opt2.step()
+
+            m2_keep_gate = torch.sigmoid(ell2 / tau).detach()
+            with torch.no_grad():
+                kept_pct = 100.0 * m2_keep_gate.mean().item()
+                print(f"[RMask-learned image] "
+                      f"kept={kept_pct:.1f}%  masked(noised)={100.0-kept_pct:.1f}%  "
+                      f"gate min={m2_keep_gate.min():.3f} max={m2_keep_gate.max():.3f} "
+                      f"mean={m2_keep_gate.mean():.3f} std={m2_keep_gate.std():.3f}")
+
+        finally:
+            for p, r in zip(self.parameters(), req):
+                p.requires_grad_(r)
+
+        return m1_keep_gate, m2_keep_gate
+
+    # ------------------------------------------------------------------
+    # main override
+    # ------------------------------------------------------------------
+
+    def _compute_logits_synib_from_proc(self, x, **kwargs):
+        proc   = x
+        device = self.backbone.device
+
+        input_ids      = proc["input_ids"].to(device)
+        attention_mask = proc["attention_mask"].to(device)
+        if "image_mask" in proc:
+            image_mask = proc["image_mask"].to(device)
+        elif "visual_pos_masks" in proc:
+            image_mask = proc["visual_pos_masks"].to(device)
+        input_embeds   = proc["input_embeds"].to(device)
+        position_ids   = proc["position_ids"].to(device)
+        deep_stack_viz = proc["deepstack_visual_embeds"].to(device)
+        deep_stack_viz = [deep_stack_viz[i] for i in range(len(deep_stack_viz))]
+
+        m1 = proc.get("hint_mask", None)
+        m2 = proc.get("visual_pos_masks", None)
+        if m1 is None or m2 is None:
+            raise KeyError("Need proc['hint_mask'] and proc['visual_pos_masks'] for RMask mode.")
+        m1 = m1.to(device).bool()
+        m2 = m2.to(device).bool()
+
+        # EMA updates (same as parent)
+        self.synib.z1_stats.ema_update(proc["input_embeds"][m1])
+        self.synib.z2_stats.ema_update(proc["input_embeds"][m2])
+        for i in range(len(proc["deepstack_visual_embeds"])):
+            self.synib.z2_deepstack_stats[i].ema_update(proc["deepstack_visual_embeds"][i])
+
+        perturb_type = self.args.get("perturb", {}).get("type", "rand") if isinstance(self.args, dict) \
+            else getattr(self.args, "perturb", {}).get("type", "rand")
+
+        # ------------------------------------------------------------------
+        # Pass 0: random-p noise augmentation (unchanged from parent)
+        # ------------------------------------------------------------------
+        m1forw, m2forw = self.synib._random_masks_randomp(m1, m2, True, True)
+
+        # ------------------------------------------------------------------
+        # Pass 1 / Pass 2 embeddings
+        # ------------------------------------------------------------------
+        if perturb_type == "rand":
+            # Pass 1 (text-only): ALL image tokens → EMA noise; hint tokens kept clean
+            this_embed_1 = input_embeds.clone()
+            this_embed_1[m2] = self.synib.z2_stats.noise_like(input_embeds[m2], 1.0).to(this_embed_1.dtype)
+
+            # Pass 2 (image-only): ALL hint tokens → EMA noise; image tokens kept clean
+            this_embed_2 = input_embeds.clone()
+            this_embed_2[m1] = self.synib.z1_stats.noise_like(input_embeds[m1], 1.0).to(this_embed_2.dtype)
+
+            # deepstack for pass 2 is clean (hint tokens are noised in embeds, image is clean)
+            deep_stack_viz_pass2 = deep_stack_viz
+
+        elif perturb_type == "learned":
+            label = kwargs.get("label", None)
+            proc_inner = {
+                "input_ids":      input_ids,
+                "position_ids":   position_ids,
+                "input_embeds":   input_embeds,
+                "image_mask":     image_mask,
+                "deep_stack_viz": deep_stack_viz,
+                "attention_mask": attention_mask,
+            }
+            m1_keep_gate, m2_keep_gate = self._learned_masks_rmask(m1, m2, proc_inner, label, **kwargs)
+
+            m1_keep = m1_keep_gate.to(input_embeds.dtype)
+            m2_keep = m2_keep_gate.to(input_embeds.dtype)
+
+            # Pass 1 (text-only with learned hint gate):
+            this_embed_1 = input_embeds.clone()
+            this_embed_1[m1] = (input_embeds[m1] * m1_keep.unsqueeze(1)
+                                + (1 - m1_keep.unsqueeze(1))
+                                * self.synib.z1_stats.noise_like(input_embeds[m1], 1.0).to(this_embed_1.dtype))
+            this_embed_1[m2] = self.synib.z2_stats.noise_like(input_embeds[m2], 1.0).to(this_embed_1.dtype)
+
+            # Pass 2 (image-only with learned image gate):
+            this_embed_2 = input_embeds.clone()
+            this_embed_2[m1] = self.synib.z1_stats.noise_like(input_embeds[m1], 1.0).to(this_embed_2.dtype)
+            this_embed_2[m2] = (input_embeds[m2] * m2_keep.unsqueeze(1)
+                                + (1 - m2_keep.unsqueeze(1))
+                                * self.synib.z2_stats.noise_like(input_embeds[m2], 1.0).to(this_embed_2.dtype))
+
+            # deepstack for pass 2 gated by m2_keep
+            deep_stack_viz_pass2 = []
+            for di in range(len(deep_stack_viz)):
+                dsv_i = deep_stack_viz[di].clone()
+                dsv_i = (dsv_i * m2_keep.unsqueeze(1)
+                         + (1 - m2_keep.unsqueeze(1))
+                         * self.synib.z2_deepstack_stats[di].noise_like(dsv_i, 1.0).to(dsv_i.dtype))
+                deep_stack_viz_pass2.append(dsv_i)
+
+        else:
+            raise ValueError(f"Unknown perturb.type: {perturb_type!r}")
+
+        # ------------------------------------------------------------------
+        # Pass 0 embedding (random-p, same as parent)
+        # ------------------------------------------------------------------
+        this_embed_0 = input_embeds.clone()
+        if (m1 != m1forw).any():
+            m1forw = m1forw.to(this_embed_0.dtype)
+            this_embed_0[m1] = (this_embed_0[m1] * m1forw[m1].unsqueeze(1)
+                                + (1 - m1forw[m1].unsqueeze(1))
+                                * self.synib.z1_stats.noise_like(this_embed_0[m1], 1.0).to(this_embed_0.dtype))
+        if (m2 != m2forw).any():
+            m2forw = m2forw.to(this_embed_0.dtype)
+            this_embed_0[m2] = (this_embed_0[m2] * m2forw[m2].unsqueeze(1)
+                                + (1 - m2forw[m2].unsqueeze(1))
+                                * self.synib.z2_stats.noise_like(this_embed_0[m2], 1.0).to(this_embed_0.dtype))
+
+        # ------------------------------------------------------------------
+        # Concatenated 3-pass forward
+        # ------------------------------------------------------------------
+        k = 3
+        masks                  = torch.cat([attention_mask, attention_mask, attention_mask], dim=0)
+        position_ids_expanded  = position_ids.repeat(1, k, 1)
+        input_embeds_expanded  = torch.cat([this_embed_0, this_embed_1, this_embed_2], dim=0)
+        filter_deep_stack      = torch.cat([image_mask, image_mask, image_mask], dim=0)
+
+        deep_stack_viz_extended = []
+        for di in range(len(deep_stack_viz)):
+            deep_stack_viz_extended.append(
+                torch.cat([deep_stack_viz[di], deep_stack_viz[di],
+                           deep_stack_viz_pass2[di] if perturb_type == "learned" else deep_stack_viz[di]],
+                          dim=0)
+            )
+
+        hidden_all = self._encode_from_inputs_embeds(
+            position_ids_expanded, input_embeds_expanded,
+            filter_deep_stack, deep_stack_viz_extended, masks
+        )
+
+        ids_all      = input_ids.repeat(k, 1)
+        h_cls_all    = self._get_cls_token_repr(hidden_all, ids_all)
+        logits_all   = self.enc_0(h_cls_all)
+
+        head_logits, head_logits_0, head_logits_1 = torch.chunk(logits_all,  chunks=3, dim=0)
+        h_cls, featcls_0, featcls_1               = torch.chunk(h_cls_all,   chunks=3, dim=0)
+
+        losses = {}
+        if "label" in kwargs and kwargs["label"] is not None:
+            losses["ce_loss_combined"] = self._mc_ce_loss(head_logits, kwargs["label"])
+
+        preds    = {"combined": head_logits,  "mask0": head_logits_0, "mask1": head_logits_1}
+        features = {"combined": h_cls,        "mask0": featcls_0,     "mask1": featcls_1}
+
+        out = {"preds": preds, "features": features, "losses": losses}
+        return out
+
+
 class QwenVL_ScienceQA_Cached_MCR(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()

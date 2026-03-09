@@ -112,7 +112,7 @@ if not vals:
     print(f"  {label:<60}  MISSING")
     sys.exit(0)
 
-print(f"  {label:<60}  val={vm:5.2f}±{vs:.2f}  test={tm:5.2f}±{ts:.2f}  ceu={cm:5.2f}±{cs:.2f}")
+print(f"  {label:<60}  val={vm:5.2f}±{vs:.2f}  test={tm:5.2f}±{ts:.2f}  ceu={cm:5.3f}±{cs:.3f}")
 sys.stdout.flush()
 
 record = {"label": label, "val_mean": vm, "val_std": vs,
@@ -196,58 +196,58 @@ if [[ "${RUN_RMASK_NOPRE}" == "1" ]]; then
   print_top3 "${D}"
 fi
 
-if [[ "${RUN_MCR}" == "1" ]]; then
-  section "MCR (l x multil sweep)"
-  D="${TMPDIR_SWEEP}/MCR"; mkdir -p "${D}"
-  for l in "${MCR_LS[@]}"; do
-    for multil in "${MCR_MULTILS[@]}"; do
-      parse_and_track "${D}" "l=${l} multil=${multil}" \
-        --config "${SYN_DIR}/MCR.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
-        --l "${l}" --multil "${multil}"
-    done
-  done
-  print_top3 "${D}"
-fi
+# if [[ "${RUN_MCR}" == "1" ]]; then
+#   section "MCR (l x multil sweep)"
+#   D="${TMPDIR_SWEEP}/MCR"; mkdir -p "${D}"
+#   for l in "${MCR_LS[@]}"; do
+#     for multil in "${MCR_MULTILS[@]}"; do
+#       parse_and_track "${D}" "l=${l} multil=${multil}" \
+#         --config "${SYN_DIR}/MCR.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+#         --l "${l}" --multil "${multil}"
+#     done
+#   done
+#   print_top3 "${D}"
+# fi
 
-if [[ "${RUN_MMPARETO}" == "1" ]]; then
-  section "MMPareto (alpha sweep)"
-  D="${TMPDIR_SWEEP}/MMPareto"; mkdir -p "${D}"
-  for alpha in "${MMPARETO_ALPHAS[@]}"; do
-    parse_and_track "${D}" "alpha=${alpha}" \
-      --config "${SYN_DIR}/MMPareto.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --alpha "${alpha}"
-  done
-  print_top3 "${D}"
-fi
+# if [[ "${RUN_MMPARETO}" == "1" ]]; then
+#   section "MMPareto (alpha sweep)"
+#   D="${TMPDIR_SWEEP}/MMPareto"; mkdir -p "${D}"
+#   for alpha in "${MMPARETO_ALPHAS[@]}"; do
+#     parse_and_track "${D}" "alpha=${alpha}" \
+#       --config "${SYN_DIR}/MMPareto.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --alpha "${alpha}"
+#   done
+#   print_top3 "${D}"
+# fi
 
-if [[ "${RUN_DNR}" == "1" ]]; then
-  section "DnR (alpha x kmepoch sweep)"
-  D="${TMPDIR_SWEEP}/DnR"; mkdir -p "${D}"
-  for alpha in "${DNR_ALPHAS[@]}"; do
-    for kmpe in "${DNR_KMEPOCHS[@]}"; do
-      parse_and_track "${D}" "alpha=${alpha} kmepoch=${kmpe}" \
-        --config "${SYN_DIR}/DnR.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
-        --alpha "${alpha}" --kmepoch "${kmpe}"
-    done
-  done
-  print_top3 "${D}"
-fi
+# if [[ "${RUN_DNR}" == "1" ]]; then
+#   section "DnR (alpha x kmepoch sweep)"
+#   D="${TMPDIR_SWEEP}/DnR"; mkdir -p "${D}"
+#   for alpha in "${DNR_ALPHAS[@]}"; do
+#     for kmpe in "${DNR_KMEPOCHS[@]}"; do
+#       parse_and_track "${D}" "alpha=${alpha} kmepoch=${kmpe}" \
+#         --config "${SYN_DIR}/DnR.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+#         --alpha "${alpha}" --kmepoch "${kmpe}"
+#     done
+#   done
+#   print_top3 "${D}"
+# fi
 
-if [[ "${RUN_RECONBOOST}" == "1" ]]; then
-  section "ReconBoost (alpha x stages x w1 sweep)"
-  D="${TMPDIR_SWEEP}/ReconBoost"; mkdir -p "${D}"
-  for alpha in "${RECONBOOST_ALPHAS[@]}"; do
-    for stages in "${RECONBOOST_STAGES[@]}"; do
-      for w1 in "${RECONBOOST_W1S[@]}"; do
-        parse_and_track "${D}" "alpha=${alpha} stages=${stages} w1=${w1}" \
-          --config "${SYN_DIR}/ReconBoost.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
-          --alpha "${alpha}" \
-          --recon_weight1 "${w1}" --recon_weight2 1 \
-          --recon_epochstages "${stages}" --recon_ensemblestages "${stages}"
-      done
-    done
-  done
-  print_top3 "${D}"
-fi
+# if [[ "${RUN_RECONBOOST}" == "1" ]]; then
+#   section "ReconBoost (alpha x stages x w1 sweep)"
+#   D="${TMPDIR_SWEEP}/ReconBoost"; mkdir -p "${D}"
+#   for alpha in "${RECONBOOST_ALPHAS[@]}"; do
+#     for stages in "${RECONBOOST_STAGES[@]}"; do
+#       for w1 in "${RECONBOOST_W1S[@]}"; do
+#         parse_and_track "${D}" "alpha=${alpha} stages=${stages} w1=${w1}" \
+#           --config "${SYN_DIR}/ReconBoost.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+#           --alpha "${alpha}" \
+#           --recon_weight1 "${w1}" --recon_weight2 1 \
+#           --recon_epochstages "${stages}" --recon_ensemblestages "${stages}"
+#       done
+#     done
+#   done
+#   print_top3 "${D}"
+# fi
 
 if [[ "${RUN_ENS}" == "1" ]]; then
   section "Ensemble"

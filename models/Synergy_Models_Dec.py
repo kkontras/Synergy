@@ -7658,6 +7658,8 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
                     )
                     jsd_sv = self._jsd(logits, logits_sv)
 
+                    print(jsd_sa, jsd_sv)
+
                     lmipd_terms.append(-self.mcr_l * (jsd_sa + jsd_sv))
                     sa_acc = (logits_sa.argmax(1) == label).float().mean()
                     sv_acc = (logits_sv.argmax(1) == label).float().mean()

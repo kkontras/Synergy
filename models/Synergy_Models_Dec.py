@@ -7301,8 +7301,8 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
         bi = getattr(args, "bias_infusion", {}) or {}
         self.mcr_enabled     = bi.get("method", "false") == "MCR"
         self.mcr_l           = float(bi.get("l", 0.1))
-        self.mcr_regby       = str(bi.get("regby", "greedy"))
         self.mcr_num_samples = int(bi.get("num_samples", 1))
+        self._mcr_step       = 0   # alternates sv / sa each forward call
         self.mcr_contr_coeff = float(bi.get("contr_coeff", 0.0))
         self.mcr_temperature = float(bi.get("temperature", 0.1))
         self.mcr_contr_type  = str(bi.get("contr_type", "label"))
@@ -7518,10 +7518,16 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
             result.append(lv[perm].reshape(B * N, -1))
         return result
 
-    def _detach_at_mask(self, emb, mask_3d):
-        """Selective detach: gradient flows only through positions where mask_3d == 0.
-        emb: (B, T, d); mask_3d: (B, T, 1) float"""
-        return emb - emb * mask_3d + (emb * mask_3d).detach()
+    @staticmethod
+    def _jsd(p_logits, q_logits):
+        """Jensen-Shannon divergence between two sets of logits (batchmean)."""
+        p = F.softmax(p_logits, dim=1)
+        q = F.softmax(q_logits, dim=1)
+        m = 0.5 * (p + q)
+        return 0.5 * (
+            F.kl_div(m.log(), p, reduction="batchmean") +
+            F.kl_div(m.log(), q, reduction="batchmean")
+        )
 
     def _lm_forward(self, inputs_embeds, attn_mask, pos_ids, img_mask, dsv, input_ids):
         """Single LM forward pass → (h_cls, logits)."""
@@ -7542,78 +7548,23 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
         logits = self.enc_0(h_cls)
         return h_cls, logits
 
-    def _get_lmipds(self, preds_dict):
-        P = preds_dict
-        device = P["pred_repeated"].device
+    def _compute_lmipd(self, logits_base, logits_shuffled, label, shuffle_mode):
+        """Direct LMIPD for a shared LM: maximize JSD when one modality is shuffled.
 
-        def jsd(p, q):
-            p = F.softmax(p, dim=1)
-            q = F.softmax(q, dim=1)
-            m = 0.5 * (p + q)
-            return 0.5 * (
-                F.kl_div(m.log(), p, reduction="batchmean") +
-                F.kl_div(m.log(), q, reduction="batchmean")
-            )
-
-        def eval_side(side):
-            if side == "sa":
-                keys = ("sa_detv", "sa_deta", "sa")
-            else:
-                keys = ("sv_detv", "sv_deta", "sv")
-            if all(k in P for k in keys):
-                detv, deta, both = P[keys[0]], P[keys[1]], P[keys[2]]
-                base = P["pred_repeated"]
-                return {
-                    "enc0": jsd(detv, base),
-                    "enc1": jsd(deta, base),
-                    "all": jsd(both, base),
-                }
-            else:
-                zero = torch.tensor(0.0, device=device)
-                return {"enc0": zero, "enc1": zero, "all": zero}
-
-        sa = eval_side("sa")
-        sv = eval_side("sv")
-
-        base = P["pred_repeated"]
-        base_acc = (base.argmax(1) == P["label_repeated"]).float().mean() + 1e-8
-        acc_sa = (P["sa_detv"].argmax(1) == P["label_repeated"]).float().mean() if "sa_detv" in P else torch.tensor(0.0, device=device)
-        acc_sv = (P["sv_deta"].argmax(1) == P["label_repeated"]).float().mean() if "sv_deta" in P else torch.tensor(0.0, device=device)
-
-        permutation_importance = {
-            "enc_0": acc_sv / base_acc,
-            "enc_1": acc_sa / base_acc,
-        }
-        lmipd_out = {
-            "enc0_sa_jsd": sa["enc0"],
-            "enc1_sa_jsd": sa["enc1"],
-            "all_sa_jsd":  sa["all"],
-            "enc0_sv_jsd": sv["enc0"],
-            "enc1_sv_jsd": sv["enc1"],
-            "all_sv_jsd":  sv["all"],
-        }
-        return lmipd_out, permutation_importance
-
-    def _apply_game(self, lmipds):
-        enc0_sa = lmipds["enc0_sa_jsd"]
-        enc0_sv = lmipds["enc0_sv_jsd"]
-        enc1_sa = lmipds["enc1_sa_jsd"]
-        enc1_sv = lmipds["enc1_sv_jsd"]
-
-        if self.mcr_regby == "greedy":
-            reg0 = enc0_sa
-            reg1 = enc1_sv
-            total = self.mcr_l * (-enc0_sa + enc1_sa - enc1_sv + enc0_sv)
-        elif self.mcr_regby == "ind":
-            reg0 = enc0_sa
-            reg1 = enc1_sv
-            total = self.mcr_l * (-(enc0_sa + enc1_sv))
-        else:  # "colab"
-            reg0 = lmipds["all_sa_jsd"]
-            reg1 = lmipds["all_sv_jsd"]
-            total = self.mcr_l * (-(reg0 + reg1))
-
-        return {"total_reg": total, "reg0": reg0, "reg1": reg1}
+        shuffle_mode: "sv" (vision shuffled) or "sa" (text shuffled).
+        Returns (lmipd_loss, permutation_importance_dict).
+        lmipd_loss is negative (adding it to total loss maximises JSD).
+        """
+        base_acc = (logits_base.argmax(1) == label).float().mean() + 1e-8
+        acc_shuffled = (logits_shuffled.argmax(1) == label).float().mean()
+        importance_ratio = acc_shuffled / base_acc  # lower → that modality matters more
+        if shuffle_mode == "sv":
+            permutation_importance = {"enc_0": importance_ratio, "enc_1": None}
+        else:
+            permutation_importance = {"enc_0": None, "enc_1": importance_ratio}
+        jsd = self._jsd(logits_base, logits_shuffled)
+        lmipd_loss = -self.mcr_l * jsd
+        return lmipd_loss, permutation_importance
 
     def _compute_contrastive_term(self, h_cls_text, h_cls_image, labels):
         if not self.mcr_contr_coeff:
@@ -7671,47 +7622,30 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
             losses["ce_loss_g"] = self._mc_ce_loss(logits_image, label)
 
         # ── MCR block ───────────────────────────────────────────────────
+        # Direct LMIPD: maximize JSD(base, shuffled) for one modality per step.
+        # Alternates sv (shuffle vision) / sa (shuffle text) every forward call
+        # so each step pays only 1 extra LM pass instead of 2.
+        # No game / detach variants — they degenerate with a shared LM because
+        # all gradient paths update the same LoRA weights.
         permutation_importance = None
         if self.training and self.mcr_enabled and label is not None:
             B = input_embeds.shape[0]
-            img_mask_3d = image_mask_bool.unsqueeze(-1).to(input_embeds.dtype)
-            hint_mask_3d = hint_mask.unsqueeze(-1).to(input_embeds.dtype)
+            shuffle_mode = "sv" if self._mcr_step % 2 == 0 else "sa"
+            self._mcr_step += 1
 
             lmipd_terms = []
             for perm in self._random_shuffles(B, self.mcr_num_samples):
                 perm = perm.to(device)
+                if shuffle_mode == "sv":
+                    sh_embeds = self._build_sv_embeds(input_embeds, image_mask_bool, perm)
+                    sh_deep   = self._shuffle_deepstack(deep_stack_viz, perm, B)
+                    _, logits_sh = self._lm_forward(sh_embeds, attention_mask, position_ids, image_mask_bool, sh_deep, input_ids)
+                else:
+                    sh_embeds = self._build_sa_embeds(input_embeds, hint_mask, perm)
+                    _, logits_sh = self._lm_forward(sh_embeds, attention_mask, position_ids, image_mask_bool, deep_stack_viz, input_ids)
 
-                sv_embeds = self._build_sv_embeds(input_embeds, image_mask_bool, perm)
-                sa_embeds = self._build_sa_embeds(input_embeds, hint_mask, perm)
-                sv_deep = self._shuffle_deepstack(deep_stack_viz, perm, B)
-
-                sv_detv = self._detach_at_mask(sv_embeds, img_mask_3d)
-                sv_deta = self._detach_at_mask(sv_embeds, hint_mask_3d)
-                sa_detv = self._detach_at_mask(sa_embeds, img_mask_3d)
-                sa_deta = self._detach_at_mask(sa_embeds, hint_mask_3d)
-
-                _, logits_sv_detv = self._lm_forward(sv_detv, attention_mask, position_ids, image_mask_bool, sv_deep, input_ids)
-                _, logits_sv_deta = self._lm_forward(sv_deta, attention_mask, position_ids, image_mask_bool, sv_deep, input_ids)
-                _, logits_sv      = self._lm_forward(sv_embeds, attention_mask, position_ids, image_mask_bool, sv_deep, input_ids)
-                _, logits_sa_detv = self._lm_forward(sa_detv, attention_mask, position_ids, image_mask_bool, deep_stack_viz, input_ids)
-                _, logits_sa_deta = self._lm_forward(sa_deta, attention_mask, position_ids, image_mask_bool, deep_stack_viz, input_ids)
-                _, logits_sa      = self._lm_forward(sa_embeds, attention_mask, position_ids, image_mask_bool, deep_stack_viz, input_ids)
-
-                preds_dict = {
-                    "pred_repeated": logits,
-                    "label_repeated": label,
-                    "label_shuffled": label[perm],
-                    "sv_detv": logits_sv_detv,
-                    "sv_deta": logits_sv_deta,
-                    "sv":      logits_sv,
-                    "sa_detv": logits_sa_detv,
-                    "sa_deta": logits_sa_deta,
-                    "sa":      logits_sa,
-                }
-
-                lmipds, permutation_importance = self._get_lmipds(preds_dict)
-                lmipd_reg = self._apply_game(lmipds)
-                lmipd_terms.append(lmipd_reg["total_reg"])
+                lmipd_loss, permutation_importance = self._compute_lmipd(logits, logits_sh, label, shuffle_mode)
+                lmipd_terms.append(lmipd_loss)
 
             losses["lmipd"] = torch.stack(lmipd_terms).mean()
             losses["contrastive"] = self._compute_contrastive_term(h_cls_text, h_cls_image, label)

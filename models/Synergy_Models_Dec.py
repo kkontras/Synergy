@@ -7336,8 +7336,14 @@ class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFas
                           * self.synib.z1_stats.noise_like(ie[m1], noise_std).to(ie.dtype))
                 # hard-suppress ALL image tokens
                 ie[m2] = self.synib.z2_stats.noise_like(ie[m2], noise_std).to(ie.dtype)
+                # hard-suppress deepstack visual features as well
+                this_dsv = []
+                for di in range(len(deep_stack_viz)):
+                    dsv_i = deep_stack_viz[di].clone()
+                    dsv_i = self.synib.z2_deepstack_stats[di].noise_like(dsv_i, noise_std).to(dsv_i.dtype)
+                    this_dsv.append(dsv_i)
 
-                logits = run_logits(ie, image_mask, deep_stack_viz)
+                logits = run_logits(ie, image_mask, this_dsv)
                 ce      = F.cross_entropy(logits, label)
                 sparsity = (1.0 - g1).mean()
                 obj     = (-ce) + lsparse * sparsity
@@ -7364,9 +7370,6 @@ class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFas
             n_m2 = int(m2.sum().item())
             ell2 = torch.full((n_m2,), 1.0, device=device, dtype=torch.float32, requires_grad=True)
             opt2 = torch.optim.Adam([ell2], lr=lr)
-
-            # deep-stack has the same number of image positions as m2 is True
-            n_img_pos = int(image_mask.sum().item())  # total image positions across batch
 
             for step in range(steps):
                 g2 = torch.sigmoid(ell2 / tau).clamp(0, 1)
@@ -7463,6 +7466,10 @@ class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFas
             # Pass 1 (text-only): ALL image tokens → EMA noise; hint tokens kept clean
             this_embed_1 = input_embeds.clone()
             this_embed_1[m2] = self.synib.z2_stats.noise_like(input_embeds[m2], 1.0).to(this_embed_1.dtype)
+            deep_stack_viz_pass1 = [
+                self.synib.z2_deepstack_stats[di].noise_like(deep_stack_viz[di], 1.0).to(deep_stack_viz[di].dtype)
+                for di in range(len(deep_stack_viz))
+            ]
 
             # Pass 2 (image-only): ALL hint tokens → EMA noise; image tokens kept clean
             this_embed_2 = input_embeds.clone()
@@ -7493,6 +7500,10 @@ class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFas
                                 + (1 - m1_keep.unsqueeze(1))
                                 * self.synib.z1_stats.noise_like(input_embeds[m1], 1.0).to(this_embed_1.dtype))
             this_embed_1[m2] = self.synib.z2_stats.noise_like(input_embeds[m2], 1.0).to(this_embed_1.dtype)
+            deep_stack_viz_pass1 = [
+                self.synib.z2_deepstack_stats[di].noise_like(deep_stack_viz[di], 1.0).to(deep_stack_viz[di].dtype)
+                for di in range(len(deep_stack_viz))
+            ]
 
             # Pass 2 (image-only with learned image gate):
             this_embed_2 = input_embeds.clone()
@@ -7517,6 +7528,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFas
         # Pass 0 embedding (random-p, same as parent)
         # ------------------------------------------------------------------
         this_embed_0 = input_embeds.clone()
+        deep_stack_viz_pass0 = [deep_stack_viz[di] for di in range(len(deep_stack_viz))]
         if (m1 != m1forw).any():
             m1forw = m1forw.to(this_embed_0.dtype)
             this_embed_0[m1] = (this_embed_0[m1] * m1forw[m1].unsqueeze(1)
@@ -7527,6 +7539,16 @@ class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFas
             this_embed_0[m2] = (this_embed_0[m2] * m2forw[m2].unsqueeze(1)
                                 + (1 - m2forw[m2].unsqueeze(1))
                                 * self.synib.z2_stats.noise_like(this_embed_0[m2], 1.0).to(this_embed_0.dtype))
+            m2forw_keep = m2forw[m2].unsqueeze(1)
+            deep_stack_viz_pass0 = []
+            for di in range(len(deep_stack_viz)):
+                dsv_i = deep_stack_viz[di].clone()
+                dsv_i = (
+                    dsv_i * m2forw_keep
+                    + (1 - m2forw_keep)
+                    * self.synib.z2_deepstack_stats[di].noise_like(dsv_i, 1.0).to(dsv_i.dtype)
+                )
+                deep_stack_viz_pass0.append(dsv_i)
 
         # ------------------------------------------------------------------
         # Concatenated 3-pass forward
@@ -7540,8 +7562,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFas
         deep_stack_viz_extended = []
         for di in range(len(deep_stack_viz)):
             deep_stack_viz_extended.append(
-                torch.cat([deep_stack_viz[di], deep_stack_viz[di],
-                           deep_stack_viz_pass2[di] if perturb_type == "learned" else deep_stack_viz[di]],
+                torch.cat([deep_stack_viz_pass0[di], deep_stack_viz_pass1[di], deep_stack_viz_pass2[di]],
                           dim=0)
             )
 

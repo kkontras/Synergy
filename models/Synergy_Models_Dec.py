@@ -7469,7 +7469,8 @@ class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFas
                 "deep_stack_viz": deep_stack_viz,
                 "attention_mask": attention_mask,
             }
-            m1_keep_gate, m2_keep_gate = self._learned_masks_rmask(m1, m2, proc_inner, label, **kwargs)
+            kwargs_no_label = {k: v for k, v in kwargs.items() if k != "label"}
+            m1_keep_gate, m2_keep_gate = self._learned_masks_rmask(m1, m2, proc_inner, label, **kwargs_no_label)
 
             m1_keep = m1_keep_gate.to(input_embeds.dtype)
             m2_keep = m2_keep_gate.to(input_embeds.dtype)

@@ -174,27 +174,27 @@ section() {
   echo "============================================================"
 }
 
-if [[ "${RUN_UNIMODALS}" == "1" ]]; then
-  section "Unimodal models"
-  D="${TMPDIR_SWEEP}/unimodal"; mkdir -p "${D}"
-  parse_and_track "${D}" "text lr=0.0005 wd=0.001" \
-    --config "${SYN_DIR}/unimodal_text.json" --lr "0.0005" --wd "0.001"
-  parse_and_track "${D}" "video lr=0.001 wd=0.001" \
-    --config "${SYN_DIR}/unimodal_video.json" --lr "0.001" --wd "0.001"
-  print_top3 "${D}"
-fi
+# if [[ "${RUN_UNIMODALS}" == "1" ]]; then
+#   section "Unimodal models"
+#   D="${TMPDIR_SWEEP}/unimodal"; mkdir -p "${D}"
+#   parse_and_track "${D}" "text lr=0.0005 wd=0.001" \
+#     --config "${SYN_DIR}/unimodal_text.json" --lr "0.0005" --wd "0.001"
+#   parse_and_track "${D}" "video lr=0.001 wd=0.001" \
+#     --config "${SYN_DIR}/unimodal_video.json" --lr "0.001" --wd "0.001"
+#   print_top3 "${D}"
+# fi
 
-if [[ "${RUN_RMASK_NOPRE}" == "1" ]]; then
-  section "RMask_nopre l=0 (lr x wd sweep)"
-  D="${TMPDIR_SWEEP}/rmask_nopre"; mkdir -p "${D}"
-  for lr in "${LRS[@]}"; do
-    for wd in "${WDS[@]}"; do
-      parse_and_track "${D}" "lr=${lr} wd=${wd}" \
-        --config "${SYN_DIR}/synprom_RMask_nopre.json" --lr "${lr}" --wd "${wd}" --l 0
-    done
-  done
-  print_top3 "${D}"
-fi
+# if [[ "${RUN_RMASK_NOPRE}" == "1" ]]; then
+#   section "RMask_nopre l=0 (lr x wd sweep)"
+#   D="${TMPDIR_SWEEP}/rmask_nopre"; mkdir -p "${D}"
+#   for lr in "${LRS[@]}"; do
+#     for wd in "${WDS[@]}"; do
+#       parse_and_track "${D}" "lr=${lr} wd=${wd}" \
+#         --config "${SYN_DIR}/synprom_RMask_nopre.json" --lr "${lr}" --wd "${wd}" --l 0
+#     done
+#   done
+#   print_top3 "${D}"
+# fi
 
 # if [[ "${RUN_MCR}" == "1" ]]; then
 #   section "MCR (l x multil sweep)"
@@ -209,28 +209,28 @@ fi
 #   print_top3 "${D}"
 # fi
 
-# if [[ "${RUN_MMPARETO}" == "1" ]]; then
-#   section "MMPareto (alpha sweep)"
-#   D="${TMPDIR_SWEEP}/MMPareto"; mkdir -p "${D}"
-#   for alpha in "${MMPARETO_ALPHAS[@]}"; do
-#     parse_and_track "${D}" "alpha=${alpha}" \
-#       --config "${SYN_DIR}/MMPareto.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --alpha "${alpha}"
-#   done
-#   print_top3 "${D}"
-# fi
+if [[ "${RUN_MMPARETO}" == "1" ]]; then
+  section "MMPareto (alpha sweep)"
+  D="${TMPDIR_SWEEP}/MMPareto"; mkdir -p "${D}"
+  for alpha in "${MMPARETO_ALPHAS[@]}"; do
+    parse_and_track "${D}" "alpha=${alpha}" \
+      --config "${SYN_DIR}/MMPareto.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" --alpha "${alpha}"
+  done
+  print_top3 "${D}"
+fi
 
-# if [[ "${RUN_DNR}" == "1" ]]; then
-#   section "DnR (alpha x kmepoch sweep)"
-#   D="${TMPDIR_SWEEP}/DnR"; mkdir -p "${D}"
-#   for alpha in "${DNR_ALPHAS[@]}"; do
-#     for kmpe in "${DNR_KMEPOCHS[@]}"; do
-#       parse_and_track "${D}" "alpha=${alpha} kmepoch=${kmpe}" \
-#         --config "${SYN_DIR}/DnR.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
-#         --alpha "${alpha}" --kmepoch "${kmpe}"
-#     done
-#   done
-#   print_top3 "${D}"
-# fi
+if [[ "${RUN_DNR}" == "1" ]]; then
+  section "DnR (alpha x kmepoch sweep)"
+  D="${TMPDIR_SWEEP}/DnR"; mkdir -p "${D}"
+  for alpha in "${DNR_ALPHAS[@]}"; do
+    for kmpe in "${DNR_KMEPOCHS[@]}"; do
+      parse_and_track "${D}" "alpha=${alpha} kmepoch=${kmpe}" \
+        --config "${SYN_DIR}/DnR.json" --lr "${METHOD_LR}" --wd "${METHOD_WD}" \
+        --alpha "${alpha}" --kmepoch "${kmpe}"
+    done
+  done
+  print_top3 "${D}"
+fi
 
 # if [[ "${RUN_RECONBOOST}" == "1" ]]; then
 #   section "ReconBoost (alpha x stages x w1 sweep)"

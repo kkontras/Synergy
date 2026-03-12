@@ -35,7 +35,7 @@
         "lora_lr": 0.0002
       },
       "multi_loss": {
-        "multi_supervised_w": { "combined": 1 }
+        "multi_supervised_w": { "combined": 0 }
       }
     },
     "load_ongoing": false,

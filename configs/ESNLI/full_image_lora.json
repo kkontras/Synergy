@@ -36,7 +36,7 @@
       },
       "multi_loss": {
         "multi_supervised_w": {
-          "combined": 1
+          "combined": 0
         }
       }
     },

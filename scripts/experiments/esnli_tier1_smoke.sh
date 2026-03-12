@@ -324,7 +324,7 @@ PYEOF
       "./configs/ESNLI/full_mmpareto.json"
       "./configs/ESNLI/full_dnr.json"
       "./configs/ESNLI/full_reconboost.json"
-      "./configs/ESNLI/full_rmask.json"
+      "./configs/ESNLI/full_synib.json"
     )
   fi
   MODEL_CONFIGS=("${MODEL_CONFIGS[@]:0:${TRAIN_MODEL_LIMIT}}")

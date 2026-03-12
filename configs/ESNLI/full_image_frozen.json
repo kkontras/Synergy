@@ -3,7 +3,7 @@
     "data_split": { "fold": 0 }
   },
   "model": {
-    "model_class": "QwenVL_ScienceQA_Cached_Image",
+    "model_class": "QwenVL_ESNLI_Cached_Image",
     "args": {
       "model_name": "Qwen/Qwen3-VL-2B-Instruct",
       "d_model": 512,

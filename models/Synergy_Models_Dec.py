@@ -679,7 +679,7 @@ class LinearHead_Qwen(nn.Module):
 
     def forward(self, x, **kwargs):
         return self.linear(x)
-class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
+class QwenVL_Synergy_FrozenCLS(nn.Module):
     """
     Multimodal (image+text) ScienceQA as 5-way classification.
     Backbone is frozen EXCEPT:
@@ -1153,7 +1153,7 @@ class QwenVL_ScienceQA_Synergy_FrozenCLS(nn.Module):
 
         return {"preds": preds, "features": features, "losses": losses}
 
-class QwenVL_ScienceQA_Synergy_FrozenCLS_VisualEmb(nn.Module):
+class QwenVL_Synergy_FrozenCLS_VisualEmb(nn.Module):
     """
     Multimodal (image+text) ScienceQA as 5-way classification.
     Backbone is frozen EXCEPT:
@@ -2407,7 +2407,7 @@ class QwenVL_ESNLI_Unimodal_Image(nn.Module):
         return {"preds": preds, "features": features, "losses": losses}
 
 
-class QwenVL_ScienceQA_Unimodal_Image(nn.Module):
+class QwenVL_Unimodal_Image(nn.Module):
     """
     Multimodal (image+text) ScienceQA as 5-way classification.
     Backbone is frozen EXCEPT:
@@ -2749,7 +2749,7 @@ class QwenVL_ScienceQA_Unimodal_Image(nn.Module):
             preds["mc_from_text"] = mc_from_text
 
         return {"preds": preds, "features": features, "losses": losses}
-class QwenVL_ScienceQA_Unimodal_Text(nn.Module):
+class QwenVL_Unimodal_Text(nn.Module):
     """
     Multimodal (image+text) ScienceQA as 5-way classification.
     Backbone is frozen EXCEPT:
@@ -3443,7 +3443,7 @@ class SynIB_QwenFaster(nn.Module):
         losses = {"sl_1": kl1 * self.synergy_weight, "sl_2": kl2 * self.synergy_weight}
         # losses["sl_diff"] = kl_diff_mse * self.synergy_weight
         return losses
-# class QwenVL_ScienceQA_Synergy_SynIBFaster(nn.Module):
+# class QwenVL_SynIBFaster(nn.Module):
 #     """
 #     Multimodal (image+text) ScienceQA as 5-way classification.
 #     Backbone is frozen EXCEPT:
@@ -5504,7 +5504,7 @@ class QwenVL_ESNLI_Synergy_FrozenCLS_VisualEmb(nn.Module):
         return {"preds": preds, "features": features, "losses": losses}
 
 
-class QwenVL_ScienceQA_Cached(nn.Module):
+class _QwenVL_CachedCombinedImpl(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
         encs = encs or []
@@ -5878,7 +5878,7 @@ class QwenVL_ScienceQA_Cached(nn.Module):
             out["generated_text"] = gen_texts
 
         return out
-class QwenVL_ScienceQA_Cached_Text(nn.Module):
+class _QwenVL_CachedTextImpl(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
         encs = encs or []
@@ -6259,7 +6259,7 @@ class QwenVL_ScienceQA_Cached_Text(nn.Module):
             out["generated_text"] = gen_texts
 
         return out
-class QwenVL_ScienceQA_Cached_Image(nn.Module):
+class _QwenVL_CachedImageImpl(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
         encs = encs or []
@@ -6660,7 +6660,7 @@ class QwenVL_ScienceQA_Cached_Image(nn.Module):
             out["generated_text"] = gen_texts
 
         return out
-class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
+class _QwenVL_CachedSynIBCoreImpl(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
         encs = encs or []
@@ -7260,7 +7260,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
         return out
 
 
-class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFaster):
+class _QwenVL_CachedSynIBMaskImpl(_QwenVL_CachedSynIBCoreImpl):
     """
     RMask variant of SynIBFaster.
 
@@ -7589,7 +7589,7 @@ class QwenVL_ScienceQA_Cached_SynIBFaster_RMask(QwenVL_ScienceQA_Cached_SynIBFas
         return out
 
 
-class QwenVL_ScienceQA_Cached_MCR(nn.Module):
+class _QwenVL_CachedMCRImpl(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
         encs = encs or []
@@ -8042,7 +8042,7 @@ class QwenVL_ScienceQA_Cached_MCR(nn.Module):
             out["generated_text"] = gen_texts
 
         return out
-class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
+class _QwenVL_CachedMMParetoImpl(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
         encs = encs or []
@@ -8419,7 +8419,7 @@ class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
         features = {"combined": h_cls, "c": h_cls_text, "g": h_cls_image}
 
         return {"preds": {"combined": logits,"c": logits_text,"g": logits_image}, "features":  features, "losses": losses}
-class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):
+class _QwenVL_CachedTextPastImpl(nn.Module):
     def __init__(self, args, encs=None, **kwargs):
         super().__init__()
         encs = encs or []
@@ -8552,7 +8552,7 @@ class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):
             features["hidden"] = hidden
 
         return {"preds": {"combined": logits}, "features": features, "losses": losses}
-# class QwenVL_ScienceQA_Cached_SynIBFaster(nn.Module):
+# class _QwenVL_CachedSynIBCoreImpl(nn.Module):
 #     def __init__(self, args, encs=None, **kwargs):
 #         super().__init__()
 #         encs = encs or []
@@ -8882,7 +8882,7 @@ class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):
 #             out["losses"].update(synergy_losses)
 #         return out
 
-# class QwenVL_ScienceQA_Cached_MMPareto(nn.Module):
+# class _QwenVL_CachedMMParetoImpl(nn.Module):
 #     def __init__(self, args, encs=None, **kwargs):
 #         super().__init__()
 #         encs = encs or []
@@ -9034,7 +9034,7 @@ class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):
 #         ###Unimodal text
 #         image_mask = x.get("image_mask", None)
 #         if image_mask is None:
-#             raise KeyError("image_mask is required for QwenVL_ScienceQA_Cached_Text")
+#             raise KeyError("image_mask is required for _QwenVL_CachedTextImpl")
 #
 #         image_mask = image_mask.to(device).bool()
 #         keep = ~image_mask
@@ -9052,7 +9052,7 @@ class QwenVL_ScienceQA_Cached_Text_PastVersion(nn.Module):
 #
 #         if hint_mask is None:
 #             print(proc.keys())
-#             raise KeyError("hint_mask or text_mask is required for QwenVL_ScienceQA_Cached_Image")
+#             raise KeyError("hint_mask or text_mask is required for _QwenVL_CachedImageImpl")
 #
 #         hint_mask = hint_mask.to(device).bool()
 #         keep = (~hint_mask)
@@ -9138,11 +9138,11 @@ if __name__ == "__main__":
 # Bias-Infusion method model classes for the ESNLI cached pipeline
 # =============================================================================
 
-class QwenVL_ScienceQA_Cached_DnR(QwenVL_ScienceQA_Cached_MMPareto):
+class _QwenVL_CachedDnRImpl(_QwenVL_CachedMMParetoImpl):
     """
     Disagree-and-Reweight (DnR) variant.
 
-    Identical forward to QwenVL_ScienceQA_Cached_MMPareto (three passes:
+    Identical forward to QwenVL_ESNLI_Cached_MMPareto (three passes:
     combined, text-only, image-only) but does NOT include ce_loss_combined
     in output["losses"].  The combined CE loss is handled exclusively by
     the trainer's calculate_loss (multi_supervised_w = {"combined": 1}),
@@ -9160,11 +9160,11 @@ class QwenVL_ScienceQA_Cached_DnR(QwenVL_ScienceQA_Cached_MMPareto):
         return out
 
 
-class QwenVL_ScienceQA_Cached_ReconBoost(QwenVL_ScienceQA_Cached_MMPareto):
+class _QwenVL_CachedReconBoostImpl(_QwenVL_CachedMMParetoImpl):
     """
     ReconBoost variant.
 
-    Same dual-forward structure as QwenVL_ScienceQA_Cached_MMPareto but
+    Same dual-forward structure as QwenVL_ESNLI_Cached_MMPareto but
     ce_loss_combined is removed from output["losses"] to avoid double-
     counting with the trainer's calculate_loss.
 
@@ -9181,7 +9181,7 @@ class QwenVL_ScienceQA_Cached_ReconBoost(QwenVL_ScienceQA_Cached_MMPareto):
         return out
 
 
-class QwenVL_ScienceQA_Cached_RMask(QwenVL_ScienceQA_Cached):
+class _QwenVL_CachedRMaskImpl(_QwenVL_CachedCombinedImpl):
     """
     Random Modality Masking (RMask) for the Qwen cached multimodal model.
 
@@ -9289,3 +9289,287 @@ class QwenVL_ScienceQA_Cached_RMask(QwenVL_ScienceQA_Cached):
             "features": {"combined": h_cls},
             "losses":   {},
         }
+
+
+# =============================================================================
+# ESNLI cached Qwen family
+# =============================================================================
+
+class QwenVL_ESNLI_CachedBase(nn.Module):
+    """
+    Shared cached-Qwen setup for the ESNLI pipeline.
+
+    Family-specific behavior lives in subclasses through forward overrides and
+    small helper extensions (SynIB, MCR, MMPareto, ...).
+    """
+
+    def __init__(self, args, encs=None, **kwargs):
+        super().__init__()
+        encs = encs or []
+        if len(encs) < 1:
+            raise ValueError("encs[0] must be provided as the classifier head.")
+
+        self.args = args
+        self.num_classes = getattr(args, "num_classes")
+
+        model_name = getattr(args, "model_name", "Qwen/Qwen3-VL-2B-Instruct")
+        hf_cache = getattr(self.args, "hf_cache", None) or getattr(self.args, "save_base_dir", None)
+
+        self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=hf_cache)
+        tok = self.processor.tokenizer
+        tok.padding_side = "left"
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
+        self.pad_token_id = tok.pad_token_id
+
+        added = tok.add_special_tokens({"additional_special_tokens": ["<CLS>"]})
+        self.cls_token_id = tok.convert_tokens_to_ids("<CLS>")
+
+        self.backbone = Qwen3VLForConditionalGeneration.from_pretrained(
+            model_name,
+            cache_dir=hf_cache,
+        )
+        if added > 0:
+            self.backbone.resize_token_embeddings(len(tok))
+
+        cfg = self.backbone.config
+        self.image_token_id = int(cfg.image_token_id)
+
+        if hasattr(cfg, "text_config") and hasattr(cfg.text_config, "hidden_size"):
+            self.d_model = int(cfg.text_config.hidden_size)
+        else:
+            self.d_model = int(cfg.hidden_size)
+
+        self.enc_0 = encs[0]
+
+        self._apply_lora()
+        self._load_cls_embedding()
+        self._setup_trainables()
+
+    def _setup_trainables(self):
+        for p in self.backbone.parameters():
+            p.requires_grad = False
+
+        if getattr(self.args, "lora_config", None) and self.args.lora_config.get("use_lora", False):
+            for n, p in self.backbone.named_parameters():
+                if "lora_" in n:
+                    p.requires_grad = True
+
+        for p in self.enc_0.parameters():
+            p.requires_grad = True
+
+        lm = self.backbone.model.language_model
+        if getattr(self.args, "cls_finetune", False):
+            if getattr(self.args, "train_cls_row", True) and lm is not None and hasattr(lm, "embed_tokens"):
+                emb = lm.embed_tokens
+                emb.weight.requires_grad = True
+
+                cls_id = int(self.cls_token_id)
+                mask = torch.zeros_like(emb.weight, dtype=torch.float32)
+                mask[cls_id].fill_(1.0)
+
+                def grad_mask_hook(grad):
+                    return grad * mask.to(grad.device, grad.dtype)
+
+                if not hasattr(self, "_cls_grad_hooked"):
+                    emb.weight.register_hook(grad_mask_hook)
+                    self._cls_grad_hooked = True
+
+    def load_cls_embedding(self, path, strict_dim=True):
+        ckpt = torch.load(path, map_location="cpu")
+        cls_row = ckpt["cls_row"]
+
+        lm = self.backbone.model.language_model
+        if lm is None or not hasattr(lm, "embed_tokens"):
+            raise RuntimeError("Language model embedding table not found")
+
+        emb = lm.embed_tokens
+        current_cls_id = int(self.cls_token_id)
+
+        if strict_dim and cls_row.numel() != emb.weight.shape[1]:
+            raise ValueError(f"CLS dim mismatch: saved {cls_row.numel()} vs model {emb.weight.shape[1]}")
+
+        with torch.no_grad():
+            emb.weight[current_cls_id].copy_(cls_row.to(emb.weight.device, emb.weight.dtype))
+
+    def _load_cls_embedding(self):
+        cls_path = getattr(self.args, "cls_emb_path", None)
+        save_base_dir = getattr(self.args, "save_base_dir", None)
+        if save_base_dir is None or cls_path is None:
+            return
+        cls_path = os.path.join(save_base_dir, cls_path)
+        if os.path.isfile(cls_path):
+            self.load_cls_embedding(cls_path)
+
+    def _apply_lora(self):
+        cfg = getattr(self.args, "lora_config", None)
+        if not cfg or not cfg.get("use_lora", False):
+            return
+
+        lora_cfg = LoraConfig(
+            r=int(cfg.get("lora_r", 8)),
+            lora_alpha=int(cfg.get("lora_alpha", 8)),
+            lora_dropout=float(cfg.get("lora_dropout", 0.0)),
+            target_modules=list(cfg.get("lora_target_modules", ["q_proj", "v_proj"])),
+            bias=str(cfg.get("lora_bias", "none")),
+            task_type="CAUSAL_LM",
+        )
+        self.backbone = get_peft_model(self.backbone, lora_cfg)
+
+    def _get_cls_token_repr(self, hidden, input_ids):
+        B = input_ids.size(0)
+        cls_pos = (input_ids == self.cls_token_id).int().argmax(dim=1)
+        h = hidden[torch.arange(B, device=input_ids.device), cls_pos]
+        h = F.layer_norm(h, (h.shape[-1],))
+        return h
+
+    def _mc_ce_loss(self, logits, labels):
+        if hasattr(self.args, "class_weights") and self.args.class_weights is not None:
+            return F.cross_entropy(logits, labels, weight=self.args.class_weights.to(logits.device))
+        return F.cross_entropy(logits, labels)
+
+    def _build_inputs_embeds_from_cache(
+        self,
+        input_ids: torch.Tensor,
+        image_mask: torch.Tensor,
+        vision_embeds: torch.Tensor,
+        *,
+        strict: bool = True,
+    ):
+        lm = self.backbone.model.language_model
+        inputs_embeds = lm.embed_tokens(input_ids)
+
+        for b in range(inputs_embeds.shape[0]):
+            pos = image_mask[b].nonzero(as_tuple=False).view(-1)
+            n_mask = int(pos.numel())
+            n_vis = int(vision_embeds[b].size(0))
+
+            if strict and (n_mask != n_vis):
+                raise ValueError(
+                    f"Sample {b}: image_mask has {n_mask} positions but vision_embeds has {n_vis} tokens"
+                )
+            inputs_embeds[b, pos, :] = vision_embeds[b, :, :].to(inputs_embeds.dtype)
+
+        return inputs_embeds
+
+    @torch.no_grad()
+    def generate_answer(
+        self,
+        proc,
+        max_new_tokens=128,
+        min_new_tokens=2,
+        temperature=0.7,
+        top_p=0.9,
+        do_sample=True,
+    ):
+        self.backbone.eval()
+
+        device = self.backbone.device
+        input_ids = proc["input_ids"].to(device)
+        attention_mask = proc["attention_mask"].to(device)
+
+        gen_ids = self.backbone.generate(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            max_new_tokens=max_new_tokens,
+            min_new_tokens=min_new_tokens,
+            do_sample=do_sample,
+            temperature=temperature,
+            top_p=top_p,
+            pad_token_id=self.pad_token_id,
+            eos_token_id=self.processor.tokenizer.eos_token_id,
+            return_dict_in_generate=False,
+        )
+
+        prompt_len = input_ids.shape[1]
+        new_token_ids = gen_ids[:, prompt_len:]
+        return self.processor.tokenizer.batch_decode(
+            new_token_ids,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )
+
+    def _encode_from_inputs_embeds(self, inputs_embeds, attention_mask):
+        out = self.backbone.model.language_model(
+            inputs_embeds=inputs_embeds,
+            attention_mask=attention_mask,
+            output_hidden_states=True,
+            return_dict=True,
+        )
+        return out.hidden_states[-1]
+
+
+class QwenVL_ESNLI_Cached(QwenVL_ESNLI_CachedBase):
+    forward = _QwenVL_CachedCombinedImpl.forward
+
+
+class QwenVL_ESNLI_Cached_Text(QwenVL_ESNLI_CachedBase):
+    forward = _QwenVL_CachedTextImpl.forward
+
+
+class QwenVL_ESNLI_Cached_Image(QwenVL_ESNLI_CachedBase):
+    forward = _QwenVL_CachedImageImpl.forward
+
+
+class QwenVL_ESNLI_Cached_SynIBCore(QwenVL_ESNLI_CachedBase):
+    def __init__(self, args, encs=None, **kwargs):
+        super().__init__(args, encs=encs, **kwargs)
+        self.synergy_weight = float(self.args.get("bias_infusion", {}).get("l", 0.0))
+        self.synib = SynIB_QwenFaster(args, [], self)
+
+    _encode_from_inputs_embeds = _QwenVL_CachedSynIBCoreImpl._encode_from_inputs_embeds
+    _compute_logits_from_proc = _QwenVL_CachedSynIBCoreImpl._compute_logits_from_proc
+    apply_custom_masks = _QwenVL_CachedSynIBCoreImpl.apply_custom_masks
+    _compute_logits_synib_from_proc = _QwenVL_CachedSynIBCoreImpl._compute_logits_synib_from_proc
+    forward = _QwenVL_CachedSynIBCoreImpl.forward
+
+
+class QwenVL_ESNLI_Cached_SynIB(QwenVL_ESNLI_Cached_SynIBCore):
+    _learned_masks_rmask = _QwenVL_CachedSynIBMaskImpl._learned_masks_rmask
+    _compute_logits_synib_from_proc = _QwenVL_CachedSynIBMaskImpl._compute_logits_synib_from_proc
+
+
+class QwenVL_ESNLI_Cached_MCR(QwenVL_ESNLI_CachedBase):
+    def __init__(self, args, encs=None, **kwargs):
+        super().__init__(args, encs=encs, **kwargs)
+
+        bi = getattr(args, "bias_infusion", {}) or {}
+        self.mcr_enabled = str(bi.get("method", "")).lower() == "mcr"
+        self.mcr_l = float(bi.get("l", 0.0))
+        self.mcr_num_samples = int(bi.get("num_samples", 1))
+
+        self.mcr_regby = str(bi.get("regby", "greedy")).lower()
+        if self.mcr_regby not in {"greedy", "colab"}:
+            warnings.warn(f"Unsupported regby='{self.mcr_regby}', defaulting to 'greedy'")
+            self.mcr_regby = "greedy"
+
+        self.mcr_contr_coeff = float(bi.get("contrastive_weight", 0.0))
+        self.mcr_contr_type = str(bi.get("contrastive_type", "instance")).lower()
+        self.mcr_temperature = float(bi.get("temperature", 0.07))
+        self._mcr_step = 0
+
+    _random_shuffles = _QwenVL_CachedMCRImpl._random_shuffles
+    _build_sv_embeds = _QwenVL_CachedMCRImpl._build_sv_embeds
+    _build_sa_embeds = _QwenVL_CachedMCRImpl._build_sa_embeds
+    _shuffle_deepstack = _QwenVL_CachedMCRImpl._shuffle_deepstack
+    _jsd = staticmethod(_QwenVL_CachedMCRImpl._jsd)
+    _lm_forward = _QwenVL_CachedMCRImpl._lm_forward
+    _compute_contrastive_term = _QwenVL_CachedMCRImpl._compute_contrastive_term
+    forward = _QwenVL_CachedMCRImpl.forward
+
+
+class QwenVL_ESNLI_Cached_MMPareto(QwenVL_ESNLI_CachedBase):
+    forward = _QwenVL_CachedMMParetoImpl.forward
+
+
+class QwenVL_ESNLI_Cached_DnR(QwenVL_ESNLI_Cached_MMPareto):
+    forward = _QwenVL_CachedDnRImpl.forward
+
+
+class QwenVL_ESNLI_Cached_ReconBoost(QwenVL_ESNLI_Cached_MMPareto):
+    forward = _QwenVL_CachedReconBoostImpl.forward
+
+
+class QwenVL_SynIBFaster(QwenVL_ESNLI_Cached_SynIB):
+    """Compatibility name for older SynIB configs without dataset-specific prefix."""
+    pass

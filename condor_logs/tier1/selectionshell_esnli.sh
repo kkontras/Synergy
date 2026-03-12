@@ -67,7 +67,7 @@ echo "Submitted: image-only frozen (full_image_frozen)"
 # echo "Submitted: ReconBoost (full_reconboost)"
 
 # qsub ${DEPEND} "${PBS_TRAIN}" \
-#     -v "${TRAIN_VARS},config=./configs/ESNLI/full_rmask.json"
+#     -v "${TRAIN_VARS},config=./configs/ESNLI/full_synib.json"
 # echo "Submitted: RMask (full_rmask)"
 
 echo ""

@@ -1,31 +1,6 @@
 {
-  "training_params": {
-    "tdqm_disable": false,
-    "wandb_disable": false,
-    "batch_size": 16,
-    "test_batch_size": 16
-  },
-  "early_stopping": {
-    "end_of_epoch_check": true,
-    "n_steps_stop": 20,
-    "save_every_valstep": 10,
-    "validate_every": 25
-  },
-  "optimizer": {
-    "type": "Adaw",
-    "learning_rate": 0.00001,
-    "momentum": 0.9,
-    "weight_decay": 0.00001,
-    "beta1": 0.9,
-    "beta2": 0.999
-  },
-  "dataset": {
-    "data_split": {
-      "fold": 0
-    }
-  },
   "model": {
-    "model_class": "QwenVL_ScienceQA_Cached_SynIBFaster_RMask",
+    "model_class": "QwenVL_ESNLI_Cached_SynIB",
     "args": {
       "d_model": 512,
       "num_classes": 3,
@@ -73,7 +48,7 @@
       }
     },
     "load_ongoing": false,
-    "save_dir": "esnli_full_rmask_{}.pth.tar",
+    "save_dir": "esnli_full_synib_{}.pth.tar",
     "encoders": [
       {
         "model": "LinearHead_Qwen",

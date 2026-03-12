@@ -5,7 +5,7 @@
     }
   },
   "model": {
-    "model_class": "QwenVL_ScienceQA_Cached_MCR",
+    "model_class": "QwenVL_ESNLI_Cached_MCR",
     "args": {
       "model_name": "Qwen/Qwen3-VL-2B-Instruct",
       "d_model": 512,

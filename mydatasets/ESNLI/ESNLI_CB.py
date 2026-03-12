@@ -809,11 +809,16 @@ class ESNLI_MemmapDataloader:
         # if config has pad_token_id, prefer it
         pad_token_id = int(getattr(getattr(config, "model", None), "pad_token_id", pad_token_id))
 
+        # read optional training-set size limit from config
+        train_max_items = getattr(config.dataset, "train_max_items", None)
+        if train_max_items is not None:
+            train_max_items = int(train_max_items)
+
         train_ds = ESNLI_ShardedLazyDataset(
             cache_root=cache_root,
             split="train",
             shard_path=shard_path,
-            max_items=max_items,
+            max_items=train_max_items,
             deep_dim=deep_dim,
         )
         val_ds = ESNLI_ShardedLazyDataset(

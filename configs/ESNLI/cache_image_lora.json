@@ -26,7 +26,7 @@
   },
   "model": {
     "model_name": "Qwen/Qwen3-VL-2B-Instruct",
-    "model_class": "QwenVL_ScienceQA_Cached_Image",
+    "model_class": "QwenVL_ESNLI_Cached_Image",
     "args": {
       "d_model": 512,
       "num_classes": 3,

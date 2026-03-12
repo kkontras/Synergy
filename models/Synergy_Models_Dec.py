@@ -7320,6 +7320,14 @@ class _QwenVL_CachedSynIBMaskImpl(_QwenVL_CachedSynIBCoreImpl):
 
         try:
             # ----------------------------------------------------------
+            # Baseline: forward pass with full data (no masking)
+            # ----------------------------------------------------------
+            with torch.no_grad():
+                logits_full = run_logits(input_embeds, image_mask, deep_stack_viz)
+                ce_full = F.cross_entropy(logits_full, label)
+                print(f"[RMask-learned] baseline (full data) ce={ce_full.item():.4f}")
+
+            # ----------------------------------------------------------
             # Pass 1: learn keep-gate over hint (m1), hard-suppress image (m2)
             # ----------------------------------------------------------
             n_m1 = int(m1.sum().item())

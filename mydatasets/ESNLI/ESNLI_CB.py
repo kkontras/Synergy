@@ -795,6 +795,7 @@ class ESNLI_MemmapDataloader:
         shard_path: Optional[str] = None,
         max_items: Optional[int] = None,
         deep_dim: int = 2048,
+        num_workers: int = 12,
         pin_memory: bool = False,
         prefetch_factor: int = 2,
         persistent_workers: bool = False,
@@ -838,7 +839,6 @@ class ESNLI_MemmapDataloader:
 
 
         self.collate_fn = lambda batch: memmap_collate(batch, pad_token_id=pad_token_id)
-        num_workers = 0
         self.train_loader = DataLoader(
             train_ds,
             batch_size=batch_size,

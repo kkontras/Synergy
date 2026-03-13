@@ -48,5 +48,9 @@ python scripts/entrypoints/train.py \
     --lr             "${lr}"             \
     --wd             "${wd}"             \
     --batch_size     "${batch_size}"     \
-    --load_ongoing   "${load_ongoing}"   
-
+    --load_ongoing   "${load_ongoing}"   \
+    --l              "${l}"              \
+    --perturb        "${perturb}"              \
+    --perturb_lsparse "${perturb_lsparse}"              \
+    --perturb_steps  "${perturb_steps}"              \
+    --perturb_pmin   "${perturb_pmin}"                                                                                                                                                                                                                                                                   

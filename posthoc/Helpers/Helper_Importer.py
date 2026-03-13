@@ -308,8 +308,13 @@ class Importer():
                 elif "model_state_dict" in checkpoint:
                     if "VaVL" not in encoders[num_enc]["model"]:
                         print("Replacing module")
+                        sd_key = next(
+                            (k for k in ["best_model_state_dict", "best_model_accuracy_state_dict", "model_state_dict"]
+                             if k in checkpoint), None)
+                        if sd_key is None:
+                            raise KeyError("No usable state dict found in encoder checkpoint")
                         checkpoint["best_model_state_dict"] = {key.replace("module.", ""): value for key, value in
-                                                               checkpoint["best_model_state_dict"].items()}
+                                                               checkpoint[sd_key].items()}
                     enc.load_state_dict(checkpoint["best_model_state_dict"])
 
             encs.append(enc)

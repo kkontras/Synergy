@@ -16,9 +16,249 @@
     ],
     "epochs": 100,
     "tuning_mode": "retune",
-    "tune_epochs": 20
+    "tune_epochs": null
   },
   "results": {
+    "synib_star": {
+      "params": {
+        "lr": 0.0003,
+        "wd": 1e-05,
+        "dropout": 0.0,
+        "lambda_kl": 10.0,
+        "mask_prob": 0.6,
+        "mask_steps": 20,
+        "mask_lr": 0.1,
+        "mask_lam_sparsity": 5.0,
+        "diffusion_steps": 10,
+        "diffusion_schedule": "cosine",
+        "diffusion_mask_prob": 0.95,
+        "diffusion_eps_std": 1.0
+      },
+      "metrics": {
+        "0.0": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9999777777777777,
+          "test_std": 3.849001794597081e-05
+        },
+        "0.2": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9999666666666668,
+          "test_std": 5.7735026918956215e-05
+        },
+        "0.4": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9999777777777777,
+          "test_std": 3.849001794597081e-05
+        },
+        "0.6": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9999777777777777,
+          "test_std": 3.849001794597081e-05
+        },
+        "0.8": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9999888888888888,
+          "test_std": 1.9245008972985406e-05
+        },
+        "1.0": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9999777777777777,
+          "test_std": 3.849001794597081e-05
+        },
+        "2.0": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9967444444444444,
+          "test_std": 0.005381071076089383
+        }
+      }
+    },
+    "synib_diffusion": {
+      "params": {
+        "lr": 0.0003,
+        "wd": 1e-05,
+        "dropout": 0.0,
+        "lambda_kl": 10.0,
+        "mask_prob": 0.6,
+        "mask_steps": 20,
+        "mask_lr": 0.1,
+        "mask_lam_sparsity": 5.0,
+        "diffusion_steps": 100,
+        "diffusion_schedule": "cosine",
+        "diffusion_mask_prob": 0.95,
+        "diffusion_eps_std": 1.0
+      },
+      "metrics": {
+        "0.0": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9999777777777777,
+          "test_std": 3.849001794597081e-05
+        },
+        "0.2": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9999777777777777,
+          "test_std": 3.849001794597081e-05
+        },
+        "0.4": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9999777777777777,
+          "test_std": 3.849001794597081e-05
+        },
+        "0.6": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 1.0,
+          "test_std": 0.0
+        },
+        "0.8": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 1.0,
+          "test_std": 0.0
+        },
+        "1.0": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9999666666666668,
+          "test_std": 5.7735026918956215e-05
+        },
+        "2.0": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9950444444444445,
+          "test_std": 0.008324817871436725
+        }
+      }
+    },
+    "synib_learned": {
+      "params": {
+        "lr": 0.0003,
+        "wd": 1e-05,
+        "dropout": 0.0,
+        "lambda_kl": 10.0,
+        "mask_prob": 0.6,
+        "mask_steps": 50,
+        "mask_lr": 0.1,
+        "mask_lam_sparsity": 10.0,
+        "diffusion_steps": 10,
+        "diffusion_schedule": "cosine",
+        "diffusion_mask_prob": 0.95,
+        "diffusion_eps_std": 1.0
+      },
+      "metrics": {
+        "0.0": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9999888888888888,
+          "test_std": 1.9245008972985406e-05
+        },
+        "0.2": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9999777777777777,
+          "test_std": 3.849001794597081e-05
+        },
+        "0.4": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9998555555555555,
+          "test_std": 0.0001644294287438568
+        },
+        "0.6": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9996555555555555,
+          "test_std": 0.00032375116187410234
+        },
+        "0.8": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9991444444444445,
+          "test_std": 0.0009106367328739121
+        },
+        "1.0": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9967555555555556,
+          "test_std": 0.004223917788201096
+        },
+        "2.0": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9720222222222222,
+          "test_std": 0.027418978288228982
+        }
+      }
+    },
+    "synib_random": {
+      "params": {
+        "lr": 0.0003,
+        "wd": 1e-05,
+        "dropout": 0.0,
+        "lambda_kl": 10.0,
+        "mask_prob": 0.9,
+        "mask_steps": 20,
+        "mask_lr": 0.1,
+        "mask_lam_sparsity": 5.0,
+        "diffusion_steps": 10,
+        "diffusion_schedule": "cosine",
+        "diffusion_mask_prob": 0.95,
+        "diffusion_eps_std": 1.0
+      },
+      "metrics": {
+        "0.0": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9998888888888889,
+          "test_std": 0.00019245008972985407
+        },
+        "0.2": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9998444444444444,
+          "test_std": 0.00021430335024426428
+        },
+        "0.4": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9995888888888889,
+          "test_std": 0.0004598711574794541
+        },
+        "0.6": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9988999999999999,
+          "test_std": 0.0013739642563683457
+        },
+        "0.8": {
+          "train_mean": 0.9988888888888888,
+          "train_std": 0.001924500897298733,
+          "test_mean": 0.9962333333333332,
+          "test_std": 0.004725815626252613
+        },
+        "1.0": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.9891444444444444,
+          "test_std": 0.015836116714415573
+        },
+        "2.0": {
+          "train_mean": 1.0,
+          "train_std": 0.0,
+          "test_mean": 0.948511111111111,
+          "test_std": 0.060134712967667016
+        }
+      }
+    },
     "baseline": {
       "params": {
         "lr": 0.01,
@@ -76,246 +316,6 @@
           "train_std": 0.0,
           "test_mean": 0.4986777777777778,
           "test_std": 0.0013035563889833262
-        }
-      }
-    },
-    "synib_star": {
-      "params": {
-        "lr": 0.0003,
-        "wd": 1e-05,
-        "dropout": 0.0,
-        "lambda_kl": 1.0,
-        "mask_prob": 0.6,
-        "mask_steps": 20,
-        "mask_lr": 0.1,
-        "mask_lam_sparsity": 5.0,
-        "diffusion_steps": 10,
-        "diffusion_schedule": "cosine",
-        "diffusion_mask_prob": 0.95,
-        "diffusion_eps_std": 1.0
-      },
-      "metrics": {
-        "0.0": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9999777777777777,
-          "test_std": 1.9245008972985406e-05
-        },
-        "0.2": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9997222222222222,
-          "test_std": 0.0003097191081059486
-        },
-        "0.4": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9955555555555554,
-          "test_std": 0.006332134389439824
-        },
-        "0.6": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9861333333333334,
-          "test_std": 0.017795910891113317
-        },
-        "0.8": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9751,
-          "test_std": 0.028613691361537623
-        },
-        "1.0": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9669888888888889,
-          "test_std": 0.02886798175090131
-        },
-        "2.0": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9446222222222223,
-          "test_std": 0.015482941628821108
-        }
-      }
-    },
-    "synib_random": {
-      "params": {
-        "lr": 0.0003,
-        "wd": 1e-05,
-        "dropout": 0.0,
-        "lambda_kl": 1.0,
-        "mask_prob": 0.6,
-        "mask_steps": 20,
-        "mask_lr": 0.1,
-        "mask_lam_sparsity": 5.0,
-        "diffusion_steps": 10,
-        "diffusion_schedule": "cosine",
-        "diffusion_mask_prob": 0.95,
-        "diffusion_eps_std": 1.0
-      },
-      "metrics": {
-        "0.0": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9992000000000001,
-          "test_std": 0.00040000000000001146
-        },
-        "0.2": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9968111111111111,
-          "test_std": 0.0009946151312237152
-        },
-        "0.4": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9533666666666667,
-          "test_std": 0.043617886239477495
-        },
-        "0.6": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.8277111111111112,
-          "test_std": 0.10972047481027684
-        },
-        "0.8": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.7061333333333334,
-          "test_std": 0.09061641376949565
-        },
-        "1.0": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.6393,
-          "test_std": 0.04300636903736208
-        },
-        "2.0": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.5793444444444444,
-          "test_std": 0.02167172590505199
-        }
-      }
-    },
-    "synib_learned": {
-      "params": {
-        "lr": 0.0003,
-        "wd": 1e-05,
-        "dropout": 0.0,
-        "lambda_kl": 1.0,
-        "mask_prob": 0.6,
-        "mask_steps": 20,
-        "mask_lr": 0.1,
-        "mask_lam_sparsity": 5.0,
-        "diffusion_steps": 10,
-        "diffusion_schedule": "cosine",
-        "diffusion_mask_prob": 0.95,
-        "diffusion_eps_std": 1.0
-      },
-      "metrics": {
-        "0.0": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9998222222222223,
-          "test_std": 6.938886664886345e-05
-        },
-        "0.2": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9986222222222222,
-          "test_std": 0.000452564707875932
-        },
-        "0.4": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.972,
-          "test_std": 0.0316376006956561
-        },
-        "0.6": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9035666666666667,
-          "test_std": 0.07666826809921644
-        },
-        "0.8": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.8138111111111112,
-          "test_std": 0.09144497029685444
-        },
-        "1.0": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.7555111111111111,
-          "test_std": 0.07044992179897352
-        },
-        "2.0": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.6422666666666667,
-          "test_std": 0.010089763789768988
-        }
-      }
-    },
-    "synib_diffusion": {
-      "params": {
-        "lr": 0.0003,
-        "wd": 1e-05,
-        "dropout": 0.0,
-        "lambda_kl": 1.0,
-        "mask_prob": 0.6,
-        "mask_steps": 20,
-        "mask_lr": 0.1,
-        "mask_lam_sparsity": 5.0,
-        "diffusion_steps": 100,
-        "diffusion_schedule": "cosine",
-        "diffusion_mask_prob": 0.95,
-        "diffusion_eps_std": 1.0
-      },
-      "metrics": {
-        "0.0": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9999666666666668,
-          "test_std": 1.3597399555105182e-16
-        },
-        "0.2": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9997333333333334,
-          "test_std": 0.00031797973380567754
-        },
-        "0.4": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9955222222222222,
-          "test_std": 0.006474765833031565
-        },
-        "0.6": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9848333333333334,
-          "test_std": 0.019277966697761502
-        },
-        "0.8": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9718999999999999,
-          "test_std": 0.03124923110165185
-        },
-        "1.0": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9616666666666666,
-          "test_std": 0.03259483599181525
-        },
-        "2.0": {
-          "train_mean": 1.0,
-          "train_std": 0.0,
-          "test_mean": 0.9351888888888888,
-          "test_std": 0.01698379401839473
         }
       }
     }
